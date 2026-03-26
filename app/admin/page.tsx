@@ -7,8 +7,8 @@ import { Rolle } from "@/types"
 
 const rollen: { rolle: Rolle; label: string; icon: string; desc: string; color: string }[] = [
   { rolle: "verwalter", label: "Hausverwaltung", icon: "\u{1F3E2}", desc: "Tickets erstellen, Handwerker verwalten, Reporting einsehen", color: "#1D9E75" },
-  { rolle: "handwerker", label: "Handwerker", icon: "\u{1F6E0}\u{FE0F}", desc: "Auftraege annehmen, Angebote abgeben, Profil verwalten", color: "#2563EB" },
-  { rolle: "mieter", label: "Mieter", icon: "\u{1F3E0}", desc: "Schaeden melden, Ticket-Status verfolgen, Bewertungen abgeben", color: "#D97706" },
+  { rolle: "handwerker", label: "Handwerker", icon: "\u{1F6E0}\u{FE0F}", desc: "Aufträge annehmen, Angebote abgeben, Profil verwalten", color: "#2563EB" },
+  { rolle: "mieter", label: "Mieter", icon: "\u{1F3E0}", desc: "Schäden melden, Ticket-Status verfolgen, Bewertungen abgeben", color: "#D97706" },
 ]
 
 export default function AdminPage() {
@@ -57,7 +57,7 @@ export default function AdminPage() {
         <div className="mb-8">
           <h1 className="text-xl font-medium text-gray-900 mb-1">Dashboard wechseln</h1>
           <p className="text-sm text-gray-500">
-            Waehle eine Rolle, um das entsprechende Dashboard zu sehen.
+            Wähle eine Rolle, um das entsprechende Dashboard zu sehen.
             {currentRolle && <span> Aktuelle Rolle: <span className="font-medium text-gray-700">{currentRolle}</span></span>}
           </p>
         </div>
@@ -74,7 +74,7 @@ export default function AdminPage() {
                 <Button variant={currentRolle === r.rolle ? "primary" : "ghost"} size="sm"
                   disabled={switching === r.rolle}
                   onClick={() => switchRole(r.rolle)}>
-                  {switching === r.rolle ? "Wechsle..." : currentRolle === r.rolle ? "Aktiv - Oeffnen" : "Als " + r.label}
+                  {switching === r.rolle ? "Wechsle..." : currentRolle === r.rolle ? "Aktiv – Öffnen" : "Als " + r.label}
                 </Button>
               </div>
               {currentRolle === r.rolle && (
