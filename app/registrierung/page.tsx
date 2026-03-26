@@ -7,7 +7,7 @@ import { Rolle } from "@/types"
 
 export default function RegistrierungPage() {
   const router = useRouter()
-  const [form, setForm] = useState({ name: "", email: "", password: "", rolle: "admin" as Rolle, firma: "", gewerk: "", plz_bereich: "" })
+  const [form, setForm] = useState({ name: "", email: "", password: "", rolle: "verwalter" as Rolle, firma: "", gewerk: "", plz_bereich: "" })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
@@ -23,8 +23,7 @@ export default function RegistrierungPage() {
       rolle: form.rolle, firma: form.firma, gewerk: form.gewerk, plz_bereich: form.plz_bereich,
     })
 
-    if (form.rolle === "admin") router.push("/admin")
-    else if (form.rolle === "verwalter") router.push("/dashboard-verwalter")
+    if (form.rolle === "verwalter") router.push("/dashboard-verwalter")
     else if (form.rolle === "handwerker") router.push("/dashboard-handwerker")
     else router.push("/dashboard-mieter")
   }
@@ -39,17 +38,16 @@ export default function RegistrierungPage() {
         <Card>
           <div className="flex flex-col gap-4">
             <Select label="Ich bin..." value={form.rolle} onChange={e => set("rolle", e.target.value)}>
-              <option value="admin">Admin (alle Rollen)</option>
               <option value="verwalter">Hausverwaltung</option>
               <option value="handwerker">Handwerksbetrieb</option>
               <option value="mieter">Mieter</option>
             </Select>
-            <Input label="VollstÃ¤ndiger Name" placeholder="Max Mustermann" value={form.name} onChange={e => set("name", e.target.value)} />
+            <Input label="Vollständiger Name" placeholder="Max Mustermann" value={form.name} onChange={e => set("name", e.target.value)} />
             <Input label="E-Mail" type="email" placeholder="name@firma.de" value={form.email} onChange={e => set("email", e.target.value)} />
             <Input label="Passwort" type="password" placeholder="Mindestens 8 Zeichen" value={form.password} onChange={e => set("password", e.target.value)} />
             {form.rolle === "handwerker" && <>
               <Input label="Firmenname" placeholder="Klimatec GmbH" value={form.firma} onChange={e => set("firma", e.target.value)} />
-              <Input label="Gewerk / Spezialisierung" placeholder="Heizung, SanitÃ¤r" value={form.gewerk} onChange={e => set("gewerk", e.target.value)} />
+              <Input label="Gewerk / Spezialisierung" placeholder="Heizung, Sanitär" value={form.gewerk} onChange={e => set("gewerk", e.target.value)} />
               <Input label="PLZ-Einzugsgebiet" placeholder="60xxx, 65xxx" value={form.plz_bereich} onChange={e => set("plz_bereich", e.target.value)} />
             </>}
             {error && <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
