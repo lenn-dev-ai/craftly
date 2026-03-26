@@ -21,7 +21,8 @@ export default function LoginPage() {
       .from("profiles").select("rolle").eq("id", data.user.id).single()
 
     const rolle = profile?.rolle
-    if (rolle === "verwalter") router.push("/dashboard-verwalter")
+    if (rolle === "admin") router.push("/admin")
+    else if (rolle === "verwalter") router.push("/dashboard-verwalter")
     else if (rolle === "handwerker") router.push("/dashboard-handwerker")
     else if (rolle === "mieter") router.push("/dashboard-mieter")
     else router.push("/dashboard-verwalter")
