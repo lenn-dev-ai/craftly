@@ -73,7 +73,7 @@ export default function AdminPage() {
                 <div className="text-xs text-gray-500 mb-4 px-2">{r.desc}</div>
                 <Button variant={currentRolle === r.rolle ? "primary" : "ghost"} size="sm"
                   disabled={switching === r.rolle}
-                  onClick={(e: React.MouseEvent) => { e.stopPropagation(); switchRole(r.rolle) }}>
+                  onClick={() => switchRole(r.rolle)}>
                   {switching === r.rolle ? "Wechsle..." : currentRolle === r.rolle ? "Aktiv - Oeffnen" : "Als " + r.label}
                 </Button>
               </div>
