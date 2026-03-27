@@ -40,7 +40,7 @@ export default function TicketDetail() {
 
     const [{ data: profile }, { data: t }, { data: msgs }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
-      supabase.from("tickets").select("*, objekt(*), angebote(*, handwerker:profiles(*))").eq("id", id).single(),
+      supabase.from("tickets").select("*, objekte(*), angebote(*, handwerker:profiles(*))").eq("id", id).single(),
       supabase.from("nachrichten").select("*, absender:profiles(*)").eq("ticket_id", id).order("created_at"),
     ])
     setCurrentUser(profile)
@@ -94,7 +94,7 @@ export default function TicketDetail() {
   if (loading) return <div className="flex items-center justify-center h-64"><div className="text-sm text-gray-400">Lädt...</div></div>
   if (!ticket) return <div className="p-6 text-sm text-gray-500">Ticket nicht gefunden.</div>
 
-  const isVerwalter = currentUser?.rolle === "verwalter"
+  const isVerwalter = currentUser?.rolle === "verwalter" || currentUser?.rolle === "admin"
   const isHandwerker = currentUser?.rolle === "handwerker"
   const hatBereitsAngebot = ticket.angebote?.some(a => a.handwerker_id === currentUser?.id)
   const sortiertAngebote = [...(ticket.angebote || [])].sort((a, b) => a.preis - b.preis)
