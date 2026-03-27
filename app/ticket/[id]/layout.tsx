@@ -7,9 +7,10 @@ import { Rolle } from "@/types"
 export default function TicketLayout({ children }: { children: React.ReactNode }) {
   const [rolle, setRolle] = useState<Rolle>("verwalter")
   useEffect(() => {
-    createClient().auth.getUser().then(async ({ data: { user } }) => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
-      const { data } = await createClient().from("profiles").select("rolle").eq("id", user.id).single()
+      const { data } = await supabase.from("profiles").select("rolle").eq("id", user.id).single()
       if (data?.rolle) setRolle(data.rolle as Rolle)
     })
   }, [])
