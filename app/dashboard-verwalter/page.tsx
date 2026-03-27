@@ -34,7 +34,7 @@ export default function VerwalterDashboard() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
-      <div className="text-sm text-gray-400">LÃ¤dt...</div>
+      <div className="text-sm text-gray-400">Lädt...</div>
     </div>
   )
 
@@ -43,7 +43,7 @@ export default function VerwalterDashboard() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-medium">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Ãbersicht aller Objekte & Tickets</p>
+          <p className="text-sm text-gray-500 mt-0.5">Übersicht aller Objekte & Tickets</p>
         </div>
         <Button onClick={() => router.push("/dashboard-verwalter/neues-ticket")}>
           + Neues Ticket
@@ -54,7 +54,7 @@ export default function VerwalterDashboard() {
         <MetricCard label="Offene Tickets" value={offen} />
         <MetricCard label="Aktive Auktionen" value={auktion} />
         <MetricCard label="In Bearbeitung" value={inArbeit} />
-        <MetricCard label="Kosten lfd. Monat" value={`â¬ ${gesamtkosten.toLocaleString("de")}`} />
+        <MetricCard label="Kosten lfd. Monat" value={`€ ${gesamtkosten.toLocaleString("de")}`} />
       </div>
 
       <div className="flex items-center justify-between mb-3">
@@ -64,7 +64,7 @@ export default function VerwalterDashboard() {
       </div>
 
       {tickets.length === 0 ? (
-        <EmptyState icon="ð«" title="Noch keine Tickets"
+        <EmptyState icon="🎫" title="Noch keine Tickets"
           desc="Erstelle dein erstes Ticket um Handwerker zu beauftragen."
           action={<Button onClick={() => router.push("/dashboard-verwalter/neues-ticket")}>Erstes Ticket erstellen</Button>} />
       ) : (
@@ -78,14 +78,14 @@ export default function VerwalterDashboard() {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{t.titel}</div>
                   <div className="text-xs text-gray-400 mt-0.5">
-                    {t.wohnung && `${t.wohnung} Â· `}
+                    {t.wohnung && `${t.wohnung} · `}
                     {t.angebote?.length ? `${t.angebote.length} Angebot${t.angebote.length !== 1 ? "e" : ""}` : "Keine Angebote"}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {t.angebote && t.angebote.length > 0 && (
                     <span className="text-sm font-medium text-[#1D9E75]">
-                      â¬ {Math.min(...t.angebote.map(a => a.preis)).toLocaleString("de")}
+                      € {Math.min(...t.angebote.map(a => a.preis)).toLocaleString("de")}
                     </span>
                   )}
                   <Badge status={t.status} />
@@ -98,7 +98,7 @@ export default function VerwalterDashboard() {
 
       {erledigt > 0 && (
         <div className="mt-4 text-center">
-          <span className="text-xs text-gray-400">{erledigt} erledigte Tickets Â· </span>
+          <span className="text-xs text-gray-400">{erledigt} erledigte Tickets · </span>
           <button onClick={() => router.push("/dashboard-verwalter/tickets")}
             className="text-xs text-[#1D9E75] hover:underline">Alle anzeigen</button>
         </div>
