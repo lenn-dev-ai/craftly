@@ -3,21 +3,8 @@ import { useEffect, useState, useRef } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket, Angebot, Nachricht, UserProfile } from "@/types"
-import { Badge, PrioBadge, Avatar, Button, Card, Input } from "@/components/ui"
-
-function Timer({ end }: { end: string }) {
-  const [secs, setSecs] = useState(0)
-  useEffect(() => {
-    const calc = () => Math.max(0, Math.floor((new Date(end).getTime() - Date.now()) / 1000))
-    setSecs(calc())
-    const id = setInterval(() => setSecs(calc()), 1000)
-    return () => clearInterval(id)
-  }, [end])
-  const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = secs % 60
-  const fmt = (n: number) => String(n).padStart(2, "0")
-  if (secs === 0) return <span className="text-xs bg-red-50 text-red-600 px-2.5 py-1 rounded-full font-medium">Abgelaufen</span>
-  return <span className="text-xs bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full font-medium">⏱ {fmt(h)}:{fmt(m)}:{fmt(s)}</span>
-}
+import { Badge, PrioBadge, Avatar, Button, Card, Input, LoadingSpinner } from "@/components/ui"
+import { Timer } from "@/components/ui/Timer"
 
 export default function TicketDetail() {
   const router = useRouter()
@@ -91,7 +78,7 @@ export default function TicketDetail() {
     await load()
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="text-sm text-gray-400">Lädt...</div></div>
+  if (loading) return <LoadingSpinner />
   if (!ticket) return <div className="p-6 text-sm text-gray-500">Ticket nicht gefunden.</div>
 
   const isVerwalter = currentUser?.rolle === "verwalter" || currentUser?.rolle === "admin"
@@ -102,7 +89,7 @@ export default function TicketDetail() {
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <button onClick={() => router.back()} className="text-sm text-gray-400 hover:text-gray-600 mb-4 flex items-center gap-1">
-        ← Zurück
+        â ZurÃ¼ck
       </button>
 
       {/* Header */}
@@ -118,7 +105,7 @@ export default function TicketDetail() {
             </div>
           </div>
           {isVerwalter && ticket.status === "in_bearbeitung" && (
-            <Button size="sm" onClick={abschliessen}>Abschließen</Button>
+            <Button size="sm" onClick={abschliessen}>AbschlieÃen</Button>
           )}
         </div>
         {ticket.beschreibung && (
@@ -147,21 +134,21 @@ export default function TicketDetail() {
                         {a.handwerker?.firma || a.handwerker?.name}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {a.handwerker?.bewertung_avg ? `★ ${a.handwerker.bewertung_avg} · ` : ""}
+                        {a.handwerker?.bewertung_avg ? `â ${a.handwerker.bewertung_avg} Â· ` : ""}
                         {a.fruehester_termin ? new Date(a.fruehester_termin).toLocaleDateString("de") : "Termin flexibel"}
                       </div>
                       {a.nachricht && <div className="text-xs text-gray-500 mt-0.5 italic">"{a.nachricht}"</div>}
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className={`text-base font-medium ${i === 0 ? "text-[#0F6E56]" : ""}`}>€ {a.preis.toLocaleString("de")}</div>
+                    <div className={`text-base font-medium ${i === 0 ? "text-[#0F6E56]" : ""}`}>â¬ {a.preis.toLocaleString("de")}</div>
                     {ticket.status !== "erledigt" && ticket.status !== "in_bearbeitung" && (
                       <Button size="sm" className="mt-1" onClick={() => vergeben(a.id, a.handwerker_id)}>
                         Vergeben
                       </Button>
                     )}
                     {a.status === "angenommen" && (
-                      <span className="text-xs text-[#0F6E56] font-medium">✓ Beauftragt</span>
+                      <span className="text-xs text-[#0F6E56] font-medium">â Beauftragt</span>
                     )}
                   </div>
                 </div>
@@ -177,12 +164,12 @@ export default function TicketDetail() {
           <h2 className="text-sm font-medium mb-3">Angebot einreichen</h2>
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-2 gap-3">
-              <Input label="Preis in €" type="number" placeholder="380" value={angebotForm.preis}
+              <Input label="Preis in â¬" type="number" placeholder="380" value={angebotForm.preis}
                 onChange={e => setAngebotForm(f => ({ ...f, preis: e.target.value }))} />
-              <Input label="Frühester Termin" type="date" value={angebotForm.termin}
+              <Input label="FrÃ¼hester Termin" type="date" value={angebotForm.termin}
                 onChange={e => setAngebotForm(f => ({ ...f, termin: e.target.value }))} />
             </div>
-            <Input label="Kurze Nachricht (optional)" placeholder="z.B. Spezialist für Gasheizungen"
+            <Input label="Kurze Nachricht (optional)" placeholder="z.B. Spezialist fÃ¼r Gasheizungen"
               value={angebotForm.nachricht} onChange={e => setAngebotForm(f => ({ ...f, nachricht: e.target.value }))} />
             <Button onClick={submitAngebot} disabled={submittingBid || !angebotForm.preis}>
               {submittingBid ? "Wird eingereicht..." : "Angebot abgeben"}
@@ -194,8 +181,8 @@ export default function TicketDetail() {
       {isHandwerker && hatBereitsAngebot && (
         <Card className="mb-4">
           <div className="text-center py-3">
-            <div className="text-[#1D9E75] font-medium text-sm mb-1">Angebot eingereicht ✓</div>
-            <div className="text-xs text-gray-500">Du wirst benachrichtigt wenn du ausgewählt wirst.</div>
+            <div className="text-[#1D9E75] font-medium text-sm mb-1">Angebot eingereicht â</div>
+            <div className="text-xs text-gray-500">Du wirst benachrichtigt wenn du ausgewÃ¤hlt wirst.</div>
           </div>
         </Card>
       )}
@@ -205,7 +192,7 @@ export default function TicketDetail() {
         <h2 className="text-sm font-medium mb-3">Chat</h2>
         <div ref={chatRef} className="flex flex-col gap-2 max-h-64 overflow-y-auto mb-3 pr-1">
           {nachrichten.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-4">Noch keine Nachrichten. Starte das Gespräch.</p>
+            <p className="text-xs text-gray-400 text-center py-4">Noch keine Nachrichten. Starte das GesprÃ¤ch.</p>
           ) : nachrichten.map(m => {
             const isMe = m.absender_id === currentUser?.id
             return (
