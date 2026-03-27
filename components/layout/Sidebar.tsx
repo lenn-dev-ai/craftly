@@ -7,24 +7,24 @@ import { useRouter } from "next/navigation"
 
 const menus: Record<Rolle, { href: string; label: string; icon: string }[]> = {
   verwalter: [
-    { href: "/dashboard-verwalter", label: "Dashboard", icon: "â" },
-    { href: "/dashboard-verwalter/tickets", label: "Tickets", icon: "ð«" },
+    { href: "/dashboard-verwalter", label: "Dashboard", icon: "◈" },
+    { href: "/dashboard-verwalter/tickets", label: "Tickets", icon: "🎫" },
     { href: "/dashboard-verwalter/neues-ticket", label: "Neues Ticket", icon: "+" },
-    { href: "/dashboard-verwalter/handwerker", label: "Handwerker", icon: "ð§" },
-    { href: "/dashboard-verwalter/reporting", label: "Reporting", icon: "â" },
+    { href: "/dashboard-verwalter/handwerker", label: "Handwerker", icon: "🔧" },
+    { href: "/dashboard-verwalter/reporting", label: "Reporting", icon: "◉" },
   ],
   handwerker: [
-    { href: "/dashboard-handwerker", label: "Dashboard", icon: "â" },
-    { href: "/dashboard-handwerker/auftraege", label: "AuftrÃ¤ge", icon: "ð" },
-    { href: "/dashboard-handwerker/profil", label: "Mein Profil", icon: "â" },
+    { href: "/dashboard-handwerker", label: "Dashboard", icon: "◈" },
+    { href: "/dashboard-handwerker/auftraege", label: "Aufträge", icon: "📋" },
+    { href: "/dashboard-handwerker/profil", label: "Mein Profil", icon: "◎" },
   ],
   mieter: [
-    { href: "/dashboard-mieter", label: "Ãbersicht", icon: "â" },
+    { href: "/dashboard-mieter", label: "Übersicht", icon: "◈" },
     { href: "/dashboard-mieter/melden", label: "Schaden melden", icon: "+" },
-    { href: "/dashboard-mieter/tickets", label: "Meine Tickets", icon: "ð«" },
+    { href: "/dashboard-mieter/tickets", label: "Meine Tickets", icon: "🎫" },
   ],
   admin: [
-    { href: "/admin", label: "Rollenwechsel", icon: "â" },
+    { href: "/admin", label: "Rollenwechsel", icon: "⚙" },
   ],
 }
 
