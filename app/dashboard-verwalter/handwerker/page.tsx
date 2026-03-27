@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { UserProfile } from "@/types"
-import { Avatar, Card, Input, EmptyState } from "@/components/ui"
+import { Avatar, Card, Input, EmptyState, LoadingSpinner } from "@/components/ui"
 
 export default function HandwerkerDBPage() {
   const router = useRouter()
@@ -40,10 +40,10 @@ export default function HandwerkerDBPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-sm text-gray-400">Lädt...</div>
+        <LoadingSpinner />
       ) : filtered.length === 0 ? (
-        <EmptyState icon="🔧" title="Keine Handwerker gefunden"
-          desc={search ? "Kein Treffer für deine Suche." : "Noch keine Handwerker registriert."} />
+        <EmptyState icon="ð§" title="Keine Handwerker gefunden"
+          desc={search ? "Kein Treffer fÃ¼r deine Suche." : "Noch keine Handwerker registriert."} />
       ) : (
         <div className="flex flex-col gap-2">
           {filtered.map(h => (
@@ -53,10 +53,10 @@ export default function HandwerkerDBPage() {
                 <div className="flex-1">
                   <div className="text-sm font-medium">{h.firma || h.name}</div>
                   <div className="text-xs text-gray-500">
-                    {h.gewerk && `${h.gewerk} · `}
-                    {h.plz_bereich && `PLZ ${h.plz_bereich} · `}
-                    {h.bewertung_avg ? `★ ${h.bewertung_avg}` : "Noch keine Bewertung"}
-                    {h.auftraege_anzahl ? ` · ${h.auftraege_anzahl} Aufträge` : ""}
+                    {h.gewerk && `${h.gewerk} Â· `}
+                    {h.plz_bereich && `PLZ ${h.plz_bereich} Â· `}
+                    {h.bewertung_avg ? `â ${h.bewertung_avg}` : "Noch keine Bewertung"}
+                    {h.auftraege_anzahl ? ` Â· ${h.auftraege_anzahl} AuftrÃ¤ge` : ""}
                   </div>
                 </div>
                 <div className="text-xs text-gray-400">{h.email}</div>
