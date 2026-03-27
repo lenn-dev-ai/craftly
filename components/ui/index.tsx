@@ -1,45 +1,49 @@
 "use client"
+
 import { TicketStatus, Prioritaet } from "@/types"
 
 export function Badge({ status }: { status: TicketStatus }) {
   const map: Record<TicketStatus, { label: string; cls: string }> = {
-    offen:          { label: "Offen",          cls: "badge-offen" },
-    auktion:        { label: "Auktion",        cls: "badge-auktion" },
+    offen: { label: "Offen", cls: "badge-offen" },
+    auktion: { label: "Auktion", cls: "badge-auktion" },
     in_bearbeitung: { label: "In Bearbeitung", cls: "badge-progress" },
-    erledigt:       { label: "Erledigt",       cls: "badge-erledigt" },
+    erledigt: { label: "Erledigt", cls: "badge-erledigt" },
   }
-  const { label, cls } = map[status]
+  const info = map[status] || { label: status, cls: "badge-offen" }
   return (
-    <span className={`${cls} text-xs font-medium px-2.5 py-1 rounded-full`}>
-      {label}
+    <span className={`${info.cls} text-xs font-medium px-2.5 py-1 rounded-full`}>
+      {info.label}
     </span>
   )
 }
 
 export function PrioBadge({ prio }: { prio: Prioritaet }) {
   const map: Record<Prioritaet, { label: string; cls: string }> = {
-    normal:   { label: "Normal",   cls: "prio-normal" },
-    hoch:     { label: "Hoch",     cls: "prio-hoch" },
+    normal: { label: "Normal", cls: "prio-normal" },
+    hoch: { label: "Hoch", cls: "prio-hoch" },
     dringend: { label: "Dringend", cls: "prio-dringend" },
   }
-  const { label, cls } = map[prio]
+  const info = map[prio] || { label: prio, cls: "prio-normal" }
   return (
-    <span className={`${cls} text-xs font-medium px-2.5 py-1 rounded-full`}>
-      {label}
+    <span className={`${info.cls} text-xs font-medium px-2.5 py-1 rounded-full`}>
+      {info.label}
     </span>
   )
 }
 
 export function StatusDot({ status }: { status: TicketStatus }) {
   const colors: Record<TicketStatus, string> = {
-    offen: "bg-red-500", auktion: "bg-blue-500",
-    in_bearbeitung: "bg-amber-400", erledigt: "bg-green-500",
+    offen: "bg-red-500",
+    auktion: "bg-blue-500",
+    in_bearbeitung: "bg-amber-400",
+    erledigt: "bg-green-500",
   }
-  return <span className={`inline-block w-2 h-2 rounded-full ${colors[status]} flex-shrink-0`} />
+  return <span className={`inline-block w-2 h-2 rounded-full ${colors[status] || "bg-gray-400"} flex-shrink-0`} />
 }
 
 export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
-  const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()
+  const safeName = name || "?"
+  const initials = safeName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()
   const sizes = { sm: "w-7 h-7 text-xs", md: "w-9 h-9 text-sm", lg: "w-12 h-12 text-base" }
   return (
     <div className={`${sizes[size]} rounded-full bg-green-light flex items-center justify-center font-medium text-green-dark flex-shrink-0`}
@@ -49,7 +53,9 @@ export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md"
   )
 }
 
-export function Card({ children, className = "", onClick, style }: { children: React.ReactNode; className?: string; onClick?: () => void; style?: React.CSSProperties }) {
+export function Card({ children, className = "", onClick, style }: {
+  children: React.ReactNode; className?: string; onClick?: () => void; style?: React.CSSProperties
+}) {
   return (
     <div className={`bg-white border border-gray-100 rounded-xl p-4 ${className}`} onClick={onClick} style={style}>
       {children}
@@ -57,9 +63,7 @@ export function Card({ children, className = "", onClick, style }: { children: R
   )
 }
 
-export function Button({
-  children, onClick, variant = "primary", size = "md", disabled = false, className = "", type = "button"
-}: {
+export function Button({ children, onClick, variant = "primary", size = "md", disabled = false, className = "", type = "button" }: {
   children: React.ReactNode; onClick?: () => void; variant?: "primary" | "ghost" | "danger"
   size?: "sm" | "md"; disabled?: boolean; className?: string; type?: "button" | "submit"
 }) {
@@ -82,8 +86,7 @@ export function Input({ label, ...props }: { label?: string } & React.InputHTMLA
   return (
     <div className="flex flex-col gap-1">
       {label && <label className="text-sm font-medium text-gray-500">{label}</label>}
-      <input {...props}
-        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[#1D9E75] transition-colors" />
+      <input {...props} className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[#1D9E75] transition-colors" />
     </div>
   )
 }
@@ -92,8 +95,7 @@ export function Select({ label, children, ...props }: { label?: string } & React
   return (
     <div className="flex flex-col gap-1">
       {label && <label className="text-sm font-medium text-gray-500">{label}</label>}
-      <select {...props}
-        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[#1D9E75] cursor-pointer">
+      <select {...props} className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[#1D9E75] cursor-pointer">
         {children}
       </select>
     </div>
@@ -104,8 +106,7 @@ export function Textarea({ label, ...props }: { label?: string } & React.Textare
   return (
     <div className="flex flex-col gap-1">
       {label && <label className="text-sm font-medium text-gray-500">{label}</label>}
-      <textarea {...props} rows={3}
-        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[#1D9E75] resize-none" />
+      <textarea {...props} rows={3} className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[#1D9E75] resize-none" />
     </div>
   )
 }
