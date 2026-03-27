@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket } from "@/types"
-import { Badge, StatusDot, Button, Card, EmptyState } from "@/components/ui"
+import { Badge, StatusDot, Button, Card, EmptyState, LoadingSpinner } from "@/components/ui"
 
 export default function MieterDashboard() {
   const router = useRouter()
@@ -25,22 +25,22 @@ export default function MieterDashboard() {
 
   const offen = tickets.filter(t => t.status !== "erledigt")
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="text-sm text-gray-400">Lädt...</div></div>
+  if (loading) return <LoadingSpinner />
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-medium">Meine Übersicht</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Deine gemeldeten Schäden & Tickets</p>
+          <h1 className="text-xl font-medium">Meine Ãbersicht</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Deine gemeldeten SchÃ¤den & Tickets</p>
         </div>
         <Button onClick={() => router.push("/dashboard-mieter/melden")}>+ Schaden melden</Button>
       </div>
 
       {offen.length === 0 && tickets.length === 0 && (
         <Card className="mb-4" style={{ background: "#E1F5EE", borderColor: "#1D9E75" }}>
-          <div className="text-sm font-medium text-[#0F6E56]">Alles in Ordnung ✓</div>
-          <div className="text-xs text-[#0F6E56] mt-1">Keine offenen Schäden gemeldet.</div>
+          <div className="text-sm font-medium text-[#0F6E56]">Alles in Ordnung â</div>
+          <div className="text-xs text-[#0F6E56] mt-1">Keine offenen SchÃ¤den gemeldet.</div>
         </Card>
       )}
 
@@ -83,7 +83,7 @@ export default function MieterDashboard() {
       )}
 
       {tickets.length === 0 && (
-        <EmptyState icon="🏠" title="Noch keine Meldungen"
+        <EmptyState icon="ð " title="Noch keine Meldungen"
           desc="Melde einen Schaden und deine Verwaltung wird sofort benachrichtigt."
           action={<Button onClick={() => router.push("/dashboard-mieter/melden")}>Ersten Schaden melden</Button>} />
       )}
