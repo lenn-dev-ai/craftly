@@ -43,6 +43,7 @@ export interface Ticket {
   kosten_final?: number
   created_at: string
   objekt?: Objekt
+  objekte?: Objekt
   ersteller?: UserProfile
   handwerker?: UserProfile
   angebote?: Angebot[]
