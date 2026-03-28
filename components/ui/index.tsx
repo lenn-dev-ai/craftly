@@ -1,12 +1,13 @@
 "use client"
 import { TicketStatus, Prioritaet } from "@/types"
+import { useState, useEffect } from "react"
 
 export function Badge({ status }: { status: TicketStatus }) {
   const map: Record<TicketStatus, { label: string; cls: string }> = {
-    offen:          { label: "Offen",          cls: "badge-offen" },
-    auktion:        { label: "Auktion",        cls: "badge-auktion" },
+    offen: { label: "Offen", cls: "badge-offen" },
+    auktion: { label: "Auktion", cls: "badge-auktion" },
     in_bearbeitung: { label: "In Bearbeitung", cls: "badge-progress" },
-    erledigt:       { label: "Erledigt",       cls: "badge-erledigt" },
+    erledigt: { label: "Erledigt", cls: "badge-erledigt" },
   }
   const { label, cls } = map[status]
   return (
@@ -18,8 +19,8 @@ export function Badge({ status }: { status: TicketStatus }) {
 
 export function PrioBadge({ prio }: { prio: Prioritaet }) {
   const map: Record<Prioritaet, { label: string; cls: string }> = {
-    normal:   { label: "Normal",   cls: "prio-normal" },
-    hoch:     { label: "Hoch",     cls: "prio-hoch" },
+    normal: { label: "Normal", cls: "prio-normal" },
+    hoch: { label: "Hoch", cls: "prio-hoch" },
     dringend: { label: "Dringend", cls: "prio-dringend" },
   }
   const { label, cls } = map[prio]
@@ -129,6 +130,28 @@ export function EmptyState({ icon, title, desc, action }: {
       <div className="font-medium text-gray-800 mb-1">{title}</div>
       <div className="text-sm text-gray-500 mb-4">{desc}</div>
       {action}
+    </div>
+  )
+}
+
+export function Toast({ message, type = "success", onClose }: {
+  message: string; type?: "success" | "error" | "info"; onClose: () => void
+}) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000)
+    return () => clearTimeout(timer)
+  }, [onClose])
+
+  const styles = {
+    success: "bg-green-50 border-green-200 text-green-800",
+    error: "bg-red-50 border-red-200 text-red-800",
+    info: "bg-blue-50 border-blue-200 text-blue-800",
+  }
+
+  return (
+    <div className={`fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg border shadow-lg ${styles[type]} flex items-center gap-3`}>
+      <span className="text-sm font-medium">{message}</span>
+      <button onClick={onClose} className="text-current opacity-60 hover:opacity-100 text-lg leading-none">&times;</button>
     </div>
   )
 }
