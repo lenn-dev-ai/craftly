@@ -36,14 +36,14 @@ export default function ReportingPage() {
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
         <h1 className="text-xl font-medium">Reporting</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Kosten- und QualitÃ¤tsÃ¼bersicht</p>
+        <p className="text-sm text-gray-500 mt-0.5">Kosten- und Qualitätsübersicht</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <MetricCard label="Tickets gesamt" value={tickets.length} />
         <MetricCard label="Erledigt" value={erledigt.length} />
-        <MetricCard label="Gesamtkosten" value={`â¬ ${gesamtkosten.toLocaleString("de")}`} />
-        <MetricCard label="Ersparnis durch Auktionen" value={`â¬ ${ersparnis.toLocaleString("de")}`} sub="vs. teuerstes Angebot" />
+        <MetricCard label="Gesamtkosten" value={`€ ${gesamtkosten.toLocaleString("de")}`} />
+        <MetricCard label="Ersparnis durch Auktionen" value={`€ ${ersparnis.toLocaleString("de")}`} sub="vs. teuerstes Angebot" />
       </div>
 
       <Card>
@@ -71,7 +71,7 @@ export default function ReportingPage() {
 
       {erledigt.length > 0 && (
         <Card className="mt-4">
-          <h2 className="text-sm font-medium mb-4">Abgeschlossene AuftrÃ¤ge</h2>
+          <h2 className="text-sm font-medium mb-4">Abgeschlossene Aufträge</h2>
           <div className="flex flex-col gap-2">
             {erledigt.slice(0, 10).map(t => (
               <div key={t.id} className="flex items-center justify-between text-sm py-1.5 border-b border-gray-50 last:border-0">
@@ -80,7 +80,7 @@ export default function ReportingPage() {
                   <div className="text-xs text-gray-400">{new Date(t.created_at).toLocaleDateString("de")}</div>
                 </div>
                 {t.kosten_final ? (
-                  <span className="text-[#1D9E75] font-medium">â¬ {t.kosten_final.toLocaleString("de")}</span>
+                  <span className="text-[#1D9E75] font-medium">€ {t.kosten_final.toLocaleString("de")}</span>
                 ) : <span className="text-gray-400 text-xs">Kosten nicht erfasst</span>}
               </div>
             ))}
