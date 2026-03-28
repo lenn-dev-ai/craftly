@@ -138,7 +138,7 @@ export function LoadingSpinner() {
     <div className="flex items-center justify-center h-64">
       <div className="flex flex-col items-center gap-3">
         <div className="w-6 h-6 border-2 border-[#1D9E75] border-t-transparent rounded-full animate-spin" />
-        <div className="text-sm text-gray-400">LÃ¤dt...</div>
+        <div className="text-sm text-gray-400">Lädt...</div>
       </div>
     </div>
   )
