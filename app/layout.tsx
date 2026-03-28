@@ -10,15 +10,15 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Craftly â Verwalter, Handwerker & Mieter verbinden",
+    default: "Craftly — Verwalter, Handwerker & Mieter verbinden",
     template: "%s | Craftly",
   },
-  description: "Die Plattform fÃ¼r Hausverwaltungen: Tickets erstellen, Handwerker per Auktion beauftragen, Kosten sparen. Das Doctolib fÃ¼r die Immobilienwirtschaft.",
+  description: "Die Plattform für Hausverwaltungen: Tickets erstellen, Handwerker per Auktion beauftragen, Kosten sparen. Das Doctolib für die Immobilienwirtschaft.",
   keywords: ["Hausverwaltung", "Handwerker", "Immobilien", "Ticketsystem", "Schadensmeldung", "Auktion"],
   authors: [{ name: "Craftly" }],
   openGraph: {
-    title: "Craftly â Verwalter, Handwerker & Mieter verbinden",
-    description: "Die Plattform fÃ¼r Hausverwaltungen: Tickets erstellen, Handwerker per Auktion beauftragen, Kosten sparen.",
+    title: "Craftly — Verwalter, Handwerker & Mieter verbinden",
+    description: "Die Plattform für Hausverwaltungen: Tickets erstellen, Handwerker per Auktion beauftragen, Kosten sparen.",
     type: "website",
     locale: "de_DE",
     siteName: "Craftly",
