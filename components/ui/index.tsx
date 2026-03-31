@@ -61,7 +61,7 @@ export function Card({ children, className = "" }: { children: React.ReactNode; 
 export function Button({
   children, onClick, variant = "primary", size = "md", disabled = false, className = "", type = "button"
 }: {
-  children: React.ReactNode; onClick?: () => void; variant?: "primary" | "ghost" | "danger"
+  children: React.ReactNode; onClick?: () => void; variant?: "primary" | "ghost" | "danger" | "secondary" | "secondary"
   size?: "sm" | "md"; disabled?: boolean; className?: string; type?: "button" | "submit"
 }) {
   const base = "font-semibold rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
@@ -69,6 +69,7 @@ export function Button({
     primary: "bg-gradient-to-r from-[#00D4AA] to-[#00B4D8] text-white hover:shadow-lg hover:shadow-[#00D4AA]/20 hover:brightness-110",
     ghost: "bg-white/[0.04] border border-white/[0.08] text-gray-300 hover:bg-white/[0.08] hover:border-white/[0.15]",
     danger: "bg-[#FF6363]/10 text-[#FF6363] border border-[#FF6363]/20 hover:bg-[#FF6363]/20",
+    secondary: "bg-white/[0.06] border border-white/[0.1] text-gray-300 hover:bg-white/[0.1]",
   }
   const sizes = { sm: "px-4 py-2 text-sm", md: "px-5 py-3 text-sm" }
   return (
@@ -149,5 +150,39 @@ export function Toast({ message, onClose }: { message: string; onClose: () => vo
       <span className="text-sm font-medium">{message}</span>
       <button onClick={onClose} className="text-gray-500 hover:text-white ml-2 text-lg">×</button>
     </div>
+  )
+}
+
+export function SectionHeader({ title, action }: { title: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="text-lg font-semibold text-white">{title}</h2>
+      {action}
+    </div>
+  )
+}
+
+export function PreisTag({ preis }: { preis: number }) {
+  return (
+    <span className="text-sm font-bold text-[#00D4AA] tabular-nums">
+      {preis.toLocaleString("de")} €
+    </span>
+  )
+}
+
+export function SectionHeader({ title, action }: { title: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="text-lg font-semibold text-white">{title}</h2>
+      {action}
+    </div>
+  )
+}
+
+export function PreisTag({ preis }: { preis: number }) {
+  return (
+    <span className="text-sm font-bold text-[#00D4AA] tabular-nums">
+      {preis.toLocaleString("de")} €
+    </span>
   )
 }
