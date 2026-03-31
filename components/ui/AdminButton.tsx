@@ -33,7 +33,7 @@ export default function AdminButton() {
       href="/admin"
       className="fixed bottom-4 right-4 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 z-50 transition-colors"
     >
-      <span role="img" aria-label="home">\u{1F3E0}</span>
+      <span>{"🏠"}</span>
       <span className="text-sm font-medium">Admin</span>
     </Link>
   )
