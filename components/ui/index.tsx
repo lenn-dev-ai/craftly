@@ -1,94 +1,76 @@
 "use client"
 import { TicketStatus, Prioritaet } from "@/types"
-import { useState, useEffect } from "react"
 
-/* ═══ BADGE — Status-Anzeige für Tickets ═══ */
 export function Badge({ status }: { status: TicketStatus }) {
   const map: Record<TicketStatus, { label: string; cls: string }> = {
-    offen: { label: "Offen", cls: "badge-offen" },
-    auktion: { label: "Auktion aktiv", cls: "badge-auktion" },
-    in_bearbeitung: { label: "In Arbeit", cls: "badge-progress" },
-    erledigt: { label: "Erledigt", cls: "badge-erledigt" },
+    offen:          { label: "Offen",          cls: "badge-offen" },
+    auktion:        { label: "Auktion aktiv",  cls: "badge-auktion" },
+    in_bearbeitung: { label: "In Arbeit",      cls: "badge-progress" },
+    erledigt:       { label: "Erledigt",       cls: "badge-erledigt" },
   }
   const { label, cls } = map[status]
   return (
-    <span className={`${cls} text-[11px] font-semibold px-2.5 py-1 rounded-full tracking-wide uppercase`}>
+    <span className={`${cls} text-xs font-semibold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
       {label}
     </span>
   )
 }
 
-/* ═══ PRIO BADGE — Dringlichkeits-Anzeige ═══ */
 export function PrioBadge({ prio }: { prio: Prioritaet }) {
-  const map: Record<Prioritaet, { label: string; cls: string; icon: string }> = {
-    normal: { label: "Normal", cls: "prio-normal", icon: "○" },
-    hoch: { label: "Hoch", cls: "prio-hoch", icon: "▲" },
-    dringend: { label: "Dringend", cls: "prio-dringend", icon: "⚡" },
+  const map: Record<Prioritaet, { label: string; icon: string; cls: string }> = {
+    normal:   { label: "Normal",   icon: "—",  cls: "prio-normal" },
+    hoch:     { label: "Hoch",     icon: "⚡", cls: "prio-hoch" },
+    dringend: { label: "Dringend", icon: "🔥", cls: "prio-dringend" },
   }
-  const { label, cls, icon } = map[prio]
+  const { label, icon, cls } = map[prio]
   return (
-    <span className={`${cls} text-[11px] font-semibold px-2.5 py-1 rounded-full tracking-wide uppercase flex items-center gap-1`}>
-      <span className="text-[10px]">{icon}</span> {label}
+    <span className={`${cls} text-xs font-semibold px-3 py-1.5 rounded-full`}>
+      {icon} {label}
     </span>
   )
 }
 
-/* ═══ STATUS DOT — Kleiner farbiger Indikator ═══ */
 export function StatusDot({ status }: { status: TicketStatus }) {
   const colors: Record<TicketStatus, string> = {
-    offen: "bg-red-500", auktion: "bg-blue-500",
-    in_bearbeitung: "bg-amber-400", erledigt: "bg-emerald-500",
+    offen: "bg-[#FF6363]", auktion: "bg-[#00B4D8]",
+    in_bearbeitung: "bg-[#FFB74D]", erledigt: "bg-[#00D4AA]",
   }
-  return (
-    <span className="relative flex-shrink-0">
-      <span className={`block w-2.5 h-2.5 rounded-full ${colors[status]}`} />
-      {(status === "auktion" || status === "in_bearbeitung") && (
-        <span className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${colors[status]} animate-ping opacity-40`} />
-      )}
-    </span>
-  )
+  return <span className={`inline-block w-2.5 h-2.5 rounded-full ${colors[status]} flex-shrink-0 ring-2 ring-current/20`} />
 }
 
-/* ═══ AVATAR — Initialen-Avatar mit Gradient ═══ */
 export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
   const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()
-  const sizes = { sm: "w-8 h-8 text-[11px]", md: "w-10 h-10 text-sm", lg: "w-14 h-14 text-lg" }
+  const sizes = { sm: "w-8 h-8 text-xs", md: "w-10 h-10 text-sm", lg: "w-14 h-14 text-base" }
   return (
-    <div className={`${sizes[size]} rounded-full gradient-green flex items-center justify-center font-bold text-white flex-shrink-0 shadow-sm`}>
+    <div className={`${sizes[size]} rounded-xl flex items-center justify-center font-bold flex-shrink-0`}
+      style={{ background: "linear-gradient(135deg, #00D4AA, #00B4D8)", color: "#fff" }}>
       {initials}
     </div>
   )
 }
 
-/* ═══ CARD — Container mit modernem Design ═══ */
-export function Card({ children, className = "", onClick, style }: {
-  children: React.ReactNode; className?: string; onClick?: () => void; style?: React.CSSProperties
-}) {
+export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div
-      className={`bg-white border border-[var(--border)] rounded-2xl p-5 shadow-[var(--shadow-sm)] ${onClick ? "cursor-pointer card-hover" : ""} ${className}`}
-      onClick={onClick} style={style}
-    >
+    <div className={`bg-[#12121a] border border-white/[0.06] rounded-2xl p-5 shadow-lg shadow-black/20 ${className}`}>
       {children}
     </div>
   )
 }
 
-/* ═══ BUTTON — Bold Modern Button ═══ */
 export function Button({
   children, onClick, variant = "primary", size = "md", disabled = false, className = "", type = "button"
 }: {
-  children: React.ReactNode; onClick?: () => void; variant?: "primary" | "ghost" | "danger" | "secondary"
-  size?: "sm" | "md" | "lg"; disabled?: boolean; className?: string; type?: "button" | "submit"
+  children: React.ReactNode; onClick?: () => void; variant?: "primary" | "ghost" | "danger"
+  size?: "sm" | "md"; disabled?: boolean; className?: string; type?: "button" | "submit"
 }) {
-  const base = "font-semibold rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
+  const base = "font-semibold rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
   const variants = {
-    primary: "gradient-green text-white shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]",
-    secondary: "bg-[var(--surface-3)] text-[var(--text)] border border-[var(--border)] hover:bg-[var(--surface)] hover:border-[var(--border-hover)] hover:shadow-md",
-    ghost: "bg-transparent text-[var(--text-secondary)] hover:bg-[var(--surface-3)] hover:text-[var(--text)]",
-    danger: "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 hover:shadow-md",
+    primary: "bg-gradient-to-r from-[#00D4AA] to-[#00B4D8] text-white hover:shadow-lg hover:shadow-[#00D4AA]/20 hover:brightness-110",
+    ghost: "bg-white/[0.04] border border-white/[0.08] text-gray-300 hover:bg-white/[0.08] hover:border-white/[0.15]",
+    danger: "bg-[#FF6363]/10 text-[#FF6363] border border-[#FF6363]/20 hover:bg-[#FF6363]/20",
   }
-  const sizes = { sm: "px-3.5 py-2 text-[13px]", md: "px-5 py-2.5 text-sm", lg: "px-6 py-3 text-base" }
+  const sizes = { sm: "px-4 py-2 text-sm", md: "px-5 py-3 text-sm" }
   return (
     <button type={type} onClick={onClick} disabled={disabled}
       className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}>
@@ -97,137 +79,75 @@ export function Button({
   )
 }
 
-/* ═══ INPUT — Modernes Eingabefeld ═══ */
 export function Input({ label, ...props }: { label?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <div className="flex flex-col gap-1.5">
-      {label && <label className="text-[13px] font-semibold text-[var(--text-secondary)]">{label}</label>}
+      {label && <label className="text-sm font-medium text-gray-400">{label}</label>}
       <input {...props}
-        className="w-full px-4 py-3 border border-[var(--border)] rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--green)] focus:ring-offset-1 focus:border-transparent transition-all placeholder:text-[var(--text-muted)]" />
+        className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-all" />
     </div>
   )
 }
 
-/* ═══ SELECT — Modernes Auswahlfeld ═══ */
 export function Select({ label, children, ...props }: { label?: string } & React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <div className="flex flex-col gap-1.5">
-      {label && <label className="text-[13px] font-semibold text-[var(--text-secondary)]">{label}</label>}
+      {label && <label className="text-sm font-medium text-gray-400">{label}</label>}
       <select {...props}
-        className="w-full px-4 py-3 border border-[var(--border)] rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--green)] focus:ring-offset-1 focus:border-transparent cursor-pointer appearance-none">
+        className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white focus:outline-none focus:border-[#00D4AA]/50 cursor-pointer">
         {children}
       </select>
     </div>
   )
 }
 
-/* ═══ TEXTAREA — Mehrzeiliges Eingabefeld ═══ */
 export function Textarea({ label, ...props }: { label?: string } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <div className="flex flex-col gap-1.5">
-      {label && <label className="text-[13px] font-semibold text-[var(--text-secondary)]">{label}</label>}
+      {label && <label className="text-sm font-medium text-gray-400">{label}</label>}
       <textarea {...props} rows={3}
-        className="w-full px-4 py-3 border border-[var(--border)] rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--green)] focus:ring-offset-1 focus:border-transparent resize-none placeholder:text-[var(--text-muted)]" />
+        className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#00D4AA]/50 resize-none" />
     </div>
   )
 }
 
-/* ═══ METRIC CARD — Bold Kennzahlen-Karte ═══ */
-export function MetricCard({ label, value, sub, icon }: {
-  label: string; value: string | number; sub?: string; icon?: string
-}) {
+export function MetricCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div className="bg-white rounded-2xl p-5 border border-[var(--border)] shadow-[var(--shadow-sm)] card-hover">
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="metric-value text-[var(--text)]">{value}</div>
-          <div className="text-[12px] font-medium text-[var(--text-muted)] mt-2 uppercase tracking-wider">{label}</div>
-          {sub && <div className="text-[12px] font-semibold text-[var(--green)] mt-1">{sub}</div>}
-        </div>
-        {icon && <span className="text-2xl opacity-60">{icon}</span>}
-      </div>
+    <div className="bg-white/[0.03] rounded-2xl p-5 border border-white/[0.06]">
+      <div className="text-3xl font-bold text-white tracking-tight">{value}</div>
+      <div className="text-xs text-gray-500 mt-1.5 font-medium uppercase tracking-wider">{label}</div>
+      {sub && <div className="text-xs text-[#00D4AA] mt-1 font-medium">{sub}</div>}
     </div>
   )
 }
 
-/* ═══ EMPTY STATE — Leerer Zustand ═══ */
 export function EmptyState({ icon, title, desc, action }: {
   icon: string; title: string; desc: string; action?: React.ReactNode
 }) {
   return (
-    <div className="text-center py-20 animate-fade-in">
-      <div className="text-5xl mb-4 animate-scale-in" style={{ animationDelay: "100ms" }}>{icon}</div>
-      <div className="text-lg font-bold text-[var(--text)] mb-2">{title}</div>
-      <div className="text-sm text-[var(--text-muted)] mb-6 max-w-xs mx-auto">{desc}</div>
+    <div className="text-center py-20">
+      <div className="text-5xl mb-4">{icon}</div>
+      <div className="font-semibold text-white text-lg mb-2">{title}</div>
+      <div className="text-sm text-gray-500 mb-6 max-w-xs mx-auto">{desc}</div>
       {action}
     </div>
   )
 }
 
-/* ═══ TOAST — Benachrichtigungs-Popup ═══ */
-export function Toast({ message, type = "success", onClose }: {
-  message: string; type?: "success" | "error" | "info"; onClose: () => void
-}) {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 4000)
-    return () => clearTimeout(timer)
-  }, [onClose])
-  const styles = {
-    success: "bg-emerald-900 text-emerald-50 border-emerald-700",
-    error: "bg-red-900 text-red-50 border-red-700",
-    info: "bg-slate-900 text-slate-50 border-slate-700",
-  }
-  return (
-    <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl border shadow-xl ${styles[type]} animate-slide-up flex items-center gap-3`}>
-      <span className="text-sm font-medium">{message}</span>
-      <button onClick={onClose} className="text-current opacity-60 hover:opacity-100 text-lg leading-none ml-2">&times;</button>
-    </div>
-  )
-}
-
-/* ═══ LOADING SPINNER ═══ */
 export function LoadingSpinner() {
   return (
-    <div className="flex items-center justify-center h-64">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-8 h-8 border-[3px] border-[var(--green)] border-t-transparent rounded-full animate-spin" />
-        <div className="text-sm font-medium text-[var(--text-muted)]">Wird geladen...</div>
-      </div>
+    <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="w-8 h-8 border-2 border-[#00D4AA]/20 border-t-[#00D4AA] rounded-full animate-spin" />
     </div>
   )
 }
 
-/* ═══ SKELETON CARD — Lade-Platzhalter ═══ */
-export function SkeletonCard() {
+export function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   return (
-    <div className="bg-white border border-[var(--border)] rounded-2xl p-4">
-      <div className="flex items-center gap-3">
-        <div className="w-2.5 h-2.5 rounded-full bg-slate-200 flex-shrink-0 animate-pulse" />
-        <div className="flex-1">
-          <div className="h-4 bg-slate-200 rounded-lg w-3/4 mb-2.5 animate-pulse" />
-          <div className="h-3 bg-slate-100 rounded-lg w-1/2 animate-pulse" />
-        </div>
-        <div className="h-6 bg-slate-200 rounded-full w-16 animate-pulse" />
-      </div>
+    <div className="fixed bottom-6 right-6 z-50 bg-[#12121a] border border-white/[0.08] text-white px-5 py-3.5 rounded-2xl shadow-2xl shadow-black/40 flex items-center gap-3 animate-[slideUp_0.3s_ease-out]">
+      <span className="text-[#00D4AA]">✓</span>
+      <span className="text-sm font-medium">{message}</span>
+      <button onClick={onClose} className="text-gray-500 hover:text-white ml-2 text-lg">×</button>
     </div>
-  )
-}
-
-/* ═══ SECTION HEADER — Abschnittsüberschrift ═══ */
-export function SectionHeader({ title, action }: { title: string; action?: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="section-title">{title}</h2>
-      {action}
-    </div>
-  )
-}
-
-/* ═══ PREIS TAG — Preisanzeige mit Hervorhebung ═══ */
-export function PreisTag({ preis, highlight = false }: { preis: number; highlight?: boolean }) {
-  return (
-    <span className={`text-base font-bold tabular-nums ${highlight ? "text-[var(--green)]" : "text-[var(--text)]"}`}>
-      {preis.toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
-    </span>
   )
 }
