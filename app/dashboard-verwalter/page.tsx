@@ -1,9 +1,10 @@
 "use client"
+
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket } from "@/types"
-import { Badge, StatusDot, MetricCard, Button, Card, EmptyState, LoadingSpinner } from "@/components/ui"
+import { Badge, StatusDot, MetricCard, Button, Card, EmptyState, LoadingSpinner, SectionHeader } from "@/components/ui"
 
 export default function VerwalterDashboard() {
   const router = useRouter()
@@ -35,53 +36,71 @@ export default function VerwalterDashboard() {
   if (loading) return <LoadingSpinner />
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-8 max-w-5xl mx-auto animate-fade-in">
+      {/* Hero Header */}
+      <div className="flex items-end justify-between mb-8">
         <div>
-          <h1 className="text-xl font-medium">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Übersicht aller Objekte & Tickets</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text)]">Dashboard</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">
+            {tickets.length} Tickets insgesamt &middot; {offen + auktion} aktiv
+          </p>
         </div>
-        <Button onClick={() => router.push("/dashboard-verwalter/neues-ticket")}>
+        <Button onClick={() => router.push("/dashboard-verwalter/neues-ticket")} size="lg">
           + Neues Ticket
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <MetricCard label="Offene Tickets" value={offen} />
-        <MetricCard label="Aktive Auktionen" value={auktion} />
-        <MetricCard label="In Bearbeitung" value={inArbeit} />
-        <MetricCard label="Kosten lfd. Monat" value={`€ ${gesamtkosten.toLocaleString("de")}`} />
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 stagger">
+        <MetricCard label="Offen" value={offen} icon="📌" />
+        <MetricCard label="Auktionen" value={auktion} icon="⏱" sub={auktion > 0 ? "Gebote laufen" : undefined} />
+        <MetricCard label="In Arbeit" value={inArbeit} icon="🔨" />
+        <MetricCard label="Kosten MTD" value={`${gesamtkosten.toLocaleString("de")} \u20AC`} icon="💰" />
       </div>
 
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-medium text-gray-700">Aktuelle Tickets</h2>
-        <button onClick={() => router.push("/dashboard-verwalter/tickets")}
-          className="text-xs text-[#1D9E75] hover:underline">Alle anzeigen</button>
-      </div>
+      {/* Ticket Liste */}
+      <SectionHeader title="Aktuelle Tickets" action={
+        tickets.length > 8 ? (
+          <button onClick={() => router.push("/dashboard-verwalter/tickets")}
+            className="text-[12px] font-semibold text-[var(--green)] hover:underline underline-offset-2">
+            Alle anzeigen &rarr;
+          </button>
+        ) : undefined
+      } />
 
       {tickets.length === 0 ? (
-        <EmptyState icon="🎫" title="Noch keine Tickets"
-          desc="Erstelle dein erstes Ticket um Handwerker zu beauftragen."
-          action={<Button onClick={() => router.push("/dashboard-verwalter/neues-ticket")}>Erstes Ticket erstellen</Button>} />
+        <EmptyState
+          icon="🎫"
+          title="Noch keine Tickets"
+          desc="Erstelle dein erstes Ticket um Handwerker per Auktion zu beauftragen."
+          action={
+            <Button onClick={() => router.push("/dashboard-verwalter/neues-ticket")} size="lg">
+              Erstes Ticket erstellen
+            </Button>
+          }
+        />
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2.5 stagger">
           {tickets.slice(0, 8).map(t => (
-            <Card key={t.id}
-              className="cursor-pointer hover:border-[#1D9E75] transition-colors !p-3"
-              onClick={() => router.push(`/ticket/${t.id}`)}>
-              <div className="flex items-center gap-3">
+            <Card key={t.id} className="!p-4" onClick={() => router.push(`/ticket/${t.id}`)}>
+              <div className="flex items-center gap-4">
                 <StatusDot status={t.status} />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{t.titel}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">
-                    {t.wohnung && `${t.wohnung} · `}
-                    {t.angebote?.length ? `${t.angebote.length} Angebot${t.angebote.length !== 1 ? "e" : ""}` : "Keine Angebote"}
+                  <div className="text-sm font-semibold truncate text-[var(--text)]">{t.titel}</div>
+                  <div className="text-[12px] text-[var(--text-muted)] mt-0.5 flex items-center gap-2">
+                    {t.wohnung && <span>{t.wohnung}</span>}
+                    {t.wohnung && t.angebote && <span>&middot;</span>}
+                    {t.angebote?.length ? (
+                      <span className="font-medium">{t.angebote.length} Angebot{t.angebote.length !== 1 ? "e" : ""}</span>
+                    ) : (
+                      <span>Keine Angebote</span>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-3 flex-shrink-0">
                   {t.angebote && t.angebote.length > 0 && (
-                    <span className="text-sm font-medium text-[#1D9E75]">
-                      € {Math.min(...t.angebote.map(a => a.preis)).toLocaleString("de")}
+                    <span className="text-sm font-bold text-[var(--green)] tabular-nums">
+                      {Math.min(...t.angebote.map(a => a.preis)).toLocaleString("de")} &euro;
                     </span>
                   )}
                   <Badge status={t.status} />
@@ -93,10 +112,12 @@ export default function VerwalterDashboard() {
       )}
 
       {erledigt > 0 && (
-        <div className="mt-4 text-center">
-          <span className="text-xs text-gray-400">{erledigt} erledigte Tickets · </span>
+        <div className="mt-6 text-center">
+          <span className="text-[12px] text-[var(--text-muted)]">{erledigt} erledigte Tickets &middot; </span>
           <button onClick={() => router.push("/dashboard-verwalter/tickets")}
-            className="text-xs text-[#1D9E75] hover:underline">Alle anzeigen</button>
+            className="text-[12px] font-semibold text-[var(--green)] hover:underline">
+            Alle anzeigen
+          </button>
         </div>
       )}
     </div>
