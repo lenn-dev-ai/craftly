@@ -4,9 +4,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        green: { DEFAULT: "#1D9E75", light: "#E1F5EE", dark: "#0F6E56" },
+        dark: { DEFAULT: "#0a0a0f", card: "#12121a", surface: "#1a1a24" },
+        accent: { green: "#00D4AA", blue: "#00B4D8", purple: "#A78BFA" },
       },
-      fontFamily: { sans: ["DM Sans", "sans-serif"] },
+      fontFamily: { sans: ["Inter", "sans-serif"], display: ["Space Grotesk", "sans-serif"] },
     },
   },
   plugins: [],
