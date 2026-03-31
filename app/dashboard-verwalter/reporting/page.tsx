@@ -56,10 +56,10 @@ export default function ReportingPage() {
         ].map(({ label, count, color }) => (
           <div key={label} className="mb-3">
             <div className="flex justify-between text-xs mb-1.5">
-              <span className="text-gray-600">{label}</span>
+              <span className="text-gray-400">{label}</span>
               <span className="font-medium">{count}</span>
             </div>
-            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-white/[0.04] rounded-full overflow-hidden">
               <div className="h-full rounded-full transition-all" style={{
                 width: tickets.length ? `${(count / tickets.length) * 100}%` : "0%",
                 background: color
@@ -76,7 +76,7 @@ export default function ReportingPage() {
             {erledigt.slice(0, 10).map(t => (
               <div key={t.id} className="flex items-center justify-between text-sm py-1.5 border-b border-gray-50 last:border-0">
                 <div>
-                  <div className="font-medium text-gray-800">{t.titel}</div>
+                  <div className="font-medium text-white">{t.titel}</div>
                   <div className="text-xs text-gray-400">{new Date(t.created_at).toLocaleDateString("de")}</div>
                 </div>
                 {t.kosten_final ? (
