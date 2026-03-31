@@ -143,7 +143,7 @@ export function LoadingSpinner() {
   )
 }
 
-export function Toast({ message, onClose }: { message: string; onClose: () => void }) {
+export function Toast({ message, onClose, type }: { message: string; onClose: () => void; type?: "success" | "error" }) {
   return (
     <div className="fixed bottom-6 right-6 z-50 bg-[#12121a] border border-white/[0.08] text-white px-5 py-3.5 rounded-2xl shadow-2xl shadow-black/40 flex items-center gap-3 animate-[slideUp_0.3s_ease-out]">
       <span className="text-[#00D4AA]">✓</span>
