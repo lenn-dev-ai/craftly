@@ -39,7 +39,7 @@ export function StatusDot({ status }: { status: TicketStatus }) {
   return <span className={`inline-block w-2.5 h-2.5 rounded-full ${colors[status]} flex-shrink-0 ring-2 ring-current/20`} />
 }
 
-export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
+export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" | "lg" }) {
   const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()
   const sizes = { sm: "w-8 h-8 text-xs", md: "w-10 h-10 text-sm", lg: "w-14 h-14 text-base" }
   return (
@@ -71,7 +71,7 @@ export function Button({
     danger: "bg-[#FF6363]/10 text-[#FF6363] border border-[#FF6363]/20 hover:bg-[#FF6363]/20",
     secondary: "bg-white/[0.06] border border-white/[0.1] text-gray-300 hover:bg-white/[0.1]",
   }
-  const sizes = { sm: "px-4 py-2 text-sm", md: "px-5 py-3 text-sm" }
+  const sizes = { sm: "px-4 py-2 text-sm", md: "px-5 py-3 text-sm", lg: "px-6 py-3.5 text-base" }
   return (
     <button type={type} onClick={onClick} disabled={disabled}
       className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}>
