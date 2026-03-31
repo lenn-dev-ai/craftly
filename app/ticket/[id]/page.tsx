@@ -120,7 +120,7 @@ export default function TicketDetail() {
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-medium text-gray-800">Handwerker einladen</h3>
               <Button size="sm" onClick={() => router.push(`/dashboard-verwalter/tickets/${id}/handwerker`)}>
-                Handwerker ausw\u00e4hlen
+                Handwerker auswählen
               </Button>
             </div>
             {einladungen.length > 0 ? (
