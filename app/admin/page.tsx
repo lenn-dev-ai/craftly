@@ -4,9 +4,9 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Button, Card } from "@/components/ui"
-import { Role } from "@/types"
+import { Rolle } from "@/types"
 
-const rollen: { rolle: Role; label: string; icon: string; desc: string; gradient: string; href: string }[] = [
+const rollen: { rolle: Rolle; label: string; icon: string; desc: string; gradient: string; href: string }[] = [
   {
     rolle: "verwalter", label: "Hausverwaltung", icon: "🏢",
     desc: "Tickets erstellen, Handwerker per Auktion beauftragen, Reporting einsehen",
@@ -34,7 +34,7 @@ export default function AdminPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push("/login"); return }
       const { data: profile } = await supabase.from("profiles").select("rolle, name").eq("id", user.id).single()
-      if (profile?.rolle !== "admin") { router.push("/login"); return }
+      if (profile?.rolle !== 'admin') { router.push('/login'); return }
       setUserName(profile.name || user.email || "")
     }
     load()
@@ -44,8 +44,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-[var(--surface-2)]">
       {/* Header */}
       <div className="bg-white border-b border-[var(--border)] px-6 py-4 shadow-[var(--shadow-sm)]">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">          <div className="flex items-center gap-3">
             <div className="logo text-2xl tracking-tight">Craft<span className="text-[var(--green)]">ly</span></div>
             <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest bg-[var(--surface-3)] px-2.5 py-1 rounded-full">Admin</span>
           </div>
