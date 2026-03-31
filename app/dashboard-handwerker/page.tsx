@@ -209,7 +209,7 @@ function EinladungCard({ einladung, onAntwort, onOpen }: {
           <div className="flex-1">
             <label className="text-[12px] font-semibold text-[var(--text-secondary)] mb-1.5 block">Mein Preis in &euro;</label>
             <input type="number" min="1" step="0.01" value={eigenPreis} onChange={e => setEigenPreis(e.target.value)}
-              className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--green)] focus:ring-offset-1"
+              className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm bg-[#12121a] focus:outline-none focus:ring-2 focus:ring-[var(--green)] focus:ring-offset-1"
               placeholder="z.B. 420" />
           </div>
           <Button size="sm" onClick={() => onAntwort(einladung.id, einladung.ticket_id, true, Number(eigenPreis))}>
