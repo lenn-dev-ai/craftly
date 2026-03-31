@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createClient } from "@/lib/supabase"
 import Link from "next/link"
 
 export default function AdminButton() {
   const [isAdmin, setIsAdmin] = useState(false)
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   useEffect(() => {
     const checkAdmin = async () => {
