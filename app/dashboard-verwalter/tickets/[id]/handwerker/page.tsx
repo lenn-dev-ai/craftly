@@ -38,7 +38,7 @@ export default function HandwerkerAuswahlPage() {
         .select("*")
         .eq("rolle", "handwerker")
       if (t.gewerk && t.gewerk !== "allgemein") {
-        query = query.eq("gewerk", t.gewerk)
+        query = query.ilike("gewerk", `%${t.gewerk}%`)
       }
       const { data: hws } = await query.order("bewertung_avg", { ascending: false })
 
