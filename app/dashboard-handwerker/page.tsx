@@ -1,9 +1,11 @@
 "use client"
+
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket, UserProfile, Einladung, GEWERK_LABELS } from "@/types"
-import { Badge, PrioBadge, MetricCard, Card, Button, EmptyState, LoadingSpinner, Toast } from "@/components/ui"
+import { Badge, PrioBadge, MetricCard, Card, Button, EmptyState, LoadingSpinner, Toast, SectionHeader, PreisTag } from "@/components/ui"
+import { berechnePreisfaktor, berechneRichtpreis } from "@/lib/preisfaktor"
 
 export default function HandwerkerDashboard() {
   const router = useRouter()
@@ -13,10 +15,7 @@ export default function HandwerkerDashboard() {
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState("")
 
-  function showToast(msg: string) {
-    setToast(msg)
-    setTimeout(() => setToast(""), 3000)
-  }
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(""), 3000) }
 
   async function load() {
     const supabase = createClient()
@@ -33,6 +32,7 @@ export default function HandwerkerDashboard() {
         .eq("zugewiesener_hw", user.id)
         .order("created_at", { ascending: false }),
     ])
+
     setProfile(prof)
     setEinladungen(einl || [])
     setMeineAuftraege(meine || [])
@@ -69,38 +69,42 @@ export default function HandwerkerDashboard() {
   }
 
   if (loading) return <LoadingSpinner />
+  const erledigteAuftraege = meineAuftraege.filter(t => t.status === "erledigt").length
+  const aktiveAuftraege = meineAuftraege.filter(t => t.status !== "erledigt").length
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-medium">
+    <div className="p-8 max-w-4xl mx-auto animate-fade-in">
+      {/* Hero */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text)]">
           Hallo, {profile?.firma || profile?.name}
         </h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          {profile?.gewerk && `${GEWERK_LABELS[profile.gewerk] || profile.gewerk} · `}
-          {profile?.bewertung_avg ? `★ ${profile.bewertung_avg}` : "Noch keine Bewertungen"}
+        <p className="text-sm text-[var(--text-muted)] mt-1 flex items-center gap-2">
+          {profile?.gewerk && <span className="font-medium">{GEWERK_LABELS[profile.gewerk] || profile.gewerk}</span>}
+          {profile?.gewerk && profile?.bewertung_avg ? <span>&middot;</span> : null}
+          {profile?.bewertung_avg ? (
+            <span className="font-semibold text-amber-500">&#9733; {profile.bewertung_avg}</span>
+          ) : (
+            <span>Noch keine Bewertungen</span>
+          )}
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <MetricCard label="Neue Anfragen" value={einladungen.length} />
-        <MetricCard label="Meine Aufträge" value={meineAuftraege.length} />
-        <MetricCard label="Bewertung" value={profile?.bewertung_avg ? `${profile.bewertung_avg} ★` : "—"} />
+      {/* Metrics */}
+      <div className="grid grid-cols-3 gap-4 mb-8 stagger">
+        <MetricCard label="Neue Anfragen" value={einladungen.length} icon="📨" sub={einladungen.length > 0 ? "Aktion nötig" : undefined} />
+        <MetricCard label="Aktive Aufträge" value={aktiveAuftraege} icon="🔨" />
+        <MetricCard label="Abgeschlossen" value={erledigteAuftraege} icon="✅" />
       </div>
 
-      {/* Einladungen / Anfragen */}
-      <h2 className="text-sm font-medium text-gray-700 mb-3">Neue Anfragen</h2>
+      {/* Einladungen */}
+      <SectionHeader title="Neue Anfragen" />
       {einladungen.length === 0 ? (
         <EmptyState icon="📨" title="Keine neuen Anfragen" desc="Aktuell gibt es keine offenen Einladungen für dich." />
       ) : (
-        <div className="flex flex-col gap-3 mb-6">
+        <div className="flex flex-col gap-3 mb-8 stagger">
           {einladungen.map(e => (
-            <EinladungCard
-              key={e.id}
-              einladung={e}
-              onAntwort={handleAntwort}
-              onOpen={() => router.push(`/ticket/${e.ticket_id}`)}
-            />
+            <EinladungCard key={e.id} einladung={e} onAntwort={handleAntwort} onOpen={() => router.push(`/ticket/${e.ticket_id}`)} />
           ))}
         </div>
       )}
@@ -108,16 +112,15 @@ export default function HandwerkerDashboard() {
       {/* Laufende Aufträge */}
       {meineAuftraege.length > 0 && (
         <>
-          <h2 className="text-sm font-medium text-gray-700 mb-3">Meine laufenden Aufträge</h2>
-          <div className="flex flex-col gap-2">
+          <SectionHeader title="Meine Aufträge" />
+          <div className="flex flex-col gap-2.5 stagger">
             {meineAuftraege.map(t => (
-              <Card key={t.id} className="cursor-pointer hover:border-[#1D9E75] transition-colors !p-3"
-                onClick={() => router.push(`/ticket/${t.id}`)}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${t.status === "erledigt" ? "bg-green-500" : "bg-amber-400"}`} />
+              <Card key={t.id} className="!p-4" onClick={() => router.push(`/ticket/${t.id}`)}>
+                <div className="flex items-center gap-4">
+                  <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${t.status === "erledigt" ? "bg-emerald-500" : "bg-amber-400"}`} />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{t.titel}</div>
-                    <div className="text-xs text-gray-400 mt-0.5">{new Date(t.created_at).toLocaleDateString("de")}</div>
+                    <div className="text-sm font-semibold truncate">{t.titel}</div>
+                    <div className="text-[12px] text-[var(--text-muted)] mt-0.5">{new Date(t.created_at).toLocaleDateString("de")}</div>
                   </div>
                   <Badge status={t.status} />
                 </div>
@@ -131,7 +134,7 @@ export default function HandwerkerDashboard() {
     </div>
   )
 }
-
+/* ─── Einladungs-Karte mit Preisfaktor ───────────── */
 function EinladungCard({ einladung, onAntwort, onOpen }: {
   einladung: Einladung
   onAntwort: (einladungId: string, ticketId: string, annehmen: boolean, preis?: number) => void
@@ -141,30 +144,51 @@ function EinladungCard({ einladung, onAntwort, onOpen }: {
   const [showForm, setShowForm] = useState(false)
   const ticket = einladung.ticket
 
+  // Dynamischen Preisfaktor berechnen
+  const pf = berechnePreisfaktor(
+    (ticket?.prioritaet as "normal" | "hoch" | "dringend") || "normal",
+    3 // Default-Annahme für verfügbare HW
+  )
+
   return (
     <Card>
-      <div className="flex items-start justify-between gap-3 mb-2">
+      <div className="flex items-start justify-between gap-4 mb-3">
         <div className="flex-1 cursor-pointer" onClick={onOpen}>
-          <div className="text-sm font-medium">{ticket?.titel}</div>
-          <div className="text-xs text-gray-500 mt-0.5">
-            {ticket?.wohnung && `${ticket.wohnung} · `}
-            {ticket?.gewerk && `${GEWERK_LABELS[ticket.gewerk] || ticket.gewerk} · `}
-            {new Date(einladung.created_at).toLocaleDateString("de")}
+          <div className="text-sm font-bold text-[var(--text)]">{ticket?.titel}</div>
+          <div className="text-[12px] text-[var(--text-muted)] mt-1 flex items-center gap-1.5 flex-wrap">
+            {ticket?.wohnung && <span>{ticket.wohnung}</span>}
+            {ticket?.gewerk && (
+              <>
+                <span>&middot;</span>
+                <span className="font-medium">{GEWERK_LABELS[ticket.gewerk] || ticket.gewerk}</span>
+              </>
+            )}
+            <span>&middot;</span>
+            <span>{new Date(einladung.created_at).toLocaleDateString("de")}</span>
           </div>
           {ticket?.beschreibung && (
-            <p className="text-xs text-gray-400 mt-1 line-clamp-2">{ticket.beschreibung}</p>
+            <p className="text-[12px] text-[var(--text-muted)] mt-2 line-clamp-2 leading-relaxed">{ticket.beschreibung}</p>
           )}
         </div>
-        <div className="flex-shrink-0 text-right">
+        <div className="flex-shrink-0">
           {ticket && <PrioBadge prio={ticket.prioritaet} />}
         </div>
       </div>
 
-      {/* Richtpreis */}
-      <div className="bg-[#E1F5EE] rounded-lg px-3 py-2 mb-3">
+      {/* Preisinfo mit dynamischem Faktor */}
+      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl px-4 py-3 mb-4 border border-emerald-100">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-[#0F6E56]">Empfohlener Preis</span>
-          <span className="text-sm font-medium text-[#0F6E56]">€ {einladung.empfohlener_preis}</span>
+          <div>
+            <span className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider">Empfohlener Preis</span>
+            {pf.faktor > 1 && (
+              <span className={`ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded ${pf.color}`}>
+                {pf.label} ({pf.faktor}x)
+              </span>
+            )}
+          </div>
+          <span className="text-lg font-extrabold text-emerald-700 tabular-nums">
+            {einladung.empfohlener_preis} &euro;
+          </span>
         </div>
       </div>
 
@@ -173,7 +197,7 @@ function EinladungCard({ einladung, onAntwort, onOpen }: {
           <Button size="sm" onClick={() => onAntwort(einladung.id, einladung.ticket_id, true, einladung.empfohlener_preis)}>
             Zum Richtpreis annehmen
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setShowForm(true)}>
+          <Button size="sm" variant="secondary" onClick={() => setShowForm(true)}>
             Gegenangebot
           </Button>
           <Button size="sm" variant="danger" onClick={() => onAntwort(einladung.id, einladung.ticket_id, false)}>
@@ -183,20 +207,16 @@ function EinladungCard({ einladung, onAntwort, onOpen }: {
       ) : (
         <div className="flex gap-2 items-end">
           <div className="flex-1">
-            <label className="text-xs text-gray-500 mb-1 block">Mein Preis in €</label>
-            <input
-              type="number" min="1" step="0.01"
-              value={eigenPreis}
-              onChange={e => setEigenPreis(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[#1D9E75]"
-              placeholder="z.B. 420"
-            />
+            <label className="text-[12px] font-semibold text-[var(--text-secondary)] mb-1.5 block">Mein Preis in &euro;</label>
+            <input type="number" min="1" step="0.01" value={eigenPreis} onChange={e => setEigenPreis(e.target.value)}
+              className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--green)] focus:ring-offset-1"
+              placeholder="z.B. 420" />
           </div>
           <Button size="sm" onClick={() => onAntwort(einladung.id, einladung.ticket_id, true, Number(eigenPreis))}>
-            Angebot senden
+            Senden
           </Button>
-          <button onClick={() => setShowForm(false)} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-2">
-            ×
+          <button onClick={() => setShowForm(false)} className="text-[var(--text-muted)] hover:text-[var(--text)] px-3 py-2.5 text-lg">
+            &times;
           </button>
         </div>
       )}
