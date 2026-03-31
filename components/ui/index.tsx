@@ -112,7 +112,7 @@ export function Textarea({ label, ...props }: { label?: string } & React.Textare
   )
 }
 
-export function MetricCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+export function MetricCard({ label, value, sub, icon }: { label: string; value: string | number; sub?: string; icon?: string }) {
   return (
     <div className="bg-white/[0.03] rounded-2xl p-5 border border-white/[0.06]">
       <div className="text-3xl font-bold text-white tracking-tight">{value}</div>
