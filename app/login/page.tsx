@@ -29,26 +29,38 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="logo text-3xl mb-2">Craft<span className="text-[#1D9E75]">ly</span></div>
-          <p className="text-sm text-gray-500">Einloggen um fortzufahren</p>
+    <div className="min-h-screen bg-[var(--surface-2)] flex items-center justify-center p-4">
+      <div className="w-full max-w-sm animate-fade-in">
+        <div className="text-center mb-10">
+          <div className="logo text-4xl mb-3 tracking-tight">
+            Craft<span className="text-[var(--green)]">ly</span>
+          </div>
+          <p className="text-sm text-[var(--text-muted)]">Einloggen um fortzufahren</p>
         </div>
-        <Card>
-          <div className="flex flex-col gap-4">
+
+        <Card className="!p-6">
+          <div className="flex flex-col gap-5">
             <Input label="E-Mail" type="email" placeholder="name@firma.de"
               value={email} onChange={e => setEmail(e.target.value)} />
             <Input label="Passwort" type="password" placeholder="••••••••"
               value={password} onChange={e => setPassword(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleLogin()} />
-            {error && <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-            <Button onClick={handleLogin} disabled={loading} className="w-full justify-center">
+
+            {error && (
+              <div className="text-[13px] text-red-600 bg-red-50 border border-red-100 px-4 py-2.5 rounded-xl font-medium animate-scale-in">
+                {error}
+              </div>
+            )}
+
+            <Button onClick={handleLogin} disabled={loading} className="w-full justify-center" size="lg">
               {loading ? "Einloggen..." : "Einloggen"}
             </Button>
-            <p className="text-center text-xs text-gray-500">
+
+            <p className="text-center text-[13px] text-[var(--text-muted)]">
               Noch kein Account?{" "}
-              <a href="/registrierung" className="text-[#1D9E75] hover:underline">Registrieren</a>
+              <a href="/registrierung" className="text-[var(--green)] font-semibold hover:underline underline-offset-2">
+                Registrieren
+              </a>
             </p>
           </div>
         </Card>
