@@ -169,20 +169,3 @@ export function PreisTag({ preis }: { preis: number }) {
     </span>
   )
 }
-
-export function SectionHeader({ title, action }: { title: string; action?: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="text-lg font-semibold text-white">{title}</h2>
-      {action}
-    </div>
-  )
-}
-
-export function PreisTag({ preis }: { preis: number }) {
-  return (
-    <span className="text-sm font-bold text-[#00D4AA] tabular-nums">
-      {preis.toLocaleString("de")} €
-    </span>
-  )
-}
