@@ -158,7 +158,6 @@ export default function HandwerkerDashboard() {
 
         {/* PROFIT-FOCUSED KPI CARDS */}
         <div className="grid grid-cols-2 gap-3 mb-8">
-          {/* Potentieller Verdienst */}
           <div className="bg-[#12121a] border border-white/5 rounded-xl p-4">
             <div className="text-xs text-white/40 mb-2">Potentieller Verdienst</div>
             <div className="text-3xl font-bold text-[#00D4AA] mb-1">
@@ -168,8 +167,6 @@ export default function HandwerkerDashboard() {
               {sortedAuktionen.length} offene {sortedAuktionen.length === 1 ? "Auktion" : "Auktionen"}
             </div>
           </div>
-
-          {/* Offene Auktionen */}
           <div className="bg-[#12121a] border border-white/5 rounded-xl p-4">
             <div className="text-xs text-white/40 mb-2">Offene Auktionen</div>
             <div className="text-3xl font-bold text-[#00B4D8]">{auktionen.length}</div>
@@ -178,8 +175,6 @@ export default function HandwerkerDashboard() {
               jetzt bieten →
             </button>
           </div>
-
-          {/* Gewinnrate */}
           <div className="bg-[#12121a] border border-white/5 rounded-xl p-4">
             <div className="text-xs text-white/40 mb-2">Gewinnrate</div>
             <div className="text-3xl font-bold text-[#F59E0B]">
@@ -189,8 +184,6 @@ export default function HandwerkerDashboard() {
               {meineAuftraege.length === 0 ? "Noch keine Daten" : `${completedCount}/${meineAuftraege.length} Aufträge`}
             </div>
           </div>
-
-          {/* Verdient */}
           <div className="bg-[#12121a] border border-white/5 rounded-xl p-4">
             <div className="text-xs text-white/40 mb-2">Verdient</div>
             <div className="text-3xl font-bold text-[#8B5CF6]">
@@ -202,7 +195,6 @@ export default function HandwerkerDashboard() {
           </div>
         </div>
 
-        {/* KALENDER CTA BANNER */}
         {auktionen.length > 0 && (
           <div className="bg-gradient-to-r from-[#F59E0B]/10 to-[#00D4AA]/10 border border-[#F59E0B]/20 rounded-xl p-4 mb-6">
             <div className="flex items-start justify-between gap-4">
@@ -222,11 +214,10 @@ export default function HandwerkerDashboard() {
           </div>
         )}
 
-        {/* TAB NAVIGATION */}
         <div className="flex gap-1 mb-6 bg-[#12121a] rounded-xl p-1 border border-white/5">
           {[
             { key: "auktionen" as const, label: "Ausschreibungen", count: auktionen.length },
-            { key: "auftraege" as const, label: "Meine Auftraege", count: meineAuftraege.length },
+            { key: "auftraege" as const, label: "Meine Aufträge", count: meineAuftraege.length },
           ].map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={"flex-1 py-2.5 rounded-lg text-sm font-medium transition-all " + (tab === t.key ? "bg-[#00D4AA]/15 text-[#00D4AA]" : "text-white/40 hover:text-white/60")}>
@@ -238,7 +229,6 @@ export default function HandwerkerDashboard() {
           ))}
         </div>
 
-        {/* AUKTIONEN TAB */}
         {tab === "auktionen" && (
           <>
             {sortedAuktionen.length === 0 ? (
@@ -265,7 +255,7 @@ export default function HandwerkerDashboard() {
                 </div>
                 <button onClick={() => router.push("/dashboard-handwerker/profil")}
                   className="mt-6 text-xs text-[#00D4AA] border border-[#00D4AA]/20 px-4 py-2 rounded-lg hover:bg-[#00D4AA]/10 transition-colors">
-                  Profil vervollstaendigen
+                  Profil vervollständigen
                 </button>
               </div>
             ) : (
@@ -281,23 +271,16 @@ export default function HandwerkerDashboard() {
                       className="bg-[#12121a] border border-white/5 rounded-xl p-4 cursor-pointer hover:border-[#00D4AA]/30 transition-all relative overflow-hidden group">
                       <PrioBar prio={t.prioritaet || "normal"} />
                       <div className="pl-4">
-
-                        {/* Main Content Area */}
                         <div className="flex items-start justify-between gap-4 mb-3">
                           <div className="flex-1">
-                            {/* Title */}
                             <div className="text-sm font-medium mb-2 group-hover:text-[#00D4AA] transition-colors max-w-lg">
                               {t.titel}
                             </div>
-
-                            {/* Location */}
                             {t.wohnung && (
                               <div className="text-xs text-white/30 mb-2">
                                 {t.wohnung}{t.raum ? " • " + t.raum : ""}
                               </div>
                             )}
-
-                            {/* Badges Row */}
                             <div className="flex flex-wrap gap-2 items-center">
                               {idx === 0 && score >= 70 && (
                                 <span className="text-[10px] bg-[#00D4AA] text-black font-bold px-2 py-0.5 rounded-full">
@@ -313,8 +296,6 @@ export default function HandwerkerDashboard() {
                               </span>
                             </div>
                           </div>
-
-                          {/* Right Side: Price + Timer */}
                           <div className="flex flex-col items-end gap-2 flex-shrink-0">
                             <div className="text-right">
                               <div className="text-2xl font-bold text-[#00D4AA]">
@@ -325,8 +306,6 @@ export default function HandwerkerDashboard() {
                             {t.auktion_ende && <Timer end={t.auktion_ende} />}
                           </div>
                         </div>
-
-                        {/* Secondary Info Row */}
                         <div className="flex flex-wrap gap-2 text-[10px]">
                           <div className="bg-[#00B4D8]/10 text-[#00B4D8] px-2 py-1 rounded-lg">
                             {kiGewinnchance(t)}
@@ -337,8 +316,6 @@ export default function HandwerkerDashboard() {
                             </div>
                           )}
                         </div>
-
-                        {/* CTA Link */}
                         <button onClick={() => router.push("/ticket/" + t.id)}
                           className="text-[10px] text-[#00D4AA] hover:text-[#00D4AA]/80 mt-3 transition-colors">
                           Angebot abgeben →
@@ -352,7 +329,6 @@ export default function HandwerkerDashboard() {
           </>
         )}
 
-        {/* AUFTRAEGE TAB */}
         {tab === "auftraege" && (
           <>
             {meineAuftraege.length === 0 ? (
@@ -360,8 +336,8 @@ export default function HandwerkerDashboard() {
                 <div className="w-16 h-16 rounded-2xl bg-[#00B4D8]/10 flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl text-[#00B4D8]">[!]</span>
                 </div>
-                <div className="text-white/60 text-sm font-medium mb-1">Noch keine Auftraege erhalten</div>
-                <div className="text-white/30 text-xs mb-4">Auftraege erscheinen hier, sobald du den Zuschlag fuer eine Ausschreibung erhaeltst.</div>
+                <div className="text-white/60 text-sm font-medium mb-1">Noch keine Aufträge erhalten</div>
+                <div className="text-white/30 text-xs mb-4">Aufträge erscheinen hier, sobald du den Zuschlag für eine Ausschreibung erhältst.</div>
                 {auktionen.length > 0 ? (
                   <button onClick={() => setTab("auktionen")}
                     className="text-xs text-[#00D4AA] border border-[#00D4AA]/20 px-4 py-2 rounded-lg hover:bg-[#00D4AA]/10 transition-colors">
@@ -373,7 +349,6 @@ export default function HandwerkerDashboard() {
               </div>
             ) : (
               <div className="flex flex-col gap-3">
-                {/* Active */}
                 {meineAuftraege.filter(t => t.status !== "erledigt").length > 0 && (
                   <>
                     <div className="text-xs text-white/30 uppercase tracking-wider mb-1">Aktiv</div>
@@ -392,7 +367,6 @@ export default function HandwerkerDashboard() {
                           <div className="text-xs text-white/30 mb-3">
                             {t.wohnung || ""} | Erstellt: {new Date(t.created_at).toLocaleDateString("de")}
                           </div>
-                          {/* Mini Progress */}
                           <div className="flex gap-1">
                             {steps.map((s, i) => (
                               <div key={s} className={"h-1 flex-1 rounded-full " + (i <= currentStep ? "bg-[#00D4AA]" : "bg-white/10")} />
@@ -403,8 +377,6 @@ export default function HandwerkerDashboard() {
                     })}
                   </>
                 )}
-
-                {/* Completed */}
                 {meineAuftraege.filter(t => t.status === "erledigt").length > 0 && (
                   <>
                     <div className="text-xs text-white/30 uppercase tracking-wider mt-4 mb-1">Abgeschlossen</div>
