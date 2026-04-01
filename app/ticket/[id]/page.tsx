@@ -27,6 +27,7 @@ export default function TicketDetail() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
+
   const [ticket, setTicket] = useState<Ticket | null>(null)
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
   const [nachrichten, setNachrichten] = useState<Nachricht[]>([])
@@ -42,17 +43,14 @@ export default function TicketDetail() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
-
     const [{ data: profile }, { data: t }, { data: msgs }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
       supabase.from("tickets").select("*, objekte(*), angebote(*, handwerker:profiles(*))").eq("id", id).single(),
       supabase.from("nachrichten").select("*, absender:profiles(*)").eq("ticket_id", id).order("created_at"),
     ])
-
     setCurrentUser(profile)
     setTicket(t)
     setNachrichten(msgs || [])
-
     const { data: einl } = await supabase.from("einladungen").select("*, handwerker:handwerker_id(id,name,firma,gewerk,bewertung_avg)").eq("ticket_id", id)
     setEinladungen(einl || [])
     setLoading(false)
@@ -123,7 +121,7 @@ export default function TicketDetail() {
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <button onClick={() => router.back()} className="text-sm text-gray-500 hover:text-gray-300 mb-4 flex items-center gap-1">
-        &larr; Zurueck
+        &larr; Zurück
       </button>
 
       {/* Header */}
@@ -144,7 +142,7 @@ export default function TicketDetail() {
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-medium text-gray-200">Handwerker einladen</h3>
                 <Button size="sm" onClick={() => router.push("/dashboard-verwalter/tickets/" + id + "/handwerker")}>
-                  Handwerker auswaehlen
+                  Handwerker auswählen
                 </Button>
               </div>
               {einladungen.length > 0 ? (
@@ -175,10 +173,9 @@ export default function TicketDetail() {
           )}
 
           {isVerwalter && ticket.status === "in_bearbeitung" && !showKosten && (
-            <Button size="sm" onClick={() => setShowKosten(true)}>Abschliessen</Button>
+            <Button size="sm" onClick={() => setShowKosten(true)}>Abschließen</Button>
           )}
         </div>
-
         {ticket.beschreibung && (
           <p className="text-sm text-gray-400 leading-relaxed">{ticket.beschreibung}</p>
         )}
@@ -193,10 +190,10 @@ export default function TicketDetail() {
                 <span className="text-sm font-bold text-[#00D4AA]">AI</span>
               </div>
               <div>
-                <div className="text-sm font-medium text-[#00D4AA]">Smart-Auktion laeuft</div>
+                <div className="text-sm font-medium text-[#00D4AA]">Smart-Auktion läuft</div>
                 <div className="text-xs text-gray-400 mt-0.5">
                   {sortiertAngebote.length} Angebot{sortiertAngebote.length !== 1 ? "e" : ""} eingegangen
-                  {ticket.auktion_ende && (" -- Endet " + new Date(ticket.auktion_ende).toLocaleDateString("de", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }))}
+                  {ticket.auktion_ende && (" — Endet " + new Date(ticket.auktion_ende).toLocaleDateString("de", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }))}
                 </div>
               </div>
             </div>
@@ -205,14 +202,15 @@ export default function TicketDetail() {
         </Card>
       )}
 
-      {/* Kosten-Eingabe beim Abschliessen */}
+      {/* Kosten-Eingabe beim Abschließen */}
       {showKosten && (
         <Card className="mb-4 border-[#00D4AA] bg-[#12121a]">
-          <h2 className="text-sm font-medium text-gray-200 mb-2">Ticket abschliessen</h2>
-          <p className="text-xs text-gray-500 mb-3">Trage die tatsaechlichen Kosten ein, bevor du das Ticket abschliesst.</p>
-          <Input label="Endkosten in EUR" type="number" placeholder="z.B. 450" value={kostenFinal} onChange={e => setKostenFinal(e.target.value)} />
+          <h2 className="text-sm font-medium text-gray-200 mb-2">Ticket abschließen</h2>
+          <p className="text-xs text-gray-500 mb-3">Trage die tatsächlichen Kosten ein, bevor du das Ticket abschließt.</p>
+          <Input label="Endkosten in EUR" type="number" placeholder="z.B. 450"
+            value={kostenFinal} onChange={e => setKostenFinal(e.target.value)} />
           <div className="flex gap-2 mt-3">
-            <Button onClick={abschliessen}>Abschliessen & Speichern</Button>
+            <Button onClick={abschliessen}>Abschließen & Speichern</Button>
             <button onClick={() => setShowKosten(false)} className="text-sm text-gray-500 hover:text-gray-300 px-3">Abbrechen</button>
           </div>
         </Card>
@@ -241,7 +239,7 @@ export default function TicketDetail() {
                       </div>
                     </div>
                     {a.fruehester_termin && <div className="text-xs text-gray-400">Ab: {new Date(a.fruehester_termin).toLocaleDateString("de")}</div>}
-                    {a.nachricht && <div className="text-xs text-gray-400 mt-1 italic">"{a.nachricht}"</div>}
+                    {a.nachricht && <div className="text-xs text-gray-400 mt-1 italic">\"{a.nachricht}\"</div>}
                   </div>
                   {a.status === "eingereicht" && (
                     <Button size="sm" onClick={() => vergeben(a.id, a.handwerker_id)}>Vergeben</Button>
@@ -260,10 +258,14 @@ export default function TicketDetail() {
         <Card className="mb-4 bg-[#12121a] border border-white/5">
           <h2 className="text-sm font-medium text-gray-200 mb-3">Dein Angebot</h2>
           <div className="space-y-3">
-            <Input label="Preis (EUR)" type="number" placeholder="z.B. 450" value={angebotForm.preis} onChange={e => setAngebotForm({ ...angebotForm, preis: e.target.value })} />
-            <Input label="Fruehester Termin" type="date" value={angebotForm.termin} onChange={e => setAngebotForm({ ...angebotForm, termin: e.target.value })} />
-            <Input label="Geschaetzte Dauer (Tage)" type="number" placeholder="z.B. 2" value={angebotForm.dauer} onChange={e => setAngebotForm({ ...angebotForm, dauer: e.target.value })} />
-            <Input label="Nachricht (Optional)" type="text" placeholder="z.B. Material inklusive" value={angebotForm.nachricht} onChange={e => setAngebotForm({ ...angebotForm, nachricht: e.target.value })} />
+            <Input label="Preis (EUR)" type="number" placeholder="z.B. 450"
+              value={angebotForm.preis} onChange={e => setAngebotForm({ ...angebotForm, preis: e.target.value })} />
+            <Input label="Frühester Termin" type="date"
+              value={angebotForm.termin} onChange={e => setAngebotForm({ ...angebotForm, termin: e.target.value })} />
+            <Input label="Geschätzte Dauer (Tage)" type="number" placeholder="z.B. 2"
+              value={angebotForm.dauer} onChange={e => setAngebotForm({ ...angebotForm, dauer: e.target.value })} />
+            <Input label="Nachricht (Optional)" type="text" placeholder="z.B. Material inklusive"
+              value={angebotForm.nachricht} onChange={e => setAngebotForm({ ...angebotForm, nachricht: e.target.value })} />
             <Button onClick={submitAngebot} disabled={submittingBid}>{submittingBid ? "Wird eingereicht..." : "Angebot einreichen"}</Button>
           </div>
         </Card>
@@ -300,7 +302,9 @@ export default function TicketDetail() {
           })}
         </div>
         <div className="flex gap-2">
-          <Input placeholder="Nachricht..." value={chatText} onChange={e => setChatText(e.target.value)} onKeyPress={e => e.key === "Enter" && sendChat()} />
+          <Input placeholder="Nachricht..." value={chatText}
+            onChange={e => setChatText(e.target.value)}
+            onKeyPress={e => e.key === "Enter" && sendChat()} />
           <Button onClick={sendChat} disabled={sending}>{sending ? "..." : "Senden"}</Button>
         </div>
       </Card>
