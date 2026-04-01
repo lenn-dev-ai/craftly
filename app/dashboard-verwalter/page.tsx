@@ -62,9 +62,9 @@ export default function VerwalterDashboard() {
   if (loading) return <LoadingSpinner />
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex items-end justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-0 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Dashboard</h1>
           <p className="text-sm text-gray-500 mt-1">{tickets.length} Tickets — {offene.length + auktionen.length} aktiv</p>
@@ -73,7 +73,7 @@ export default function VerwalterDashboard() {
       </div>
 
       {/* KPI Grid */}
-      <div className="grid grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
         {[
           { label: "OFFEN", value: offene.length, color: offene.length > 0 ? "text-amber-400" : "text-gray-300" },
           { label: "AUKTIONEN", value: auktionen.length, color: auktionen.length > 0 ? "text-[#00D4AA]" : "text-gray-300" },
@@ -87,7 +87,7 @@ export default function VerwalterDashboard() {
         ))}
       </div>
 
-      {/* KI-Triage: Neue Meldungen zur Freigabe */}
+      {/* KI-Triage */}
       {offene.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-3">
@@ -102,7 +102,6 @@ export default function VerwalterDashboard() {
               return (
                 <Card key={t.id} className="bg-[#12121a] border border-white/5">
                   <div className="flex items-start gap-4">
-                    {/* Prio Indicator */}
                     <div className={"w-1 self-stretch rounded-full flex-shrink-0 " + (
                       t.prioritaet === "dringend" ? "bg-red-500" :
                       t.prioritaet === "hoch" ? "bg-amber-500" : "bg-[#00D4AA]"
@@ -120,7 +119,6 @@ export default function VerwalterDashboard() {
                       {t.beschreibung && (
                         <p className="text-xs text-gray-400 mb-3 line-clamp-2">{t.beschreibung}</p>
                       )}
-                      {/* KI Insights Row */}
                       <div className="flex items-center gap-3 flex-wrap">
                         <span className={"text-[10px] font-medium px-2 py-0.5 rounded-full border " + vorschlag.color}>
                           {vorschlag.label}
