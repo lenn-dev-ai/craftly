@@ -56,8 +56,6 @@ export default function AuftraegePage() {
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
       <div className="max-w-4xl mx-auto p-6">
-
-        {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-semibold">Meine Auftraege</h1>
           <p className="text-white/40 text-sm mt-1">
@@ -65,7 +63,6 @@ export default function AuftraegePage() {
           </p>
         </div>
 
-        {/* Filter Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
           {[
             { key: "alle", label: "Alle", count: tickets.length },
@@ -74,27 +71,38 @@ export default function AuftraegePage() {
             { key: "erledigt", label: "Erledigt", count: erledigt },
           ].map(f => (
             <button key={f.key} onClick={() => setFilter(f.key)}
-              className={"px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap " +
-                (filter === f.key
+              className={"px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap " + (
+                filter === f.key
                   ? "bg-[#00D4AA]/15 text-[#00D4AA] border border-[#00D4AA]/30"
-                  : "bg-white/5 text-white/40 border border-white/5 hover:text-white/60")}>
+                  : "bg-white/5 text-white/40 border border-white/5 hover:text-white/60"
+              )}>
               {f.label}
-              <span className={"ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] " +
-                (filter === f.key ? "bg-[#00D4AA]/20" : "bg-white/5")}>
+              <span className={"ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] " + (filter === f.key ? "bg-[#00D4AA]/20" : "bg-white/5")}>
                 {f.count}
               </span>
             </button>
           ))}
         </div>
 
-        {/* Ticket List */}
         {filtered.length === 0 ? (
-          <div className="bg-[#12121a] border border-white/5 rounded-xl p-12 text-center">
-            <div className="text-3xl mb-3 opacity-50">[!]</div>
-            <div className="text-white/50 text-sm">
-              {filter === "alle" ? "Noch keine Auftraege" : "Keine Auftraege mit diesem Status"}
+          <div className="bg-[#12121a] border border-white/5 rounded-xl p-8 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-[#00B4D8]/10 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl text-[#00B4D8]">[!]</span>
             </div>
-            <div className="text-white/30 text-xs mt-1">Auftraege erscheinen hier sobald dir ein Auftrag vergeben wird</div>
+            <div className="text-white/60 text-sm font-medium mb-1">
+              {filter === "alle" ? "Noch keine Auftraege" : "Keine Auftraege mit Status \"" + (STATUS_CONFIG[filter]?.label || filter) + "\""}
+            </div>
+            <div className="text-white/30 text-xs mb-4">
+              {filter === "alle"
+                ? "Auftraege erscheinen hier, sobald du den Zuschlag fuer eine Ausschreibung erhaeltst."
+                : "Aendere den Filter oder warte auf neue Auftraege."}
+            </div>
+            {filter === "alle" && (
+              <button onClick={() => router.push("/dashboard-handwerker")}
+                className="text-xs text-[#00D4AA] border border-[#00D4AA]/20 px-4 py-2 rounded-lg hover:bg-[#00D4AA]/10 transition-colors">
+                Zu den Ausschreibungen
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -104,12 +112,10 @@ export default function AuftraegePage() {
               const stepIdx = steps.indexOf(t.status) >= 0 ? steps.indexOf(t.status) : 0
 
               return (
-                <div key={t.id}
-                  onClick={() => router.push("/ticket/" + t.id)}
-                  className={"bg-[#12121a] border border-white/5 rounded-xl p-4 cursor-pointer transition-all " +
-                    (t.status === "erledigt" ? "opacity-60 hover:border-white/10" : "hover:border-[#00D4AA]/30")}>
-
-                  {/* Top Row */}
+                <div key={t.id} onClick={() => router.push("/ticket/" + t.id)}
+                  className={"bg-[#12121a] border border-white/5 rounded-xl p-4 cursor-pointer transition-all " + (
+                    t.status === "erledigt" ? "opacity-60 hover:border-white/10" : "hover:border-[#00D4AA]/30"
+                  )}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-sm font-medium">{t.titel}</div>
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
@@ -117,28 +123,19 @@ export default function AuftraegePage() {
                       {cfg.label}
                     </span>
                   </div>
-
-                  {/* Details */}
                   <div className="text-xs text-white/30 mb-3">
-                    {t.wohnung || "Keine Adresse"}
-                    {" | "}
-                    Erstellt: {new Date(t.created_at).toLocaleDateString("de")}
+                    {t.wohnung || "Keine Adresse"}{" | "}Erstellt: {new Date(t.created_at).toLocaleDateString("de")}
                     {t.status !== "erledigt" && (
                       <span className="ml-2 text-[#00B4D8]">Geschaetzte Dauer: {kiDauerSchaetzung(t)}</span>
                     )}
                   </div>
-
-                  {/* Progress Bar */}
-                  {t.status !== "erledigt" && (
+                  {t.status !== "erledigt" ? (
                     <div className="flex gap-1">
                       {steps.map((s, i) => (
-                        <div key={s} className={"h-1 flex-1 rounded-full " +
-                          (i <= stepIdx ? "bg-[#00D4AA]" : "bg-white/10")} />
+                        <div key={s} className={"h-1 flex-1 rounded-full " + (i <= stepIdx ? "bg-[#00D4AA]" : "bg-white/10")} />
                       ))}
                     </div>
-                  )}
-
-                  {t.status === "erledigt" && (
+                  ) : (
                     <div className="flex gap-1">
                       {steps.map(s => (
                         <div key={s} className="h-1 flex-1 rounded-full bg-[#8B5CF6]/50" />
@@ -150,7 +147,6 @@ export default function AuftraegePage() {
             })}
           </div>
         )}
-
       </div>
     </div>
   )
