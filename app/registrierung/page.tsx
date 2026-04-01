@@ -6,9 +6,13 @@ import { Rolle } from "@/types"
 
 export default function RegistrierungPage() {
   const [form, setForm] = useState({
-    name: "", email: "", password: "",
+    name: "",
+    email: "",
+    password: "",
     rolle: "verwalter" as Rolle,
-    firma: "", gewerk: "", plz_bereich: ""
+    firma: "",
+    gewerk: "",
+    plz_bereich: ""
   })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -19,12 +23,10 @@ export default function RegistrierungPage() {
     if (!form.name.trim()) { setError("Bitte Name eingeben."); return }
     if (!form.email.trim()) { setError("Bitte E-Mail eingeben."); return }
     if (form.password.length < 8) { setError("Passwort muss mindestens 8 Zeichen lang sein."); return }
-
     setLoading(true); setError("")
     const supabase = createClient()
     const { data, error } = await supabase.auth.signUp({ email: form.email, password: form.password })
     if (error || !data.user) { setError(error?.message || "Fehler bei Registrierung"); setLoading(false); return }
-
     await supabase.from("profiles").insert({
       id: data.user.id,
       email: form.email,
@@ -34,9 +36,7 @@ export default function RegistrierungPage() {
       gewerk: form.gewerk,
       plz_bereich: form.plz_bereich,
     })
-
-    if (form.rolle === "admin") window.location.href = "/dashboard-admin"
-    else if (form.rolle === "verwalter") window.location.href = "/dashboard-verwalter"
+    if (form.rolle === "verwalter") window.location.href = "/dashboard-verwalter"
     else if (form.rolle === "handwerker") window.location.href = "/dashboard-handwerker"
     else window.location.href = "/dashboard-mieter"
   }
@@ -55,30 +55,30 @@ export default function RegistrierungPage() {
           </div>
           <p className="text-sm text-gray-500">Konto erstellen</p>
         </div>
+
         <Card>
           <div className="flex flex-col gap-4">
             <Select label="Ich bin..." value={form.rolle} onChange={e => set("rolle", e.target.value)}>
               <option value="verwalter">Hausverwaltung</option>
               <option value="handwerker">Handwerksbetrieb</option>
               <option value="mieter">Mieter</option>
-              <option value="admin">Administrator</option>
             </Select>
 
-            <Input label="Vollstaendiger Name" placeholder="Max Mustermann" value={form.name} onChange={e => set("name", e.target.value)} />
-            <Input label="E-Mail" type="email" placeholder="name@firma.de" value={form.email} onChange={e => set("email", e.target.value)} />
-            <Input label="Passwort" type="password" placeholder="Mindestens 8 Zeichen" value={form.password} onChange={e => set("password", e.target.value)} />
+            <Input label="Vollständiger Name" placeholder="Max Mustermann"
+              value={form.name} onChange={e => set("name", e.target.value)} />
+            <Input label="E-Mail" type="email" placeholder="name@firma.de"
+              value={form.email} onChange={e => set("email", e.target.value)} />
+            <Input label="Passwort" type="password" placeholder="Mindestens 8 Zeichen"
+              value={form.password} onChange={e => set("password", e.target.value)} />
 
             {form.rolle === "handwerker" && <>
-              <Input label="Firmenname" placeholder="Klimatec GmbH" value={form.firma} onChange={e => set("firma", e.target.value)} />
-              <Input label="Gewerk / Spezialisierung" placeholder="Heizung, Sanitaer" value={form.gewerk} onChange={e => set("gewerk", e.target.value)} />
-              <Input label="PLZ-Einzugsgebiet" placeholder="60xxx, 65xxx" value={form.plz_bereich} onChange={e => set("plz_bereich", e.target.value)} />
+              <Input label="Firmenname" placeholder="Klimatec GmbH"
+                value={form.firma} onChange={e => set("firma", e.target.value)} />
+              <Input label="Gewerk / Spezialisierung" placeholder="Heizung, Sanitär"
+                value={form.gewerk} onChange={e => set("gewerk", e.target.value)} />
+              <Input label="PLZ-Einzugsgebiet" placeholder="60xxx, 65xxx"
+                value={form.plz_bereich} onChange={e => set("plz_bereich", e.target.value)} />
             </>}
-
-            {form.rolle === "admin" && (
-              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5">
-                <p className="text-xs text-amber-400">Admin-Konten haben vollen Zugriff auf alle Bereiche der Plattform.</p>
-              </div>
-            )}
 
             {error && (
               <p className="text-xs text-[#FF6363] bg-[#FF6363]/10 border border-[#FF6363]/20 px-4 py-2.5 rounded-xl font-medium">
