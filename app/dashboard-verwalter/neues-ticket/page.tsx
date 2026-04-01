@@ -9,9 +9,9 @@ import { berechnePreisfaktor, berechneRichtpreis } from "@/lib/preisfaktor"
 type VergabeModus = "sofort" | "auktion" | "plan"
 
 const VERGABE_MODI: { id: VergabeModus; label: string; icon: string; desc: string; zeit: string; color: string }[] = [
-  { id: "sofort", label: "Sofort-Vergabe", icon: "!", desc: "Notfall — schnellster verfuegbarer Handwerker wird automatisch zugewiesen", zeit: "< 4 Stunden", color: "#FF6363" },
-  { id: "auktion", label: "Smart-Auktion", icon: "#", desc: "Handwerker bieten mit Preis + Termin — bestes Gesamtpaket gewinnt", zeit: "24-48 Stunden", color: "#00D4AA" },
-  { id: "plan", label: "Planauftrag", icon: "~", desc: "Fuer geplante Wartung — Handwerker bieten auf Wochenzeitraeume", zeit: "1-2 Wochen", color: "#00B4D8" },
+  { id: "sofort", label: "Sofort-Vergabe", icon: "!", desc: "Notfall — schnellster verfügbarer Handwerker wird automatisch zugewiesen", zeit: "< 4 Stunden", color: "#FF6363" },
+  { id: "auktion", label: "Smart-Auktion", icon: "#", desc: "Handwerker bieten mit Preis + Termin — bestes Gesamtpaket gewinnt", zeit: "24–48 Stunden", color: "#00D4AA" },
+  { id: "plan", label: "Planauftrag", icon: "~", desc: "Für geplante Wartung — Handwerker bieten auf Wochenzeiträume", zeit: "1–2 Wochen", color: "#00B4D8" },
 ]
 
 export default function NeuesTicketPage() {
@@ -59,15 +59,14 @@ export default function NeuesTicketPage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
-
     const auktionEnde = new Date()
     if (modus === "sofort") auktionEnde.setHours(auktionEnde.getHours() + 4)
     else if (modus === "auktion") auktionEnde.setHours(auktionEnde.getHours() + parseInt(form.auktionsDauer))
     else auktionEnde.setDate(auktionEnde.getDate() + 14)
 
     const { data, error: insertErr } = await supabase.from("tickets").insert({
-      titel: form.titel, beschreibung: form.beschreibung,
-      wohnung: form.wohnung, prioritaet: modus === "sofort" ? "dringend" : form.prioritaet,
+      titel: form.titel, beschreibung: form.beschreibung, wohnung: form.wohnung,
+      prioritaet: modus === "sofort" ? "dringend" : form.prioritaet,
       gewerk: form.gewerk, vergabemodus: modus,
       status: modus === "sofort" ? "sofort" : "offen",
       erstellt_von: user.id,
@@ -86,12 +85,11 @@ export default function NeuesTicketPage() {
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <div className="mb-8">
-        <button onClick={() => router.back()}
-          className="text-sm text-gray-500 hover:text-[#00D4AA] mb-3 flex items-center gap-1 transition-colors">
-          &#8592; Zurueck
+        <button onClick={() => router.back()} className="text-sm text-gray-500 hover:text-[#00D4AA] mb-3 flex items-center gap-1 transition-colors">
+          &#8592; Zurück
         </button>
         <h1 className="text-2xl font-bold text-white tracking-tight">Neuer Auftrag</h1>
-        <p className="text-sm text-gray-500 mt-1">Schaden melden und Vergabemodus waehlen</p>
+        <p className="text-sm text-gray-500 mt-1">Schaden melden und Vergabemodus wählen</p>
       </div>
 
       {/* Vergabe-Modus Auswahl */}
@@ -111,11 +109,9 @@ export default function NeuesTicketPage() {
                 {m.label}
               </div>
               <div className="text-[11px] text-gray-500 leading-relaxed">{m.desc}</div>
-              <div className="mt-2 text-[10px] font-bold uppercase tracking-wider"
-                style={{ color: m.color }}>{m.zeit}</div>
+              <div className="mt-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: m.color }}>{m.zeit}</div>
               {modus === m.id && (
-                <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center"
-                  style={{ background: m.color }}>
+                <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: m.color }}>
                   <span className="text-white text-xs">&#10003;</span>
                 </div>
               )}
@@ -129,10 +125,9 @@ export default function NeuesTicketPage() {
         <h2 className="text-sm font-semibold text-white mb-4">Auftragsdetails</h2>
         <div className="flex flex-col gap-4">
           <Input label="Titel / Schadensbeschreibung *"
-            placeholder={modus === "sofort" ? "z.B. Wasserrohrbruch Keller" : modus === "plan" ? "z.B. Jaehrliche Heizungswartung" : "z.B. Heizung ausgefallen"}
+            placeholder={modus === "sofort" ? "z.B. Wasserrohrbruch Keller" : modus === "plan" ? "z.B. Jährliche Heizungswartung" : "z.B. Heizung ausgefallen"}
             value={form.titel} onChange={e => set("titel", e.target.value)} />
-          <Textarea label="Detailbeschreibung"
-            placeholder="Was genau ist passiert? Wo befindet sich der Schaden?"
+          <Textarea label="Detailbeschreibung" placeholder="Was genau ist passiert? Wo befindet sich der Schaden?"
             value={form.beschreibung} onChange={e => set("beschreibung", e.target.value)} />
           <div className="grid grid-cols-2 gap-3">
             <Input label="Wohnung / Bereich" placeholder="z.B. Whg. 3"
@@ -143,17 +138,14 @@ export default function NeuesTicketPage() {
               ))}
             </Select>
           </div>
-
           {modus === "auktion" && (
             <div className="grid grid-cols-2 gap-3">
-              <Select label="Dringlichkeit" value={form.prioritaet}
-                onChange={e => set("prioritaet", e.target.value)}>
+              <Select label="Dringlichkeit" value={form.prioritaet} onChange={e => set("prioritaet", e.target.value)}>
                 <option value="normal">Normal (7 Tage)</option>
-                <option value="hoch">Hoch (2-3 Tage)</option>
+                <option value="hoch">Hoch (2–3 Tage)</option>
                 <option value="dringend">Dringend (heute/morgen)</option>
               </Select>
-              <Select label="Auktionsdauer" value={form.auktionsDauer}
-                onChange={e => set("auktionsDauer", e.target.value)}>
+              <Select label="Auktionsdauer" value={form.auktionsDauer} onChange={e => set("auktionsDauer", e.target.value)}>
                 <option value="24">24 Stunden</option>
                 <option value="48">48 Stunden (empfohlen)</option>
                 <option value="72">72 Stunden</option>
@@ -178,26 +170,26 @@ export default function NeuesTicketPage() {
             </h2>
             {modus === "sofort" && (
               <div className="text-xs text-gray-400 space-y-1.5">
-                <p>1. Ihr Auftrag wird sofort an alle verfuegbaren Handwerker gesendet</p>
-                <p>2. Der erste Handwerker der zusagt, erhaelt den Auftrag</p>
+                <p>1. Ihr Auftrag wird sofort an alle verfügbaren Handwerker gesendet</p>
+                <p>2. Der erste Handwerker der zusagt, erhält den Auftrag</p>
                 <p>3. Preis wird zum Sofort-Tarif berechnet (Faktor {pf.faktor}x)</p>
                 <p className="text-[#FF6363] font-medium mt-2">Erwartete Reaktionszeit: unter 4 Stunden</p>
               </div>
             )}
             {modus === "auktion" && (
               <div className="text-xs text-gray-400 space-y-1.5">
-                <p>1. Handwerker sehen Ihren Auftrag und bieten mit Preis + fruehestem Termin</p>
-                <p>2. Jedes Angebot erhaelt einen Value-Score aus Preis, Verfuegbarkeit und Bewertung</p>
-                <p>3. Sie sehen die Top-Angebote im Ranking und waehlen das beste Paket</p>
-                <p className="text-[#00D4AA] font-medium mt-2">Typisch 3-5 Angebote innerhalb von {form.auktionsDauer}h</p>
+                <p>1. Handwerker sehen Ihren Auftrag und bieten mit Preis + frühestem Termin</p>
+                <p>2. Jedes Angebot erhält einen Value-Score aus Preis, Verfügbarkeit und Bewertung</p>
+                <p>3. Sie sehen die Top-Angebote im Ranking und wählen das beste Paket</p>
+                <p className="text-[#00D4AA] font-medium mt-2">Typisch 3–5 Angebote innerhalb von {form.auktionsDauer}h</p>
               </div>
             )}
             {modus === "plan" && (
               <div className="text-xs text-gray-400 space-y-1.5">
                 <p>1. Handwerker bieten auf Ihren Wunschzeitraum mit reduziertem Preis</p>
-                <p>2. Planbare Auftraege sind guenstiger da Handwerker ihre Kapazitaet besser planen</p>
-                <p>3. Ideal fuer Wartung, Renovierung und nicht-dringende Reparaturen</p>
-                <p className="text-[#00B4D8] font-medium mt-2">Typisch 15-25% guenstiger als Smart-Auktion</p>
+                <p>2. Planbare Aufträge sind günstiger da Handwerker ihre Kapazität besser planen</p>
+                <p>3. Ideal für Wartung, Renovierung und nicht-dringende Reparaturen</p>
+                <p className="text-[#00B4D8] font-medium mt-2">Typisch 15–25% günstiger als Smart-Auktion</p>
               </div>
             )}
           </div>
@@ -229,7 +221,7 @@ export default function NeuesTicketPage() {
       {hwPreview.length > 0 && modus !== "sofort" && (
         <Card className="mb-4">
           <h2 className="text-sm font-semibold text-white mb-3">
-            Verfuegbare Handwerker ({hwPreview.length})
+            Verfügbare Handwerker ({hwPreview.length})
           </h2>
           <div className="flex flex-col gap-2">
             {hwPreview.slice(0, 4).map(hw => {
@@ -244,7 +236,7 @@ export default function NeuesTicketPage() {
                     <div>
                       <div className="text-sm font-medium text-white">{hw.firma || hw.name}</div>
                       <div className="text-[11px] text-gray-500">
-                        {hw.bewertung_avg ? `Bewertung ${hw.bewertung_avg}` : "Neu"} - {hw.auftraege_anzahl || 0} Auftraege
+                        {hw.bewertung_avg ? `Bewertung ${hw.bewertung_avg}` : "Neu"} – {hw.auftraege_anzahl || 0} Aufträge
                       </div>
                     </div>
                   </div>
@@ -265,10 +257,7 @@ export default function NeuesTicketPage() {
 
       <div className="flex gap-3">
         <Button onClick={handleCreate} disabled={loading}>
-          {loading ? "Wird erstellt..." :
-           modus === "sofort" ? "Sofort-Auftrag senden" :
-           modus === "auktion" ? "Auktion starten" :
-           "Planauftrag erstellen"}
+          {loading ? "Wird erstellt..." : modus === "sofort" ? "Sofort-Auftrag senden" : modus === "auktion" ? "Auktion starten" : "Planauftrag erstellen"}
         </Button>
         <Button variant="ghost" onClick={() => router.back()}>Abbrechen</Button>
       </div>
