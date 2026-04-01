@@ -7,19 +7,31 @@ import { Badge, Button, Card, LoadingSpinner } from "@/components/ui"
 
 function kiVergabevorschlag(t: Ticket): { modus: string; label: string; color: string; grund: string } {
   const p = t.prioritaet
-  if (p === "dringend") return { modus: "sofort", label: "Sofort-Vergabe", color: "text-red-400 bg-red-500/10 border-red-500/20", grund: "Notfall erkannt -- schnellste Reaktion noetig" }
-  if (p === "hoch") return { modus: "auktion", label: "Smart-Auktion", color: "text-[#00D4AA] bg-[#00D4AA]/10 border-[#00D4AA]/20", grund: "Hoehere Prioritaet -- Wettbewerb fuer bestes Angebot" }
-  return { modus: "plan", label: "Planauftrag", color: "text-blue-400 bg-blue-500/10 border-blue-500/20", grund: "Keine Eile -- guenstigster Preis bei flexibler Planung" }
+  if (p === "dringend") return {
+    modus: "sofort", label: "Sofort-Vergabe",
+    color: "text-red-400 bg-red-500/10 border-red-500/20",
+    grund: "Notfall erkannt — schnellste Reaktion nötig"
+  }
+  if (p === "hoch") return {
+    modus: "auktion", label: "Smart-Auktion",
+    color: "text-[#00D4AA] bg-[#00D4AA]/10 border-[#00D4AA]/20",
+    grund: "Höhere Priorität — Wettbewerb für bestes Angebot"
+  }
+  return {
+    modus: "plan", label: "Planauftrag",
+    color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+    grund: "Keine Eile — günstigster Preis bei flexibler Planung"
+  }
 }
 
 function kiKosten(t: Ticket): string {
   const titel = (t.titel || "").toLowerCase()
-  if (titel.match(/heiz|warm/)) return "250-600"
-  if (titel.match(/wasser|feucht|rohr/)) return "150-800"
-  if (titel.match(/elektr|strom|sicher/)) return "100-400"
-  if (titel.match(/tuer|fenster|schloss/)) return "80-350"
-  if (titel.match(/schimmel/)) return "200-900"
-  return "100-500"
+  if (titel.match(/heiz|warm/)) return "250–600"
+  if (titel.match(/wasser|feucht|rohr/)) return "150–800"
+  if (titel.match(/elektr|strom|sicher/)) return "100–400"
+  if (titel.match(/tuer|fenster|schloss/)) return "80–350"
+  if (titel.match(/schimmel/)) return "200–900"
+  return "100–500"
 }
 
 export default function VerwalterDashboard() {
@@ -55,7 +67,7 @@ export default function VerwalterDashboard() {
       <div className="flex items-end justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">{tickets.length} Tickets -- {offene.length + auktionen.length} aktiv</p>
+          <p className="text-sm text-gray-500 mt-1">{tickets.length} Tickets — {offene.length + auktionen.length} aktiv</p>
         </div>
         <Button onClick={() => router.push("/dashboard-verwalter/neues-ticket")}>+ Neues Ticket</Button>
       </div>
@@ -80,7 +92,7 @@ export default function VerwalterDashboard() {
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xs text-[#00D4AA] font-medium bg-[#00D4AA]/10 px-2 py-0.5 rounded">AI</span>
-            <h2 className="text-sm font-medium text-gray-200">Neue Meldungen -- KI-Voranalyse</h2>
+            <h2 className="text-sm font-medium text-gray-200">Neue Meldungen — KI-Voranalyse</h2>
             <span className="text-xs text-gray-500">({offene.length} warten auf Freigabe)</span>
           </div>
           <div className="flex flex-col gap-3">
@@ -91,43 +103,39 @@ export default function VerwalterDashboard() {
                 <Card key={t.id} className="bg-[#12121a] border border-white/5">
                   <div className="flex items-start gap-4">
                     {/* Prio Indicator */}
-                    <div className={"w-1 self-stretch rounded-full flex-shrink-0 " + (t.prioritaet === "dringend" ? "bg-red-500" : t.prioritaet === "hoch" ? "bg-amber-500" : "bg-[#00D4AA]")} />
-
+                    <div className={"w-1 self-stretch rounded-full flex-shrink-0 " + (
+                      t.prioritaet === "dringend" ? "bg-red-500" :
+                      t.prioritaet === "hoch" ? "bg-amber-500" : "bg-[#00D4AA]"
+                    )} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <div className="text-sm font-semibold text-white">{t.titel}</div>
                           <div className="text-xs text-gray-500 mt-0.5">
-                            {t.wohnung && (t.wohnung + " -- ")}{new Date(t.created_at).toLocaleDateString("de")}
+                            {t.wohnung && (t.wohnung + " — ")}{new Date(t.created_at).toLocaleDateString("de")}
                           </div>
                         </div>
                         <Badge status={t.status} />
                       </div>
-
                       {t.beschreibung && (
                         <p className="text-xs text-gray-400 mb-3 line-clamp-2">{t.beschreibung}</p>
                       )}
-
                       {/* KI Insights Row */}
                       <div className="flex items-center gap-3 flex-wrap">
                         <span className={"text-[10px] font-medium px-2 py-0.5 rounded-full border " + vorschlag.color}>
                           {vorschlag.label}
                         </span>
                         <span className="text-[10px] text-gray-500">
-                          Geschaetzte Kosten: <span className="text-gray-300 font-medium">{kosten} EUR</span>
+                          Geschätzte Kosten: <span className="text-gray-300 font-medium">{kosten} EUR</span>
                         </span>
                         <span className="text-[10px] text-gray-600">{vorschlag.grund}</span>
                       </div>
-
                       {/* Action Buttons */}
                       <div className="flex items-center gap-2 mt-3">
                         <Button size="sm" onClick={() => router.push("/dashboard-verwalter/tickets/" + t.id + "/handwerker")}>
-                          Freigeben + Handwerker waehlen
+                          Freigeben + Handwerker wählen
                         </Button>
-                        <button
-                          onClick={() => router.push("/ticket/" + t.id)}
-                          className="text-xs text-gray-500 hover:text-gray-300 px-3 py-1.5"
-                        >
+                        <button onClick={() => router.push("/ticket/" + t.id)} className="text-xs text-gray-500 hover:text-gray-300 px-3 py-1.5">
                           Details
                         </button>
                       </div>
@@ -146,7 +154,8 @@ export default function VerwalterDashboard() {
           <h2 className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-3">Laufende Auktionen ({auktionen.length})</h2>
           <div className="flex flex-col gap-2">
             {auktionen.map(t => (
-              <Card key={t.id} className="bg-[#12121a] border border-white/5 hover:border-white/10 cursor-pointer transition-all" onClick={() => router.push("/ticket/" + t.id)}>
+              <Card key={t.id} className="bg-[#12121a] border border-white/5 hover:border-white/10 cursor-pointer transition-all"
+                onClick={() => router.push("/ticket/" + t.id)}>
                 <div className="flex items-center gap-4">
                   <div className="w-2 h-2 rounded-full bg-[#00D4AA] animate-pulse flex-shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -156,7 +165,7 @@ export default function VerwalterDashboard() {
                   <div className="flex items-center gap-3 flex-shrink-0">
                     {t.angebote && t.angebote.length > 0 ? (
                       <span className="text-sm font-bold text-[#00D4AA] tabular-nums">
-                        {t.angebote.length} Angebot{t.angebote.length > 1 ? "e" : ""} -- ab {Math.min(...t.angebote.map(a => a.preis))} EUR
+                        {t.angebote.length} Angebot{t.angebote.length > 1 ? "e" : ""} — ab {Math.min(...t.angebote.map(a => a.preis))} EUR
                       </span>
                     ) : (
                       <span className="text-xs text-gray-500">Warte auf Angebote...</span>
@@ -176,7 +185,8 @@ export default function VerwalterDashboard() {
           <h2 className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-3">In Arbeit ({inArbeit.length})</h2>
           <div className="flex flex-col gap-2">
             {inArbeit.map(t => (
-              <Card key={t.id} className="bg-[#12121a] border border-white/5 hover:border-white/10 cursor-pointer transition-all" onClick={() => router.push("/ticket/" + t.id)}>
+              <Card key={t.id} className="bg-[#12121a] border border-white/5 hover:border-white/10 cursor-pointer transition-all"
+                onClick={() => router.push("/ticket/" + t.id)}>
                 <div className="flex items-center gap-4">
                   <div className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
