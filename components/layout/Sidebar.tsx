@@ -16,6 +16,7 @@ const menus: Record<Rolle, { href: string; label: string; icon: string }[]> = {
   handwerker: [
     { href: "/dashboard-handwerker", label: "Dashboard", icon: "⬡" },
     { href: "/dashboard-handwerker/auftraege", label: "Aufträge", icon: "◉" },
+    { href: "/dashboard-handwerker/kalender", label: "Kalender", icon: "▦" },
     { href: "/dashboard-handwerker/profil", label: "Mein Profil", icon: "◎" },
   ],
   mieter: [
