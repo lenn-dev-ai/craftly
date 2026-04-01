@@ -18,6 +18,7 @@ export default function HandwerkerAuswahlPage() {
   const router = useRouter()
   const params = useParams()
   const ticketId = params.id as string
+
   const [ticket, setTicket] = useState<Ticket | null>(null)
   const [handwerker, setHandwerker] = useState<(UserProfile & { selected: boolean; verfuegbarkeiten?: Verfuegbarkeit[] })[]>([])
   const [loading, setLoading] = useState(true)
@@ -31,23 +32,28 @@ export default function HandwerkerAuswahlPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push("/login"); return }
+
       const { data: t } = await supabase.from("tickets")
         .select("*, einladungen(*, handwerker:profiles(*))")
         .eq("id", ticketId).single()
       if (!t) { router.push("/dashboard-verwalter"); return }
       setTicket(t)
+
       let query = supabase.from("profiles").select("*").eq("rolle", "handwerker")
       if (t.gewerk && t.gewerk !== "allgemein") {
         query = query.ilike("gewerk", `%${t.gewerk}%`)
       }
       const { data: hws } = await query.order("bewertung_avg", { ascending: false })
+
       const hwIds = (hws || []).map(hw => hw.id)
       const { data: alleVerf } = await supabase.from("verfuegbarkeiten").select("*").in("handwerker_id", hwIds).eq("aktiv", true)
+
       const verfMap = new Map<string, Verfuegbarkeit[]>()
       ;(alleVerf || []).forEach((v: Verfuegbarkeit) => {
         if (!verfMap.has(v.handwerker_id)) verfMap.set(v.handwerker_id, [])
         verfMap.get(v.handwerker_id)!.push(v)
       })
+
       const bereitsEingeladen = new Set((t.einladungen || []).map((e: any) => e.handwerker_id))
       setHandwerker((hws || []).map(hw => ({
         ...hw,
@@ -58,6 +64,24 @@ export default function HandwerkerAuswahlPage() {
     }
     load()
   }, [ticketId, router])
+
+  async function loadOhneFilter() {
+    const supabase = createClient()
+    const { data: hws } = await supabase.from("profiles").select("*").eq("rolle", "handwerker").order("bewertung_avg", { ascending: false })
+    const hwIds = (hws || []).map(hw => hw.id)
+    const { data: alleVerf } = await supabase.from("verfuegbarkeiten").select("*").in("handwerker_id", hwIds).eq("aktiv", true)
+    const verfMap = new Map<string, Verfuegbarkeit[]>()
+    ;(alleVerf || []).forEach((v: Verfuegbarkeit) => {
+      if (!verfMap.has(v.handwerker_id)) verfMap.set(v.handwerker_id, [])
+      verfMap.get(v.handwerker_id)!.push(v)
+    })
+    const bereitsEingeladen = ticket ? new Set((ticket.einladungen || []).map((e: any) => e.handwerker_id)) : new Set()
+    setHandwerker((hws || []).map(hw => ({
+      ...hw,
+      selected: bereitsEingeladen.has(hw.id),
+      verfuegbarkeiten: verfMap.get(hw.id) || [],
+    })))
+  }
 
   function toggleHW(id: string) {
     setHandwerker(prev => prev.map(hw => hw.id === id ? { ...hw, selected: !hw.selected } : hw))
@@ -168,33 +192,34 @@ export default function HandwerkerAuswahlPage() {
         </div>
 
         {handwerker.length === 0 ? (
-          <p className="text-xs text-gray-500 py-6 text-center">
-            Keine Handwerker fuer dieses Gewerk gefunden.
-          </p>
+          <div className="py-8 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-[#F59E0B]/10 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl text-[#F59E0B]">[?]</span>
+            </div>
+            <div className="text-white/60 text-sm font-medium mb-1">Keine Handwerker fuer dieses Gewerk gefunden</div>
+            <div className="text-white/30 text-xs mb-4">
+              Fuer "{GEWERK_LABELS[ticket.gewerk || "allgemein"] || ticket.gewerk}" sind aktuell keine Handwerker registriert.
+            </div>
+            <button onClick={loadOhneFilter}
+              className="text-xs text-[#00D4AA] border border-[#00D4AA]/20 px-4 py-2 rounded-lg hover:bg-[#00D4AA]/10 transition-colors">
+              Alle Handwerker anzeigen (ohne Gewerk-Filter)
+            </button>
+          </div>
         ) : (
           <div className="flex flex-col gap-2">
             {handwerker.map(hw => {
               const richtpreis = berechneRichtpreis(hw.basis_preis || 50, pf.faktor)
               return (
-                <div
-                  key={hw.id}
-                  onClick={() => toggleHW(hw.id)}
+                <div key={hw.id} onClick={() => toggleHW(hw.id)}
                   className={"flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all " + (
-                    hw.selected
-                      ? "border-[#00D4AA]/40 bg-[#00D4AA]/5"
-                      : "border-white/5 bg-[#0a0a0f] hover:border-white/10"
-                  )}
-                >
+                    hw.selected ? "border-[#00D4AA]/40 bg-[#00D4AA]/5" : "border-white/5 bg-[#0a0a0f] hover:border-white/10"
+                  )}>
                   <div className={"w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors " + (
-                    hw.selected
-                      ? "bg-[#00D4AA] border-[#00D4AA]"
-                      : "border-gray-600 bg-transparent"
+                    hw.selected ? "bg-[#00D4AA] border-[#00D4AA]" : "border-gray-600 bg-transparent"
                   )}>
                     {hw.selected && <span className="text-black text-xs font-bold">ok</span>}
                   </div>
-
                   <Avatar name={hw.name || "?"} size="sm" />
-
                   <div className="flex-1 min-w-0">
                     <div className={"text-sm font-medium " + (hw.selected ? "text-[#00D4AA]" : "text-gray-200")}>
                       {hw.firma || hw.name}
@@ -211,15 +236,10 @@ export default function HandwerkerAuswahlPage() {
                         {[1,2,3,4,5,6,0].map(tag => {
                           const aktiv = hw.verfuegbarkeiten!.some(v => v.wochentag === tag)
                           return (
-                            <div
-                              key={tag}
-                              title={WOCHENTAGE[tag] + (aktiv ? " verfuegbar" : "")}
+                            <div key={tag} title={WOCHENTAGE[tag] + (aktiv ? " verfuegbar" : "")}
                               className={"w-4 h-4 rounded text-[9px] flex items-center justify-center font-medium " + (
-                                aktiv
-                                  ? "bg-[#00D4AA]/20 text-[#00D4AA]"
-                                  : "bg-white/5 text-gray-600"
-                              )}
-                            >
+                                aktiv ? "bg-[#00D4AA]/20 text-[#00D4AA]" : "bg-white/5 text-gray-600"
+                              )}>
                               {WOCHENTAGE[tag]}
                             </div>
                           )
@@ -229,7 +249,6 @@ export default function HandwerkerAuswahlPage() {
                       <div className="text-[10px] text-gray-600 mt-1">Keine Verfuegbarkeit hinterlegt</div>
                     )}
                   </div>
-
                   <div className="text-right flex-shrink-0">
                     <div className={"text-sm font-medium " + (hw.selected ? "text-[#00D4AA]" : "text-gray-300")}>
                       EUR {richtpreis}
@@ -246,11 +265,10 @@ export default function HandwerkerAuswahlPage() {
       {/* Actions */}
       <div className="flex gap-2">
         <Button onClick={sendeEinladungen} disabled={sending || selectedCount === 0}>
-          {sending
-            ? "Wird gesendet..."
-            : bereitsEingeladen
-            ? "Weitere " + selectedCount + " Handwerker einladen"
-            : selectedCount + " Handwerker anfragen"}
+          {sending ? "Wird gesendet..." :
+            bereitsEingeladen
+              ? "Weitere " + selectedCount + " Handwerker einladen"
+              : selectedCount + " Handwerker anfragen"}
         </Button>
         <Button variant="ghost" onClick={() => router.push("/ticket/" + ticketId)}>
           Ueberspringen
