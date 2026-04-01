@@ -161,7 +161,7 @@ export default function KalenderPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Dein Verdienstkalender</h1>
           <p className="text-white/60 text-sm">
-            {activeCount} Zeitfenster aktiv \u2014 mehr Slots = mehr Verdienst
+            {activeCount} Zeitfenster aktiv — mehr Slots = mehr Verdienst
           </p>
         </div>
 
@@ -169,7 +169,7 @@ export default function KalenderPage() {
         <div className="bg-gradient-to-r from-[#00D4AA]/10 to-[#00B4D8]/10 border border-[#00D4AA]/30 rounded-xl p-6 mb-8">
           <div className="flex items-start justify-between gap-6">
             <div className="flex-1">
-              <div className="text-sm text-white/60 mb-2">Geschaetzter Monatsverdienst</div>
+              <div className="text-sm text-white/60 mb-2">Geschätzter Monatsverdienst</div>
               <div className={`text-4xl font-bold mb-2 ${earningsColor}`}>
                 EUR {Math.round(estimatedEarnings).toLocaleString('de-DE')}
               </div>
@@ -177,12 +177,12 @@ export default function KalenderPage() {
                 Bereich: EUR {earningsMin.toLocaleString('de-DE')} - EUR {earningsMax.toLocaleString('de-DE')}
               </div>
               <div className="text-xs text-white/40 mt-2">
-                Basierend auf {activeCount} Zeitfenstern \u00d7 \u00d8 1-2 Auftraege/Slot \u00d7 EUR 200-500
+                Basierend auf {activeCount} Zeitfenstern × Ø 1-2 Aufträge/Slot × EUR 200-500
               </div>
             </div>
             {activeCount === 0 && (
               <div className="text-right text-xs text-red-500/80 bg-red-500/5 px-3 py-2 rounded-lg border border-red-500/20">
-                Keine aktiven Slots<br/>\u2192 Starten!
+                Keine aktiven Slots<br/>→ Starten!
               </div>
             )}
             {activeCount >= 5 && (
@@ -207,7 +207,7 @@ export default function KalenderPage() {
           </div>
           {activeCount < 10 && (
             <p className="text-[10px] text-white/40 mt-2">
-              \ud83d\udca1 Tipp: {10 - activeCount} weitere Slots fuer maximale Sichtbarkeit
+              💡 Tipp: {10 - activeCount} weitere Slots für maximale Sichtbarkeit
             </p>
           )}
         </div>
@@ -287,7 +287,7 @@ export default function KalenderPage() {
                     >
                       {active && (
                         <>
-                          <span className="text-[#00D4AA] text-xs font-bold">\u2713</span>
+                          <span className="text-[#00D4AA] text-xs font-bold">✓</span>
                           <span className="text-[10px] text-[#00D4AA]/70">~EUR {slotEarnings}/Mo</span>
                         </>
                       )}
@@ -303,11 +303,11 @@ export default function KalenderPage() {
         <div className="flex items-center gap-4 mb-20">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-[#00D4AA]/20 border border-[#00D4AA]/40" />
-            <span className="text-[10px] text-white/40">Verfuegbar</span>
+            <span className="text-[10px] text-white/40">Verfügbar</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-white/[0.02] border border-white/5" />
-            <span className="text-[10px] text-white/40">Nicht verfuegbar</span>
+            <span className="text-[10px] text-white/40">Nicht verfügbar</span>
           </div>
         </div>
       </div>
@@ -318,12 +318,12 @@ export default function KalenderPage() {
           <div className="flex items-center gap-3">
             {changedCount > 0 && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                <span className="text-xs font-medium text-yellow-500">{changedCount} Aenderungen</span>
+                <span className="text-xs font-medium text-yellow-500">{changedCount} Änderungen</span>
               </div>
             )}
             {saved && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#00D4AA]/10 border border-[#00D4AA]/20">
-                <span className="text-xs font-medium text-[#00D4AA]">\u2713 Gespeichert!</span>
+                <span className="text-xs font-medium text-[#00D4AA]">✓ Gespeichert!</span>
               </div>
             )}
           </div>
