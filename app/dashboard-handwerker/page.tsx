@@ -2,267 +2,330 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
-import { Ticket, UserProfile, Einladung, GEWERK_LABELS } from "@/types"
-import { Badge, PrioBadge, MetricCard, Card, Button, EmptyState, LoadingSpinner, Toast, SectionHeader } from "@/components/ui"
-import { berechnePreisfaktor } from "@/lib/preisfaktor"
+import { Ticket, UserProfile } from "@/types"
 
-const MODUS_INFO: Record<string, { label: string; color: string; icon: string }> = {
-  sofort: { label: "Sofort", color: "#FF6363", icon: "!" },
-  auktion: { label: "Auktion", color: "#00D4AA", icon: "#" },
-  plan: { label: "Plan", color: "#00B4D8", icon: "~" },
+/* -- KI Match-Score -- */
+function kiMatchScore(ticket: any, profil: UserProfile | null): number {
+  if (!profil) return 50
+  let score = 50
+  const titelLower = (ticket.titel || "").toLowerCase()
+  const gewerkLower = (profil.gewerk || "").toLowerCase()
+  if (gewerkLower && titelLower.includes(gewerkLower.split(",")[0].trim().split(" ")[0])) score += 30
+  if (ticket.prioritaet === "dringend" || ticket.prioritaet === "hoch") score += 10
+  if ((ticket.angebote as any[])?.length < 3) score += 10
+  return Math.min(score, 99)
+}
+
+function kiMatchLabel(score: number): { text: string; color: string } {
+  if (score >= 80) return { text: "Top-Match", color: "#00D4AA" }
+  if (score >= 60) return { text: "Guter Match", color: "#F59E0B" }
+  return { text: "Passend", color: "#64748B" }
+}
+
+function kiGewinnchance(ticket: any): string {
+  const anz = (ticket.angebote as any[])?.length || 0
+  if (anz === 0) return "Sehr hoch - Erstes Angebot!"
+  if (anz < 3) return "Hoch - Wenig Konkurrenz"
+  if (anz < 5) return "Mittel"
+  return "Niedrig - Viele Angebote"
+}
+
+function kiPreisempfehlung(ticket: any): string {
+  const t = (ticket.titel || "").toLowerCase()
+  if (t.includes("heizung") || t.includes("therme")) return "800 - 2.500"
+  if (t.includes("wasser") || t.includes("rohr") || t.includes("leck")) return "300 - 1.200"
+  if (t.includes("elektr") || t.includes("strom") || t.includes("steckdose")) return "150 - 600"
+  if (t.includes("tuer") || t.includes("schloss") || t.includes("fenster")) return "200 - 800"
+  if (t.includes("schimmel") || t.includes("feucht")) return "500 - 2.000"
+  return "250 - 1.000"
+}
+
+/* -- Timer -- */
+function Timer({ end }: { end: string }) {
+  const [secs, setSecs] = useState(0)
+  useEffect(() => {
+    const calc = () => Math.max(0, Math.floor((new Date(end).getTime() - Date.now()) / 1000))
+    setSecs(calc())
+    const id = setInterval(() => setSecs(calc()), 1000)
+    return () => clearInterval(id)
+  }, [end])
+  const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = secs % 60
+  const fmt = (n: number) => String(n).padStart(2, "0")
+  if (secs === 0) return <span className="text-xs text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">Abgelaufen</span>
+  return (
+    <span className="text-xs bg-amber-500/10 text-amber-400 px-2 py-1 rounded-full font-mono">
+      {fmt(h)}:{fmt(m)}:{fmt(s)}
+    </span>
+  )
+}
+
+/* -- Priority Bar -- */
+function PrioBar({ prio }: { prio: string }) {
+  const c = prio === "dringend" ? "#EF4444" : prio === "hoch" ? "#F59E0B" : "#00D4AA"
+  return <div className="w-1 h-full rounded-full absolute left-0 top-0" style={{ backgroundColor: c }} />
 }
 
 export default function HandwerkerDashboard() {
   const router = useRouter()
-  const [einladungen, setEinladungen] = useState<Einladung[]>([])
+  const [auktionen, setAuktionen] = useState<Ticket[]>([])
   const [meineAuftraege, setMeineAuftraege] = useState<Ticket[]>([])
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [toast, setToast] = useState("")
+  const [tab, setTab] = useState<"auktionen" | "auftraege">("auktionen")
 
-  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(""), 3000) }
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push("/login"); return }
 
-  async function load() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push("/login"); return }
-    const [{ data: prof }, { data: einl }, { data: meine }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).single(),
-      supabase.from("einladungen").select("*, ticket:tickets(*, objekte(*))")
-        .eq("handwerker_id", user.id).eq("status", "offen")
-        .order("created_at", { ascending: false }),
-      supabase.from("tickets").select("*")
-        .eq("zugewiesener_hw", user.id)
-        .order("created_at", { ascending: false }),
-    ])
-    setProfile(prof)
-    setEinladungen(einl || [])
-    setMeineAuftraege(meine || [])
-    setLoading(false)
-  }
-
-  useEffect(() => { load() }, [router])
-
-  async function handleAntwort(einladungId: string, ticketId: string, annehmen: boolean, preis?: number, termin?: string, dauer?: string) {
-    const supabase = createClient()
-    if (!annehmen) {
-      await supabase.from("einladungen").update({ status: "abgelehnt" }).eq("id", einladungId)
-      showToast("Anfrage abgelehnt.")
-      await load(); return
+      const [{ data: prof }, { data: offene }, { data: meine }] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", user.id).single(),
+        supabase.from("tickets").select("*, angebote(*)").eq("status", "auktion")
+          .gt("auktion_ende", new Date().toISOString()).order("auktion_ende"),
+        supabase.from("tickets").select("*").eq("zugewiesener_hw", user.id).order("created_at", { ascending: false }),
+      ])
+      setProfile(prof)
+      setAuktionen(offene || [])
+      setMeineAuftraege(meine || [])
+      setLoading(false)
     }
-    if (!preis || preis <= 0) { showToast("Bitte einen gueltigen Preis eingeben."); return }
-    const { error } = await supabase.from("angebote").insert({
-      ticket_id: ticketId, handwerker_id: profile!.id,
-      preis: preis, status: "eingereicht",
-      verfuegbar_ab: termin || null,
-      geschaetzte_dauer: dauer || null,
-    })
-    if (error) { showToast("Fehler: " + error.message); return }
-    await supabase.from("einladungen").update({ status: "angebot" }).eq("id", einladungId)
-    showToast("Angebot eingereicht!")
-    await load()
-  }
+    load()
+  }, [router])
 
-  if (loading) return <LoadingSpinner />
-
-  const erledigteAuftraege = meineAuftraege.filter(t => t.status === "erledigt").length
-  const aktiveAuftraege = meineAuftraege.filter(t => t.status !== "erledigt").length
-
-  return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-extrabold tracking-tight text-white">
-          Hallo, {profile?.firma || profile?.name}
-        </h1>
-        <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
-          {profile?.gewerk && <span className="font-medium text-gray-400">{GEWERK_LABELS[profile.gewerk] || profile.gewerk}</span>}
-          {profile?.gewerk && profile?.bewertung_avg ? <span className="text-gray-600">-</span> : null}
-          {profile?.bewertung_avg ? (
-            <span className="font-semibold text-amber-400">Bewertung {profile.bewertung_avg}</span>
-          ) : (
-            <span className="text-gray-500">Noch keine Bewertungen</span>
-          )}
-        </p>
+  if (loading) return (
+    <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-[#00D4AA]/30 border-t-[#00D4AA] rounded-full animate-spin" />
+        <span className="text-sm text-white/40">Smart-Match wird geladen...</span>
       </div>
-
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-[#12121a] border border-white/[0.06] rounded-2xl p-5">
-          <div className="text-2xl font-bold text-white">{einladungen.length}</div>
-          <div className="text-[11px] text-gray-500 mt-1 uppercase tracking-wider">Neue Anfragen</div>
-          {einladungen.length > 0 && <div className="text-[10px] text-[#FF6363] mt-1 font-medium">Aktion noetig</div>}
-        </div>
-        <div className="bg-[#12121a] border border-white/[0.06] rounded-2xl p-5">
-          <div className="text-2xl font-bold text-white">{aktiveAuftraege}</div>
-          <div className="text-[11px] text-gray-500 mt-1 uppercase tracking-wider">Aktive Auftraege</div>
-        </div>
-        <div className="bg-[#12121a] border border-white/[0.06] rounded-2xl p-5">
-          <div className="text-2xl font-bold text-white">{erledigteAuftraege}</div>
-          <div className="text-[11px] text-gray-500 mt-1 uppercase tracking-wider">Abgeschlossen</div>
-        </div>
-      </div>
-
-      <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Neue Anfragen</h2>
-      {einladungen.length === 0 ? (
-        <EmptyState icon="M" title="Keine neuen Anfragen" desc="Aktuell gibt es keine offenen Einladungen fuer dich." />
-      ) : (
-        <div className="flex flex-col gap-3 mb-8">
-          {einladungen.map(e => (
-            <EinladungCard key={e.id} einladung={e} onAntwort={handleAntwort}
-              onOpen={() => router.push(`/ticket/${e.ticket_id}`)} />
-          ))}
-        </div>
-      )}
-
-      {meineAuftraege.length > 0 && (
-        <>
-          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 mt-8">Meine Auftraege</h2>
-          <div className="flex flex-col gap-2.5">
-            {meineAuftraege.map(t => (
-              <Card key={t.id} className="!p-4 cursor-pointer hover:border-[#00D4AA]/30 transition-colors"
-                onClick={() => router.push(`/ticket/${t.id}`)}>
-                <div className="flex items-center gap-4">
-                  <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                    t.status === "erledigt" ? "bg-[#00D4AA]" : "bg-amber-400"}`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-white truncate">{t.titel}</div>
-                    <div className="text-[11px] text-gray-500 mt-0.5">
-                      {new Date(t.created_at).toLocaleDateString("de")}
-                    </div>
-                  </div>
-                  <Badge status={t.status} />
-                </div>
-              </Card>
-            ))}
-          </div>
-        </>
-      )}
-      {toast && <Toast message={toast} onClose={() => setToast("")} />}
     </div>
   )
-}
 
-function EinladungCard({ einladung, onAntwort, onOpen }: {
-  einladung: Einladung
-  onAntwort: (id: string, ticketId: string, annehmen: boolean, preis?: number, termin?: string, dauer?: string) => void
-  onOpen: () => void
-}) {
-  const [eigenPreis, setEigenPreis] = useState(String(einladung.empfohlener_preis || ""))
-  const [termin, setTermin] = useState("")
-  const [dauer, setDauer] = useState("2-4 Stunden")
-  const [showForm, setShowForm] = useState(false)
-  const ticket = einladung.ticket
-
-  const modus = (ticket as any)?.vergabemodus || "auktion"
-  const modusInfo = MODUS_INFO[modus] || MODUS_INFO.auktion
-
-  const pf = berechnePreisfaktor(
-    (ticket?.prioritaet as "normal" | "hoch" | "dringend") || "normal", 3
-  )
+  const sortedAuktionen = [...auktionen].sort((a, b) => kiMatchScore(b, profile) - kiMatchScore(a, profile))
 
   return (
-    <Card>
-      <div className="flex items-start justify-between gap-4 mb-3">
-        <div className="flex-1 cursor-pointer" onClick={onOpen}>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider"
-              style={{ background: modusInfo.color + "15", color: modusInfo.color }}>
-              {modusInfo.icon} {modusInfo.label}
-            </span>
-            {ticket && <PrioBadge prio={ticket.prioritaet} />}
-          </div>
-          <div className="text-sm font-bold text-white">{ticket?.titel}</div>
-          <div className="text-[11px] text-gray-500 mt-1 flex items-center gap-1.5 flex-wrap">
-            {ticket?.wohnung && <span>{ticket.wohnung}</span>}
-            {ticket?.gewerk && (
-              <><span className="text-gray-600">-</span>
-              <span className="font-medium text-gray-400">{GEWERK_LABELS[ticket.gewerk] || ticket.gewerk}</span></>
-            )}
-            <span className="text-gray-600">-</span>
-            <span>{new Date(einladung.created_at).toLocaleDateString("de")}</span>
-          </div>
-          {ticket?.beschreibung && (
-            <p className="text-[11px] text-gray-500 mt-2 line-clamp-2 leading-relaxed">{ticket.beschreibung}</p>
-          )}
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#0a0a0f] text-white">
+      <div className="max-w-4xl mx-auto p-6">
 
-      {/* Preis-Info */}
-      <div className="rounded-xl px-4 py-3 mb-4 border border-white/[0.06] bg-white/[0.02]">
-        <div className="flex items-center justify-between">
+        {/* Header + Profile Summary */}
+        <div className="flex items-start justify-between mb-8">
           <div>
-            <span className="text-[11px] font-semibold text-[#00D4AA] uppercase tracking-wider">Empfohlener Preis</span>
-            {pf.faktor > 1 && (
-              <span className={`ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded ${pf.color}`}>
-                {pf.label} ({pf.faktor}x)
+            <h1 className="text-2xl font-semibold">
+              {profile?.firma || profile?.name || "Handwerker"}
+            </h1>
+            <p className="text-white/40 text-sm mt-1">
+              {profile?.gewerk || "Gewerk nicht hinterlegt"}
+              {profile?.bewertung_avg ? (" | " + profile.bewertung_avg + "/5 Sterne") : ""}
+            </p>
+          </div>
+          <button onClick={() => router.push("/dashboard-handwerker/profil")}
+            className="text-xs text-[#00D4AA] border border-[#00D4AA]/20 px-3 py-1.5 rounded-lg hover:bg-[#00D4AA]/10 transition-colors">
+            Profil bearbeiten
+          </button>
+        </div>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-4 gap-3 mb-8">
+          {[
+            { label: "Match-Score", value: profile?.bewertung_avg ? Math.round(Number(profile.bewertung_avg) * 18) + "%" : "72%", color: "#00D4AA" },
+            { label: "Offene Auktionen", value: String(auktionen.length), color: "#00B4D8" },
+            { label: "Aktive Auftraege", value: String(meineAuftraege.filter(t => t.status !== "erledigt").length), color: "#F59E0B" },
+            { label: "Abgeschlossen", value: String(meineAuftraege.filter(t => t.status === "erledigt").length), color: "#8B5CF6" },
+          ].map((kpi, i) => (
+            <div key={i} className="bg-[#12121a] border border-white/5 rounded-xl p-4">
+              <div className="text-xs text-white/40 mb-1">{kpi.label}</div>
+              <div className="text-2xl font-semibold" style={{ color: kpi.color }}>{kpi.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* KI Smart-Match Banner */}
+        {auktionen.length > 0 && (
+          <div className="bg-gradient-to-r from-[#00D4AA]/10 to-[#00B4D8]/10 border border-[#00D4AA]/20 rounded-xl p-4 mb-6 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#00D4AA]/20 flex items-center justify-center flex-shrink-0">
+              <span className="text-lg">*</span>
+            </div>
+            <div className="flex-1">
+              <div className="text-sm font-medium text-[#00D4AA]">KI Smart-Match aktiv</div>
+              <div className="text-xs text-white/50 mt-0.5">
+                {sortedAuktionen.filter(t => kiMatchScore(t, profile) >= 70).length} Ausschreibungen passen besonders gut zu deinem Profil.
+                Sortiert nach Match-Score fuer maximale Gewinnchance.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab Navigation */}
+        <div className="flex gap-1 mb-6 bg-[#12121a] rounded-xl p-1 border border-white/5">
+          {[
+            { key: "auktionen" as const, label: "Ausschreibungen", count: auktionen.length },
+            { key: "auftraege" as const, label: "Meine Auftraege", count: meineAuftraege.length },
+          ].map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              className={"flex-1 py-2.5 rounded-lg text-sm font-medium transition-all " +
+                (tab === t.key
+                  ? "bg-[#00D4AA]/15 text-[#00D4AA]"
+                  : "text-white/40 hover:text-white/60")}>
+              {t.label}
+              <span className={"ml-2 text-xs px-1.5 py-0.5 rounded-full " +
+                (tab === t.key ? "bg-[#00D4AA]/20" : "bg-white/5")}>
+                {t.count}
               </span>
-            )}
-          </div>
-          <span className="text-lg font-extrabold text-white tabular-nums">
-            {einladung.empfohlener_preis} EUR
-          </span>
-        </div>
-      </div>
-
-      {!showForm ? (
-        <div className="flex gap-2">
-          <Button size="sm" onClick={() => setShowForm(true)}>
-            Angebot abgeben
-          </Button>
-          <Button size="sm" variant="danger"
-            onClick={() => onAntwort(einladung.id, einladung.ticket_id, false)}>
-            Ablehnen
-          </Button>
-        </div>
-      ) : (
-        <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-4">
-          <h4 className="text-xs font-bold text-white mb-3 uppercase tracking-wider">Mein Angebot</h4>
-          <div className="grid grid-cols-3 gap-3 mb-3">
-            <div>
-              <label className="text-[11px] font-semibold text-gray-500 mb-1.5 block">Preis (EUR)</label>
-              <input type="number" min="1" step="0.01" value={eigenPreis}
-                onChange={e => setEigenPreis(e.target.value)}
-                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-[#0a0a0f] text-white focus:outline-none focus:border-[#00D4AA]/40"
-                placeholder="z.B. 420" />
-            </div>
-            <div>
-              <label className="text-[11px] font-semibold text-gray-500 mb-1.5 block">Fruehester Termin</label>
-              <input type="date" value={termin} onChange={e => setTermin(e.target.value)}
-                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-[#0a0a0f] text-white focus:outline-none focus:border-[#00D4AA]/40" />
-            </div>
-            <div>
-              <label className="text-[11px] font-semibold text-gray-500 mb-1.5 block">Geschaetzte Dauer</label>
-              <select value={dauer} onChange={e => setDauer(e.target.value)}
-                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-[#0a0a0f] text-white focus:outline-none focus:border-[#00D4AA]/40">
-                <option value="< 1 Stunde">Unter 1 Stunde</option>
-                <option value="1-2 Stunden">1-2 Stunden</option>
-                <option value="2-4 Stunden">2-4 Stunden</option>
-                <option value="Halber Tag">Halber Tag</option>
-                <option value="Ganzer Tag">Ganzer Tag</option>
-                <option value="Mehrere Tage">Mehrere Tage</option>
-              </select>
-            </div>
-          </div>
-
-          {termin && (
-            <div className="text-[11px] text-gray-500 mb-3 p-2 bg-white/[0.02] rounded-lg">
-              Ihr Angebot: <span className="text-white font-semibold">{eigenPreis} EUR</span> -
-              Termin ab <span className="text-white font-semibold">{new Date(termin).toLocaleDateString("de")}</span> -
-              Dauer ca. <span className="text-white font-semibold">{dauer}</span>
-            </div>
-          )}
-
-          <div className="flex gap-2">
-            <Button size="sm"
-              onClick={() => onAntwort(einladung.id, einladung.ticket_id, true, Number(eigenPreis), termin, dauer)}>
-              Angebot senden
-            </Button>
-            <button onClick={() => setShowForm(false)}
-              className="text-gray-500 hover:text-white px-3 py-1.5 text-sm transition-colors">
-              Abbrechen
             </button>
-          </div>
+          ))}
         </div>
-      )}
-    </Card>
+
+        {/* AUKTIONEN TAB */}
+        {tab === "auktionen" && (
+          <>
+            {sortedAuktionen.length === 0 ? (
+              <div className="bg-[#12121a] border border-white/5 rounded-xl p-12 text-center">
+                <div className="text-3xl mb-3 opacity-50">[~]</div>
+                <div className="text-white/50 text-sm">Aktuell keine offenen Ausschreibungen</div>
+                <div className="text-white/30 text-xs mt-1">Neue Auftraege erscheinen hier automatisch</div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {sortedAuktionen.map((t, idx) => {
+                  const score = kiMatchScore(t, profile)
+                  const match = kiMatchLabel(score)
+                  const angeboteCount = (t.angebote as any[])?.length || 0
+
+                  return (
+                    <div key={t.id}
+                      onClick={() => router.push("/ticket/" + t.id)}
+                      className="bg-[#12121a] border border-white/5 rounded-xl p-4 cursor-pointer hover:border-[#00D4AA]/30 transition-all relative overflow-hidden group">
+
+                      <PrioBar prio={t.prioritaet || "normal"} />
+
+                      <div className="pl-4">
+                        {/* Top row: Match badge + Timer */}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {idx === 0 && score >= 70 && (
+                              <span className="text-[10px] bg-[#00D4AA] text-black font-bold px-2 py-0.5 rounded-full">
+                                #1 MATCH
+                              </span>
+                            )}
+                            <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                              style={{ backgroundColor: match.color + "15", color: match.color }}>
+                              {score}% {match.text}
+                            </span>
+                            <span className="text-[10px] text-white/30 bg-white/5 px-2 py-0.5 rounded-full">
+                              {angeboteCount} Angebot{angeboteCount !== 1 ? "e" : ""}
+                            </span>
+                          </div>
+                          {t.auktion_ende && <Timer end={t.auktion_ende} />}
+                        </div>
+
+                        {/* Title + Location */}
+                        <div className="text-sm font-medium mb-1 group-hover:text-[#00D4AA] transition-colors">
+                          {t.titel}
+                        </div>
+                        <div className="text-xs text-white/30 mb-3">
+                          {t.wohnung || "Keine Adresse"}
+                          {t.raum ? (" | " + t.raum) : ""}
+                        </div>
+
+                        {/* KI Insights Row */}
+                        <div className="flex flex-wrap gap-2">
+                          <div className="text-[10px] bg-[#00D4AA]/10 text-[#00D4AA] px-2 py-1 rounded-lg">
+                            Preisrahmen: {kiPreisempfehlung(t)} EUR
+                          </div>
+                          <div className="text-[10px] bg-[#00B4D8]/10 text-[#00B4D8] px-2 py-1 rounded-lg">
+                            Chance: {kiGewinnchance(t)}
+                          </div>
+                          {t.prioritaet === "dringend" && (
+                            <div className="text-[10px] bg-red-500/10 text-red-400 px-2 py-1 rounded-lg">
+                              Eilauftrag - Schnelle Reaktion erwartet
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* AUFTRAEGE TAB */}
+        {tab === "auftraege" && (
+          <>
+            {meineAuftraege.length === 0 ? (
+              <div className="bg-[#12121a] border border-white/5 rounded-xl p-12 text-center">
+                <div className="text-3xl mb-3 opacity-50">[!]</div>
+                <div className="text-white/50 text-sm">Noch keine Auftraege erhalten</div>
+                <div className="text-white/30 text-xs mt-1">Biete auf Ausschreibungen um Auftraege zu erhalten</div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {/* Active */}
+                {meineAuftraege.filter(t => t.status !== "erledigt").length > 0 && (
+                  <>
+                    <div className="text-xs text-white/30 uppercase tracking-wider mb-1">Aktiv</div>
+                    {meineAuftraege.filter(t => t.status !== "erledigt").map(t => {
+                      const steps = ["vergeben", "in_arbeit", "erledigt"]
+                      const currentStep = steps.indexOf(t.status) >= 0 ? steps.indexOf(t.status) : 0
+
+                      return (
+                        <div key={t.id}
+                          onClick={() => router.push("/ticket/" + t.id)}
+                          className="bg-[#12121a] border border-white/5 rounded-xl p-4 cursor-pointer hover:border-[#00D4AA]/30 transition-all">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-sm font-medium">{t.titel}</div>
+                            <span className={"text-[10px] px-2 py-0.5 rounded-full font-medium " +
+                              (t.status === "in_arbeit"
+                                ? "bg-amber-500/15 text-amber-400"
+                                : "bg-[#00D4AA]/15 text-[#00D4AA]")}>
+                              {t.status === "in_arbeit" ? "In Arbeit" : t.status === "vergeben" ? "Vergeben" : t.status}
+                            </span>
+                          </div>
+                          <div className="text-xs text-white/30 mb-3">
+                            {t.wohnung || ""} | Erstellt: {new Date(t.created_at).toLocaleDateString("de")}
+                          </div>
+                          {/* Mini Progress */}
+                          <div className="flex gap-1">
+                            {steps.map((s, i) => (
+                              <div key={s} className={"h-1 flex-1 rounded-full " +
+                                (i <= currentStep ? "bg-[#00D4AA]" : "bg-white/10")} />
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </>
+                )}
+
+                {/* Completed */}
+                {meineAuftraege.filter(t => t.status === "erledigt").length > 0 && (
+                  <>
+                    <div className="text-xs text-white/30 uppercase tracking-wider mt-4 mb-1">Abgeschlossen</div>
+                    {meineAuftraege.filter(t => t.status === "erledigt").map(t => (
+                      <div key={t.id}
+                        onClick={() => router.push("/ticket/" + t.id)}
+                        className="bg-[#12121a] border border-white/5 rounded-xl p-4 cursor-pointer hover:border-white/10 transition-all opacity-60">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm">{t.titel}</div>
+                          <span className="text-[10px] bg-[#8B5CF6]/15 text-[#8B5CF6] px-2 py-0.5 rounded-full">
+                            Erledigt
+                          </span>
+                        </div>
+                        <div className="text-xs text-white/30 mt-1">
+                          {t.wohnung || ""} | {new Date(t.created_at).toLocaleDateString("de")}
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+      </div>
+    </div>
   )
 }
