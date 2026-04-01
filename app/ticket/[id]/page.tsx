@@ -42,14 +42,17 @@ export default function TicketDetail() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
+
     const [{ data: profile }, { data: t }, { data: msgs }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
       supabase.from("tickets").select("*, objekte(*), angebote(*, handwerker:profiles(*))").eq("id", id).single(),
       supabase.from("nachrichten").select("*, absender:profiles(*)").eq("ticket_id", id).order("created_at"),
     ])
+
     setCurrentUser(profile)
     setTicket(t)
     setNachrichten(msgs || [])
+
     const { data: einl } = await supabase.from("einladungen").select("*, handwerker:handwerker_id(id,name,firma,gewerk,bewertung_avg)").eq("ticket_id", id)
     setEinladungen(einl || [])
     setLoading(false)
@@ -156,9 +159,9 @@ export default function TicketDetail() {
                         </div>
                       </div>
                       <span className={"text-xs px-2 py-0.5 rounded-full " + (
-                        e.status === "angebot" ? "bg-[#00D4AA]/10 text-[#00D4AA]"
-                        : e.status === "abgelehnt" ? "bg-red-500/10 text-red-400"
-                        : "bg-amber-500/10 text-amber-400"
+                        e.status === "angebot" ? "bg-[#00D4AA]/10 text-[#00D4AA]" :
+                        e.status === "abgelehnt" ? "bg-red-500/10 text-red-400" :
+                        "bg-amber-500/10 text-amber-400"
                       )}>
                         {e.status === "angebot" ? "Angebot erhalten" : e.status === "abgelehnt" ? "Abgelehnt" : "Eingeladen"}
                       </span>
@@ -175,10 +178,32 @@ export default function TicketDetail() {
             <Button size="sm" onClick={() => setShowKosten(true)}>Abschliessen</Button>
           )}
         </div>
+
         {ticket.beschreibung && (
           <p className="text-sm text-gray-400 leading-relaxed">{ticket.beschreibung}</p>
         )}
       </Card>
+
+      {/* Auktions-Info */}
+      {ticket.status === "auktion" && (
+        <Card className="mb-4 bg-gradient-to-r from-[#00D4AA]/5 to-[#00B4D8]/5 border border-[#00D4AA]/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#00D4AA]/20 flex items-center justify-center">
+                <span className="text-sm font-bold text-[#00D4AA]">AI</span>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-[#00D4AA]">Smart-Auktion laeuft</div>
+                <div className="text-xs text-gray-400 mt-0.5">
+                  {sortiertAngebote.length} Angebot{sortiertAngebote.length !== 1 ? "e" : ""} eingegangen
+                  {ticket.auktion_ende && (" -- Endet " + new Date(ticket.auktion_ende).toLocaleDateString("de", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }))}
+                </div>
+              </div>
+            </div>
+            {ticket.auktion_ende && <Timer end={ticket.auktion_ende} />}
+          </div>
+        </Card>
+      )}
 
       {/* Kosten-Eingabe beim Abschliessen */}
       {showKosten && (
@@ -193,71 +218,36 @@ export default function TicketDetail() {
         </Card>
       )}
 
-      {/* Angebote (Verwalter-Ansicht) mit Value-Score */}
+      {/* Angebote Section */}
       {isVerwalter && (
         <Card className="mb-4 bg-[#12121a] border border-white/5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-medium text-gray-200">
-              Angebote {sortiertAngebote.length > 0 && ("(" + sortiertAngebote.length + ")")}
-            </h2>
-            {sortiertAngebote.length > 1 && (
-              <span className="text-[10px] text-gray-500">Sortiert nach Value-Score</span>
-            )}
-          </div>
+          <h2 className="text-sm font-medium text-gray-200 mb-4">Eingegangene Angebote ({sortiertAngebote.length})</h2>
           {sortiertAngebote.length === 0 ? (
-            <p className="text-xs text-gray-500 py-3 text-center">Noch keine Angebote eingegangen.</p>
+            <p className="text-xs text-gray-500">Noch keine Angebote eingegangen.</p>
           ) : (
-            <div className="flex flex-col gap-2">
-              {sortiertAngebote.map((a, i) => (
-                <div key={a.id} className={"flex items-center justify-between p-3 rounded-lg border " + (
-                  i === 0 ? "border-[#00D4AA]/30 bg-[#00D4AA]/5" : "border-white/5 bg-[#0a0a0f]"
-                )}>
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <Avatar name={a.handwerker?.name || "?"} size="sm" />
-                      {i === 0 && (
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#00D4AA] rounded-full flex items-center justify-center">
-                          <span className="text-[8px] text-black font-bold">1</span>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <div className={"text-sm font-medium " + (i === 0 ? "text-[#00D4AA]" : "text-gray-200")}>
-                        {a.handwerker?.firma || a.handwerker?.name}
+            <div className="space-y-3">
+              {sortiertAngebote.map(a => (
+                <div key={a.id} className="flex items-start justify-between p-3 bg-[#0a0a0f] rounded-lg border border-white/5">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Avatar name={(a.handwerker as any)?.name || "?"} size="sm" />
+                      <div>
+                        <div className="text-sm font-medium text-white">{(a.handwerker as any)?.name}</div>
+                        <div className="text-xs text-gray-500">{(a.handwerker as any)?.firma}</div>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {a.handwerker?.bewertung_avg ? ("* " + a.handwerker.bewertung_avg + " -- ") : ""}
-                        {a.fruehester_termin ? new Date(a.fruehester_termin).toLocaleDateString("de") : "Termin flexibel"}
-                        {(a as any).geschaetzte_dauer && (" -- " + (a as any).geschaetzte_dauer)}
+                      <div className="ml-auto flex items-center gap-2">
+                        <span className="text-sm font-semibold text-[#00D4AA]">{a.preis} EUR</span>
+                        <span className="text-xs bg-[#00D4AA]/10 text-[#00D4AA] px-2 py-1 rounded">Score: {a.valueScore}%</span>
                       </div>
-                      {a.nachricht && <div className="text-xs text-gray-500 mt-0.5 italic">{a.nachricht}</div>}
                     </div>
+                    {a.fruehester_termin && <div className="text-xs text-gray-400">Ab: {new Date(a.fruehester_termin).toLocaleDateString("de")}</div>}
+                    {a.nachricht && <div className="text-xs text-gray-400 mt-1 italic">"{a.nachricht}"</div>}
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className={"text-base font-medium " + (i === 0 ? "text-[#00D4AA]" : "text-gray-200")}>
-                      EUR {a.preis.toLocaleString("de")}
-                    </div>
-                    {/* Value-Score Bar */}
-                    <div className="flex items-center gap-1.5 mt-1 justify-end">
-                      <div className="w-16 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div
-                          className={"h-full rounded-full " + (a.valueScore >= 70 ? "bg-[#00D4AA]" : a.valueScore >= 40 ? "bg-amber-400" : "bg-red-400")}
-                          style={{ width: a.valueScore + "%" }}
-                        />
-                      </div>
-                      <span className={"text-[10px] font-medium " + (a.valueScore >= 70 ? "text-[#00D4AA]" : a.valueScore >= 40 ? "text-amber-400" : "text-red-400")}>
-                        {a.valueScore}
-                      </span>
-                    </div>
-                    {ticket.status !== "erledigt" && ticket.status !== "in_bearbeitung" && (
-                      <Button size="sm" className="mt-1" onClick={() => vergeben(a.id, a.handwerker_id)}>
-                        Vergeben
-                      </Button>
-                    )}
-                    {a.status === "angenommen" && (
-                      <span className="text-xs text-[#00D4AA] font-medium">Beauftragt</span>
-                    )}
-                  </div>
+                  {a.status === "eingereicht" && (
+                    <Button size="sm" onClick={() => vergeben(a.id, a.handwerker_id)}>Vergeben</Button>
+                  )}
+                  {a.status === "angenommen" && <span className="text-xs text-[#00D4AA] font-medium">Angenommen</span>}
+                  {a.status === "abgelehnt" && <span className="text-xs text-gray-500 font-medium">Abgelehnt</span>}
                 </div>
               ))}
             </div>
@@ -265,62 +255,39 @@ export default function TicketDetail() {
         </Card>
       )}
 
-      {/* Angebot abgeben (Handwerker) */}
-      {isHandwerker && ticket.status === "auktion" && !hatBereitsAngebot && (
+      {/* Handwerker Angebot Section */}
+      {isHandwerker && !hatBereitsAngebot && ticket.status === "auktion" && (
         <Card className="mb-4 bg-[#12121a] border border-white/5">
-          <h2 className="text-sm font-medium text-gray-200 mb-3">Angebot einreichen</h2>
-          <div className="flex flex-col gap-3">
-            <div className="grid grid-cols-3 gap-3">
-              <Input label="Preis in EUR" type="number" placeholder="380" value={angebotForm.preis} onChange={e => setAngebotForm(f => ({ ...f, preis: e.target.value }))} />
-              <Input label="Fruehester Termin" type="date" value={angebotForm.termin} onChange={e => setAngebotForm(f => ({ ...f, termin: e.target.value }))} />
-              <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Geschaetzte Dauer</label>
-                <select
-                  value={angebotForm.dauer}
-                  onChange={e => setAngebotForm(f => ({ ...f, dauer: e.target.value }))}
-                  className="w-full px-3 py-2 bg-[#0a0a0f] border border-white/10 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-[#00D4AA]"
-                >
-                  <option value="">Auswaehlen</option>
-                  <option value="1-2 Std">1-2 Std</option>
-                  <option value="2-4 Std">2-4 Std</option>
-                  <option value="4-8 Std">4-8 Std</option>
-                  <option value="1-2 Tage">1-2 Tage</option>
-                  <option value="3-5 Tage">3-5 Tage</option>
-                  <option value="1+ Woche">1+ Woche</option>
-                </select>
-              </div>
-            </div>
-            <Input label="Kurze Nachricht (optional)" placeholder="z.B. Spezialist fuer Gasheizungen" value={angebotForm.nachricht} onChange={e => setAngebotForm(f => ({ ...f, nachricht: e.target.value }))} />
-            <Button onClick={submitAngebot} disabled={submittingBid || !angebotForm.preis}>
-              {submittingBid ? "Wird eingereicht..." : "Angebot abgeben"}
-            </Button>
+          <h2 className="text-sm font-medium text-gray-200 mb-3">Dein Angebot</h2>
+          <div className="space-y-3">
+            <Input label="Preis (EUR)" type="number" placeholder="z.B. 450" value={angebotForm.preis} onChange={e => setAngebotForm({ ...angebotForm, preis: e.target.value })} />
+            <Input label="Fruehester Termin" type="date" value={angebotForm.termin} onChange={e => setAngebotForm({ ...angebotForm, termin: e.target.value })} />
+            <Input label="Geschaetzte Dauer (Tage)" type="number" placeholder="z.B. 2" value={angebotForm.dauer} onChange={e => setAngebotForm({ ...angebotForm, dauer: e.target.value })} />
+            <Input label="Nachricht (Optional)" type="text" placeholder="z.B. Material inklusive" value={angebotForm.nachricht} onChange={e => setAngebotForm({ ...angebotForm, nachricht: e.target.value })} />
+            <Button onClick={submitAngebot} disabled={submittingBid}>{submittingBid ? "Wird eingereicht..." : "Angebot einreichen"}</Button>
           </div>
         </Card>
       )}
 
-      {isHandwerker && hatBereitsAngebot && (
-        <Card className="mb-4 bg-[#12121a] border border-white/5">
-          <div className="text-center py-3">
-            <div className="text-[#00D4AA] font-medium text-sm mb-1">Angebot eingereicht</div>
-            <div className="text-xs text-gray-500">Du wirst benachrichtigt wenn du ausgewaehlt wirst.</div>
-          </div>
-        </Card>
-      )}
-
-      {/* Chat */}
+      {/* Chat Section */}
       <Card className="bg-[#12121a] border border-white/5">
-        <h2 className="text-sm font-medium text-gray-200 mb-3">Chat</h2>
-        <div ref={chatRef} className="flex flex-col gap-2 max-h-64 overflow-y-auto mb-3 pr-1">
+        <h2 className="text-sm font-medium text-gray-200 mb-3">Nachrichten</h2>
+        <div ref={chatRef} className="bg-[#0a0a0f] rounded-lg p-4 h-64 overflow-y-auto mb-3 flex flex-col gap-3">
           {nachrichten.length === 0 ? (
-            <p className="text-xs text-gray-500 text-center py-4">Noch keine Nachrichten. Starte das Gespraech.</p>
+            <div className="text-xs text-gray-500 text-center py-8">Noch keine Nachrichten</div>
           ) : nachrichten.map(m => {
             const isMe = m.absender_id === currentUser?.id
+            const zeit = new Date(m.created_at).toLocaleTimeString("de", { hour: "2-digit", minute: "2-digit" })
+            const datum = new Date(m.created_at).toLocaleDateString("de", { day: "2-digit", month: "2-digit" })
             return (
               <div key={m.id} className={"flex " + (isMe ? "justify-end" : "justify-start")}>
                 <div className={"max-w-xs " + (isMe ? "" : "flex gap-2 items-end")}>
                   {!isMe && <Avatar name={m.absender?.name || "?"} size="sm" />}
                   <div>
-                    {!isMe && <div className="text-xs text-gray-500 mb-1">{m.absender?.name}</div>}
+                    <div className={"text-[10px] mb-0.5 flex items-center gap-1.5 " + (isMe ? "justify-end" : "")}>
+                      <span className="font-medium text-gray-400">{isMe ? "Du" : (m.absender?.name || "Unbekannt")}</span>
+                      <span className="text-gray-600">{datum} {zeit}</span>
+                    </div>
                     <div className={"text-sm px-3 py-2 rounded-xl leading-relaxed " + (
                       isMe ? "bg-[#00D4AA] text-black" : "bg-white/5 text-gray-200"
                     )}>
@@ -333,16 +300,8 @@ export default function TicketDetail() {
           })}
         </div>
         <div className="flex gap-2">
-          <input
-            value={chatText}
-            onChange={e => setChatText(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendChat()}
-            placeholder="Nachricht schreiben..."
-            className="flex-1 px-3 py-2 bg-[#0a0a0f] border border-white/10 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#00D4AA]"
-          />
-          <Button onClick={sendChat} disabled={sending || !chatText.trim()} size="sm">
-            Senden
-          </Button>
+          <Input placeholder="Nachricht..." value={chatText} onChange={e => setChatText(e.target.value)} onKeyPress={e => e.key === "Enter" && sendChat()} />
+          <Button onClick={sendChat} disabled={sending}>{sending ? "..." : "Senden"}</Button>
         </div>
       </Card>
     </div>
