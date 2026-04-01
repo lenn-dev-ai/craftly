@@ -156,10 +156,10 @@ export default function KalenderPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white pb-24">
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6">
         {/* Profit-Focused Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Dein Verdienstkalender</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Dein Verdienstkalender</h1>
           <p className="text-white/60 text-sm">
             {activeCount} Zeitfenster aktiv — mehr Slots = mehr Verdienst
           </p>
@@ -167,10 +167,10 @@ export default function KalenderPage() {
 
         {/* Earnings Forecast */}
         <div className="bg-gradient-to-r from-[#00D4AA]/10 to-[#00B4D8]/10 border border-[#00D4AA]/30 rounded-xl p-6 mb-8">
-          <div className="flex items-start justify-between gap-6">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-6">
             <div className="flex-1">
               <div className="text-sm text-white/60 mb-2">Geschätzter Monatsverdienst</div>
-              <div className={`text-4xl font-bold mb-2 ${earningsColor}`}>
+              <div className={`text-2xl sm:text-4xl font-bold mb-2 ${earningsColor}`}>
                 EUR {Math.round(estimatedEarnings).toLocaleString('de-DE')}
               </div>
               <div className="text-xs text-white/50">
@@ -251,7 +251,7 @@ export default function KalenderPage() {
         {/* Calendar Grid */}
         <div className="bg-[#12121a] border border-white/5 rounded-xl overflow-hidden mb-8">
           {/* Header Row */}
-          <div className="grid grid-cols-8 border-b border-white/5">
+          <div className="grid grid-cols-4 sm:grid-cols-8 border-b border-white/5">
             <div className="p-3" />
             {TAGE.map(tag => (
               <div key={tag.key} className="p-3 text-center">
@@ -262,7 +262,7 @@ export default function KalenderPage() {
 
           {/* Slot Rows */}
           {SLOTS.map(slot => (
-            <div key={slot.von} className="grid grid-cols-8 border-b border-white/5 last:border-0">
+            <div key={slot.von} className="grid grid-cols-4 sm:grid-cols-8 border-b border-white/5 last:border-0">
               <div className="p-3 flex flex-col justify-center">
                 <div className="text-xs font-medium text-white/50">{slot.label}</div>
                 <div className="text-[10px] text-white/25">{slot.sub}</div>
@@ -314,7 +314,7 @@ export default function KalenderPage() {
 
       {/* Sticky Save Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/95 to-[#0a0a0f]/80 border-t border-white/5 backdrop-blur-md">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {changedCount > 0 && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
