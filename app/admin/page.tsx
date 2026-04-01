@@ -1,26 +1,40 @@
 "use client"
-
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
-import { Button, Card } from "@/components/ui"
-import { Rolle } from "@/types"
 
-const rollen: { rolle: Rolle; label: string; icon: string; desc: string; gradient: string; href: string }[] = [
+const rollen = [
   {
-    rolle: "verwalter", label: "Hausverwaltung", icon: "🏢",
+    rolle: "admin",
+    label: "Admin Dashboard",
+    icon: "[A]",
+    desc: "Nutzer verwalten, Rollen aendern, Plattform-Einstellungen, Statistiken",
+    color: "#8B5CF6",
+    href: "/dashboard-admin",
+  },
+  {
+    rolle: "verwalter",
+    label: "Hausverwaltung",
+    icon: "[H]",
     desc: "Tickets erstellen, Handwerker per Auktion beauftragen, Reporting einsehen",
-    gradient: "from-emerald-500 to-teal-600", href: "/dashboard-verwalter"
+    color: "#00D4AA",
+    href: "/dashboard-verwalter",
   },
   {
-    rolle: "handwerker", label: "Handwerker", icon: "🛠️",
-    desc: "Aufträge annehmen, Angebote abgeben, Verfügbarkeit verwalten",
-    gradient: "from-blue-500 to-indigo-600", href: "/dashboard-handwerker"
+    rolle: "handwerker",
+    label: "Handwerker",
+    icon: "[W]",
+    desc: "Auftraege annehmen, Angebote abgeben, Verfuegbarkeit verwalten",
+    color: "#00B4D8",
+    href: "/dashboard-handwerker",
   },
   {
-    rolle: "mieter", label: "Mieter", icon: "🏠",
-    desc: "Schäden melden, Ticket-Status verfolgen, Bewertungen abgeben",
-    gradient: "from-amber-500 to-orange-600", href: "/dashboard-mieter"
+    rolle: "mieter",
+    label: "Mieter",
+    icon: "[M]",
+    desc: "Schaeden melden, Ticket-Status verfolgen, Bewertungen abgeben",
+    color: "#F59E0B",
+    href: "/dashboard-mieter",
   },
 ]
 
@@ -34,54 +48,68 @@ export default function AdminPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push("/login"); return }
       const { data: profile } = await supabase.from("profiles").select("rolle, name").eq("id", user.id).single()
-      if (profile?.rolle !== 'admin') { router.push('/login'); return }
+      if (profile?.rolle !== "admin") { router.push("/login"); return }
       setUserName(profile.name || user.email || "")
     }
     load()
   }, [router])
 
   return (
-    <div className="min-h-screen bg-[var(--surface-2)]">
+    <div className="min-h-screen bg-[#0a0a0f] text-white">
+
       {/* Header */}
-      <div className="bg-white border-b border-[var(--border)] px-6 py-4 shadow-[var(--shadow-sm)]">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">          <div className="flex items-center gap-3">
-            <div className="logo text-2xl tracking-tight">Craft<span className="text-[var(--green)]">ly</span></div>
-            <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest bg-[var(--surface-3)] px-2.5 py-1 rounded-full">Admin</span>
+      <div className="border-b border-white/5 px-6 py-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="text-2xl font-bold tracking-tight">Craft<span className="text-[#00D4AA]">ly</span></div>
+            <span className="text-[10px] font-bold text-[#8B5CF6] uppercase tracking-widest bg-[#8B5CF6]/15 px-2.5 py-1 rounded-full">Admin</span>
           </div>
-          <div className="text-sm font-medium text-[var(--text-secondary)]">{userName}</div>
+          <div className="text-sm text-white/40">{userName}</div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto p-8 animate-fade-in">
+      <div className="max-w-5xl mx-auto p-8">
         <div className="mb-10">
-          <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text)]">Admin-Panel</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1.5 max-w-lg">
-            Wähle ein Dashboard, um es zu testen. Du bleibst als Admin eingeloggt und kannst jederzeit über den Button unten rechts hierher zurückkehren.
+          <h1 className="text-2xl font-semibold">Admin-Panel</h1>
+          <p className="text-sm text-white/40 mt-1.5 max-w-lg">
+            Waehle ein Dashboard, um es zu testen. Du bleibst als Admin eingeloggt und
+            kannst jederzeit ueber den Button unten rechts hierher zurueckkehren.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 stagger">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {rollen.map(r => (
             <div key={r.rolle}
               onClick={() => router.push(r.href)}
-              className="group cursor-pointer bg-white rounded-2xl border border-[var(--border)] shadow-[var(--shadow-sm)] overflow-hidden card-hover">
+              className="group cursor-pointer bg-[#12121a] rounded-xl border border-white/5 overflow-hidden hover:border-white/20 transition-all">
+
               {/* Colored top bar */}
-              <div className={`h-1.5 bg-gradient-to-r ${r.gradient}`} />
-              <div className="p-6 text-center">
-                <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">{r.icon}</div>
-                <div className="text-base font-bold text-[var(--text)] mb-2">{r.label}</div>
-                <div className="text-[12px] text-[var(--text-muted)] mb-5 leading-relaxed px-2">{r.desc}</div>
-                <Button variant="secondary" size="sm" onClick={() => router.push(r.href)}>
-                  Dashboard öffnen &rarr;
-                </Button>
+              <div className="h-1" style={{ backgroundColor: r.color }} />
+
+              <div className="p-5 text-center">
+                <div className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center text-lg font-bold"
+                  style={{ backgroundColor: r.color + "20", color: r.color }}>
+                  {r.label.charAt(0)}
+                </div>
+                <div className="text-sm font-semibold mb-2">{r.label}</div>
+                <div className="text-[11px] text-white/40 mb-4 leading-relaxed">{r.desc}</div>
+                <div className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                  style={{ backgroundColor: r.color + "15", color: r.color }}>
+                  Dashboard oeffnen
+                </div>
               </div>
             </div>
           ))}
         </div>
 
         <div className="mt-12 text-center">
-          <button onClick={async () => { const s = createClient(); await s.auth.signOut(); router.push("/login") }}
-            className="text-sm font-medium text-[var(--text-muted)] hover:text-red-500 transition-colors">
+          <button
+            onClick={async () => {
+              const s = createClient()
+              await s.auth.signOut()
+              router.push("/login")
+            }}
+            className="text-sm font-medium text-white/30 hover:text-red-400 transition-colors">
             Ausloggen
           </button>
         </div>
