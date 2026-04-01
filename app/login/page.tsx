@@ -19,7 +19,8 @@ export default function LoginPage() {
       .from("profiles").select("rolle").eq("id", data.user.id).single()
 
     const rolle = profile?.rolle
-    if (rolle === "verwalter") window.location.href = "/dashboard-verwalter"
+    if (rolle === "admin") window.location.href = "/dashboard-admin"
+    else if (rolle === "verwalter") window.location.href = "/dashboard-verwalter"
     else if (rolle === "handwerker") window.location.href = "/dashboard-handwerker"
     else if (rolle === "mieter") window.location.href = "/dashboard-mieter"
     else window.location.href = "/dashboard-verwalter"
@@ -42,18 +43,15 @@ export default function LoginPage() {
         </div>
         <Card>
           <div className="flex flex-col gap-5">
-            <Input label="E-Mail" type="email" placeholder="name@firma.de"
-              value={email} onChange={e => setEmail(e.target.value)} />
-            <Input label="Passwort" type="password" placeholder="••••••••"
-              value={password} onChange={e => setPassword(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleLogin()} />
+            <Input label="E-Mail" type="email" placeholder="name@firma.de" value={email} onChange={e => setEmail(e.target.value)} />
+            <Input label="Passwort" type="password" placeholder="........" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} />
             {error && (
               <p className="text-xs text-[#FF6363] bg-[#FF6363]/10 border border-[#FF6363]/20 px-4 py-2.5 rounded-xl font-medium">
                 {error}
               </p>
             )}
             <Button onClick={handleLogin} disabled={loading} className="w-full justify-center">
-              {loading ? "Einloggen..." : "Einloggen →"}
+              {loading ? "Einloggen..." : "Einloggen"}
             </Button>
             <p className="text-center text-xs text-gray-600">
               Noch kein Account?{" "}
