@@ -83,7 +83,7 @@ export default function NeuesTicketPage() {
   const aktiverModus = VERGABE_MODI.find(m => m.id === modus)!
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-3xl mx-auto">
       <div className="mb-8">
         <button onClick={() => router.back()} className="text-sm text-gray-500 hover:text-[#00D4AA] mb-3 flex items-center gap-1 transition-colors">
           &#8592; Zurück
@@ -95,7 +95,7 @@ export default function NeuesTicketPage() {
       {/* Vergabe-Modus Auswahl */}
       <div className="mb-6">
         <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Vergabemodus</h2>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {VERGABE_MODI.map(m => (
             <button key={m.id} onClick={() => setModus(m.id)}
               className={`relative p-4 rounded-2xl border-2 transition-all text-left ${
@@ -129,7 +129,7 @@ export default function NeuesTicketPage() {
             value={form.titel} onChange={e => set("titel", e.target.value)} />
           <Textarea label="Detailbeschreibung" placeholder="Was genau ist passiert? Wo befindet sich der Schaden?"
             value={form.beschreibung} onChange={e => set("beschreibung", e.target.value)} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input label="Wohnung / Bereich" placeholder="z.B. Whg. 3"
               value={form.wohnung} onChange={e => set("wohnung", e.target.value)} />
             <Select label="Gewerk *" value={form.gewerk} onChange={e => set("gewerk", e.target.value)}>
@@ -139,7 +139,7 @@ export default function NeuesTicketPage() {
             </Select>
           </div>
           {modus === "auktion" && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Select label="Dringlichkeit" value={form.prioritaet} onChange={e => set("prioritaet", e.target.value)}>
                 <option value="normal">Normal (7 Tage)</option>
                 <option value="hoch">Hoch (2–3 Tage)</option>
