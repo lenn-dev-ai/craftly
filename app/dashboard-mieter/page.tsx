@@ -23,12 +23,18 @@ function getStepIndex(status: string): number {
 function getKiInsight(ticket: Ticket): string {
   const s = ticket.status
   const p = ticket.prioritaet
-  if (s === "offen" && p === "dringend") return "Deine Meldung hat Prioritaet -- Hausverwaltung wird umgehend informiert."
-  if (s === "offen") return "Deine Hausverwaltung prueft die Meldung. Normalerweise innerhalb weniger Stunden."
-  if (s === "auktion" && p === "dringend") return "Eilauftrag! Handwerker werden per Sofort-Vergabe kontaktiert."
-  if (s === "auktion") return "Handwerker bieten gerade auf deinen Auftrag. Bestes Angebot wird ausgewaehlt."
-  if (s === "in_bearbeitung") return "Ein Handwerker arbeitet bereits an der Loesung. Du wirst informiert sobald es fertig ist."
-  if (s === "erledigt") return "Reparatur abgeschlossen. Wir hoffen alles funktioniert wieder!"
+  if (s === "offen" && p === "dringend")
+    return "Deine Meldung hat Priorität — Hausverwaltung wird umgehend informiert."
+  if (s === "offen")
+    return "Deine Hausverwaltung prüft die Meldung. Normalerweise innerhalb weniger Stunden."
+  if (s === "auktion" && p === "dringend")
+    return "Eilauftrag! Handwerker werden per Sofort-Vergabe kontaktiert."
+  if (s === "auktion")
+    return "Handwerker bieten gerade auf deinen Auftrag. Bestes Angebot wird ausgewählt."
+  if (s === "in_bearbeitung")
+    return "Ein Handwerker arbeitet bereits an der Lösung. Du wirst informiert sobald es fertig ist."
+  if (s === "erledigt")
+    return "Reparatur abgeschlossen. Wir hoffen alles funktioniert wieder!"
   return ""
 }
 
@@ -36,9 +42,9 @@ function getEstimate(ticket: Ticket): string {
   const s = ticket.status
   const p = ticket.prioritaet
   if (s === "erledigt") return "Abgeschlossen"
-  if (s === "in_bearbeitung") return p === "dringend" ? "Heute" : "1-2 Tage"
-  if (s === "auktion") return p === "dringend" ? "~4 Stunden" : "1-3 Tage"
-  if (s === "offen") return p === "dringend" ? "~1 Tag" : "3-5 Tage"
+  if (s === "in_bearbeitung") return p === "dringend" ? "Heute" : "1–2 Tage"
+  if (s === "auktion") return p === "dringend" ? "~4 Stunden" : "1–3 Tage"
+  if (s === "offen") return p === "dringend" ? "~1 Tag" : "3–5 Tage"
   return ""
 }
 
@@ -73,12 +79,12 @@ export default function MieterDashboard() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white">
-          {userName ? ("Hallo " + userName) : "Meine Uebersicht"}
+          {userName ? ("Hallo " + userName) : "Meine Übersicht"}
         </h1>
         <p className="text-sm text-gray-500 mt-1">
           {aktiv.length > 0
             ? aktiv.length + " aktive Meldung" + (aktiv.length > 1 ? "en" : "")
-            : "Alles in Ordnung -- keine offenen Schaeden"}
+            : "Alles in Ordnung — keine offenen Schäden"}
         </p>
       </div>
 
@@ -107,7 +113,7 @@ export default function MieterDashboard() {
             </div>
             <div>
               <div className="text-sm font-medium text-[#00D4AA]">Alles in Ordnung</div>
-              <div className="text-xs text-gray-500">Keine offenen Schaeden. {erledigt.length} erledigte Meldung{erledigt.length > 1 ? "en" : ""}.</div>
+              <div className="text-xs text-gray-500">Keine offenen Schäden. {erledigt.length} erledigte Meldung{erledigt.length > 1 ? "en" : ""}.</div>
             </div>
           </div>
         </Card>
@@ -123,9 +129,7 @@ export default function MieterDashboard() {
               const insight = getKiInsight(t)
               const estimate = getEstimate(t)
               return (
-                <Card
-                  key={t.id}
-                  className="bg-[#12121a] border border-white/5 hover:border-white/10 cursor-pointer transition-all"
+                <Card key={t.id} className="bg-[#12121a] border border-white/5 hover:border-white/10 cursor-pointer transition-all"
                   onClick={() => router.push("/ticket/" + t.id)}
                 >
                   {/* Titel + Badge */}
@@ -134,7 +138,7 @@ export default function MieterDashboard() {
                       <div className="text-sm font-semibold text-white truncate">{t.titel}</div>
                       <div className="text-xs text-gray-500 mt-0.5">
                         {new Date(t.created_at).toLocaleDateString("de")}
-                        {t.wohnung && (" -- " + t.wohnung)}
+                        {t.wohnung && (" — " + t.wohnung)}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -177,9 +181,7 @@ export default function MieterDashboard() {
           <h2 className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-3">Erledigt ({erledigt.length})</h2>
           <div className="flex flex-col gap-2">
             {erledigt.map(t => (
-              <Card
-                key={t.id}
-                className="bg-[#12121a]/50 border border-white/[0.03] cursor-pointer hover:border-white/10 transition-all"
+              <Card key={t.id} className="bg-[#12121a]/50 border border-white/[0.03] cursor-pointer hover:border-white/10 transition-all"
                 onClick={() => router.push("/ticket/" + t.id)}
               >
                 <div className="flex items-center gap-3">
