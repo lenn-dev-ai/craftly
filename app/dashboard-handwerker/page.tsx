@@ -85,6 +85,7 @@ export default function HandwerkerDashboard() {
           .gt("auktion_ende", new Date().toISOString()).order("auktion_ende"),
         supabase.from("tickets").select("*").eq("zugewiesener_hw", user.id).order("created_at", { ascending: false }),
       ])
+
       setProfile(prof)
       setAuktionen(offene || [])
       setMeineAuftraege(meine || [])
@@ -107,7 +108,6 @@ export default function HandwerkerDashboard() {
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
       <div className="max-w-4xl mx-auto p-6">
-
         {/* Header + Profile Summary */}
         <div className="flex items-start justify-between mb-8">
           <div>
@@ -163,13 +163,9 @@ export default function HandwerkerDashboard() {
             { key: "auftraege" as const, label: "Meine Auftraege", count: meineAuftraege.length },
           ].map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
-              className={"flex-1 py-2.5 rounded-lg text-sm font-medium transition-all " +
-                (tab === t.key
-                  ? "bg-[#00D4AA]/15 text-[#00D4AA]"
-                  : "text-white/40 hover:text-white/60")}>
+              className={"flex-1 py-2.5 rounded-lg text-sm font-medium transition-all " + (tab === t.key ? "bg-[#00D4AA]/15 text-[#00D4AA]" : "text-white/40 hover:text-white/60")}>
               {t.label}
-              <span className={"ml-2 text-xs px-1.5 py-0.5 rounded-full " +
-                (tab === t.key ? "bg-[#00D4AA]/20" : "bg-white/5")}>
+              <span className={"ml-2 text-xs px-1.5 py-0.5 rounded-full " + (tab === t.key ? "bg-[#00D4AA]/20" : "bg-white/5")}>
                 {t.count}
               </span>
             </button>
@@ -180,10 +176,31 @@ export default function HandwerkerDashboard() {
         {tab === "auktionen" && (
           <>
             {sortedAuktionen.length === 0 ? (
-              <div className="bg-[#12121a] border border-white/5 rounded-xl p-12 text-center">
-                <div className="text-3xl mb-3 opacity-50">[~]</div>
-                <div className="text-white/50 text-sm">Aktuell keine offenen Ausschreibungen</div>
-                <div className="text-white/30 text-xs mt-1">Neue Auftraege erscheinen hier automatisch</div>
+              <div className="bg-[#12121a] border border-white/5 rounded-xl p-8 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-[#00B4D8]/10 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl text-[#00B4D8]">[~]</span>
+                </div>
+                <div className="text-white/60 text-sm font-medium mb-1">Aktuell keine offenen Ausschreibungen</div>
+                <div className="text-white/30 text-xs mb-6">Neue Auftraege erscheinen hier automatisch, sobald Verwalter Tickets freigeben.</div>
+                <div className="max-w-xs mx-auto space-y-3 text-left">
+                  {[
+                    { step: "1", text: "Profil vollstaendig ausfuellen", sub: "Gewerk, Firma, Region" },
+                    { step: "2", text: "Verfuegbarkeit im Kalender eintragen", sub: "Erhoehe deine Match-Chance" },
+                    { step: "3", text: "Benachrichtigungen aktivieren", sub: "Sofort erfahren wenn Jobs reinkommen" },
+                  ].map(s => (
+                    <div key={s.step} className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-[#00D4AA]/15 text-[#00D4AA] flex items-center justify-center text-xs font-bold flex-shrink-0">{s.step}</div>
+                      <div>
+                        <div className="text-xs text-white/60 font-medium">{s.text}</div>
+                        <div className="text-[10px] text-white/30">{s.sub}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => router.push("/dashboard-handwerker/profil")}
+                  className="mt-6 text-xs text-[#00D4AA] border border-[#00D4AA]/20 px-4 py-2 rounded-lg hover:bg-[#00D4AA]/10 transition-colors">
+                  Profil vervollstaendigen
+                </button>
               </div>
             ) : (
               <div className="flex flex-col gap-3">
@@ -191,16 +208,11 @@ export default function HandwerkerDashboard() {
                   const score = kiMatchScore(t, profile)
                   const match = kiMatchLabel(score)
                   const angeboteCount = (t.angebote as any[])?.length || 0
-
                   return (
-                    <div key={t.id}
-                      onClick={() => router.push("/ticket/" + t.id)}
+                    <div key={t.id} onClick={() => router.push("/ticket/" + t.id)}
                       className="bg-[#12121a] border border-white/5 rounded-xl p-4 cursor-pointer hover:border-[#00D4AA]/30 transition-all relative overflow-hidden group">
-
                       <PrioBar prio={t.prioritaet || "normal"} />
-
                       <div className="pl-4">
-                        {/* Top row: Match badge + Timer */}
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             {idx === 0 && score >= 70 && (
@@ -218,8 +230,6 @@ export default function HandwerkerDashboard() {
                           </div>
                           {t.auktion_ende && <Timer end={t.auktion_ende} />}
                         </div>
-
-                        {/* Title + Location */}
                         <div className="text-sm font-medium mb-1 group-hover:text-[#00D4AA] transition-colors">
                           {t.titel}
                         </div>
@@ -227,8 +237,6 @@ export default function HandwerkerDashboard() {
                           {t.wohnung || "Keine Adresse"}
                           {t.raum ? (" | " + t.raum) : ""}
                         </div>
-
-                        {/* KI Insights Row */}
                         <div className="flex flex-wrap gap-2">
                           <div className="text-[10px] bg-[#00D4AA]/10 text-[#00D4AA] px-2 py-1 rounded-lg">
                             Preisrahmen: {kiPreisempfehlung(t)} EUR
@@ -255,42 +263,44 @@ export default function HandwerkerDashboard() {
         {tab === "auftraege" && (
           <>
             {meineAuftraege.length === 0 ? (
-              <div className="bg-[#12121a] border border-white/5 rounded-xl p-12 text-center">
-                <div className="text-3xl mb-3 opacity-50">[!]</div>
-                <div className="text-white/50 text-sm">Noch keine Auftraege erhalten</div>
-                <div className="text-white/30 text-xs mt-1">Biete auf Ausschreibungen um Auftraege zu erhalten</div>
+              <div className="bg-[#12121a] border border-white/5 rounded-xl p-8 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-[#00B4D8]/10 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl text-[#00B4D8]">[!]</span>
+                </div>
+                <div className="text-white/60 text-sm font-medium mb-1">Noch keine Auftraege erhalten</div>
+                <div className="text-white/30 text-xs mb-4">Auftraege erscheinen hier, sobald du den Zuschlag fuer eine Ausschreibung erhaeltst.</div>
+                {auktionen.length > 0 ? (
+                  <button onClick={() => setTab("auktionen")}
+                    className="text-xs text-[#00D4AA] border border-[#00D4AA]/20 px-4 py-2 rounded-lg hover:bg-[#00D4AA]/10 transition-colors">
+                    {auktionen.length} offene Ausschreibungen ansehen
+                  </button>
+                ) : (
+                  <div className="text-white/20 text-xs">Aktuell gibt es keine offenen Ausschreibungen.</div>
+                )}
               </div>
             ) : (
               <div className="flex flex-col gap-3">
-                {/* Active */}
                 {meineAuftraege.filter(t => t.status !== "erledigt").length > 0 && (
                   <>
                     <div className="text-xs text-white/30 uppercase tracking-wider mb-1">Aktiv</div>
                     {meineAuftraege.filter(t => t.status !== "erledigt").map(t => {
                       const steps = ["vergeben", "in_arbeit", "erledigt"]
                       const currentStep = steps.indexOf(t.status) >= 0 ? steps.indexOf(t.status) : 0
-
                       return (
-                        <div key={t.id}
-                          onClick={() => router.push("/ticket/" + t.id)}
+                        <div key={t.id} onClick={() => router.push("/ticket/" + t.id)}
                           className="bg-[#12121a] border border-white/5 rounded-xl p-4 cursor-pointer hover:border-[#00D4AA]/30 transition-all">
                           <div className="flex items-center justify-between mb-2">
                             <div className="text-sm font-medium">{t.titel}</div>
-                            <span className={"text-[10px] px-2 py-0.5 rounded-full font-medium " +
-                              (t.status === "in_arbeit"
-                                ? "bg-amber-500/15 text-amber-400"
-                                : "bg-[#00D4AA]/15 text-[#00D4AA]")}>
+                            <span className={"text-[10px] px-2 py-0.5 rounded-full font-medium " + (t.status === "in_arbeit" ? "bg-amber-500/15 text-amber-400" : "bg-[#00D4AA]/15 text-[#00D4AA]")}>
                               {t.status === "in_arbeit" ? "In Arbeit" : t.status === "vergeben" ? "Vergeben" : t.status}
                             </span>
                           </div>
                           <div className="text-xs text-white/30 mb-3">
                             {t.wohnung || ""} | Erstellt: {new Date(t.created_at).toLocaleDateString("de")}
                           </div>
-                          {/* Mini Progress */}
                           <div className="flex gap-1">
                             {steps.map((s, i) => (
-                              <div key={s} className={"h-1 flex-1 rounded-full " +
-                                (i <= currentStep ? "bg-[#00D4AA]" : "bg-white/10")} />
+                              <div key={s} className={"h-1 flex-1 rounded-full " + (i <= currentStep ? "bg-[#00D4AA]" : "bg-white/10")} />
                             ))}
                           </div>
                         </div>
@@ -298,14 +308,11 @@ export default function HandwerkerDashboard() {
                     })}
                   </>
                 )}
-
-                {/* Completed */}
                 {meineAuftraege.filter(t => t.status === "erledigt").length > 0 && (
                   <>
                     <div className="text-xs text-white/30 uppercase tracking-wider mt-4 mb-1">Abgeschlossen</div>
                     {meineAuftraege.filter(t => t.status === "erledigt").map(t => (
-                      <div key={t.id}
-                        onClick={() => router.push("/ticket/" + t.id)}
+                      <div key={t.id} onClick={() => router.push("/ticket/" + t.id)}
                         className="bg-[#12121a] border border-white/5 rounded-xl p-4 cursor-pointer hover:border-white/10 transition-all opacity-60">
                         <div className="flex items-center justify-between">
                           <div className="text-sm">{t.titel}</div>
@@ -324,7 +331,6 @@ export default function HandwerkerDashboard() {
             )}
           </>
         )}
-
       </div>
     </div>
   )
