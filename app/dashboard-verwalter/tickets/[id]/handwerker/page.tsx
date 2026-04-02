@@ -156,7 +156,7 @@ export default function HandwerkerAuswahlPage() {
       <Card className="mb-4 bg-[#12121a] border border-white/5">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm font-medium text-gray-200 mb-1">Dynamischer Marktpreis</div>
+            <div className="text-sm font-medium text-white mb-1">Dynamischer Marktpreis</div>
             <div className="text-xs text-gray-500">
               Dringlichkeit {pf.dringlichkeitsFaktor}x -- Verfuegbarkeit {pf.angebotsFaktor}x
             </div>
