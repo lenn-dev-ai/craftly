@@ -316,7 +316,7 @@ export default function HandwerkerDashboard() {
                             </div>
                           )}
                         </div>
-                        <button onClick={() => router.push("/ticket/" + t.id)}
+                        <button onClick={() => router.push("/dashboard-handwerker/angebot/" + t.id)}
                           className="text-[10px] text-[#00D4AA] hover:text-[#00D4AA]/80 mt-3 transition-colors">
                           Angebot abgeben →
                         </button>
