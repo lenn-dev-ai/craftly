@@ -32,6 +32,12 @@ const rolleLabels: Record<Rolle, string> = {
   mieter: "Mieter",
 }
 
+const dashboardLinks: Record<Rolle, string> = {
+  verwalter: "/dashboard-verwalter",
+  handwerker: "/dashboard-handwerker",
+  mieter: "/dashboard-mieter",
+}
+
 export default function Sidebar({ rolle }: { rolle: Rolle }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -45,13 +51,13 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
 
   return (
     <aside className="w-56 flex-shrink-0 bg-[#08080d] border-r border-white/[0.04] flex flex-col min-h-screen">
-      <div className="p-5 pb-4">
+      <Link href={dashboardLinks[rolle]} className="block p-5 pb-4 hover:opacity-80 transition-opacity cursor-pointer">
         <div className="logo text-2xl">
           <span className="text-white">Craft</span>
           <span className="gradient-text">ly</span>
         </div>
         <div className="text-[11px] text-gray-600 mt-1 font-medium uppercase tracking-widest">{rolleLabels[rolle]}</div>
-      </div>
+      </Link>
 
       <div className="px-3 mb-2">
         <div className="h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
@@ -79,8 +85,7 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
       </div>
 
       <div className="p-4">
-        <button onClick={handleLogout}
-          className="w-full text-left text-xs text-gray-600 hover:text-gray-400 py-2 px-3 rounded-lg hover:bg-white/[0.03] transition-all font-medium">
+        <button onClick={handleLogout} className="w-full text-left text-xs text-gray-600 hover:text-gray-400 py-2 px-3 rounded-lg hover:bg-white/[0.03] transition-all font-medium">
           ← Abmelden
         </button>
       </div>
