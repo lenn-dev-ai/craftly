@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase"
 import { Button, Input, Card } from "@/components/ui"
@@ -10,6 +10,33 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [checking, setChecking] = useState(true)
+
+  // Check if user is already logged in and redirect to dashboard
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase
+          .from("profiles")
+          .select("rolle")
+          .eq("id", user.id)
+          .single()
+          .then(({ data: profile }) => {
+            const rolle = profile?.rolle || "mieter"
+            const dashMap: Record<string, string> = {
+              admin: "/dashboard-admin",
+              verwalter: "/dashboard-verwalter",
+              handwerker: "/dashboard-handwerker",
+              mieter: "/dashboard-mieter",
+            }
+            window.location.href = dashMap[rolle] || "/dashboard-mieter"
+          })
+      } else {
+        setChecking(false)
+      }
+    })
+  }, [])
 
   async function handleLogin() {
     setLoading(true)
@@ -17,7 +44,6 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient()
-
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -29,6 +55,7 @@ export default function LoginPage() {
         return
       }
 
+      // Fetch user role from profiles table
       const { data: profile } = await supabase
         .from("profiles")
         .select("rolle")
@@ -36,6 +63,8 @@ export default function LoginPage() {
         .single()
 
       const rolle = profile?.rolle
+
+      // Redirect based on role
       const dashMap: Record<string, string> = {
         admin: "/dashboard-admin",
         verwalter: "/dashboard-verwalter",
@@ -43,7 +72,6 @@ export default function LoginPage() {
         mieter: "/dashboard-mieter",
       }
 
-      // Full page redirect so middleware sees the fresh auth cookies
       window.location.href = dashMap[rolle as string] || "/dashboard-mieter"
     } catch {
       setError("Ein unerwarteter Fehler ist aufgetreten.")
@@ -51,59 +79,79 @@ export default function LoginPage() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background gradient orbs */}
-      <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-[#00D4AA]/[0.07] rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-[#00B4D8]/[0.05] rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute top-[40%] right-[20%] w-[300px] h-[300px] bg-[#7B61FF]/[0.04] rounded-full blur-[80px] pointer-events-none" />
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+        <div className="logo text-4xl">
+          <span className="text-white">Repa</span>
+          <span className="gradient-text">ro</span>
+        </div>
+      </div>
+    )
+  }
 
-      <div className="w-full max-w-sm relative z-10">
-        <div className="text-center mb-10">
-          <div className="logo text-4xl mb-3">
+  return (
+    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
+      <Card className="w-full max-w-md p-8">
+        <div className="text-center mb-8">
+          <div className="logo text-4xl mb-2">
             <span className="text-white">Repa</span>
             <span className="gradient-text">ro</span>
           </div>
-          <p className="text-sm text-gray-500">Immobilienverwaltung, neu gedacht.</p>
+          <p className="text-gray-400">Melden Sie sich an</p>
         </div>
 
-        <Card>
-          <div className="flex flex-col gap-5">
-            <Input
-              label="E-Mail"
-              type="email"
-              placeholder="name@firma.de"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-            />
-            <Input
-              label="Passwort"
-              type="password"
-              placeholder="........"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleLogin()}
-            />
-            {error && (
-              <p className="text-xs text-[#FF6363] bg-[#FF6363]/10 border border-[#FF6363]/20 px-4 py-2.5 rounded-xl font-medium">
-                {error}
-              </p>
-            )}
-            <Button onClick={handleLogin} disabled={loading} className="w-full justify-center">
-              {loading ? "Einloggen..." : "Einloggen"}
-            </Button>
-            <p className="text-center text-xs text-gray-600">
-              Noch kein Account?{" "}
-              <Link
-                href="/registrierung"
-                className="text-[#00D4AA] hover:text-[#00B4D8] font-medium transition-colors"
-              >
-                Registrieren
-              </Link>
-            </p>
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 mb-4">
+            <p className="text-red-400 text-sm">{error}</p>
           </div>
-        </Card>
-      </div>
+        )}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              E-Mail
+            </label>
+            <Input
+              type="email"
+              placeholder="ihre@email.de"
+              value={email}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+              onFocus={(e: React.FocusEvent<HTMLInputElement>) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Passwort
+            </label>
+            <Input
+              type="password"
+              placeholder="Ihr Passwort"
+              value={password}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+              onFocus={(e: React.FocusEvent<HTMLInputElement>) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <Button
+            onClick={handleLogin}
+            disabled={loading}
+            className="w-full"
+          >
+            {loading ? "Anmeldung..." : "Anmelden"}
+          </Button>
+        </div>
+
+        <div className="mt-6 text-center">
+          <p className="text-gray-400 text-sm">
+            Noch kein Konto?{" "}
+            <Link href="/register" className="text-blue-400 hover:text-blue-300">
+              Registrieren
+            </Link>
+          </p>
+        </div>
+      </Card>
     </div>
   )
 }
