@@ -53,6 +53,7 @@ export interface Ticket {
   gewerk?: string
   objekt_id?: string
   wohnung?: string
+  raum?: string
   erstellt_von: string
   zugewiesener_hw?: string
   auktion_ende?: string
