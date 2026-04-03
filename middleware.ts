@@ -6,16 +6,10 @@ export async function middleware(request: NextRequest) {
     request: { headers: request.headers },
   })
 
-  // Debug: log env vars and cookies
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  const allCookies = request.cookies.getAll()
-  console.log("[middleware] path:", request.nextUrl.pathname)
-  console.log("[middleware] env URL exists:", !!url, "key exists:", !!key)
-  console.log("[middleware] cookies count:", allCookies.length, "names:", allCookies.map(c => c.name).join(", "))
 
   if (!url || !key) {
-    console.log("[middleware] MISSING ENV VARS - skipping auth check")
     return response
   }
 
@@ -25,7 +19,11 @@ export async function middleware(request: NextRequest) {
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll()
+          // Decode URL-encoded cookie values so Supabase SSR can parse the JSON session
+          return request.cookies.getAll().map(cookie => ({
+            name: cookie.name,
+            value: decodeURIComponent(cookie.value),
+          }))
         },
         setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
           cookiesToSet.forEach(({ name, value, options }) => {
@@ -37,12 +35,11 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user }, error } = await supabase.auth.getUser()
-  console.log("[middleware] user:", user?.id || "null", "error:", error?.message || "none")
+  const { data: { user } } = await supabase.auth.getUser()
 
   // Helper: create redirect that preserves refreshed auth cookies
-  function redirectWithCookies(url: URL) {
-    const redirectResponse = NextResponse.redirect(url)
+  function redirectWithCookies(targetUrl: URL) {
+    const redirectResponse = NextResponse.redirect(targetUrl)
     response.cookies.getAll().forEach(cookie => {
       redirectResponse.cookies.set(cookie.name, cookie.value)
     })
@@ -51,7 +48,6 @@ export async function middleware(request: NextRequest) {
 
   // Protect all dashboard routes
   if (request.nextUrl.pathname.startsWith("/dashboard-") && !user) {
-    console.log("[middleware] BLOCKING dashboard access - no user")
     return redirectWithCookies(new URL("/login", request.url))
   }
 
@@ -64,7 +60,6 @@ export async function middleware(request: NextRequest) {
       .single()
 
     const rolle = profile?.rolle || "mieter"
-    console.log("[middleware] redirecting logged-in user, rolle:", rolle)
     const dashMap: Record<string, string> = {
       verwalter: "/dashboard-verwalter",
       handwerker: "/dashboard-handwerker",
