@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import AdminButton from '@/components/AdminButton'
-import Script from 'next/script'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -19,12 +18,13 @@ const displayFont = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: 'Reparo — Verwalter, Handwerker & Mieter verbinden',
-  description: 'Die intelligente Plattform für Hausverwaltungen, Handwerker und Mieter. Verwalten Sie Arbeitsaufträge effizient, kommunizieren Sie nahtlos und erhöhen Sie die Kundenzufriedenheit.',
+  description:
+    'Die intelligente Plattform für Hausverwaltungen, Handwerker und Mieter. Verwalten Sie Arbeitsaufträge effizient, kommunizieren Sie nahtlos und erhöhen Sie die Kundenzufriedenheit.',
   manifest: '/manifest.json',
-  themeColor: '#00D4AA',
   openGraph: {
     title: 'Reparo — Verwalter, Handwerker & Mieter verbinden',
-    description: 'Die intelligente Plattform für Hausverwaltungen, Handwerker und Mieter.',
+    description:
+      'Die intelligente Plattform für Hausverwaltungen, Handwerker und Mieter.',
     url: 'https://reparo.app',
     siteName: 'Reparo',
     type: 'website',
@@ -32,7 +32,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Reparo',
-    description: 'Die intelligente Plattform für Hausverwaltungen, Handwerker und Mieter.',
+    description:
+      'Die intelligente Plattform für Hausverwaltungen, Handwerker und Mieter.',
   },
   icons: {
     icon: '/icons/favicon.ico',
@@ -66,23 +67,21 @@ export default function RootLayout({
     >
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
         <meta name="apple-mobile-web-app-title" content="Reparo" />
       </head>
       <body className={`${inter.className} antialiased`}>
         <AdminButton />
         {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}`,
+          }}
+        />
       </body>
-      <Script
-        id="service-worker"
-        dangerouslySetInnerHTML={{
-          __html: `
-            if ('serviceWorker' in navigator) {
-              navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration failed: ', err));
-            }
-          `,
-        }}
-      />
     </html>
   )
 }
