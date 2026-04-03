@@ -26,9 +26,18 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Helper: create redirect that preserves refreshed auth cookies
+  function redirectWithCookies(url: URL) {
+    const redirectResponse = NextResponse.redirect(url)
+    response.cookies.getAll().forEach(cookie => {
+      redirectResponse.cookies.set(cookie.name, cookie.value)
+    })
+    return redirectResponse
+  }
+
   // Protect all dashboard routes
   if (request.nextUrl.pathname.startsWith("/dashboard-") && !user) {
-    return NextResponse.redirect(new URL("/login", request.url))
+    return redirectWithCookies(new URL("/login", request.url))
   }
 
   // Redirect logged-in users away from login page
@@ -46,7 +55,7 @@ export async function middleware(request: NextRequest) {
       mieter: "/dashboard-mieter",
       admin: "/dashboard-admin",
     }
-    return NextResponse.redirect(new URL(dashMap[rolle] || "/dashboard-mieter", request.url))
+    return redirectWithCookies(new URL(dashMap[rolle] || "/dashboard-mieter", request.url))
   }
 
   return response
