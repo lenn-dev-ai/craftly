@@ -1,4 +1,5 @@
 "use client"
+
 import { useState } from "react"
 import { createClient } from "@/lib/supabase"
 import { Button, Input, Select, Card } from "@/components/ui"
@@ -23,10 +24,20 @@ export default function RegistrierungPage() {
     if (!form.name.trim()) { setError("Bitte Name eingeben."); return }
     if (!form.email.trim()) { setError("Bitte E-Mail eingeben."); return }
     if (form.password.length < 8) { setError("Passwort muss mindestens 8 Zeichen lang sein."); return }
+
     setLoading(true); setError("")
+
     const supabase = createClient()
-    const { data, error } = await supabase.auth.signUp({ email: form.email, password: form.password })
-    if (error || !data.user) { setError(error?.message || "Fehler bei Registrierung"); setLoading(false); return }
+    const { data, error } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password
+    })
+
+    if (error || !data.user) {
+      setError(error?.message || "Fehler bei Registrierung")
+      setLoading(false); return
+    }
+
     await supabase.from("profiles").insert({
       id: data.user.id,
       email: form.email,
@@ -36,6 +47,7 @@ export default function RegistrierungPage() {
       gewerk: form.gewerk,
       plz_bereich: form.plz_bereich,
     })
+
     if (form.rolle === "verwalter") window.location.href = "/dashboard-verwalter"
     else if (form.rolle === "handwerker") window.location.href = "/dashboard-handwerker"
     else window.location.href = "/dashboard-mieter"
@@ -50,8 +62,8 @@ export default function RegistrierungPage() {
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <div className="logo text-3xl mb-2">
-            <span className="text-white">Craft</span>
-            <span className="gradient-text">ly</span>
+            <span className="text-white">Repa</span>
+            <span className="gradient-text">ro</span>
           </div>
           <p className="text-sm text-gray-500">Konto erstellen</p>
         </div>
@@ -64,20 +76,14 @@ export default function RegistrierungPage() {
               <option value="mieter">Mieter</option>
             </Select>
 
-            <Input label="Vollständiger Name" placeholder="Max Mustermann"
-              value={form.name} onChange={e => set("name", e.target.value)} />
-            <Input label="E-Mail" type="email" placeholder="name@firma.de"
-              value={form.email} onChange={e => set("email", e.target.value)} />
-            <Input label="Passwort" type="password" placeholder="Mindestens 8 Zeichen"
-              value={form.password} onChange={e => set("password", e.target.value)} />
+            <Input label="Vollständiger Name" placeholder="Max Mustermann" value={form.name} onChange={e => set("name", e.target.value)} />
+            <Input label="E-Mail" type="email" placeholder="name@firma.de" value={form.email} onChange={e => set("email", e.target.value)} />
+            <Input label="Passwort" type="password" placeholder="Mindestens 8 Zeichen" value={form.password} onChange={e => set("password", e.target.value)} />
 
             {form.rolle === "handwerker" && <>
-              <Input label="Firmenname" placeholder="Klimatec GmbH"
-                value={form.firma} onChange={e => set("firma", e.target.value)} />
-              <Input label="Gewerk / Spezialisierung" placeholder="Heizung, Sanitär"
-                value={form.gewerk} onChange={e => set("gewerk", e.target.value)} />
-              <Input label="PLZ-Einzugsgebiet" placeholder="60xxx, 65xxx"
-                value={form.plz_bereich} onChange={e => set("plz_bereich", e.target.value)} />
+              <Input label="Firmenname" placeholder="Klimatec GmbH" value={form.firma} onChange={e => set("firma", e.target.value)} />
+              <Input label="Gewerk / Spezialisierung" placeholder="Heizung, Sanitär" value={form.gewerk} onChange={e => set("gewerk", e.target.value)} />
+              <Input label="PLZ-Einzugsgebiet" placeholder="60xxx, 65xxx" value={form.plz_bereich} onChange={e => set("plz_bereich", e.target.value)} />
             </>}
 
             {error && (
