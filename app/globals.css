@@ -1,19 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+/* Fonts loaded via next/font in layout.tsx — no @import needed */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
   background: #0a0a0f;
   color: #f0f0f5;
   -webkit-font-smoothing: antialiased;
 }
 
 .logo {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-display), sans-serif;
   font-weight: 700;
   letter-spacing: -0.03em;
 }
@@ -41,32 +44,89 @@ body {
 }
 
 /* Status badge colors - modern dark theme */
-.badge-offen    { background: rgba(255,99,99,0.15); color: #FF6363; border: 1px solid rgba(255,99,99,0.2); }
-.badge-auktion  { background: rgba(0,180,216,0.15); color: #00B4D8; border: 1px solid rgba(0,180,216,0.2); }
-.badge-progress { background: rgba(255,183,77,0.15); color: #FFB74D; border: 1px solid rgba(255,183,77,0.2); }
-.badge-erledigt { background: rgba(0,212,170,0.15); color: #00D4AA; border: 1px solid rgba(0,212,170,0.2); }
+.badge-offen {
+  background: rgba(255,99,99,0.15);
+  color: #FF6363;
+  border: 1px solid rgba(255,99,99,0.2);
+}
+
+.badge-auktion {
+  background: rgba(0,180,216,0.15);
+  color: #00B4D8;
+  border: 1px solid rgba(0,180,216,0.2);
+}
+
+.badge-progress {
+  background: rgba(255,183,77,0.15);
+  color: #FFB74D;
+  border: 1px solid rgba(255,183,77,0.2);
+}
+
+.badge-erledigt {
+  background: rgba(0,212,170,0.15);
+  color: #00D4AA;
+  border: 1px solid rgba(0,212,170,0.2);
+}
 
 /* Priority colors */
-.prio-dringend { background: rgba(255,99,99,0.15); color: #FF6363; border: 1px solid rgba(255,99,99,0.2); }
-.prio-hoch     { background: rgba(255,183,77,0.15); color: #FFB74D; border: 1px solid rgba(255,183,77,0.2); }
-.prio-normal   { background: rgba(255,255,255,0.06); color: #8888aa; border: 1px solid rgba(255,255,255,0.08); }
+.prio-dringend {
+  background: rgba(255,99,99,0.15);
+  color: #FF6363;
+  border: 1px solid rgba(255,99,99,0.2);
+}
+
+.prio-hoch {
+  background: rgba(255,183,77,0.15);
+  color: #FFB74D;
+  border: 1px solid rgba(255,183,77,0.2);
+}
+
+.prio-normal {
+  background: rgba(255,255,255,0.06);
+  color: #8888aa;
+  border: 1px solid rgba(255,255,255,0.08);
+}
 
 /* Glow effects */
-.glow-green { box-shadow: 0 0 20px rgba(0,212,170,0.15), 0 0 60px rgba(0,212,170,0.05); }
-.glow-blue  { box-shadow: 0 0 20px rgba(0,180,216,0.15), 0 0 60px rgba(0,180,216,0.05); }
+.glow-green {
+  box-shadow: 0 0 20px rgba(0,212,170,0.15), 0 0 60px rgba(0,212,170,0.05);
+}
 
-/* Smooth transitions everywhere */
-*, *::before, *::after {
-  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+.glow-blue {
+  box-shadow: 0 0 20px rgba(0,180,216,0.15), 0 0 60px rgba(0,180,216,0.05);
+}
+
+/* Focus visible — Accessibility */
+:focus-visible {
+  outline: 2px solid #00D4AA;
+  outline-offset: 2px;
+}
+
+/* iOS safe area for bottom nav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Scrollbar styling */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.2);
+}
 
 /* Selection */
-::selection { background: rgba(0,212,170,0.3); color: #fff; }
+::selection {
+  background: rgba(0,212,170,0.3);
+  color: #fff;
+}
