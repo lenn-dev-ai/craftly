@@ -1,17 +1,35 @@
-import Link from "next/link"
+import Link from 'next/link';
+import { SearchX } from 'lucide-react';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="text-center">
-        <div className="logo text-3xl mb-4">Craft<span className="text-[#1D9E75]">ly</span></div>
-        <h1 className="text-6xl font-medium text-gray-200 mb-2">404</h1>
-        <p className="text-gray-500 mb-6">Diese Seite wurde nicht gefunden.</p>
-        <Link href="/login"
-          className="inline-block bg-[#1D9E75] text-white font-medium px-5 py-2.5 rounded-lg hover:bg-[#0F6E56] transition-colors text-sm">
+    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center px-4">
+      <div className="text-center space-y-6 max-w-md">
+        {/* Icon */}
+        <div className="flex justify-center">
+          <SearchX size={64} className="text-[#00D4AA]/50" />
+        </div>
+
+        {/* Heading */}
+        <h1 className="text-4xl font-bold text-white">404</h1>
+
+        {/* Message */}
+        <p className="text-2xl font-semibold text-gray-300">
+          Seite nicht gefunden
+        </p>
+
+        <p className="text-gray-400">
+          Die angeforderte Seite existiert nicht oder wurde verschoben.
+        </p>
+
+        {/* Back Link */}
+        <Link
+          href="/login"
+          className="inline-block px-6 py-3 bg-[#00D4AA] text-[#0a0a0f] font-semibold rounded-lg hover:bg-[#00B4D8] transition-colors"
+        >
           Zurück zum Login
         </Link>
       </div>
     </div>
-  )
+  );
 }
