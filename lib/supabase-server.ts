@@ -12,13 +12,13 @@ export function createServerSupabaseClient() {
         getAll() {
           return cookieStore.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)
             )
           } catch {
-            // The `setAll` method is called from a Server Component.
+            // The \`setAll\` method is called from a Server Component.
             // This can be ignored if middleware refreshes user sessions.
           }
         },
