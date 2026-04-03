@@ -11,8 +11,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Craftly — Verwalter, Handwerker & Mieter verbinden",
-    template: "%s | Craftly",
+    default: "Reparo — Verwalter, Handwerker & Mieter verbinden",
+    template: "%s | Reparo",
   },
   description:
     "Die Plattform für Hausverwaltungen: Tickets erstellen, Handwerker per Auktion beauftragen, Kosten sparen. Das Doctolib für die Immobilienwirtschaft.",
@@ -24,20 +24,20 @@ export const metadata: Metadata = {
     "Schadensmeldung",
     "Auktion",
   ],
-  authors: [{ name: "Craftly" }],
+  authors: [{ name: "Reparo" }],
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Craftly",
+    title: "Reparo",
   },
   openGraph: {
-    title: "Craftly — Verwalter, Handwerker & Mieter verbinden",
+    title: "Reparo — Verwalter, Handwerker & Mieter verbinden",
     description:
       "Die Plattform für Hausverwaltungen: Tickets erstellen, Handwerker per Auktion beauftragen, Kosten sparen.",
     type: "website",
     locale: "de_DE",
-    siteName: "Craftly",
+    siteName: "Reparo",
   },
   robots: {
     index: true,
