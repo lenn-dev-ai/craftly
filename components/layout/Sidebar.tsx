@@ -1,4 +1,5 @@
 "use client"
+
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Rolle } from "@/types"
@@ -24,18 +25,24 @@ const menus: Record<Rolle, { href: string; label: string; icon: string }[]> = {
     { href: "/dashboard-mieter/melden", label: "Schaden melden", icon: "＋" },
     { href: "/dashboard-mieter/tickets", label: "Meine Tickets", icon: "◉" },
   ],
+  admin: [
+    { href: "/dashboard-admin", label: "Dashboard", icon: "⬡" },
+    { href: "/dashboard-verwalter", label: "Verwaltung", icon: "◈" },
+  ],
 }
 
 const rolleLabels: Record<Rolle, string> = {
   verwalter: "Verwaltung",
   handwerker: "Handwerker",
   mieter: "Mieter",
+  admin: "Admin",
 }
 
 const dashboardLinks: Record<Rolle, string> = {
   verwalter: "/dashboard-verwalter",
   handwerker: "/dashboard-handwerker",
   mieter: "/dashboard-mieter",
+  admin: "/dashboard-admin",
 }
 
 export default function Sidebar({ rolle }: { rolle: Rolle }) {
@@ -67,7 +74,9 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
         {items.map(item => {
           const active = pathname === item.href || (item.href !== "/dashboard-" + rolle && pathname.startsWith(item.href))
           return (
-            <Link key={item.href} href={item.href}
+            <Link
+              key={item.href}
+              href={item.href}
               className={`flex items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium rounded-xl mb-0.5 transition-all ${
                 active
                   ? "text-white bg-gradient-to-r from-[#00D4AA]/15 to-[#00B4D8]/10 border border-[#00D4AA]/20 shadow-sm shadow-[#00D4AA]/5"
@@ -85,7 +94,9 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
       </div>
 
       <div className="p-4">
-        <button onClick={handleLogout} className="w-full text-left text-xs text-gray-600 hover:text-gray-400 py-2 px-3 rounded-lg hover:bg-white/[0.03] transition-all font-medium">
+        <button
+          onClick={handleLogout}
+          className="w-full text-left text-xs text-gray-600 hover:text-gray-400 py-2 px-3 rounded-lg hover:bg-white/[0.03] transition-all font-medium">
           ← Abmelden
         </button>
       </div>
