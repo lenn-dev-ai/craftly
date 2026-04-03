@@ -1,0 +1,323 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase"
+import { UserProfile, Zeitslot, GEWERK_LABELS } from "@/types"
+import { GEWERK_BASIS_PREISE } from "@/lib/yield-management"
+
+type Filter = "alle" | "sanitaer" | "elektro" | "heizung" | "maler" | "schreiner" | "dachdecker" | "schlosser"
+
+export default function MarktplatzPage() {
+  const router = useRouter()
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [slots, setSlots] = useState<Zeitslot[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<Filter>("alle")
+  const [sending, setSending] = useState<string | null>(null)
+  const [toast, setToast] = useState("")
+  const [gebotPreise, setGebotPreise] = useState<Record<string, number>>({})
+  const [gebotNachrichten, setGebotNachrichten] = useState<Record<string, string>>({})
+  const [expandedSlot, setExpandedSlot] = useState<string | null>(null)
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  async function loadData() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push("/login"); return }
+
+    const [{ data: prof }, { data: verfuegbareSlots }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", user.id).single(),
+      supabase
+        .from("zeitslots")
+        .select("*, handwerker:profiles!handwerker_id(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl, plz_bereich), gebote:zeitslot_gebote(count)")
+        .eq("status", "verfuegbar")
+        .gte("datum", new Date().toISOString().split("T")[0])
+        .order("datum", { ascending: true }),
+    ])
+
+    setProfile(prof)
+    setSlots(verfuegbareSlots || [])
+    setLoading(false)
+  }
+
+  async function submitGebot(slotId: string) {
+    if (!profile) return
+    setSending(slotId)
+
+    const slot = slots.find(s => s.id === slotId)
+    if (!slot) return
+
+    const preis = gebotPreise[slotId] || slot.dynamischer_preis || slot.basis_preis_stunde
+    const nachricht = gebotNachrichten[slotId] || ""
+
+    const supabase = createClient()
+    const { error } = await supabase.from("zeitslot_gebote").insert({
+      zeitslot_id: slotId,
+      verwalter_id: profile.id,
+      gebotener_preis: preis,
+      wunsch_stunden: slot.stunden,
+      nachricht: nachricht || null,
+      status: "offen",
+    })
+
+    if (error) {
+      if (error.message.includes("duplicate")) {
+        setToast("Du hast bereits ein Gebot fuer diesen Slot abgegeben")
+      } else {
+        setToast("Fehler: " + error.message)
+      }
+    } else {
+      setToast("Gebot erfolgreich gesendet! Der Handwerker wird benachrichtigt.")
+      setExpandedSlot(null)
+      await loadData()
+    }
+    setSending(null)
+    setTimeout(() => setToast(""), 4000)
+  }
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-[#00D4AA]/30 border-t-[#00D4AA] rounded-full animate-spin" />
+        <span className="text-sm text-white/40">Marktplatz laden...</span>
+      </div>
+    </div>
+  )
+
+  const filteredSlots = filter === "alle"
+    ? slots
+    : slots.filter(s => s.gewerk === filter)
+
+  const gewerke = [...new Set(slots.map(s => s.gewerk).filter(Boolean))] as string[]
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0f] text-white">
+      <div className="max-w-5xl mx-auto p-6 md:p-6 pt-16 md:pt-6">
+        {/* Toast */}
+        {toast && (
+          <div className="fixed top-4 right-4 z-50 bg-[#12121a] border border-[#00D4AA]/30 text-white text-sm px-4 py-3 rounded-xl shadow-lg shadow-[#00D4AA]/10">
+            {toast}
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">Handwerker-Marktplatz</h1>
+          <p className="text-white/40 text-sm mt-1">
+            Verfuegbare Zeitslots â Biete auf Handwerker deiner Wahl
+          </p>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+          <div className="bg-[#12121a] border border-white/5 rounded-xl p-4">
+            <div className="text-xs text-white/40 mb-1">Verfuegbare Slots</div>
+            <div className="text-2xl font-bold text-[#00D4AA]">{slots.length}</div>
+          </div>
+          <div className="bg-[#12121a] border border-white/5 rounded-xl p-4">
+            <div className="text-xs text-white/40 mb-1">Gewerke</div>
+            <div className="text-2xl font-bold text-[#00B4D8]">{gewerke.length}</div>
+          </div>
+          <div className="bg-[#12121a] border border-white/5 rounded-xl p-4 hidden sm:block">
+            <div className="text-xs text-white/40 mb-1">Ã Preis/h</div>
+            <div className="text-2xl font-bold text-white">
+              {slots.length > 0
+                ? Math.round(slots.reduce((s, sl) => s + (sl.dynamischer_preis || sl.basis_preis_stunde), 0) / slots.length)
+                : 0
+              } EUR
+            </div>
+          </div>
+        </div>
+
+        {/* Filter */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <button
+            onClick={() => setFilter("alle")}
+            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
+              filter === "alle"
+                ? "bg-[#00D4AA]/15 text-[#00D4AA] border border-[#00D4AA]/20"
+                : "text-white/40 border border-white/10 hover:text-white/60 hover:border-white/20"
+            }`}
+          >
+            Alle ({slots.length})
+          </button>
+          {gewerke.map(g => {
+            const count = slots.filter(s => s.gewerk === g).length
+            return (
+              <button
+                key={g}
+                onClick={() => setFilter(g as Filter)}
+                className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
+                  filter === g
+                    ? "bg-[#00D4AA]/15 text-[#00D4AA] border border-[#00D4AA]/20"
+                    : "text-white/40 border border-white/10 hover:text-white/60 hover:border-white/20"
+                }`}
+              >
+                {GEWERK_LABELS[g] || g} ({count})
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Slots Grid */}
+        {filteredSlots.length === 0 ? (
+          <div className="bg-[#12121a] border border-white/5 rounded-2xl p-12 text-center">
+            <div className="text-4xl mb-3">ð</div>
+            <div className="text-lg font-semibold mb-1">Keine Slots gefunden</div>
+            <div className="text-sm text-white/40">
+              {filter !== "alle"
+                ? `Keine verfuegbaren Slots fuer ${GEWERK_LABELS[filter]}. Probiere einen anderen Filter.`
+                : "Aktuell sind keine Handwerker-Slots verfuegbar. Schau spaeter nochmal vorbei!"
+              }
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {filteredSlots.map(s => {
+              const hw = s.handwerker as any
+              const preis = s.dynamischer_preis || s.basis_preis_stunde
+              const basisPreis = GEWERK_BASIS_PREISE[s.gewerk || "allgemein"] || 50
+              const isExpanded = expandedSlot === s.id
+              const gebotsCount = (s.gebote as any)?.[0]?.count || 0
+
+              return (
+                <div
+                  key={s.id}
+                  className={`bg-[#12121a] border rounded-xl transition-all ${
+                    isExpanded ? "border-[#00D4AA]/30 shadow-lg shadow-[#00D4AA]/5" : "border-white/5 hover:border-white/10"
+                  }`}
+                >
+                  <div className="p-4">
+                    <div className="flex items-start justify-between flex-wrap gap-3">
+                      {/* Left: Handwerker Info */}
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#00D4AA]/20 to-[#00B4D8]/20 rounded-xl flex items-center justify-center text-sm font-bold text-[#00D4AA] flex-shrink-0">
+                          {hw?.name?.charAt(0) || "H"}
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold flex items-center gap-2">
+                            {hw?.firma || hw?.name || "Handwerker"}
+                            {hw?.bewertung_avg > 0 && (
+                              <span className="text-[10px] text-[#F59E0B]">
+                                â {hw.bewertung_avg.toFixed(1)}
+                              </span>
+                            )}
+                            {hw?.auftraege_anzahl > 0 && (
+                              <span className="text-[10px] text-white/30">
+                                ({hw.auftraege_anzahl} Auftraege)
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-white/40 mt-0.5">
+                            {GEWERK_LABELS[s.gewerk || "allgemein"]}
+                            {hw?.plz_bereich && ` Â· PLZ ${hw.plz_bereich}`}
+                          </div>
+                          <div className="text-xs text-white/50 mt-1">
+                            <span className="font-medium">
+                              {new Date(s.datum).toLocaleDateString("de", { weekday: "short", day: "numeric", month: "short" })}
+                            </span>
+                            {" Â· "}
+                            {s.von} - {s.bis} ({s.stunden}h)
+                          </div>
+                          {s.ist_luecke && (
+                            <span className="inline-block mt-1 text-[9px] bg-[#8B5CF6]/15 text-[#8B5CF6] px-1.5 py-0.5 rounded-full">
+                              Luecken-Angebot (-15%)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right: Price + Action */}
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-2xl font-bold text-[#00D4AA]">{preis} EUR<span className="text-sm text-white/40">/h</span></div>
+                        {s.preisfaktor > 1.0 && (
+                          <div className="text-[10px] text-[#F59E0B]">Ã{s.preisfaktor} Surge</div>
+                        )}
+                        {s.preisfaktor <= 1.0 && preis < basisPreis && (
+                          <div className="text-[10px] text-[#8B5CF6]">Unter Marktpreis</div>
+                        )}
+                        <div className="text-[10px] text-white/20 mt-0.5">
+                          Markt: {basisPreis} EUR/h
+                        </div>
+                        {gebotsCount > 0 && (
+                          <div className="text-[10px] text-[#F59E0B] mt-1">
+                            {gebotsCount} {gebotsCount === 1 ? "Gebot" : "Gebote"} vorhanden
+                          </div>
+                        )}
+                        <button
+                          onClick={() => setExpandedSlot(isExpanded ? null : s.id)}
+                          className={`mt-2 text-xs font-bold px-4 py-2 rounded-lg transition-all ${
+                            isExpanded
+                              ? "bg-white/10 text-white/60"
+                              : "bg-gradient-to-r from-[#00D4AA] to-[#00B4D8] text-black hover:brightness-110"
+                          }`}
+                        >
+                          {isExpanded ? "Schliessen" : "Gebot abgeben"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expanded: Gebot Form */}
+                  {isExpanded && (
+                    <div className="border-t border-white/5 p-4 bg-white/[0.02]">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-xs text-white/40 mb-1 block">Dein Gebot (EUR/h) *</label>
+                          <input
+                            type="number"
+                            min={1}
+                            value={gebotPreise[s.id] || preis}
+                            onChange={e => setGebotPreise({ ...gebotPreise, [s.id]: Number(e.target.value) })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00D4AA]/40 focus:outline-none transition-colors"
+                          />
+                          <div className="text-[10px] text-white/30 mt-1">
+                            {(gebotPreise[s.id] || preis) >= preis
+                              ? "â Gebot liegt beim oder ueber dem aktuellen Preis"
+                              : "â  Unter dem aktuellen Preis â Annahme unwahrscheinlich"
+                            }
+                          </div>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="text-xs text-white/40 mb-1 block">Nachricht (optional)</label>
+                          <input
+                            type="text"
+                            value={gebotNachrichten[s.id] || ""}
+                            onChange={e => setGebotNachrichten({ ...gebotNachrichten, [s.id]: e.target.value })}
+                            placeholder="z.B. Fuer Sanitaer-Reparatur in Musterstrasse 12..."
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/20 focus:border-[#00D4AA]/40 focus:outline-none transition-colors"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Gesamt-Vorschau */}
+                      <div className="mt-3 bg-white/5 rounded-lg p-3 flex items-center justify-between">
+                        <div className="text-xs text-white/40">
+                          Geschaetzte Gesamtkosten: <span className="font-bold text-white">
+                            {Math.round((gebotPreise[s.id] || preis) * s.stunden)} EUR
+                          </span>
+                          <span className="text-white/20"> ({s.stunden}h Ã {gebotPreise[s.id] || preis} EUR)</span>
+                        </div>
+                        <button
+                          onClick={() => submitGebot(s.id)}
+                          disabled={sending === s.id}
+                          className="text-xs font-bold bg-gradient-to-r from-[#00D4AA] to-[#00B4D8] text-black px-6 py-2.5 rounded-lg hover:brightness-110 transition-all disabled:opacity-50"
+                        >
+                          {sending === s.id ? "Wird gesendet..." : "Gebot senden"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
