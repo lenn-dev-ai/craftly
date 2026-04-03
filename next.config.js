@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // TypeScript errors must be fixed, not ignored
+  // typescript: { ignoreBuildErrors: true },  // REMOVED
 }
+
 module.exports = nextConfig
