@@ -1,48 +1,56 @@
-import type { Metadata, Viewport } from "next"
-import "./globals.css"
-import AdminButton from "@/components/AdminButton"
-import Script from "next/script"
+import type { Metadata, Viewport } from 'next'
+import { Inter, Space_Grotesk } from 'next/font/google'
+import './globals.css'
+import AdminButton from '@/components/AdminButton'
+import Script from 'next/script'
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  themeColor: "#00D4AA",
-}
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const displayFont = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+})
 
 export const metadata: Metadata = {
-  title: {
-    default: "Reparo — Verwalter, Handwerker & Mieter verbinden",
-    template: "%s | Reparo",
+  title: 'Reparo — Verwalter, Handwerker & Mieter verbinden',
+  description: 'Die intelligente Plattform für Hausverwaltungen, Handwerker und Mieter. Verwalten Sie Arbeitsaufträge effizient, kommunizieren Sie nahtlos und erhöhen Sie die Kundenzufriedenheit.',
+  manifest: '/manifest.json',
+  themeColor: '#00D4AA',
+  openGraph: {
+    title: 'Reparo — Verwalter, Handwerker & Mieter verbinden',
+    description: 'Die intelligente Plattform für Hausverwaltungen, Handwerker und Mieter.',
+    url: 'https://reparo.app',
+    siteName: 'Reparo',
+    type: 'website',
   },
-  description:
-    "Die Plattform für Hausverwaltungen: Tickets erstellen, Handwerker per Auktion beauftragen, Kosten sparen. Das Doctolib für die Immobilienwirtschaft.",
-  keywords: [
-    "Hausverwaltung",
-    "Handwerker",
-    "Immobilien",
-    "Ticketsystem",
-    "Schadensmeldung",
-    "Auktion",
-  ],
-  authors: [{ name: "Reparo" }],
-  manifest: "/manifest.json",
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Reparo',
+    description: 'Die intelligente Plattform für Hausverwaltungen, Handwerker und Mieter.',
+  },
+  icons: {
+    icon: '/icons/favicon.ico',
+    apple: '/icons/icon-192x192.png',
+  },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
-    title: "Reparo",
+    statusBarStyle: 'black-translucent',
+    title: 'Reparo',
   },
-  openGraph: {
-    title: "Reparo — Verwalter, Handwerker & Mieter verbinden",
-    description:
-      "Die Plattform für Hausverwaltungen: Tickets erstellen, Handwerker per Auktion beauftragen, Kosten sparen.",
-    type: "website",
-    locale: "de_DE",
-    siteName: "Reparo",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#00D4AA',
+  colorScheme: 'light dark',
 }
 
 export default function RootLayout({
@@ -51,26 +59,30 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="de">
+    <html
+      lang="de"
+      className={`${inter.variable} ${displayFont.variable}`}
+      suppressHydrationWarning
+    >
       <head>
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Reparo" />
       </head>
-      <body>
-        {children}
+      <body className={`${inter.className} antialiased`}>
         <AdminButton />
-        <Script
-          id="sw-register"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ("serviceWorker" in navigator) {
-                navigator.serviceWorker.register("/sw.js").catch(() => {});
-              }
-            `,
-          }}
-        />
+        {children}
       </body>
+      <Script
+        id="service-worker"
+        dangerouslySetInnerHTML={{
+          __html: `
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration failed: ', err));
+            }
+          `,
+        }}
+      />
     </html>
   )
 }
