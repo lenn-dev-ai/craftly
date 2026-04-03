@@ -1,4 +1,4 @@
-const CACHE_NAME = "craftly-v1";
+const CACHE_NAME = "reparo-v1";
 const OFFLINE_URL = "/offline.html";
 
 // Assets to pre-cache on install
