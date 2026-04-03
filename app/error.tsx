@@ -10,7 +10,6 @@ interface ErrorPageProps {
 
 export default function Error({ error, reset }: ErrorPageProps) {
   useEffect(() => {
-    // Log error for debugging
     console.error('Application error:', error);
   }, [error]);
 
@@ -27,21 +26,22 @@ export default function Error({ error, reset }: ErrorPageProps) {
           Ein Fehler ist aufgetreten
         </h1>
 
-        {/* Error Message */}
-        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-left">
-          <p className="text-red-400 text-sm font-mono">
-            {error.message || 'Ein unerwarteter Fehler ist aufgetreten.'}
+        {/* Error Info — only digest for support, no raw messages */}
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+          <p className="text-red-400 text-sm">
+            Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.
           </p>
           {error.digest && (
-            <p className="text-red-300/60 text-xs mt-2">
-              Error ID: {error.digest}
+            <p className="text-red-300/60 text-xs mt-2 font-mono">
+              Fehler-ID: {error.digest}
             </p>
           )}
         </div>
 
         {/* Description */}
         <p className="text-gray-400">
-          Bitte versuchen Sie die Seite zu aktualisieren oder kontaktieren Sie den Support.
+          Falls das Problem weiterhin besteht, kontaktieren Sie bitte den Support
+          {error.digest ? ` mit der Fehler-ID: ${error.digest}` : ''}.
         </p>
 
         {/* Buttons */}
