@@ -3,10 +3,12 @@ import { TicketStatus, Prioritaet } from "@/types"
 
 export function Badge({ status }: { status: TicketStatus }) {
   const map: Record<TicketStatus, { label: string; cls: string }> = {
-    offen:          { label: "Offen",          cls: "badge-offen" },
-    auktion:        { label: "Auktion aktiv",  cls: "badge-auktion" },
-    in_bearbeitung: { label: "In Arbeit",      cls: "badge-progress" },
-    erledigt:       { label: "Erledigt",       cls: "badge-erledigt" },
+    offen:           { label: "Offen",           cls: "badge-offen" },
+    auktion:         { label: "Auktion aktiv",   cls: "badge-auktion" },
+    vergeben:        { label: "Vergeben",         cls: "badge-progress" },
+    in_bearbeitung:  { label: "In Bearbeitung",  cls: "badge-progress" },
+    in_arbeit:       { label: "In Arbeit",        cls: "badge-progress" },
+    erledigt:        { label: "Erledigt",         cls: "badge-erledigt" },
   }
   const { label, cls } = map[status]
   return (
@@ -19,7 +21,7 @@ export function Badge({ status }: { status: TicketStatus }) {
 
 export function PrioBadge({ prio }: { prio: Prioritaet }) {
   const map: Record<Prioritaet, { label: string; icon: string; cls: string }> = {
-    normal:   { label: "Normal",   icon: "—",  cls: "prio-normal" },
+    normal:   { label: "Normal",   icon: "—", cls: "prio-normal" },
     hoch:     { label: "Hoch",     icon: "⚡", cls: "prio-hoch" },
     dringend: { label: "Dringend", icon: "🔥", cls: "prio-dringend" },
   }
@@ -33,18 +35,22 @@ export function PrioBadge({ prio }: { prio: Prioritaet }) {
 
 export function StatusDot({ status }: { status: TicketStatus }) {
   const colors: Record<TicketStatus, string> = {
-    offen: "bg-[#FF6363]", auktion: "bg-[#00B4D8]",
-    in_bearbeitung: "bg-[#FFB74D]", erledigt: "bg-[#00D4AA]",
+    offen:          "bg-[#FF6363]",
+    auktion:        "bg-[#00B4D8]",
+    vergeben:       "bg-[#A78BFA]",
+    in_bearbeitung: "bg-[#FFB74D]",
+    in_arbeit:      "bg-[#FFB74D]",
+    erledigt:       "bg-[#00D4AA]",
   }
   return <span className={`inline-block w-2.5 h-2.5 rounded-full ${colors[status]} flex-shrink-0 ring-2 ring-current/20`} />
 }
 
-export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" | "lg" }) {
+export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
   const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()
   const sizes = { sm: "w-8 h-8 text-xs", md: "w-10 h-10 text-sm", lg: "w-14 h-14 text-base" }
   return (
     <div className={`${sizes[size]} rounded-xl flex items-center justify-center font-bold flex-shrink-0`}
-      style={{ background: "linear-gradient(135deg, #00D4AA, #00B4D8)", color: "#fff" }}>
+         style={{ background: "linear-gradient(135deg, #00D4AA, #00B4D8)", color: "#fff" }}>
       {initials}
     </div>
   )
@@ -61,7 +67,8 @@ export function Card({ children, className = "", onClick }: { children: React.Re
 export function Button({
   children, onClick, variant = "primary", size = "md", disabled = false, className = "", type = "button"
 }: {
-  children: React.ReactNode; onClick?: () => void; variant?: "primary" | "ghost" | "danger" | "secondary" | "secondary"
+  children: React.ReactNode; onClick?: () => void;
+  variant?: "primary" | "ghost" | "danger" | "secondary"
   size?: "sm" | "md"; disabled?: boolean; className?: string; type?: "button" | "submit"
 }) {
   const base = "font-semibold rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
@@ -74,7 +81,7 @@ export function Button({
   const sizes = { sm: "px-4 py-2 text-sm", md: "px-5 py-3 text-sm", lg: "px-6 py-3.5 text-base" }
   return (
     <button type={type} onClick={onClick} disabled={disabled}
-      className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}>
+            className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}>
       {children}
     </button>
   )
@@ -84,8 +91,7 @@ export function Input({ label, ...props }: { label?: string } & React.InputHTMLA
   return (
     <div className="flex flex-col gap-1.5">
       {label && <label className="text-sm font-medium text-gray-400">{label}</label>}
-      <input {...props}
-        className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-all" />
+      <input {...props} className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-all" />
     </div>
   )
 }
@@ -94,8 +100,7 @@ export function Select({ label, children, ...props }: { label?: string } & React
   return (
     <div className="flex flex-col gap-1.5">
       {label && <label className="text-sm font-medium text-gray-400">{label}</label>}
-      <select {...props}
-        className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white focus:outline-none focus:border-[#00D4AA]/50 cursor-pointer">
+      <select {...props} className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white focus:outline-none focus:border-[#00D4AA]/50 cursor-pointer">
         {children}
       </select>
     </div>
@@ -106,8 +111,7 @@ export function Textarea({ label, ...props }: { label?: string } & React.Textare
   return (
     <div className="flex flex-col gap-1.5">
       {label && <label className="text-sm font-medium text-gray-400">{label}</label>}
-      <textarea {...props} rows={3}
-        className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#00D4AA]/50 resize-none" />
+      <textarea {...props} rows={3} className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#00D4AA]/50 resize-none" />
     </div>
   )
 }
@@ -122,9 +126,7 @@ export function MetricCard({ label, value, sub, icon }: { label: string; value: 
   )
 }
 
-export function EmptyState({ icon, title, desc, action }: {
-  icon: string; title: string; desc: string; action?: React.ReactNode
-}) {
+export function EmptyState({ icon, title, desc, action }: { icon: string; title: string; desc: string; action?: React.ReactNode }) {
   return (
     <div className="text-center py-20">
       <div className="text-5xl mb-4">{icon}</div>
