@@ -131,7 +131,7 @@ export function erkenneLuecken(
     nachDatum.get(d)!.push(t)
   }
 
-  for (const [datum, events] of nachDatum.entries()) {
+  for (const [datum, events] of Array.from(nachDatum.entries())) {
     const sorted = events.sort((a, b) => a.von.localeCompare(b.von))
 
     for (let i = 0; i < sorted.length - 1; i++) {
