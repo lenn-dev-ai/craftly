@@ -93,7 +93,7 @@ export default function MarktplatzPage() {
     ? slots
     : slots.filter(s => s.gewerk === filter)
 
-  const gewerke = [...new Set(slots.map(s => s.gewerk).filter(Boolean))] as string[]
+  const gewerke = Array.from(new Set(slots.map(s => s.gewerk).filter(Boolean))) as string[]
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
