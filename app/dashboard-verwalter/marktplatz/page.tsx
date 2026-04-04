@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { UserProfile, Zeitslot, GEWERK_LABELS } from "@/types"
 import { GEWERK_BASIS_PREISE } from "@/lib/yield-management"
+import { formatZeit } from "@/lib/format"
 
 type Filter = "alle" | "sanitaer" | "elektro" | "heizung" | "maler" | "schreiner" | "dachdecker" | "schlosser"
 
@@ -46,12 +47,12 @@ export default function MarktplatzPage() {
 
   async function submitGebot(slotId: string) {
     if (!profile) return
-    setSending(slotId)
-
     const slot = slots.find(s => s.id === slotId)
     if (!slot) return
-
     const preis = gebotPreise[slotId] || slot.dynamischer_preis || slot.basis_preis_stunde
+    if (!window.confirm(`Gebot über ${preis} €/h für "${slot.titel}" wirklich absenden?`)) return
+    setSending(slotId)
+
     const nachricht = gebotNachrichten[slotId] || ""
 
     const supabase = createClient()
@@ -66,7 +67,7 @@ export default function MarktplatzPage() {
 
     if (error) {
       if (error.message.includes("duplicate")) {
-        setToast("Du hast bereits ein Gebot fuer diesen Slot abgegeben")
+        setToast("Du hast bereits ein Gebot für diesen Slot abgegeben")
       } else {
         setToast("Fehler: " + error.message)
       }
@@ -92,7 +93,7 @@ export default function MarktplatzPage() {
     ? slots
     : slots.filter(s => s.gewerk === filter)
 
-  const gewerke = Array.from(new Set(slots.map(s => s.gewerk).filter(Boolean))) as string[]
+  const gewerke = [...new Set(slots.map(s => s.gewerk).filter(Boolean))] as string[]
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
@@ -108,14 +109,14 @@ export default function MarktplatzPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Handwerker-Marktplatz</h1>
           <p className="text-white/40 text-sm mt-1">
-            Verfuegbare Zeitslots â Biete auf Handwerker deiner Wahl
+            Verfügbare Zeitslots — Biete auf Handwerker deiner Wahl
           </p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
           <div className="bg-[#12121a] border border-white/5 rounded-xl p-4">
-            <div className="text-xs text-white/40 mb-1">Verfuegbare Slots</div>
+            <div className="text-xs text-white/40 mb-1">Verfügbare Slots</div>
             <div className="text-2xl font-bold text-[#00D4AA]">{slots.length}</div>
           </div>
           <div className="bg-[#12121a] border border-white/5 rounded-xl p-4">
@@ -123,12 +124,12 @@ export default function MarktplatzPage() {
             <div className="text-2xl font-bold text-[#00B4D8]">{gewerke.length}</div>
           </div>
           <div className="bg-[#12121a] border border-white/5 rounded-xl p-4 hidden sm:block">
-            <div className="text-xs text-white/40 mb-1">Ã Preis/h</div>
+            <div className="text-xs text-white/40 mb-1">Ø Preis/h</div>
             <div className="text-2xl font-bold text-white">
               {slots.length > 0
                 ? Math.round(slots.reduce((s, sl) => s + (sl.dynamischer_preis || sl.basis_preis_stunde), 0) / slots.length)
                 : 0
-              } EUR
+              } €
             </div>
           </div>
         </div>
@@ -166,12 +167,12 @@ export default function MarktplatzPage() {
         {/* Slots Grid */}
         {filteredSlots.length === 0 ? (
           <div className="bg-[#12121a] border border-white/5 rounded-2xl p-12 text-center">
-            <div className="text-4xl mb-3">ð</div>
+            <div className="text-4xl mb-3">🔍</div>
             <div className="text-lg font-semibold mb-1">Keine Slots gefunden</div>
             <div className="text-sm text-white/40">
               {filter !== "alle"
-                ? `Keine verfuegbaren Slots fuer ${GEWERK_LABELS[filter]}. Probiere einen anderen Filter.`
-                : "Aktuell sind keine Handwerker-Slots verfuegbar. Schau spaeter nochmal vorbei!"
+                ? `Keine verfügbaren Slots für ${GEWERK_LABELS[filter]}. Probiere einen anderen Filter.`
+                : "Aktuell sind keine Handwerker-Slots verfügbar. Schau später nochmal vorbei!"
               }
             </div>
           </div>
@@ -203,29 +204,29 @@ export default function MarktplatzPage() {
                             {hw?.firma || hw?.name || "Handwerker"}
                             {hw?.bewertung_avg > 0 && (
                               <span className="text-[10px] text-[#F59E0B]">
-                                â {hw.bewertung_avg.toFixed(1)}
+                                ★ {hw.bewertung_avg.toFixed(1)}
                               </span>
                             )}
                             {hw?.auftraege_anzahl > 0 && (
                               <span className="text-[10px] text-white/30">
-                                ({hw.auftraege_anzahl} Auftraege)
+                                ({hw.auftraege_anzahl} Aufträge)
                               </span>
                             )}
                           </div>
                           <div className="text-xs text-white/40 mt-0.5">
                             {GEWERK_LABELS[s.gewerk || "allgemein"]}
-                            {hw?.plz_bereich && ` Â· PLZ ${hw.plz_bereich}`}
+                            {hw?.plz_bereich && ` · PLZ ${hw.plz_bereich}`}
                           </div>
                           <div className="text-xs text-white/50 mt-1">
                             <span className="font-medium">
                               {new Date(s.datum).toLocaleDateString("de", { weekday: "short", day: "numeric", month: "short" })}
                             </span>
-                            {" Â· "}
-                            {s.von} - {s.bis} ({s.stunden}h)
+                            {" · "}
+                            {formatZeit(s.von)} – {formatZeit(s.bis)} ({s.stunden}h)
                           </div>
                           {s.ist_luecke && (
                             <span className="inline-block mt-1 text-[9px] bg-[#8B5CF6]/15 text-[#8B5CF6] px-1.5 py-0.5 rounded-full">
-                              Luecken-Angebot (-15%)
+                              Lücken-Angebot (–15%)
                             </span>
                           )}
                         </div>
@@ -233,15 +234,15 @@ export default function MarktplatzPage() {
 
                       {/* Right: Price + Action */}
                       <div className="text-right flex-shrink-0">
-                        <div className="text-2xl font-bold text-[#00D4AA]">{preis} EUR<span className="text-sm text-white/40">/h</span></div>
+                        <div className="text-2xl font-bold text-[#00D4AA]">{preis} €<span className="text-sm text-white/40">/h</span></div>
                         {s.preisfaktor > 1.0 && (
-                          <div className="text-[10px] text-[#F59E0B]">Ã{s.preisfaktor} Surge</div>
+                          <div className="text-[10px] text-[#F59E0B]">×{s.preisfaktor} Surge</div>
                         )}
                         {s.preisfaktor <= 1.0 && preis < basisPreis && (
                           <div className="text-[10px] text-[#8B5CF6]">Unter Marktpreis</div>
                         )}
                         <div className="text-[10px] text-white/20 mt-0.5">
-                          Markt: {basisPreis} EUR/h
+                          Markt: {basisPreis} €/h
                         </div>
                         {gebotsCount > 0 && (
                           <div className="text-[10px] text-[#F59E0B] mt-1">
@@ -256,7 +257,7 @@ export default function MarktplatzPage() {
                               : "bg-gradient-to-r from-[#00D4AA] to-[#00B4D8] text-black hover:brightness-110"
                           }`}
                         >
-                          {isExpanded ? "Schliessen" : "Gebot abgeben"}
+                          {isExpanded ? "Schließen" : "Gebot abgeben"}
                         </button>
                       </div>
                     </div>
@@ -267,7 +268,7 @@ export default function MarktplatzPage() {
                     <div className="border-t border-white/5 p-4 bg-white/[0.02]">
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
-                          <label className="text-xs text-white/40 mb-1 block">Dein Gebot (EUR/h) *</label>
+                          <label className="text-xs text-white/40 mb-1 block">Dein Gebot (€/h) *</label>
                           <input
                             type="number"
                             min={1}
@@ -277,8 +278,8 @@ export default function MarktplatzPage() {
                           />
                           <div className="text-[10px] text-white/30 mt-1">
                             {(gebotPreise[s.id] || preis) >= preis
-                              ? "â Gebot liegt beim oder ueber dem aktuellen Preis"
-                              : "â  Unter dem aktuellen Preis â Annahme unwahrscheinlich"
+                              ? "✓ Gebot liegt beim oder über dem aktuellen Preis"
+                              : "⚠ Unter dem aktuellen Preis — Annahme unwahrscheinlich"
                             }
                           </div>
                         </div>
@@ -288,7 +289,7 @@ export default function MarktplatzPage() {
                             type="text"
                             value={gebotNachrichten[s.id] || ""}
                             onChange={e => setGebotNachrichten({ ...gebotNachrichten, [s.id]: e.target.value })}
-                            placeholder="z.B. Fuer Sanitaer-Reparatur in Musterstrasse 12..."
+                            placeholder="z.B. Für Sanitär-Reparatur in Musterstraße 12..."
                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/20 focus:border-[#00D4AA]/40 focus:outline-none transition-colors"
                           />
                         </div>
@@ -297,10 +298,10 @@ export default function MarktplatzPage() {
                       {/* Gesamt-Vorschau */}
                       <div className="mt-3 bg-white/5 rounded-lg p-3 flex items-center justify-between">
                         <div className="text-xs text-white/40">
-                          Geschaetzte Gesamtkosten: <span className="font-bold text-white">
-                            {Math.round((gebotPreise[s.id] || preis) * s.stunden)} EUR
+                          Geschätzte Gesamtkosten: <span className="font-bold text-white">
+                            {Math.round((gebotPreise[s.id] || preis) * s.stunden)} €
                           </span>
-                          <span className="text-white/20"> ({s.stunden}h Ã {gebotPreise[s.id] || preis} EUR)</span>
+                          <span className="text-white/20"> ({s.stunden}h × {gebotPreise[s.id] || preis} €)</span>
                         </div>
                         <button
                           onClick={() => submitGebot(s.id)}
