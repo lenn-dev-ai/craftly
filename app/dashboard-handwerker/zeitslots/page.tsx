@@ -10,6 +10,7 @@ import {
   erkenneLuecken,
   Luecke,
 } from "@/lib/yield-management"
+import { formatZeit } from "@/lib/format"
 
 type Tab = "aktiv" | "vergangen" | "erstellen"
 
@@ -157,7 +158,7 @@ export default function ZeitslotsPage() {
 
     const { error } = await supabase.from("zeitslots").insert({
       handwerker_id: profile.id,
-      titel: `Luecken-Slot (${luecke.vorher} → ${luecke.nachher})`,
+      titel: `Lücken-Slot (${luecke.vorher} → ${luecke.nachher})`,
       gewerk: profile.gewerk || "allgemein",
       datum: luecke.datum,
       von: luecke.von,
@@ -168,13 +169,13 @@ export default function ZeitslotsPage() {
       preisfaktor: preisInfo.gesamtFaktor,
       status: "verfuegbar",
       ist_luecke: true,
-      notizen: `Automatisch erkannte Luecke zwischen "${luecke.vorher}" und "${luecke.nachher}"`,
+      notizen: `Automatisch erkannte Lücke zwischen "${luecke.vorher}" und "${luecke.nachher}"`,
     })
 
     if (error) {
       setToast("Fehler: " + error.message)
     } else {
-      setToast("Luecken-Slot erstellt! (-15% Rabatt fuer schnelle Buchung)")
+      setToast("Lücken-Slot erstellt! (-15% Rabatt für schnelle Buchung)")
       await loadData()
     }
     setSaving(false)
@@ -182,9 +183,10 @@ export default function ZeitslotsPage() {
   }
 
   async function deleteSlot(id: string) {
+    if (!window.confirm("Zeitslot wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.")) return
     const supabase = createClient()
     await supabase.from("zeitslots").delete().eq("id", id)
-    setToast("Slot geloescht")
+    setToast("Slot gelöscht")
     await loadData()
     setTimeout(() => setToast(""), 3000)
   }
@@ -235,7 +237,7 @@ export default function ZeitslotsPage() {
           <div>
             <h1 className="text-2xl font-bold">Meine Zeitslots</h1>
             <p className="text-white/40 text-sm mt-1">
-              Verwalte deine Verfuegbarkeit — Dynamisches Pricing inklusive
+              Verwalte deine Verfügbarkeit — Dynamisches Pricing inklusive
             </p>
           </div>
           <button
@@ -277,10 +279,10 @@ export default function ZeitslotsPage() {
                 AI
               </span>
               <span className="text-sm font-semibold">
-                {luecken.length} Luecke{luecken.length > 1 ? "n" : ""} erkannt
+                {luecken.length} Lücke{luecken.length > 1 ? "n" : ""} erkannt
               </span>
               <span className="text-xs text-white/40">
-                — Monetarisiere leere Zeitfenster mit -15% Rabatt
+                — Monetarisiere leere Zeitfenster mit –15% Rabatt
               </span>
             </div>
             <div className="flex flex-col gap-2">
@@ -297,7 +299,7 @@ export default function ZeitslotsPage() {
                         month: "short",
                       })}
                       {" — "}
-                      {l.von} bis {l.bis} ({l.stunden}h)
+                      {formatZeit(l.von)} bis {formatZeit(l.bis)} ({l.stunden}h)
                     </div>
                     <div className="text-[10px] text-white/30 mt-0.5">
                       Zwischen "{l.vorher}" und "{l.nachher}"
@@ -327,7 +329,7 @@ export default function ZeitslotsPage() {
                   type="text"
                   value={form.titel}
                   onChange={(e) => setForm({ ...form, titel: e.target.value })}
-                  placeholder="z.B. Sanitaer-Einsatz Vormittag"
+                  placeholder="z.B. Sanitär-Einsatz Vormittag"
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/20 focus:border-[#00D4AA]/40 focus:outline-none transition-colors"
                 />
               </div>
@@ -412,10 +414,10 @@ export default function ZeitslotsPage() {
                     <div className="flex items-center gap-4">
                       <div>
                         <div className="text-2xl font-bold" style={{ color: preisInfo.farbe }}>
-                          {preisInfo.dynamischerPreis} EUR/h
+                          {preisInfo.dynamischerPreis} €/h
                         </div>
                         <div className="text-[10px] text-white/30">
-                          Basis: {basisPreis} EUR × {preisInfo.gesamtFaktor}
+                          Basis: {basisPreis} € × {preisInfo.gesamtFaktor}
                         </div>
                       </div>
                       <div
@@ -446,7 +448,7 @@ export default function ZeitslotsPage() {
                 disabled={saving}
                 className="flex-1 text-sm font-bold bg-gradient-to-r from-[#00D4AA] to-[#00B4D8] text-black py-3 rounded-xl hover:brightness-110 transition-all disabled:opacity-50"
               >
-                {saving ? "Wird erstellt..." : "Zeitslot veroeffentlichen"}
+                {saving ? "Wird erstellt..." : "Zeitslot veröffentlichen"}
               </button>
               <button
                 type="button"
@@ -478,75 +480,90 @@ export default function ZeitslotsPage() {
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                {aktiveSlots.map((s) => {
+                {aktiveSlots.map((s, idx) => {
                   const preis = s.dynamischer_preis || s.basis_preis_stunde
                   const gebotsCount = (s.gebote as any[])?.length || 0
+                  const showDateHeader = idx === 0 || aktiveSlots[idx - 1].datum !== s.datum
                   return (
-                    <div
-                      key={s.id}
-                      className="bg-[#12121a] border border-white/5 rounded-xl p-4 hover:border-[#00D4AA]/20 transition-all"
-                    >
-                      <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="text-center min-w-[50px]">
-                            <div className="text-xs text-white/30">
-                              {new Date(s.datum).toLocaleDateString("de", {
-                                weekday: "short",
-                              })}
-                            </div>
-                            <div className="text-lg font-bold">
-                              {new Date(s.datum).getDate()}.
-                              {new Date(s.datum).getMonth() + 1}
-                            </div>
+                    <div key={s.id}>
+                      {showDateHeader && (
+                        <div className={`flex items-center gap-3 ${idx > 0 ? "mt-4" : ""} mb-2`}>
+                          <div className="text-xs font-semibold text-white/50">
+                            {new Date(s.datum).toLocaleDateString("de", {
+                              weekday: "long",
+                              day: "numeric",
+                              month: "long",
+                            })}
                           </div>
-                          <div>
-                            <div className="text-sm font-medium flex items-center gap-2">
-                              {s.titel}
-                              {s.ist_luecke && (
-                                <span className="text-[9px] bg-[#8B5CF6]/15 text-[#8B5CF6] px-1.5 py-0.5 rounded-full">
-                                  Luecke
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-xs text-white/40">
-                              {s.von} - {s.bis} ({s.stunden}h) ·{" "}
-                              {GEWERK_LABELS[s.gewerk || "allgemein"]}
-                            </div>
+                          <div className="flex-1 h-px bg-white/5" />
+                          <div className="text-[10px] text-white/20">
+                            {aktiveSlots.filter(sl => sl.datum === s.datum).length} Slots
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          {gebotsCount > 0 && (
-                            <span className="text-[10px] bg-[#F59E0B]/15 text-[#F59E0B] px-2 py-0.5 rounded-full font-medium animate-pulse">
-                              {gebotsCount}{" "}
-                              {gebotsCount === 1 ? "Anfrage" : "Anfragen"}
-                            </span>
-                          )}
-                          <div className="text-right">
-                            <div className="text-lg font-bold text-[#00D4AA]">
-                              {preis} EUR/h
-                            </div>
-                            {s.preisfaktor > 1.0 && (
-                              <div className="text-[10px] text-[#F59E0B]">
-                                ×{s.preisfaktor} Surge
+                      )}
+                      <div className="bg-[#12121a] border border-white/5 rounded-xl p-4 hover:border-[#00D4AA]/20 transition-all">
+                        <div className="flex items-center justify-between flex-wrap gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="text-center min-w-[50px]">
+                              <div className="text-xs text-white/30">
+                                {new Date(s.datum).toLocaleDateString("de", {
+                                  weekday: "short",
+                                })}
                               </div>
+                              <div className="text-lg font-bold">
+                                {new Date(s.datum).getDate()}.
+                                {new Date(s.datum).getMonth() + 1}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium flex items-center gap-2">
+                                {s.titel}
+                                {s.ist_luecke && (
+                                  <span className="text-[9px] bg-[#8B5CF6]/15 text-[#8B5CF6] px-1.5 py-0.5 rounded-full">
+                                    Lücke
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-xs text-white/40">
+                                {formatZeit(s.von)} – {formatZeit(s.bis)} ({s.stunden}h) ·{" "}
+                                {GEWERK_LABELS[s.gewerk || "allgemein"]}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {gebotsCount > 0 && (
+                              <span className="text-[10px] bg-[#F59E0B]/15 text-[#F59E0B] px-2 py-0.5 rounded-full font-medium animate-pulse">
+                                {gebotsCount}{" "}
+                                {gebotsCount === 1 ? "Anfrage" : "Anfragen"}
+                              </span>
+                            )}
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-[#00D4AA]">
+                                {preis} €/h
+                              </div>
+                              {s.preisfaktor > 1.0 && (
+                                <div className="text-[10px] text-[#F59E0B]">
+                                  ×{s.preisfaktor} Surge
+                                </div>
+                              )}
+                            </div>
+                            <span
+                              className={`text-[10px] px-2 py-1 rounded-full font-medium border ${
+                                statusColors[s.status]
+                              }`}
+                            >
+                              {statusLabels[s.status]}
+                            </span>
+                            {s.status === "verfuegbar" && (
+                              <button
+                                onClick={() => deleteSlot(s.id)}
+                                className="text-[10px] text-white/20 hover:text-red-400 transition-colors ml-1"
+                                title="Slot löschen"
+                              >
+                                ✕
+                              </button>
                             )}
                           </div>
-                          <span
-                            className={`text-[10px] px-2 py-1 rounded-full font-medium border ${
-                              statusColors[s.status]
-                            }`}
-                          >
-                            {statusLabels[s.status]}
-                          </span>
-                          {s.status === "verfuegbar" && (
-                            <button
-                              onClick={() => deleteSlot(s.id)}
-                              className="text-[10px] text-white/20 hover:text-red-400 transition-colors ml-1"
-                              title="Slot loeschen"
-                            >
-                              ✕
-                            </button>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -591,13 +608,13 @@ export default function ZeitslotsPage() {
                           <div>
                             <div className="text-sm font-medium">{s.titel}</div>
                             <div className="text-xs text-white/40">
-                              {s.von} - {s.bis} ({s.stunden}h)
+                              {formatZeit(s.von)} – {formatZeit(s.bis)} ({s.stunden}h)
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="text-lg font-bold text-white/40">
-                            {preis} EUR/h
+                            {preis} €/h
                           </div>
                           <span
                             className={`text-[10px] px-2 py-1 rounded-full font-medium border ${
