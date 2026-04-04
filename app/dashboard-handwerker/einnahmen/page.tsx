@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { UserProfile, Zeitslot, ZeitslotGebot } from "@/types"
 import { berechneEinnahmenPrognose, GEWERK_BASIS_PREISE } from "@/lib/yield-management"
+import { formatZeit } from "@/lib/format"
 
 export default function EinnahmenDashboard() {
   const router = useRouter()
@@ -12,6 +13,30 @@ export default function EinnahmenDashboard() {
   const [slots, setSlots] = useState<Zeitslot[]>([])
   const [gebote, setGebote] = useState<ZeitslotGebot[]>([])
   const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState("")
+
+  async function handleGebot(gebotId: string, action: "angenommen" | "abgelehnt") {
+    const label = action === "angenommen" ? "annehmen" : "ablehnen"
+    if (!window.confirm(`Anfrage wirklich ${label}?`)) return
+    const supabase = createClient()
+    const { error } = await supabase.from("zeitslot_gebote").update({ status: action }).eq("id", gebotId)
+    if (error) {
+      setToast("Fehler: " + error.message)
+    } else {
+      setToast(action === "angenommen" ? "Anfrage angenommen!" : "Anfrage abgelehnt.")
+      // Reload data
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const [{ data: mySlots }, { data: myGebote }] = await Promise.all([
+          supabase.from("zeitslots").select("*, gebote:zeitslot_gebote(*)").eq("handwerker_id", user.id).order("datum"),
+          supabase.from("zeitslot_gebote").select("*, zeitslot:zeitslots(*)").eq("zeitslots.handwerker_id", user.id),
+        ])
+        setSlots(mySlots || [])
+        setGebote(myGebote || [])
+      }
+    }
+    setTimeout(() => setToast(""), 3000)
+  }
 
   useEffect(() => {
     async function load() {
@@ -46,7 +71,7 @@ export default function EinnahmenDashboard() {
   const offeneGebote = gebote.filter(g => g.status === "offen")
   const basisPreis = profile?.basis_preis || GEWERK_BASIS_PREISE[profile?.gewerk || "allgemein"] || 50
 
-  // Naechste 7 Tage Slots
+  // Nächste 7 Tage Slots
   const heute = new Date()
   const in7Tagen = new Date(heute)
   in7Tagen.setDate(heute.getDate() + 7)
@@ -66,31 +91,38 @@ export default function EinnahmenDashboard() {
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
       <div className="max-w-4xl mx-auto p-6 md:p-6 pt-16 md:pt-6">
+        {/* Toast */}
+        {toast && (
+          <div className="fixed top-4 right-4 z-50 bg-[#12121a] border border-[#00D4AA]/30 text-white text-sm px-4 py-3 rounded-xl shadow-lg shadow-[#00D4AA]/10 animate-pulse">
+            {toast}
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Meine Einnahmen</h1>
-          <p className="text-white/40 text-sm mt-1">Yield Management â Deine Zeit, dein Preis</p>
+          <p className="text-white/40 text-sm mt-1">Yield Management — Deine Zeit, dein Preis</p>
         </div>
 
-        {/* HERO: Einnahmen-Uebersicht */}
+        {/* HERO: Einnahmen-Übersicht */}
         <div className="bg-gradient-to-br from-[#00D4AA]/10 via-[#12121a] to-[#00B4D8]/10 border border-[#00D4AA]/20 rounded-2xl p-6 mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <div className="text-xs text-white/40 mb-1">Diese Woche verdient</div>
               <div className="text-4xl font-bold text-[#00D4AA]">
-                {prognose.dieseWoche > 0 ? prognose.dieseWoche.toLocaleString("de") : "0"} <span className="text-lg">EUR</span>
+                {prognose.dieseWoche > 0 ? prognose.dieseWoche.toLocaleString("de") : "0"} <span className="text-lg">€</span>
               </div>
             </div>
             <div>
-              <div className="text-xs text-white/40 mb-1">Naechste Woche geplant</div>
+              <div className="text-xs text-white/40 mb-1">Nächste Woche geplant</div>
               <div className="text-4xl font-bold text-[#00B4D8]">
-                {prognose.naechsteWoche > 0 ? prognose.naechsteWoche.toLocaleString("de") : "0"} <span className="text-lg">EUR</span>
+                {prognose.naechsteWoche > 0 ? prognose.naechsteWoche.toLocaleString("de") : "0"} <span className="text-lg">€</span>
               </div>
             </div>
             <div>
               <div className="text-xs text-white/40 mb-1">Offenes Potenzial</div>
               <div className="text-4xl font-bold text-[#F59E0B]">
-                +{prognose.potenzialNaechsteWoche.toLocaleString("de")} <span className="text-lg">EUR</span>
+                +{prognose.potenzialNaechsteWoche.toLocaleString("de")} <span className="text-lg">€</span>
               </div>
               <div className="text-[10px] text-white/30">{prognose.offeneSlots} offene Slots</div>
             </div>
@@ -106,9 +138,9 @@ export default function EinnahmenDashboard() {
         {/* KPIs */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <div className="bg-[#12121a] border border-white/5 rounded-xl p-4">
-            <div className="text-xs text-white/40 mb-1">Ã Stundensatz</div>
-            <div className="text-2xl font-bold text-white">{avgStundensatz} EUR</div>
-            <div className="text-[10px] text-[#00D4AA]">Markt: {basisPreis} EUR</div>
+            <div className="text-xs text-white/40 mb-1">Ø Stundensatz</div>
+            <div className="text-2xl font-bold text-white">{avgStundensatz} €</div>
+            <div className="text-[10px] text-[#00D4AA]">Markt: {basisPreis} €</div>
           </div>
           <div className="bg-[#12121a] border border-white/5 rounded-xl p-4">
             <div className="text-xs text-white/40 mb-1">Aktive Slots</div>
@@ -123,7 +155,7 @@ export default function EinnahmenDashboard() {
           <div className="bg-[#12121a] border border-white/5 rounded-xl p-4">
             <div className="text-xs text-white/40 mb-1">Vergeben</div>
             <div className="text-2xl font-bold text-[#8B5CF6]">{vergebeneSlots.length}</div>
-            <div className="text-[10px] text-white/30">Gebuchte Auftraege</div>
+            <div className="text-[10px] text-white/30">Gebuchte Aufträge</div>
           </div>
         </div>
 
@@ -134,7 +166,7 @@ export default function EinnahmenDashboard() {
               <div>
                 <div className="text-sm font-semibold text-white">
                   {verfuegbareSlots.length === 0
-                    ? "Starte jetzt â Stell deine ersten Zeitslots ein!"
+                    ? "Starte jetzt — Stell deine ersten Zeitslots ein!"
                     : `Noch ${5 - verfuegbareSlots.length} Slots bis zur optimalen Sichtbarkeit`
                   }
                 </div>
@@ -159,24 +191,41 @@ export default function EinnahmenDashboard() {
             <div className="flex flex-col gap-2">
               {offeneGebote.map(g => (
                 <div key={g.id} className="bg-[#12121a] border border-[#F59E0B]/20 rounded-xl p-4">
+                  {/* Zeitslot-Zuordnung */}
+                  {(g as any).zeitslot && (
+                    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
+                      <span className="text-[10px] bg-[#00B4D8]/15 text-[#00B4D8] px-2 py-0.5 rounded-full font-medium">Zeitslot</span>
+                      <span className="text-xs text-white/60 font-medium">{(g as any).zeitslot.titel}</span>
+                      <span className="text-[10px] text-white/30">
+                        {new Date((g as any).zeitslot.datum).toLocaleDateString("de", { weekday: "short", day: "numeric", month: "short" })}
+                        {" · "}{(g as any).zeitslot.von} – {(g as any).zeitslot.bis}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-sm font-medium">{g.verwalter?.firma || g.verwalter?.name || "Hausverwaltung"}</div>
                       <div className="text-xs text-white/40 mt-1">
-                        {g.wunsch_stunden ? `${g.wunsch_stunden}h gewuenscht` : ""}
-                        {g.nachricht && ` â "${g.nachricht}"`}
+                        {g.wunsch_stunden ? `${g.wunsch_stunden}h gewünscht` : ""}
+                        {g.nachricht && ` — "${g.nachricht}"`}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xl font-bold text-[#00D4AA]">{g.gebotener_preis} EUR</div>
+                      <div className="text-xl font-bold text-[#00D4AA]">{g.gebotener_preis} €</div>
                       <div className="text-[10px] text-white/30">Geboten</div>
                     </div>
                   </div>
                   <div className="flex gap-2 mt-3">
-                    <button className="flex-1 text-xs font-semibold bg-gradient-to-r from-[#00D4AA] to-[#00B4D8] text-white py-2 rounded-lg hover:brightness-110 transition-all">
+                    <button
+                      onClick={() => handleGebot(g.id, "angenommen")}
+                      className="flex-1 text-xs font-semibold bg-gradient-to-r from-[#00D4AA] to-[#00B4D8] text-white py-2 rounded-lg hover:brightness-110 transition-all"
+                    >
                       Annehmen
                     </button>
-                    <button className="text-xs text-white/40 border border-white/10 px-4 py-2 rounded-lg hover:bg-white/5 transition-all">
+                    <button
+                      onClick={() => handleGebot(g.id, "abgelehnt")}
+                      className="text-xs text-white/40 border border-white/10 px-4 py-2 rounded-lg hover:bg-white/5 transition-all"
+                    >
                       Ablehnen
                     </button>
                   </div>
@@ -186,21 +235,21 @@ export default function EinnahmenDashboard() {
           </div>
         )}
 
-        {/* Naechste Slots Timeline */}
+        {/* Nächste Slots Timeline */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold">Naechste 7 Tage</h2>
+            <h2 className="text-lg font-semibold">Nächste 7 Tage</h2>
             <button
               onClick={() => router.push("/dashboard-handwerker/zeitslots")}
               className="text-xs text-[#00D4AA] hover:text-[#00D4AA]/80 transition-colors"
             >
-              Alle verwalten â
+              Alle verwalten →
             </button>
           </div>
           {naechsteSlots.length === 0 ? (
             <div className="bg-[#12121a] border border-white/5 rounded-xl p-8 text-center">
-              <div className="text-2xl mb-2">ð</div>
-              <div className="text-sm text-white/60">Keine Slots fuer die naechsten 7 Tage</div>
+              <div className="text-2xl mb-2">📅</div>
+              <div className="text-sm text-white/60">Keine Slots für die nächsten 7 Tage</div>
               <button
                 onClick={() => router.push("/dashboard-handwerker/zeitslots")}
                 className="mt-3 text-xs text-[#00D4AA] border border-[#00D4AA]/20 px-4 py-2 rounded-lg hover:bg-[#00D4AA]/10 transition-colors"
@@ -238,7 +287,7 @@ export default function EinnahmenDashboard() {
                         </div>
                         <div>
                           <div className="text-sm font-medium">{s.titel}</div>
-                          <div className="text-xs text-white/40">{s.von} - {s.bis} ({s.stunden}h)</div>
+                          <div className="text-xs text-white/40">{formatZeit(s.von)} – {formatZeit(s.bis)} ({s.stunden}h)</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
@@ -248,10 +297,10 @@ export default function EinnahmenDashboard() {
                           </span>
                         )}
                         <div className="text-right">
-                          <div className="text-lg font-bold text-[#00D4AA]">{preis} EUR/h</div>
+                          <div className="text-lg font-bold text-[#00D4AA]">{preis} €/h</div>
                           {s.preisfaktor > 1.0 && (
                             <div className="text-[10px] text-[#F59E0B]">
-                              Ã{s.preisfaktor} Surge
+                              ×{s.preisfaktor} Surge
                             </div>
                           )}
                         </div>
