@@ -2,19 +2,19 @@ import { Zeitslot, ZeitslotGebot } from "@/types"
 
 /* ============================================================
    REPARO YIELD MANAGEMENT ENGINE
-   Dynamisches Pricing nach Uber/Hotel-Modell fuer Handwerker
+   Dynamisches Pricing nach Uber/Hotel-Modell fÃ¼r Handwerker
    ============================================================ */
 
-// Basis-Stundensaetze nach Gewerk (Marktdurchschnitt Deutschland)
+// Basis-StundensÃ¤tze nach Gewerk (Marktdurchschnitt Deutschland)
 export const GEWERK_BASIS_PREISE: Record<string, number> = {
   sanitaer: 65, elektro: 60, heizung: 70, maler: 45,
   schreiner: 55, dachdecker: 75, schlosser: 50, allgemein: 50,
 }
 
-// Tageszeit-Faktoren (Frueh/Spaet = premium)
+// Tageszeit-Faktoren (FrÃ¼h/SpÃ¤t = premium)
 export function tageszeitFaktor(von: string): number {
   const h = parseInt(von.split(":")[0])
-  if (h < 8) return 1.3    // Fruehmorgens â Premium
+  if (h < 8) return 1.3    // FrÃ¼hmorgens â Premium
   if (h >= 17) return 1.2   // Abends â Premium
   if (h >= 12 && h <= 13) return 0.95 // Mittagspause â leichter Rabatt
   return 1.0
@@ -37,7 +37,7 @@ export function nachfrageFaktor(geboteAnzahl: number): number {
   return 1.0
 }
 
-// Knappheits-Faktor (wenige verfuegbare Slots im gleichen Gewerk)
+// Knappheits-Faktor (wenige verfÃ¼gbare Slots im gleichen Gewerk)
 export function knappheitsFaktor(verfuegbareSlots: number): number {
   if (verfuegbareSlots <= 1) return 1.5
   if (verfuegbareSlots <= 3) return 1.25
@@ -45,7 +45,7 @@ export function knappheitsFaktor(verfuegbareSlots: number): number {
   return 1.0
 }
 
-// Luecken-Rabatt (Slot zwischen zwei Jobs â leichter Discount fuer Auslastung)
+// LÃ¼cken-Rabatt (Slot zwischen zwei Jobs â leichter Discount fÃ¼r Auslastung)
 export function lueckenRabatt(istLuecke: boolean): number {
   return istLuecke ? 0.85 : 1.0
 }
@@ -92,21 +92,21 @@ export function berechneDynamischenPreis(
   let label: string, farbe: string
   if (gesamtFaktor >= 1.8) { label = "Sehr hohe Nachfrage"; farbe = "#EF4444" }
   else if (gesamtFaktor >= 1.4) { label = "Hohe Nachfrage"; farbe = "#F59E0B" }
-  else if (gesamtFaktor >= 1.15) { label = "Erhoehte Nachfrage"; farbe = "#00B4D8" }
-  else if (gesamtFaktor < 1.0) { label = "Luecken-Angebot"; farbe = "#8B5CF6" }
+  else if (gesamtFaktor >= 1.15) { label = "ErhÃ¶hte Nachfrage"; farbe = "#00B4D8" }
+  else if (gesamtFaktor < 1.0) { label = "LÃ¼cken-Angebot"; farbe = "#8B5CF6" }
   else { label = "Normaler Marktpreis"; farbe = "#00D4AA" }
 
   return { basisPreis: basisPreisStunde, dynamischerPreis, gesamtFaktor, faktoren, label, farbe }
 }
 
-// Luecken-Erkennung: Findet Zeitfenster zwischen bestehenden Slots
+// LÃ¼cken-Erkennung: Findet Zeitfenster zwischen bestehenden Slots
 export interface Luecke {
   datum: string
   von: string
   bis: string
   stunden: number
   vorher?: string // Titel des vorherigen Auftrags
-  nachher?: string // Titel des naechsten Auftrags
+  nachher?: string // Titel des nÃ¤chsten Auftrags
 }
 
 export function erkenneLuecken(
@@ -131,7 +131,7 @@ export function erkenneLuecken(
     nachDatum.get(d)!.push(t)
   }
 
-  for (const [datum, events] of Array.from(nachDatum.entries())) {
+  for (const [datum, events] of nachDatum.entries()) {
     const sorted = events.sort((a, b) => a.von.localeCompare(b.von))
 
     for (let i = 0; i < sorted.length - 1; i++) {
@@ -142,7 +142,7 @@ export function erkenneLuecken(
       const startMin = zeitZuMinuten(naechsterStart)
       const differenz = startMin - endeMin
 
-      // Luecke >= 1.5 Stunden ist verwertbar
+      // LÃ¼cke >= 1.5 Stunden ist verwertbar
       if (differenz >= 90) {
         luecken.push({
           datum,
@@ -206,7 +206,7 @@ export function berechneEinnahmenPrognose(
     }
   }
 
-  // Angenommene Gebote zaehlen
+  // Angenommene Gebote zÃ¤hlen
   for (const g of gebote) {
     if (g.status === "angenommen") {
       const slot = slots.find(s => s.id === g.zeitslot_id)
@@ -220,8 +220,8 @@ export function berechneEinnahmenPrognose(
 
   let tipp = ""
   if (offeneSlots === 0) tipp = "Mehr Zeitslots einstellen um dein Einkommen zu steigern!"
-  else if (offeneSlots <= 3) tipp = `${offeneSlots} offene Slots = ${Math.round(potenzial)}EUR Potenzial. Teile mehr Verfuegbarkeit!`
-  else tipp = `Super! ${offeneSlots} Slots online. Dein Potenzial: ${Math.round(potenzial)}EUR`
+  else if (offeneSlots <= 3) tipp = `${offeneSlots} offene Slots = ${Math.round(potenzial)} â¬ Potenzial. Teile mehr VerfÃ¼gbarkeit!`
+  else tipp = `Super! ${offeneSlots} Slots online. Dein Potenzial: ${Math.round(potenzial)} â¬`
 
   return {
     dieseWoche: Math.round(dieseWoche),
