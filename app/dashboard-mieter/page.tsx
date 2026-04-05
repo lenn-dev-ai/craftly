@@ -1,4 +1,5 @@
 "use client"
+
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
@@ -23,18 +24,12 @@ function getStepIndex(status: string): number {
 function getKiInsight(ticket: Ticket): string {
   const s = ticket.status
   const p = ticket.prioritaet
-  if (s === "offen" && p === "dringend")
-    return "Deine Meldung hat Priorität — Hausverwaltung wird umgehend informiert."
-  if (s === "offen")
-    return "Deine Hausverwaltung prüft die Meldung. Normalerweise innerhalb weniger Stunden."
-  if (s === "marktplatz" && p === "dringend")
-    return "Eilauftrag! Deine Hausverwaltung bucht per Sofort-Buchung auf dem Marktplatz."
-  if (s === "marktplatz")
-    return "Deine Hausverwaltung bucht passende Handwerker-Stunden auf dem Zeitslot-Marktplatz."
-  if (s === "in_bearbeitung")
-    return "Ein Handwerker arbeitet bereits an der Lösung. Du wirst informiert sobald es fertig ist."
-  if (s === "erledigt")
-    return "Reparatur abgeschlossen. Wir hoffen alles funktioniert wieder!"
+  if (s === "offen" && p === "dringend") return "Deine Meldung hat Priorit\u00E4t \u2014 Hausverwaltung wird umgehend informiert."
+  if (s === "offen") return "Deine Hausverwaltung pr\u00FCft die Meldung. Normalerweise innerhalb weniger Stunden."
+  if (s === "marktplatz" && p === "dringend") return "Eilauftrag! Deine Hausverwaltung bucht per Sofort-Buchung auf dem Marktplatz."
+  if (s === "marktplatz") return "Deine Hausverwaltung bucht passende Handwerker-Stunden auf dem Zeitslot-Marktplatz."
+  if (s === "in_bearbeitung") return "Ein Handwerker arbeitet bereits an der L\u00F6sung. Du wirst informiert sobald es fertig ist."
+  if (s === "erledigt") return "Reparatur abgeschlossen. Wir hoffen alles funktioniert wieder!"
   return ""
 }
 
@@ -42,9 +37,9 @@ function getEstimate(ticket: Ticket): string {
   const s = ticket.status
   const p = ticket.prioritaet
   if (s === "erledigt") return "Abgeschlossen"
-  if (s === "in_bearbeitung") return p === "dringend" ? "Heute" : "1–2 Tage"
-  if (s === "marktplatz") return p === "dringend" ? "~4 Stunden" : "1–3 Tage"
-  if (s === "offen") return p === "dringend" ? "~1 Tag" : "3–5 Tage"
+  if (s === "in_bearbeitung") return p === "dringend" ? "Heute" : "1\u20132 Tage"
+  if (s === "marktplatz") return p === "dringend" ? "~4 Stunden" : "1\u20133 Tage"
+  if (s === "offen") return p === "dringend" ? "~1 Tag" : "3\u20135 Tage"
   return ""
 }
 
@@ -78,42 +73,42 @@ export default function MieterDashboard() {
     <div className="p-6 max-w-2xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">
-          {userName ? ("Hallo " + userName) : "Meine Übersicht"}
+        <h1 className="text-2xl font-bold text-[#2D2A26]">
+          {userName ? ("Hallo " + userName) : "Meine \u00DCbersicht"}
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-[#8C857B] mt-1">
           {aktiv.length > 0
             ? aktiv.length + " aktive Meldung" + (aktiv.length > 1 ? "en" : "")
-            : "Alles in Ordnung — keine offenen Schäden"}
+            : "Alles in Ordnung \u2014 keine offenen Sch\u00E4den"}
         </p>
       </div>
 
       {/* Quick Action */}
       <button
         onClick={() => router.push("/dashboard-mieter/melden")}
-        className="w-full mb-6 p-4 rounded-2xl border-2 border-dashed border-[#00D4AA]/20 hover:border-[#00D4AA]/40 bg-[#00D4AA]/[0.03] hover:bg-[#00D4AA]/[0.06] transition-all group"
+        className="w-full mb-6 p-4 rounded-2xl border-2 border-dashed border-[#3D8B7A]/20 hover:border-[#3D8B7A]/40 bg-[#E8F4F1]/30 hover:bg-[#E8F4F1]/60 transition-all group"
       >
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-[#00D4AA]/10 group-hover:bg-[#00D4AA]/20 flex items-center justify-center transition-colors">
-            <span className="text-[#00D4AA] text-lg font-bold">+</span>
+          <div className="w-12 h-12 rounded-xl bg-[#E8F4F1] group-hover:bg-[#3D8B7A]/20 flex items-center justify-center transition-colors">
+            <span className="text-[#3D8B7A] text-lg font-bold">+</span>
           </div>
           <div className="text-left">
-            <div className="text-sm font-semibold text-white">Schaden melden</div>
-            <div className="text-xs text-gray-500">KI erkennt Kategorie + Dringlichkeit automatisch</div>
+            <div className="text-sm font-semibold text-[#2D2A26]">Schaden melden</div>
+            <div className="text-xs text-[#8C857B]">KI erkennt Kategorie + Dringlichkeit automatisch</div>
           </div>
         </div>
       </button>
 
       {/* Alles OK */}
       {aktiv.length === 0 && tickets.length > 0 && (
-        <Card className="mb-6 bg-[#00D4AA]/5 border border-[#00D4AA]/10">
+        <Card className="mb-6 bg-[#E8F4F1]/50 border border-[#3D8B7A]/10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#00D4AA]/10 flex items-center justify-center">
-              <span className="text-[#00D4AA] text-sm font-bold">OK</span>
+            <div className="w-10 h-10 rounded-full bg-[#E8F4F1] flex items-center justify-center">
+              <span className="text-[#3D8B7A] text-sm font-bold">OK</span>
             </div>
             <div>
-              <div className="text-sm font-medium text-[#00D4AA]">Alles in Ordnung</div>
-              <div className="text-xs text-gray-500">Keine offenen Schäden. {erledigt.length} erledigte Meldung{erledigt.length > 1 ? "en" : ""}.</div>
+              <div className="text-sm font-medium text-[#3D8B7A]">Alles in Ordnung</div>
+              <div className="text-xs text-[#8C857B]">Keine offenen Sch\u00E4den. {erledigt.length} erledigte Meldung{erledigt.length > 1 ? "en" : ""}.</div>
             </div>
           </div>
         </Card>
@@ -122,27 +117,26 @@ export default function MieterDashboard() {
       {/* Aktive Meldungen mit Pipeline */}
       {aktiv.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-3">Aktive Meldungen</h2>
+          <h2 className="text-xs uppercase tracking-wider text-[#8C857B] font-medium mb-3">Aktive Meldungen</h2>
           <div className="flex flex-col gap-3">
             {aktiv.map(t => {
               const stepIdx = getStepIndex(t.status)
               const insight = getKiInsight(t)
               const estimate = getEstimate(t)
               return (
-                <Card key={t.id} className="bg-[#12121a] border border-white/5 hover:border-white/10 cursor-pointer transition-all"
-                  onClick={() => router.push("/ticket/" + t.id)}
-                >
+                <Card key={t.id} className="hover:bg-[#F7F4F0] cursor-pointer transition-all"
+                      onClick={() => router.push("/ticket/" + t.id)}>
                   {/* Titel + Badge */}
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-white truncate">{t.titel}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">
+                      <div className="text-sm font-semibold text-[#2D2A26] truncate">{t.titel}</div>
+                      <div className="text-xs text-[#8C857B] mt-0.5">
                         {new Date(t.created_at).toLocaleDateString("de")}
-                        {t.wohnung && (" — " + t.wohnung)}
+                        {t.wohnung && (" \u2014 " + t.wohnung)}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {estimate && <span className="text-[10px] text-gray-500">{estimate}</span>}
+                      {estimate && <span className="text-[10px] text-[#8C857B]">{estimate}</span>}
                       <Badge status={t.status} />
                     </div>
                   </div>
@@ -151,21 +145,21 @@ export default function MieterDashboard() {
                   <div className="flex items-center gap-1 mb-3">
                     {PIPELINE_STEPS.map((ps, i) => (
                       <div key={ps.key} className="flex items-center flex-1">
-                        <div className={"h-1.5 flex-1 rounded-full " + (i <= stepIdx ? "bg-[#00D4AA]" : "bg-white/5")} />
+                        <div className={"h-1.5 flex-1 rounded-full " + (i <= stepIdx ? "bg-[#3D8B7A]" : "bg-[#EDE8E1]")} />
                       </div>
                     ))}
                   </div>
-                  <div className="flex justify-between text-[9px] text-gray-600 mb-3">
+                  <div className="flex justify-between text-[9px] text-[#B5AEA4] mb-3">
                     {PIPELINE_STEPS.map((ps, i) => (
-                      <span key={ps.key} className={i <= stepIdx ? "text-[#00D4AA]" : ""}>{ps.label}</span>
+                      <span key={ps.key} className={i <= stepIdx ? "text-[#3D8B7A]" : ""}>{ps.label}</span>
                     ))}
                   </div>
 
                   {/* KI Insight */}
                   {insight && (
-                    <div className="flex items-start gap-2 bg-white/[0.02] rounded-lg px-3 py-2">
-                      <span className="text-[10px] text-[#00D4AA] mt-0.5">AI</span>
-                      <p className="text-xs text-gray-400">{insight}</p>
+                    <div className="flex items-start gap-2 bg-[#F5F3F0] rounded-lg px-3 py-2">
+                      <span className="text-[10px] text-[#3D8B7A] mt-0.5 font-semibold">AI</span>
+                      <p className="text-xs text-[#8C857B]">{insight}</p>
                     </div>
                   )}
                 </Card>
@@ -178,18 +172,17 @@ export default function MieterDashboard() {
       {/* Erledigte */}
       {erledigt.length > 0 && (
         <div>
-          <h2 className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-3">Erledigt ({erledigt.length})</h2>
+          <h2 className="text-xs uppercase tracking-wider text-[#8C857B] font-medium mb-3">Erledigt ({erledigt.length})</h2>
           <div className="flex flex-col gap-2">
             {erledigt.map(t => (
-              <Card key={t.id} className="bg-[#12121a]/50 border border-white/[0.03] cursor-pointer hover:border-white/10 transition-all"
-                onClick={() => router.push("/ticket/" + t.id)}
-              >
+              <Card key={t.id} className="hover:bg-[#F7F4F0] cursor-pointer transition-all"
+                    onClick={() => router.push("/ticket/" + t.id)}>
                 <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-[#00D4AA] flex-shrink-0" />
+                  <div className="w-2 h-2 rounded-full bg-[#3D8B7A] flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm text-gray-400 truncate">{t.titel}</div>
+                    <div className="text-sm text-[#8C857B] truncate">{t.titel}</div>
                   </div>
-                  <span className="text-xs text-gray-600">{new Date(t.created_at).toLocaleDateString("de")}</span>
+                  <span className="text-xs text-[#B5AEA4]">{new Date(t.created_at).toLocaleDateString("de")}</span>
                 </div>
               </Card>
             ))}
@@ -200,11 +193,11 @@ export default function MieterDashboard() {
       {/* Empty State */}
       {tickets.length === 0 && (
         <div className="text-center py-16">
-          <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">HOME</span>
+          <div className="w-20 h-20 rounded-2xl bg-[#F5F3F0] flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">\uD83C\uDFE0</span>
           </div>
-          <h2 className="text-lg font-semibold text-white mb-2">Noch keine Meldungen</h2>
-          <p className="text-sm text-gray-500 mb-6">Melde einen Schaden und deine Verwaltung wird sofort benachrichtigt.</p>
+          <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Noch keine Meldungen</h2>
+          <p className="text-sm text-[#8C857B] mb-6">Melde einen Schaden und deine Verwaltung wird sofort benachrichtigt.</p>
           <Button onClick={() => router.push("/dashboard-mieter/melden")}>Ersten Schaden melden</Button>
         </div>
       )}
