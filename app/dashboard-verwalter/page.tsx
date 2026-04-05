@@ -8,12 +8,12 @@ import { Badge, Button, Card, LoadingSpinner } from "@/components/ui"
 
 function kiKosten(t: Ticket): string {
   const titel = (t.titel || "").toLowerCase()
-  if (titel.match(/heiz|warm/)) return "250–600"
-  if (titel.match(/wasser|feucht|rohr/)) return "150–800"
-  if (titel.match(/elektr|strom|sicher/)) return "100–400"
-  if (titel.match(/tuer|fenster|schloss/)) return "80–350"
-  if (titel.match(/schimmel/)) return "200–900"
-  return "100–500"
+  if (titel.match(/heiz|warm/)) return "250\u2013600"
+  if (titel.match(/wasser|feucht|rohr/)) return "150\u2013800"
+  if (titel.match(/elektr|strom|sicher/)) return "100\u2013400"
+  if (titel.match(/tuer|fenster|schloss/)) return "80\u2013350"
+  if (titel.match(/schimmel/)) return "200\u2013900"
+  return "100\u2013500"
 }
 
 export default function VerwalterDashboard() {
@@ -48,8 +48,8 @@ export default function VerwalterDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-0 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">{tickets.length} Tickets — {offene.length + marktplatz.length} aktiv</p>
+          <h1 className="text-2xl font-bold text-[#2D2A26]">Dashboard</h1>
+          <p className="text-sm text-[#8C857B] mt-1">{tickets.length} Tickets \u2014 {offene.length + marktplatz.length} aktiv</p>
         </div>
         <Button onClick={() => router.push("/dashboard-verwalter/marktplatz")}>Zum Marktplatz</Button>
       </div>
@@ -57,14 +57,14 @@ export default function VerwalterDashboard() {
       {/* KPI Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
         {[
-          { label: "MELDUNGEN", value: offene.length, color: offene.length > 0 ? "text-amber-400" : "text-gray-300" },
-          { label: "MARKTPLATZ", value: marktplatz.length, color: marktplatz.length > 0 ? "text-[#00D4AA]" : "text-gray-300" },
-          { label: "IN ARBEIT", value: inArbeit.length, color: inArbeit.length > 0 ? "text-blue-400" : "text-gray-300" },
-          { label: "KOSTEN MTD", value: gesamtkosten.toLocaleString("de") + " EUR", color: "text-gray-300" },
+          { label: "MELDUNGEN", value: offene.length, color: offene.length > 0 ? "text-[#C4956A]" : "text-[#8C857B]" },
+          { label: "MARKTPLATZ", value: marktplatz.length, color: marktplatz.length > 0 ? "text-[#3D8B7A]" : "text-[#8C857B]" },
+          { label: "IN ARBEIT", value: inArbeit.length, color: inArbeit.length > 0 ? "text-[#5B6ABF]" : "text-[#8C857B]" },
+          { label: "KOSTEN MTD", value: gesamtkosten.toLocaleString("de") + " EUR", color: "text-[#8C857B]" },
         ].map(kpi => (
-          <Card key={kpi.label} className="bg-[#12121a] border border-white/5 text-center py-4">
+          <Card key={kpi.label} className="text-center py-4">
             <div className={"text-2xl font-bold tabular-nums " + kpi.color}>{kpi.value}</div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">{kpi.label}</div>
+            <div className="text-[10px] text-[#B5AEA4] uppercase tracking-wider mt-1">{kpi.label}</div>
           </Card>
         ))}
       </div>
@@ -73,54 +73,51 @@ export default function VerwalterDashboard() {
       {offene.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded">NEU</span>
-            <h2 className="text-sm font-medium text-gray-200">Eingehende Meldungen von Mietern</h2>
-            <span className="text-xs text-gray-500">({offene.length} warten auf Bearbeitung)</span>
+            <span className="text-xs text-[#B07A3B] font-semibold bg-[#FFF3E8] px-2 py-0.5 rounded-lg">NEU</span>
+            <h2 className="text-sm font-medium text-[#2D2A26]">Eingehende Meldungen von Mietern</h2>
+            <span className="text-xs text-[#8C857B]">({offene.length} warten auf Bearbeitung)</span>
           </div>
           <div className="flex flex-col gap-3">
             {offene.map(t => {
               const kosten = kiKosten(t)
               return (
-                <Card key={t.id} className="bg-[#12121a] border border-white/5">
+                <Card key={t.id}>
                   <div className="flex items-start gap-4">
                     <div className={"w-1 self-stretch rounded-full flex-shrink-0 " + (
-                      t.prioritaet === "dringend" ? "bg-red-500" :
-                      t.prioritaet === "hoch" ? "bg-amber-500" : "bg-[#00D4AA]"
+                      t.prioritaet === "dringend" ? "bg-[#C4574B]" :
+                      t.prioritaet === "hoch" ? "bg-[#C4956A]" : "bg-[#3D8B7A]"
                     )} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <div className="text-sm font-semibold text-white">{t.titel}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">
-                            {t.wohnung && (t.wohnung + " — ")}{new Date(t.created_at).toLocaleDateString("de")}
+                          <div className="text-sm font-semibold text-[#2D2A26]">{t.titel}</div>
+                          <div className="text-xs text-[#8C857B] mt-0.5">
+                            {t.wohnung && (t.wohnung + " \u2014 ")}{new Date(t.created_at).toLocaleDateString("de")}
                           </div>
                         </div>
                         <Badge status={t.status} />
                       </div>
                       {t.beschreibung && (
-                        <p className="text-xs text-gray-400 mb-3 line-clamp-2">{t.beschreibung}</p>
+                        <p className="text-xs text-[#8C857B] mb-3 line-clamp-2">{t.beschreibung}</p>
                       )}
                       <div className="flex items-center gap-3 flex-wrap">
                         <span className={"text-[10px] font-medium px-2 py-0.5 rounded-full border " + (
-                          t.prioritaet === "dringend" ? "text-red-400 bg-red-500/10 border-red-500/20" :
-                          t.prioritaet === "hoch" ? "text-amber-400 bg-amber-500/10 border-amber-500/20" :
-                          "text-blue-400 bg-blue-500/10 border-blue-500/20"
+                          t.prioritaet === "dringend" ? "text-[#C4574B] bg-[#FDEEEC] border-[#C4574B]/15" :
+                          t.prioritaet === "hoch" ? "text-[#B07A3B] bg-[#FFF3E8] border-[#C4956A]/20" :
+                          "text-[#5B6ABF] bg-[#EEF0FF] border-[#5B6ABF]/15"
                         )}>
                           {t.prioritaet === "dringend" ? "Dringend" : t.prioritaet === "hoch" ? "Hoch" : "Normal"}
                         </span>
-                        <span className="text-[10px] text-gray-500">
-                          Geschätzte Kosten: <span className="text-gray-300 font-medium">{kosten} EUR</span>
+                        <span className="text-[10px] text-[#8C857B]">
+                          Gesch\u00E4tzte Kosten: <span className="text-[#2D2A26] font-medium">{kosten} EUR</span>
                         </span>
                       </div>
-                      {/* Action Buttons */}
                       <div className="flex items-center gap-2 mt-3">
                         <Button size="sm" onClick={() => router.push("/dashboard-verwalter/marktplatz")}>
                           Handwerker-Stunden buchen
                         </Button>
-                        <button
-                          onClick={() => router.push("/ticket/" + t.id)}
-                          className="text-xs text-gray-500 hover:text-gray-300 px-3 py-1.5"
-                        >
+                        <button onClick={() => router.push("/ticket/" + t.id)}
+                          className="text-xs text-[#8C857B] hover:text-[#2D2A26] px-3 py-1.5">
                           Details
                         </button>
                       </div>
@@ -133,22 +130,22 @@ export default function VerwalterDashboard() {
         </div>
       )}
 
-      {/* Marktplatz-Buchungen aktiv */}
+      {/* Marktplatz-Buchungen */}
       {marktplatz.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-3">Marktplatz-Buchungen ({marktplatz.length})</h2>
+          <h2 className="text-xs uppercase tracking-wider text-[#8C857B] font-medium mb-3">Marktplatz-Buchungen ({marktplatz.length})</h2>
           <div className="flex flex-col gap-2">
             {marktplatz.map(t => (
-              <Card key={t.id} className="bg-[#12121a] border border-white/5 hover:border-white/10 cursor-pointer transition-all"
-                onClick={() => router.push("/ticket/" + t.id)}>
+              <Card key={t.id} className="hover:bg-[#F7F4F0] cursor-pointer transition-all"
+                    onClick={() => router.push("/ticket/" + t.id)}>
                 <div className="flex items-center gap-4">
-                  <div className="w-2 h-2 rounded-full bg-[#00D4AA] animate-pulse flex-shrink-0" />
+                  <div className="w-2 h-2 rounded-full bg-[#3D8B7A] animate-pulse flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white truncate">{t.titel}</div>
-                    <div className="text-xs text-gray-500">{t.wohnung}</div>
+                    <div className="text-sm font-medium text-[#2D2A26] truncate">{t.titel}</div>
+                    <div className="text-xs text-[#8C857B]">{t.wohnung}</div>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-xs text-[#00D4AA]">Zeitslot gebucht</span>
+                    <span className="text-xs text-[#3D8B7A]">Zeitslot gebucht</span>
                     <Badge status={t.status} />
                   </div>
                 </div>
@@ -161,16 +158,16 @@ export default function VerwalterDashboard() {
       {/* In Arbeit */}
       {inArbeit.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-3">In Arbeit ({inArbeit.length})</h2>
+          <h2 className="text-xs uppercase tracking-wider text-[#8C857B] font-medium mb-3">In Arbeit ({inArbeit.length})</h2>
           <div className="flex flex-col gap-2">
             {inArbeit.map(t => (
-              <Card key={t.id} className="bg-[#12121a] border border-white/5 hover:border-white/10 cursor-pointer transition-all"
-                onClick={() => router.push("/ticket/" + t.id)}>
+              <Card key={t.id} className="hover:bg-[#F7F4F0] cursor-pointer transition-all"
+                    onClick={() => router.push("/ticket/" + t.id)}>
                 <div className="flex items-center gap-4">
-                  <div className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
+                  <div className="w-2 h-2 rounded-full bg-[#5B6ABF] flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white truncate">{t.titel}</div>
-                    <div className="text-xs text-gray-500">{t.wohnung}</div>
+                    <div className="text-sm font-medium text-[#2D2A26] truncate">{t.titel}</div>
+                    <div className="text-xs text-[#8C857B]">{t.wohnung}</div>
                   </div>
                   <Badge status={t.status} />
                 </div>
@@ -183,22 +180,20 @@ export default function VerwalterDashboard() {
       {/* Empty State */}
       {tickets.length === 0 && (
         <div className="text-center py-16">
-          <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl text-gray-500">INBOX</span>
+          <div className="w-20 h-20 rounded-2xl bg-[#F5F3F0] flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl text-[#8C857B]">INBOX</span>
           </div>
-          <h2 className="text-lg font-semibold text-white mb-2">Noch keine Meldungen</h2>
-          <p className="text-sm text-gray-500 mb-6">Sobald Mieter Schäden melden, erscheinen sie hier. Buche Handwerker-Stunden auf dem Marktplatz.</p>
-          <Button onClick={() => router.push("/dashboard-verwalter/marktplatz")}>Marktplatz öffnen</Button>
+          <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Noch keine Meldungen</h2>
+          <p className="text-sm text-[#8C857B] mb-6">Sobald Mieter Sch\u00E4den melden, erscheinen sie hier. Buche Handwerker-Stunden auf dem Marktplatz.</p>
+          <Button onClick={() => router.push("/dashboard-verwalter/marktplatz")}>Marktplatz \u00F6ffnen</Button>
         </div>
       )}
 
       {/* Erledigte Footer */}
       {erledigt.length > 0 && (
         <div className="text-center mt-4">
-          <button
-            onClick={() => router.push("/dashboard-verwalter/tickets")}
-            className="text-xs text-gray-500 hover:text-[#00D4AA] transition-colors"
-          >
+          <button onClick={() => router.push("/dashboard-verwalter/tickets")}
+            className="text-xs text-[#B5AEA4] hover:text-[#3D8B7A] transition-colors">
             {erledigt.length} erledigte Tickets anzeigen
           </button>
         </div>
