@@ -78,40 +78,40 @@ export default function LoginPage() {
 
   if (checking) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="logo text-4xl">
-            <span className="text-white">Repa</span>
+            <span className="text-[#2D2A26]">Repa</span>
             <span className="gradient-text">ro</span>
           </div>
-          <div className="w-6 h-6 border-2 border-[#00D4AA]/30 border-t-[#00D4AA] rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-[#3D8B7A]/40 border-t-[#3D8B7A] rounded-full animate-spin" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center p-4">
       <Card className="w-full max-w-md p-8 animate-fade-in">
         <div className="text-center mb-8">
           <div className="logo text-4xl mb-2">
-            <span className="text-white">Repa</span>
+            <span className="text-[#2D2A26]">Repa</span>
             <span className="gradient-text">ro</span>
           </div>
-          <p className="text-gray-400 text-sm">
+          <p className="text-[#8C857B] text-sm">
             Verwalter, Handwerker & Mieter verbinden
           </p>
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4 animate-fade-in">
-            <p className="text-red-400 text-sm">{error}</p>
+          <div className="bg-[#FDEEEC] border border-[#C4574B]/20 rounded-lg p-3 mb-4 animate-fade-in">
+            <p className="text-[#C4574B] text-sm">{error}</p>
           </div>
         )}
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-[#6B655B] mb-1">
               E-Mail
             </label>
             <Input
@@ -124,7 +124,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-[#6B655B] mb-1">
               Passwort
             </label>
             <Input
@@ -146,11 +146,11 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-6 text-center">
-          <p className="text-gray-400 text-sm">
+          <p className="text-[#8C857B] text-sm">
             Noch kein Konto?{" "}
             <Link
               href="/registrierung"
-              className="text-[#00D4AA] hover:text-[#00E4BA] font-medium"
+              className="text-[#3D8B7A] hover:text-[#4A9E8C] font-medium"
             >
               Jetzt registrieren
             </Link>
