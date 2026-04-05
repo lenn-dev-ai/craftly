@@ -1,0 +1,90 @@
+import Link from "next/link"
+
+export const metadata = {
+  title: "Impressum - Reparo",
+}
+
+export default function Impressum() {
+  return (
+    <div className="min-h-screen bg-[#FAF8F5] text-[#2D2A26]">
+      <nav className="border-b border-[#EDE8E1] bg-white">
+        <div className="max-w-3xl mx-auto px-6 h-14 flex items-center">
+          <Link href="/" className="flex items-center gap-2 text-[#2D2A26] hover:text-[#3D8B7A] transition-colors">
+            <div className="w-7 h-7 rounded-md bg-[#3D8B7A] flex items-center justify-center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+            </div>
+            <span className="font-semibold">Reparo</span>
+          </Link>
+        </div>
+      </nav>
+
+      <main className="max-w-3xl mx-auto px-6 py-16">
+        <h1 className="text-3xl font-bold mb-8">Impressum</h1>
+
+        <div className="space-y-6 text-[#6B665E] leading-relaxed">
+          <section>
+            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Angaben gemaess 5 TMG</h2>
+            <p>
+              Reparo GmbH (Platzhalter)<br />
+              Musterstrasse 1<br />
+              10115 Berlin
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Kontakt</h2>
+            <p>
+              E-Mail: info@reparo-app.de<br />
+              Telefon: +49 (0) 30 123456789
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Vertretungsberechtigte Person</h2>
+            <p>Max Mustermann, Geschaeftsfuehrer</p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Registereintrag</h2>
+            <p>
+              Handelsregister: Amtsgericht Berlin-Charlottenburg<br />
+              Registernummer: HRB 000000 (Platzhalter)
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Umsatzsteuer-ID</h2>
+            <p>
+              Umsatzsteuer-Identifikationsnummer gemaess 27a UStG:<br />
+              DE000000000 (Platzhalter)
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Verantwortlich fuer den Inhalt</h2>
+            <p>
+              Max Mustermann<br />
+              Musterstrasse 1<br />
+              10115 Berlin
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Haftungsausschluss</h2>
+            <p>
+              Trotz sorgfaeltiger inhaltlicher Kontrolle uebernehmen wir keine Haftung fuer die Inhalte externer Links. Fuer den Inhalt der verlinkten Seiten sind ausschliesslich deren Betreiber verantwortlich.
+            </p>
+          </section>
+        </div>
+
+        <div className="mt-12 pt-8 border-t border-[#EDE8E1] flex gap-6 text-sm text-[#8C857B]">
+          <Link href="/" className="hover:text-[#2D2A26] transition-colors">Startseite</Link>
+          <Link href="/datenschutz" className="hover:text-[#2D2A26] transition-colors">Datenschutz</Link>
+        </div>
+      </main>
+    </div>
+  )
+}
