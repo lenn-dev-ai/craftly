@@ -1,8 +1,30 @@
 /* Fonts loaded via next/font in layout.tsx — no @import needed */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --color-bg: #0a0a0f;
+  --color-surface: #12121a;
+  --color-surface-hover: #1a1a2e;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-accent: #00D4AA;
+  --color-accent-hover: #00E4BA;
+  --color-secondary: #00B4D8;
+  --color-purple: #7B61FF;
+  --color-text: #f0f0f5;
+  --color-text-muted: #8888aa;
+  --color-danger: #FF6363;
+  --color-warning: #FFB74D;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --shadow-glow: 0 0 20px rgba(0, 212, 170, 0.12);
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
 
 * {
   box-sizing: border-box;
@@ -10,8 +32,8 @@
 
 body {
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #0a0a0f;
-  color: #f0f0f5;
+  background: var(--color-bg);
+  color: var(--color-text);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -21,84 +43,136 @@ body {
   letter-spacing: -0.03em;
 }
 
-/* ===== BOLD MODERN THEME ===== */
+/* ===== MODERN DESIGN SYSTEM ===== */
+
+/* Smooth transitions by default */
+a, button, input, select, textarea {
+  transition: all var(--transition-fast);
+}
 
 /* Glassmorphism base */
 .glass {
-  background: rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
 /* Gradient accents */
 .gradient-primary {
-  background: linear-gradient(135deg, #00D4AA 0%, #00B4D8 50%, #7B61FF 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-secondary) 50%, var(--color-purple) 100%);
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #00D4AA, #00B4D8);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-secondary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Status badge colors - modern dark theme */
+/* Status badge colors */
 .badge-offen {
-  background: rgba(255,99,99,0.15);
-  color: #FF6363;
-  border: 1px solid rgba(255,99,99,0.2);
+  background: rgba(255, 99, 99, 0.12);
+  color: var(--color-danger);
+  border: 1px solid rgba(255, 99, 99, 0.18);
+  border-radius: var(--radius-sm);
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .badge-auktion {
-  background: rgba(0,180,216,0.15);
-  color: #00B4D8;
-  border: 1px solid rgba(0,180,216,0.2);
+  background: rgba(0, 180, 216, 0.12);
+  color: var(--color-secondary);
+  border: 1px solid rgba(0, 180, 216, 0.18);
+  border-radius: var(--radius-sm);
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .badge-progress {
-  background: rgba(255,183,77,0.15);
-  color: #FFB74D;
-  border: 1px solid rgba(255,183,77,0.2);
+  background: rgba(255, 183, 77, 0.12);
+  color: var(--color-warning);
+  border: 1px solid rgba(255, 183, 77, 0.18);
+  border-radius: var(--radius-sm);
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .badge-erledigt {
-  background: rgba(0,212,170,0.15);
-  color: #00D4AA;
-  border: 1px solid rgba(0,212,170,0.2);
+  background: rgba(0, 212, 170, 0.12);
+  color: var(--color-accent);
+  border: 1px solid rgba(0, 212, 170, 0.18);
+  border-radius: var(--radius-sm);
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 /* Priority colors */
 .prio-dringend {
-  background: rgba(255,99,99,0.15);
-  color: #FF6363;
-  border: 1px solid rgba(255,99,99,0.2);
+  background: rgba(255, 99, 99, 0.12);
+  color: var(--color-danger);
+  border: 1px solid rgba(255, 99, 99, 0.18);
 }
 
 .prio-hoch {
-  background: rgba(255,183,77,0.15);
-  color: #FFB74D;
-  border: 1px solid rgba(255,183,77,0.2);
+  background: rgba(255, 183, 77, 0.12);
+  color: var(--color-warning);
+  border: 1px solid rgba(255, 183, 77, 0.18);
 }
 
 .prio-normal {
-  background: rgba(255,255,255,0.06);
-  color: #8888aa;
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
 }
 
 /* Glow effects */
 .glow-green {
-  box-shadow: 0 0 20px rgba(0,212,170,0.15), 0 0 60px rgba(0,212,170,0.05);
+  box-shadow: 0 0 20px rgba(0, 212, 170, 0.12), 0 0 60px rgba(0, 212, 170, 0.04);
 }
 
 .glow-blue {
-  box-shadow: 0 0 20px rgba(0,180,216,0.15), 0 0 60px rgba(0,180,216,0.05);
+  box-shadow: 0 0 20px rgba(0, 180, 216, 0.12), 0 0 60px rgba(0, 180, 216, 0.04);
+}
+
+/* Modern card hover effect */
+.card-hover {
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Pulse glow animation */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 170, 0.1); }
+  50% { box-shadow: 0 0 30px rgba(0, 212, 170, 0.25); }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
 }
 
 /* Focus visible — Accessibility */
 :focus-visible {
-  outline: 2px solid #00D4AA;
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
@@ -117,16 +191,16 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.16);
 }
 
 /* Selection */
 ::selection {
-  background: rgba(0,212,170,0.3);
+  background: rgba(0, 212, 170, 0.3);
   color: #fff;
 }
