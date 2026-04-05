@@ -1,28 +1,10 @@
 "use client"
+
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket } from "@/types"
 import { Badge, Button, Card, LoadingSpinner } from "@/components/ui"
-
-function kiVergabevorschlag(t: Ticket): { modus: string; label: string; color: string; grund: string } {
-  const p = t.prioritaet
-  if (p === "dringend") return {
-    modus: "sofort", label: "Sofort-Vergabe",
-    color: "text-red-400 bg-red-500/10 border-red-500/20",
-    grund: "Notfall erkannt — schnellste Reaktion nötig"
-  }
-  if (p === "hoch") return {
-    modus: "auktion", label: "Smart-Auktion",
-    color: "text-[#00D4AA] bg-[#00D4AA]/10 border-[#00D4AA]/20",
-    grund: "Höhere Priorität — Wettbewerb für bestes Angebot"
-  }
-  return {
-    modus: "plan", label: "Planauftrag",
-    color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-    grund: "Keine Eile — günstigster Preis bei flexibler Planung"
-  }
-}
 
 function kiKosten(t: Ticket): string {
   const titel = (t.titel || "").toLowerCase()
@@ -45,8 +27,8 @@ export default function VerwalterDashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push("/login"); return }
       const { data } = await supabase
-        .from("tickets").select("*, objekte(*), angebote(*)")
-        .eq("erstellt_von", user.id).order("created_at", { ascending: false })
+        .from("tickets").select("*")
+        .order("created_at", { ascending: false })
       setTickets(data || [])
       setLoading(false)
     }
@@ -54,7 +36,7 @@ export default function VerwalterDashboard() {
   }, [router])
 
   const offene = tickets.filter(t => t.status === "offen")
-  const auktionen = tickets.filter(t => t.status === "auktion")
+  const marktplatz = tickets.filter(t => t.status === "marktplatz")
   const inArbeit = tickets.filter(t => t.status === "in_bearbeitung")
   const erledigt = tickets.filter(t => t.status === "erledigt")
   const gesamtkosten = tickets.filter(t => t.kosten_final).reduce((s, t) => s + (t.kosten_final || 0), 0)
@@ -67,16 +49,16 @@ export default function VerwalterDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-0 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">{tickets.length} Tickets — {offene.length + auktionen.length} aktiv</p>
+          <p className="text-sm text-gray-500 mt-1">{tickets.length} Tickets — {offene.length + marktplatz.length} aktiv</p>
         </div>
-        <Button onClick={() => router.push("/dashboard-verwalter/neues-ticket")}>+ Neues Ticket</Button>
+        <Button onClick={() => router.push("/dashboard-verwalter/marktplatz")}>Zum Marktplatz</Button>
       </div>
 
       {/* KPI Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
         {[
-          { label: "OFFEN", value: offene.length, color: offene.length > 0 ? "text-amber-400" : "text-gray-300" },
-          { label: "AUKTIONEN", value: auktionen.length, color: auktionen.length > 0 ? "text-[#00D4AA]" : "text-gray-300" },
+          { label: "MELDUNGEN", value: offene.length, color: offene.length > 0 ? "text-amber-400" : "text-gray-300" },
+          { label: "MARKTPLATZ", value: marktplatz.length, color: marktplatz.length > 0 ? "text-[#00D4AA]" : "text-gray-300" },
           { label: "IN ARBEIT", value: inArbeit.length, color: inArbeit.length > 0 ? "text-blue-400" : "text-gray-300" },
           { label: "KOSTEN MTD", value: gesamtkosten.toLocaleString("de") + " EUR", color: "text-gray-300" },
         ].map(kpi => (
@@ -87,17 +69,16 @@ export default function VerwalterDashboard() {
         ))}
       </div>
 
-      {/* KI-Triage */}
+      {/* Eingehende Meldungen */}
       {offene.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs text-[#00D4AA] font-medium bg-[#00D4AA]/10 px-2 py-0.5 rounded">AI</span>
-            <h2 className="text-sm font-medium text-gray-200">Neue Meldungen — KI-Voranalyse</h2>
-            <span className="text-xs text-gray-500">({offene.length} warten auf Freigabe)</span>
+            <span className="text-xs text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded">NEU</span>
+            <h2 className="text-sm font-medium text-gray-200">Eingehende Meldungen von Mietern</h2>
+            <span className="text-xs text-gray-500">({offene.length} warten auf Bearbeitung)</span>
           </div>
           <div className="flex flex-col gap-3">
             {offene.map(t => {
-              const vorschlag = kiVergabevorschlag(t)
               const kosten = kiKosten(t)
               return (
                 <Card key={t.id} className="bg-[#12121a] border border-white/5">
@@ -120,20 +101,26 @@ export default function VerwalterDashboard() {
                         <p className="text-xs text-gray-400 mb-3 line-clamp-2">{t.beschreibung}</p>
                       )}
                       <div className="flex items-center gap-3 flex-wrap">
-                        <span className={"text-[10px] font-medium px-2 py-0.5 rounded-full border " + vorschlag.color}>
-                          {vorschlag.label}
+                        <span className={"text-[10px] font-medium px-2 py-0.5 rounded-full border " + (
+                          t.prioritaet === "dringend" ? "text-red-400 bg-red-500/10 border-red-500/20" :
+                          t.prioritaet === "hoch" ? "text-amber-400 bg-amber-500/10 border-amber-500/20" :
+                          "text-blue-400 bg-blue-500/10 border-blue-500/20"
+                        )}>
+                          {t.prioritaet === "dringend" ? "Dringend" : t.prioritaet === "hoch" ? "Hoch" : "Normal"}
                         </span>
                         <span className="text-[10px] text-gray-500">
                           Geschätzte Kosten: <span className="text-gray-300 font-medium">{kosten} EUR</span>
                         </span>
-                        <span className="text-[10px] text-gray-600">{vorschlag.grund}</span>
                       </div>
                       {/* Action Buttons */}
                       <div className="flex items-center gap-2 mt-3">
-                        <Button size="sm" onClick={() => router.push("/dashboard-verwalter/tickets/" + t.id + "/handwerker")}>
-                          Freigeben + Handwerker wählen
+                        <Button size="sm" onClick={() => router.push("/dashboard-verwalter/marktplatz")}>
+                          Handwerker-Stunden buchen
                         </Button>
-                        <button onClick={() => router.push("/ticket/" + t.id)} className="text-xs text-gray-500 hover:text-gray-300 px-3 py-1.5">
+                        <button
+                          onClick={() => router.push("/ticket/" + t.id)}
+                          className="text-xs text-gray-500 hover:text-gray-300 px-3 py-1.5"
+                        >
                           Details
                         </button>
                       </div>
@@ -146,12 +133,12 @@ export default function VerwalterDashboard() {
         </div>
       )}
 
-      {/* Laufende Auktionen */}
-      {auktionen.length > 0 && (
+      {/* Marktplatz-Buchungen aktiv */}
+      {marktplatz.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-3">Laufende Auktionen ({auktionen.length})</h2>
+          <h2 className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-3">Marktplatz-Buchungen ({marktplatz.length})</h2>
           <div className="flex flex-col gap-2">
-            {auktionen.map(t => (
+            {marktplatz.map(t => (
               <Card key={t.id} className="bg-[#12121a] border border-white/5 hover:border-white/10 cursor-pointer transition-all"
                 onClick={() => router.push("/ticket/" + t.id)}>
                 <div className="flex items-center gap-4">
@@ -161,13 +148,7 @@ export default function VerwalterDashboard() {
                     <div className="text-xs text-gray-500">{t.wohnung}</div>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    {t.angebote && t.angebote.length > 0 ? (
-                      <span className="text-sm font-bold text-[#00D4AA] tabular-nums">
-                        {t.angebote.length} Angebot{t.angebote.length > 1 ? "e" : ""} — ab {Math.min(...t.angebote.map(a => a.preis))} EUR
-                      </span>
-                    ) : (
-                      <span className="text-xs text-gray-500">Warte auf Angebote...</span>
-                    )}
+                    <span className="text-xs text-[#00D4AA]">Zeitslot gebucht</span>
                     <Badge status={t.status} />
                   </div>
                 </div>
@@ -203,18 +184,21 @@ export default function VerwalterDashboard() {
       {tickets.length === 0 && (
         <div className="text-center py-16">
           <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl text-gray-500">TICKET</span>
+            <span className="text-2xl text-gray-500">INBOX</span>
           </div>
-          <h2 className="text-lg font-semibold text-white mb-2">Noch keine Tickets</h2>
-          <p className="text-sm text-gray-500 mb-6">Erstelle dein erstes Ticket um Handwerker per Smart-Vergabe zu beauftragen.</p>
-          <Button onClick={() => router.push("/dashboard-verwalter/neues-ticket")}>Erstes Ticket erstellen</Button>
+          <h2 className="text-lg font-semibold text-white mb-2">Noch keine Meldungen</h2>
+          <p className="text-sm text-gray-500 mb-6">Sobald Mieter Schäden melden, erscheinen sie hier. Buche Handwerker-Stunden auf dem Marktplatz.</p>
+          <Button onClick={() => router.push("/dashboard-verwalter/marktplatz")}>Marktplatz öffnen</Button>
         </div>
       )}
 
       {/* Erledigte Footer */}
       {erledigt.length > 0 && (
         <div className="text-center mt-4">
-          <button onClick={() => router.push("/dashboard-verwalter/tickets")} className="text-xs text-gray-500 hover:text-[#00D4AA] transition-colors">
+          <button
+            onClick={() => router.push("/dashboard-verwalter/tickets")}
+            className="text-xs text-gray-500 hover:text-[#00D4AA] transition-colors"
+          >
             {erledigt.length} erledigte Tickets anzeigen
           </button>
         </div>
