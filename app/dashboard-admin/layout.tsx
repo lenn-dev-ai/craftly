@@ -38,7 +38,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="flex min-h-screen bg-[#0a0a0f]">
       <aside className="w-56 bg-[#12121a] border-r border-white/[0.06] flex flex-col">
         <div className="p-5 border-b border-white/[0.06]">
-          <div className="text-xl tracking-tight text-white">Craft<span className="text-[#00D4AA]">ly</span></div>
+          <div className="text-xl tracking-tight text-white">Repa<span className="text-[#00D4AA]">ro</span></div>
           <div className="text-[10px] font-bold text-[#00D4AA] uppercase tracking-widest mt-1">Admin Panel</div>
         </div>
         <nav className="flex-1 p-3 space-y-1">
