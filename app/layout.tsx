@@ -17,23 +17,56 @@ const displayFont = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: 'Reparo — Verwalter, Handwerker & Mieter verbinden',
+  title: {
+    default: 'Reparo - Intelligente Immobilienverwaltung',
+    template: '%s | Reparo',
+  },
   description:
-    'Die intelligente Plattform für Hausverwaltungen, Handwerker und Mieter. Verwalten Sie Arbeitsaufträge effizient, kommunizieren Sie nahtlos und erhöhen Sie die Kundenzufriedenheit.',
+    'Die intelligente Plattform fuer Hausverwaltungen, Handwerker und Mieter. Schadensmeldungen, Auftragsvergabe und Kommunikation - alles an einem Ort.',
+  keywords: [
+    'Hausverwaltung',
+    'Schadensmeldung',
+    'Immobilienverwaltung',
+    'Handwerker',
+    'Mieter',
+    'Property Management',
+    'Facility Management',
+    'Reparatur',
+    'Wartung',
+  ],
+  authors: [{ name: 'Reparo' }],
+  creator: 'Reparo',
+  publisher: 'Reparo',
+  metadataBase: new URL('https://reparo.app'),
+  alternates: {
+    canonical: '/',
+  },
   manifest: '/manifest.json',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   openGraph: {
-    title: 'Reparo — Verwalter, Handwerker & Mieter verbinden',
+    title: 'Reparo - Intelligente Immobilienverwaltung',
     description:
-      'Die intelligente Plattform für Hausverwaltungen, Handwerker und Mieter.',
+      'Schadensmeldungen, Auftragsvergabe und Kommunikation - alles an einem Ort. Fuer Verwalter, Handwerker und Mieter.',
     url: 'https://reparo.app',
     siteName: 'Reparo',
     type: 'website',
+    locale: 'de_DE',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Reparo',
+    title: 'Reparo - Intelligente Immobilienverwaltung',
     description:
-      'Die intelligente Plattform für Hausverwaltungen, Handwerker und Mieter.',
+      'Die intelligente Plattform fuer Hausverwaltungen, Handwerker und Mieter.',
   },
   icons: {
     icon: '/icons/favicon.ico',
@@ -54,6 +87,27 @@ export const viewport: Viewport = {
   colorScheme: 'light dark',
 }
 
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Reparo',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  description:
+    'Intelligente Plattform fuer Schadensmeldungen, Auftragsvergabe und Kommunikation in der Immobilienverwaltung.',
+  url: 'https://reparo.app',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'EUR',
+  },
+  author: {
+    '@type': 'Organization',
+    name: 'Reparo',
+    url: 'https://reparo.app',
+  },
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -72,6 +126,10 @@ export default function RootLayout({
           content="black-translucent"
         />
         <meta name="apple-mobile-web-app-title" content="Reparo" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
       <body className={`${inter.className} antialiased bg-[#FAF8F5] text-[#2D2A26]`}>
         <AdminButton />
