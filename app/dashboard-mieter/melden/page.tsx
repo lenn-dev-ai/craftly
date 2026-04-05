@@ -87,19 +87,19 @@ export default function MeldenPage() {
   const stepIndex = ["foto", "analyse", "details", "ort", "dringlichkeit", "zusammenfassung", "gesendet"].indexOf(step)
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
+    <div className="min-h-screen bg-[#FAF8F5] text-[#2D2A26]">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-white/5">
+      <div className="px-6 py-4 border-b border-[#EDE8E1]">
         <div className="flex items-center justify-between max-w-xl mx-auto">
-          <button onClick={() => router.back()} className="text-sm text-gray-500 hover:text-gray-300">&larr; Zurueck</button>
-          <h1 className="text-sm font-medium text-gray-300">Schaden melden</h1>
-          <span className="text-xs text-gray-600">{Math.min(stepIndex + 1, 5)}/5</span>
+          <button onClick={() => router.back()} className="text-sm text-[#8C857B] hover:text-[#2D2A26]">&larr; Zurueck</button>
+          <h1 className="text-sm font-medium text-[#2D2A26]">Schaden melden</h1>
+          <span className="text-xs text-[#B5AEA4]">{Math.min(stepIndex + 1, 5)}/5</span>
         </div>
       </div>
 
       {/* Progress Bar */}
-      <div className="h-0.5 bg-white/5">
-        <div className="h-full bg-gradient-to-r from-[#00D4AA] to-[#00B4D8] transition-all duration-700" style={{ width: Math.min((stepIndex + 1) / 5 * 100, 100) + "%" }} />
+      <div className="h-0.5 bg-[#F5F3F0]">
+        <div className="h-full bg-gradient-to-r from-[#3D8B7A] to-[#4A9E8C] transition-all duration-700" style={{ width: Math.min((stepIndex + 1) / 5 * 100, 100) + "%" }} />
       </div>
 
       <div className="max-w-xl mx-auto px-6 py-8">
@@ -108,35 +108,35 @@ export default function MeldenPage() {
         {step === "foto" && (
           <div className="animate-fade-in">
             <div className="text-center mb-8">
-              <div className="w-16 h-16 rounded-2xl bg-[#00D4AA]/10 flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-[#3D8B7A]/10 flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">AI</span>
               </div>
               <h2 className="text-xl font-semibold mb-2">Was ist passiert?</h2>
-              <p className="text-sm text-gray-500">Beschreibe den Schaden -- unsere KI erkennt automatisch Kategorie, Gewerk und Dringlichkeit.</p>
+              <p className="text-sm text-[#8C857B]">Beschreibe den Schaden -- unsere KI erkennt automatisch Kategorie, Gewerk und Dringlichkeit.</p>
             </div>
 
             {/* Foto Upload Area */}
-            <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center mb-6 hover:border-[#00D4AA]/30 transition-colors cursor-pointer">
+            <div className="border-2 border-dashed border-[#EDE8E1] rounded-2xl p-8 text-center mb-6 hover:border-[#3D8B7A]/30 transition-colors cursor-pointer">
               <div className="text-3xl mb-2">CAM</div>
-              <p className="text-sm text-gray-400">Foto aufnehmen oder hochladen</p>
-              <p className="text-xs text-gray-600 mt-1">KI erkennt Schaeden automatisch aus Bildern</p>
+              <p className="text-sm text-[#8C857B]">Foto aufnehmen oder hochladen</p>
+              <p className="text-xs text-[#B5AEA4] mt-1">KI erkennt Schaeden automatisch aus Bildern</p>
             </div>
 
             {/* Text Beschreibung */}
             <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-400 mb-2">Oder beschreibe den Schaden</label>
+              <label className="block text-xs font-medium text-[#8C857B] mb-2">Oder beschreibe den Schaden</label>
               <textarea
                 value={beschreibung}
                 onChange={e => setBeschreibung(e.target.value)}
                 placeholder="z.B. Wasser tropft von der Decke im Bad, der Fleck wird groesser..."
                 rows={4}
-                className="w-full bg-[#12121a] border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#00D4AA]/50 resize-none"
+                className="w-full bg-white border border-[#EDE8E1] rounded-xl px-4 py-3 text-sm text-[#2D2A26] placeholder-[#B5AEA4] focus:outline-none focus:border-[#3D8B7A]/50 resize-none"
               />
             </div>
 
             {/* Quick-Select Buttons */}
             <div className="mb-6">
-              <p className="text-xs text-gray-500 mb-2">Oder schnell auswaehlen:</p>
+              <p className="text-xs text-[#8C857B] mb-2">Oder schnell auswaehlen:</p>
               <div className="flex flex-wrap gap-2">
                 {[
                   { label: "Heizung aus", icon: "!", val: "Heizung funktioniert nicht mehr, Wohnung wird kalt" },
@@ -148,7 +148,7 @@ export default function MeldenPage() {
                   <button
                     key={item.label}
                     onClick={() => { setBeschreibung(item.val); }}
-                    className="text-xs bg-white/5 hover:bg-[#00D4AA]/10 border border-white/10 hover:border-[#00D4AA]/30 rounded-full px-3 py-1.5 transition-all text-gray-400 hover:text-[#00D4AA]"
+                    className="text-xs bg-[#F5F3F0] hover:bg-[#3D8B7A]/10 border border-[#EDE8E1] hover:border-[#3D8B7A]/30 rounded-full px-3 py-1.5 transition-all text-[#8C857B] hover:text-[#3D8B7A]"
                   >
                     {item.icon} {item.label}
                   </button>
@@ -165,15 +165,15 @@ export default function MeldenPage() {
         {/* STEP 2: KI Analyse Animation */}
         {step === "analyse" && (
           <div className="animate-fade-in text-center py-16">
-            <div className="w-20 h-20 rounded-full bg-[#00D4AA]/10 flex items-center justify-center mx-auto mb-6 animate-pulse">
+            <div className="w-20 h-20 rounded-full bg-[#3D8B7A]/10 flex items-center justify-center mx-auto mb-6 animate-pulse">
               <span className="text-2xl">AI</span>
             </div>
             <h2 className="text-lg font-semibold mb-2">KI analysiert deinen Schaden...</h2>
-            <p className="text-sm text-gray-500 mb-8">Kategorie, Gewerk und Dringlichkeit werden erkannt</p>
-            <div className="w-64 h-2 bg-white/5 rounded-full mx-auto overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-[#00D4AA] to-[#00B4D8] rounded-full transition-all duration-300" style={{ width: Math.min(analyseProgress, 100) + "%" }} />
+            <p className="text-sm text-[#8C857B] mb-8">Kategorie, Gewerk und Dringlichkeit werden erkannt</p>
+            <div className="w-64 h-2 bg-[#F5F3F0] rounded-full mx-auto overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-[#3D8B7A] to-[#4A9E8C] rounded-full transition-all duration-300" style={{ width: Math.min(analyseProgress, 100) + "%" }} />
             </div>
-            <div className="mt-4 space-y-2 text-xs text-gray-500">
+            <div className="mt-4 space-y-2 text-xs text-[#8C857B]">
               {analyseProgress > 20 && <p className="animate-fade-in">Schadensbeschreibung wird analysiert...</p>}
               {analyseProgress > 50 && <p className="animate-fade-in">Gewerk und Fachgebiet erkannt...</p>}
               {analyseProgress > 80 && <p className="animate-fade-in">Dringlichkeit wird bewertet...</p>}
@@ -185,68 +185,68 @@ export default function MeldenPage() {
         {step === "details" && analyse && (
           <div className="animate-fade-in">
             <div className="text-center mb-6">
-              <div className="inline-flex items-center gap-2 bg-[#00D4AA]/10 border border-[#00D4AA]/20 rounded-full px-4 py-1.5 mb-4">
-                <div className="w-2 h-2 rounded-full bg-[#00D4AA]" />
-                <span className="text-xs text-[#00D4AA] font-medium">KI-Analyse abgeschlossen</span>
+              <div className="inline-flex items-center gap-2 bg-[#3D8B7A]/10 border border-[#3D8B7A]/20 rounded-full px-4 py-1.5 mb-4">
+                <div className="w-2 h-2 rounded-full bg-[#3D8B7A]" />
+                <span className="text-xs text-[#3D8B7A] font-medium">KI-Analyse abgeschlossen</span>
               </div>
               <h2 className="text-lg font-semibold">{analyse.titel}</h2>
             </div>
 
             {/* KI Insight Card */}
-            <Card className="mb-4 bg-[#12121a] border border-white/5">
+            <Card className="mb-4 bg-white border border-[#EDE8E1]">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Dringlichkeit</div>
-                  <div className={"text-sm font-semibold " + (form.prioritaet === "dringend" ? "text-red-400" : form.prioritaet === "hoch" ? "text-amber-400" : "text-[#00D4AA]")}>
+                  <div className="text-[10px] text-[#8C857B] uppercase tracking-wider mb-1">Dringlichkeit</div>
+                  <div className={"text-sm font-semibold " + (form.prioritaet === "dringend" ? "text-[#C4574B]" : form.prioritaet === "hoch" ? "text-[#B07A3B]" : "text-[#3D8B7A]")}>
                     {form.prioritaet === "dringend" ? "DRINGEND" : form.prioritaet === "hoch" ? "HOCH" : "NORMAL"}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Geschaetzte Zeit</div>
-                  <div className="text-sm font-semibold text-gray-200">{analyse.zeit}</div>
+                  <div className="text-[10px] text-[#8C857B] uppercase tracking-wider mb-1">Geschaetzte Zeit</div>
+                  <div className="text-sm font-semibold text-[#2D2A26]">{analyse.zeit}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Fachgebiet</div>
-                  <div className="text-sm font-semibold text-gray-200">{form.gewerk === "heizung_sanitaer" ? "Sanitaer" : form.gewerk === "elektro" ? "Elektro" : form.gewerk === "schreiner" ? "Schreiner" : form.gewerk === "maler" ? "Maler" : "Allgemein"}</div>
+                  <div className="text-[10px] text-[#8C857B] uppercase tracking-wider mb-1">Fachgebiet</div>
+                  <div className="text-sm font-semibold text-[#2D2A26]">{form.gewerk === "heizung_sanitaer" ? "Sanitaer" : form.gewerk === "elektro" ? "Elektro" : form.gewerk === "schreiner" ? "Schreiner" : form.gewerk === "maler" ? "Maler" : "Allgemein"}</div>
                 </div>
               </div>
             </Card>
 
             {/* KI Tipp */}
-            <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl px-4 py-3 mb-6">
+            <div className="bg-[#FFF3E8] border border-[#C4956A]/15 rounded-xl px-4 py-3 mb-6">
               <div className="flex items-start gap-2">
-                <span className="text-amber-400 text-sm mt-0.5">!</span>
+                <span className="text-[#B07A3B] text-sm mt-0.5">!</span>
                 <div>
-                  <div className="text-xs font-medium text-amber-400 mb-0.5">KI-Soforttipp</div>
-                  <p className="text-xs text-gray-400">{analyse.tipp}</p>
+                  <div className="text-xs font-medium text-[#B07A3B] mb-0.5">KI-Soforttipp</div>
+                  <p className="text-xs text-[#8C857B]">{analyse.tipp}</p>
                 </div>
               </div>
             </div>
 
             {/* Beschreibung Review */}
             <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-400 mb-2">Deine Beschreibung</label>
+              <label className="block text-xs font-medium text-[#8C857B] mb-2">Deine Beschreibung</label>
               <textarea
                 value={form.beschreibung}
                 onChange={e => setForm(f => ({ ...f, beschreibung: e.target.value }))}
                 rows={3}
-                className="w-full bg-[#12121a] border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-[#00D4AA]/50 resize-none"
+                className="w-full bg-white border border-[#EDE8E1] rounded-xl px-4 py-3 text-sm text-[#2D2A26] focus:outline-none focus:border-[#3D8B7A]/50 resize-none"
               />
             </div>
 
             {/* Dringlichkeit Override */}
             <div className="mb-6">
-              <label className="block text-xs font-medium text-gray-400 mb-2">Dringlichkeit anpassen</label>
+              <label className="block text-xs font-medium text-[#8C857B] mb-2">Dringlichkeit anpassen</label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { val: "normal", label: "Normal", sub: "Kein Eile", color: "border-[#00D4AA]/30 bg-[#00D4AA]/5 text-[#00D4AA]" },
-                  { val: "hoch", label: "Hoch", sub: "Bitte bald", color: "border-amber-400/30 bg-amber-500/5 text-amber-400" },
-                  { val: "dringend", label: "Notfall", sub: "Sofort", color: "border-red-400/30 bg-red-500/5 text-red-400" },
+                  { val: "normal", label: "Normal", sub: "Kein Eile", color: "border-[#3D8B7A]/30 bg-[#3D8B7A]/5 text-[#3D8B7A]" },
+                  { val: "hoch", label: "Hoch", sub: "Bitte bald", color: "border-[#C4956A]/30 bg-[#FFF3E8] text-[#B07A3B]" },
+                  { val: "dringend", label: "Notfall", sub: "Sofort", color: "border-[#C4574B]/30 bg-[#FDEEEC] text-[#C4574B]" },
                 ].map(d => (
                   <button
                     key={d.val}
                     onClick={() => setForm(f => ({ ...f, prioritaet: d.val }))}
-                    className={"rounded-xl p-3 border text-center transition-all " + (form.prioritaet === d.val ? d.color : "border-white/5 bg-white/[0.02] text-gray-500")}
+                    className={"rounded-xl p-3 border text-center transition-all " + (form.prioritaet === d.val ? d.color : "border-[#EDE8E1] bg-[#F5F3F0] text-[#8C857B]")}
                   >
                     <div className="text-sm font-medium">{d.label}</div>
                     <div className="text-[10px] mt-0.5 opacity-70">{d.sub}</div>
@@ -265,25 +265,25 @@ export default function MeldenPage() {
         {step === "ort" && (
           <div className="animate-fade-in">
             <h2 className="text-lg font-semibold mb-2">Wo ist das Problem?</h2>
-            <p className="text-sm text-gray-500 mb-6">Wohnung, Raum oder Bereich angeben</p>
+            <p className="text-sm text-[#8C857B] mb-6">Wohnung, Raum oder Bereich angeben</p>
 
             <div className="mb-4">
               <input
                 value={form.wohnung}
                 onChange={e => setForm(f => ({ ...f, wohnung: e.target.value }))}
                 placeholder="z.B. Whg. 3 OG, Bad"
-                className="w-full bg-[#12121a] border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#00D4AA]/50"
+                className="w-full bg-white border border-[#EDE8E1] rounded-xl px-4 py-3 text-sm text-[#2D2A26] placeholder-[#B5AEA4] focus:outline-none focus:border-[#3D8B7A]/50"
               />
             </div>
 
             <div className="mb-6">
-              <p className="text-xs text-gray-500 mb-2">Schnellauswahl:</p>
+              <p className="text-xs text-[#8C857B] mb-2">Schnellauswahl:</p>
               <div className="flex flex-wrap gap-2">
                 {["Kueche", "Bad", "Wohnzimmer", "Schlafzimmer", "Flur", "Keller", "Balkon"].map(r => (
                   <button
                     key={r}
                     onClick={() => setForm(f => ({ ...f, wohnung: f.wohnung ? f.wohnung + ", " + r : r }))}
-                    className="text-xs bg-white/5 hover:bg-[#00D4AA]/10 border border-white/10 hover:border-[#00D4AA]/30 rounded-full px-3 py-1.5 transition-all text-gray-400 hover:text-[#00D4AA]"
+                    className="text-xs bg-[#F5F3F0] hover:bg-[#3D8B7A]/10 border border-[#EDE8E1] hover:border-[#3D8B7A]/30 rounded-full px-3 py-1.5 transition-all text-[#8C857B] hover:text-[#3D8B7A]"
                   >
                     {r}
                   </button>
@@ -302,70 +302,70 @@ export default function MeldenPage() {
           <div className="animate-fade-in">
             <div className="text-center mb-6">
               <h2 className="text-lg font-semibold">Meldung pruefen</h2>
-              <p className="text-sm text-gray-500">Alles korrekt? Dann ab damit.</p>
+              <p className="text-sm text-[#8C857B]">Alles korrekt? Dann ab damit.</p>
             </div>
 
-            <Card className="mb-6 bg-[#12121a] border border-white/5">
+            <Card className="mb-6 bg-white border border-[#EDE8E1]">
               <div className="space-y-4">
                 <div className="flex justify-between items-start">
-                  <span className="text-xs text-gray-500">Problem</span>
-                  <span className="text-sm font-medium text-gray-200 text-right">{form.titel}</span>
+                  <span className="text-xs text-[#8C857B]">Problem</span>
+                  <span className="text-sm font-medium text-[#2D2A26] text-right">{form.titel}</span>
                 </div>
-                <div className="border-t border-white/5" />
+                <div className="border-t border-[#EDE8E1]" />
                 <div className="flex justify-between items-start">
-                  <span className="text-xs text-gray-500">Beschreibung</span>
-                  <span className="text-sm text-gray-300 text-right max-w-[65%]">{form.beschreibung}</span>
+                  <span className="text-xs text-[#8C857B]">Beschreibung</span>
+                  <span className="text-sm text-[#2D2A26] text-right max-w-[65%]">{form.beschreibung}</span>
                 </div>
-                <div className="border-t border-white/5" />
+                <div className="border-t border-[#EDE8E1]" />
                 <div className="flex justify-between">
-                  <span className="text-xs text-gray-500">Ort</span>
-                  <span className="text-sm text-gray-200">{form.wohnung}</span>
+                  <span className="text-xs text-[#8C857B]">Ort</span>
+                  <span className="text-sm text-[#2D2A26]">{form.wohnung}</span>
                 </div>
-                <div className="border-t border-white/5" />
+                <div className="border-t border-[#EDE8E1]" />
                 <div className="flex justify-between">
-                  <span className="text-xs text-gray-500">Dringlichkeit</span>
-                  <span className={"text-sm font-medium " + (form.prioritaet === "dringend" ? "text-red-400" : form.prioritaet === "hoch" ? "text-amber-400" : "text-[#00D4AA]")}>
+                  <span className="text-xs text-[#8C857B]">Dringlichkeit</span>
+                  <span className={"text-sm font-medium " + (form.prioritaet === "dringend" ? "text-[#C4574B]" : form.prioritaet === "hoch" ? "text-[#B07A3B]" : "text-[#3D8B7A]")}>
                     {form.prioritaet === "dringend" ? "Notfall" : form.prioritaet === "hoch" ? "Hoch" : "Normal"}
                   </span>
                 </div>
-                <div className="border-t border-white/5" />
+                <div className="border-t border-[#EDE8E1]" />
                 <div className="flex justify-between">
-                  <span className="text-xs text-gray-500">Geschaetzte Bearbeitung</span>
-                  <span className="text-sm text-gray-200">{analyse.zeit}</span>
+                  <span className="text-xs text-[#8C857B]">Geschaetzte Bearbeitung</span>
+                  <span className="text-sm text-[#2D2A26]">{analyse.zeit}</span>
                 </div>
               </div>
             </Card>
 
             {/* Was passiert als naechstes */}
-            <div className="bg-[#00D4AA]/5 border border-[#00D4AA]/10 rounded-xl px-4 py-3 mb-6">
-              <div className="text-xs font-medium text-[#00D4AA] mb-2">Was passiert jetzt?</div>
+            <div className="bg-[#3D8B7A]/5 border border-[#3D8B7A]/10 rounded-xl px-4 py-3 mb-6">
+              <div className="text-xs font-medium text-[#3D8B7A] mb-2">Was passiert jetzt?</div>
               <div className="space-y-1.5">
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <div className="w-4 h-4 rounded-full bg-[#00D4AA]/20 flex items-center justify-center text-[8px] text-[#00D4AA] font-bold">1</div>
+                <div className="flex items-center gap-2 text-xs text-[#8C857B]">
+                  <div className="w-4 h-4 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center text-[8px] text-[#3D8B7A] font-bold">1</div>
                   Hausverwaltung wird sofort benachrichtigt
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <div className="w-4 h-4 rounded-full bg-[#00D4AA]/20 flex items-center justify-center text-[8px] text-[#00D4AA] font-bold">2</div>
+                <div className="flex items-center gap-2 text-xs text-[#8C857B]">
+                  <div className="w-4 h-4 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center text-[8px] text-[#3D8B7A] font-bold">2</div>
                   Verwalter prueft und bewertet deine Meldung
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <div className="w-4 h-4 rounded-full bg-[#00D4AA]/20 flex items-center justify-center text-[8px] text-[#00D4AA] font-bold">3</div>
+                <div className="flex items-center gap-2 text-xs text-[#8C857B]">
+                  <div className="w-4 h-4 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center text-[8px] text-[#3D8B7A] font-bold">3</div>
                   Passende Handwerker-Stunden werden auf dem Marktplatz gebucht
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <div className="w-4 h-4 rounded-full bg-[#00D4AA]/20 flex items-center justify-center text-[8px] text-[#00D4AA] font-bold">4</div>
+                <div className="flex items-center gap-2 text-xs text-[#8C857B]">
+                  <div className="w-4 h-4 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center text-[8px] text-[#3D8B7A] font-bold">4</div>
                   Du wirst ueber jeden Schritt informiert
                 </div>
               </div>
             </div>
 
-            {error && <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 px-4 py-2.5 rounded-xl mb-4">{error}</p>}
+            {error && <p className="text-xs text-[#C4574B] bg-[#FDEEEC] border border-[#C4574B]/15 px-4 py-2.5 rounded-xl mb-4">{error}</p>}
 
             <div className="flex gap-3">
               <Button onClick={handleSubmit} disabled={loading} className="flex-1 justify-center">
                 {loading ? "Wird gesendet..." : "Meldung absenden"}
               </Button>
-              <button onClick={() => setStep("details")} className="text-sm text-gray-500 hover:text-gray-300 px-4">Zurueck</button>
+              <button onClick={() => setStep("details")} className="text-sm text-[#8C857B] hover:text-[#2D2A26] px-4">Zurueck</button>
             </div>
           </div>
         )}
@@ -373,20 +373,20 @@ export default function MeldenPage() {
         {/* STEP 6: Gesendet - Erfolg */}
         {step === "gesendet" && (
           <div className="animate-fade-in text-center py-12">
-            <div className="w-20 h-20 rounded-full bg-[#00D4AA]/10 flex items-center justify-center mx-auto mb-6">
-              <span className="text-3xl text-[#00D4AA]">OK</span>
+            <div className="w-20 h-20 rounded-full bg-[#3D8B7A]/10 flex items-center justify-center mx-auto mb-6">
+              <span className="text-3xl text-[#3D8B7A]">OK</span>
             </div>
             <h2 className="text-xl font-semibold mb-2">Meldung erfolgreich gesendet</h2>
-            <p className="text-sm text-gray-500 mb-8">Deine Hausverwaltung wurde benachrichtigt. Du erhaeltst Updates zu jedem Schritt.</p>
+            <p className="text-sm text-[#8C857B] mb-8">Deine Hausverwaltung wurde benachrichtigt. Du erhaeltst Updates zu jedem Schritt.</p>
 
             {/* Mini Pipeline */}
             <div className="flex items-center justify-center gap-2 mb-10">
               {["Gemeldet", "Pruefung", "Marktplatz", "Reparatur", "Fertig"].map((s, i) => (
                 <div key={s} className="flex items-center gap-2">
-                  <div className={"w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium " + (i === 0 ? "bg-[#00D4AA] text-black" : "bg-white/5 text-gray-600")}>
+                  <div className={"w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium " + (i === 0 ? "bg-[#3D8B7A] text-white" : "bg-[#F5F3F0] text-[#B5AEA4]")}>
                     {i + 1}
                   </div>
-                  {i < 4 && <div className={"w-6 h-0.5 " + (i === 0 ? "bg-[#00D4AA]/30" : "bg-white/5")} />}
+                  {i < 4 && <div className={"w-6 h-0.5 " + (i === 0 ? "bg-[#3D8B7A]/30" : "bg-[#F5F3F0]")} />}
                 </div>
               ))}
             </div>
