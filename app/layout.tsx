@@ -50,7 +50,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
-  themeColor: '#00D4AA',
+  themeColor: '#3D8B7A',
   colorScheme: 'light dark',
 }
 
@@ -73,7 +73,7 @@ export default function RootLayout({
         />
         <meta name="apple-mobile-web-app-title" content="Reparo" />
       </head>
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.className} antialiased bg-[#FAF8F5] text-[#2D2A26]`}>
         <AdminButton />
         {children}
         <script
