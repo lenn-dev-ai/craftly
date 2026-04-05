@@ -5,13 +5,13 @@ module.exports = {
     extend: {
       colors: {
         dark: {
-          DEFAULT: "#0a0a0f",
-          card: "#12121a",
+          DEFAULT: "#FAF8F5",
+          card: "#FFFFFF",
           surface: "#1a1a24",
         },
         accent: {
-          green: "#00D4AA",
-          blue: "#00B4D8",
+          green: "#3D8B7A",
+          blue: "#4A9E8C",
           purple: "#A78BFA",
         },
       },
