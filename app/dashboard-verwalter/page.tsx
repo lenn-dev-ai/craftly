@@ -8,17 +8,17 @@ import { Badge, Button, Card, LoadingSpinner } from "@/components/ui"
 
 function kiKosten(t: Ticket): string {
   const titel = (t.titel || "").toLowerCase()
-  if (titel.match(/heiz|warm/)) return "250\u2013600"
-  if (titel.match(/wasser|feucht|rohr/)) return "150\u2013800"
-  if (titel.match(/elektr|strom|sicher/)) return "100\u2013400"
-  if (titel.match(/tuer|fenster|schloss/)) return "80\u2013350"
-  if (titel.match(/schimmel/)) return "200\u2013900"
-  return "100\u2013500"
+  if (titel.match(/heiz|warm/)) return "250-600"
+  if (titel.match(/wasser|feucht|rohr/)) return "150-800"
+  if (titel.match(/elektr|strom|sicher/)) return "100-400"
+  if (titel.match(/tuer|fenster|schloss/)) return "80-350"
+  if (titel.match(/schimmel/)) return "200-900"
+  return "100-500"
 }
 
 export default function VerwalterDashboard() {
   const router = useRouter()
-  const [tickets, setTickets] = useState<Ticket[]>([])
+  const [tickets, setVorgaenge] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function VerwalterDashboard() {
       const { data } = await supabase
         .from("tickets").select("*")
         .order("created_at", { ascending: false })
-      setTickets(data || [])
+      setVorgaenge(data || [])
       setLoading(false)
     }
     load()
@@ -49,9 +49,9 @@ export default function VerwalterDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-0 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[#2D2A26]">Dashboard</h1>
-          <p className="text-sm text-[#8C857B] mt-1">{tickets.length} Tickets \u2014 {offene.length + marktplatz.length} aktiv</p>
+          <p className="text-sm text-[#8C857B] mt-1">{tickets.length} Vorgaenge  -  {offene.length + marktplatz.length} aktiv</p>
         </div>
-        <Button onClick={() => router.push("/dashboard-verwalter/marktplatz")}>Zum Marktplatz</Button>
+        <Button onClick={() => router.push("/dashboard-verwalter/marktplatz")}>Zum Handwerker-Auftraege</Button>
       </div>
 
       {/* KPI Grid */}
@@ -60,7 +60,7 @@ export default function VerwalterDashboard() {
           { label: "MELDUNGEN", value: offene.length, color: offene.length > 0 ? "text-[#C4956A]" : "text-[#8C857B]" },
           { label: "MARKTPLATZ", value: marktplatz.length, color: marktplatz.length > 0 ? "text-[#3D8B7A]" : "text-[#8C857B]" },
           { label: "IN ARBEIT", value: inArbeit.length, color: inArbeit.length > 0 ? "text-[#5B6ABF]" : "text-[#8C857B]" },
-          { label: "KOSTEN MTD", value: gesamtkosten.toLocaleString("de") + " EUR", color: "text-[#8C857B]" },
+          { label: "KOSTEN MONAT", value: gesamtkosten.toLocaleString("de") + " EUR", color: "text-[#8C857B]" },
         ].map(kpi => (
           <Card key={kpi.label} className="text-center py-4">
             <div className={"text-2xl font-bold tabular-nums " + kpi.color}>{kpi.value}</div>
@@ -92,7 +92,7 @@ export default function VerwalterDashboard() {
                         <div>
                           <div className="text-sm font-semibold text-[#2D2A26]">{t.titel}</div>
                           <div className="text-xs text-[#8C857B] mt-0.5">
-                            {t.wohnung && (t.wohnung + " \u2014 ")}{new Date(t.created_at).toLocaleDateString("de")}
+                            {t.wohnung && (t.wohnung + "  -  ")}{new Date(t.created_at).toLocaleDateString("de")}
                           </div>
                         </div>
                         <Badge status={t.status} />
@@ -109,7 +109,7 @@ export default function VerwalterDashboard() {
                           {t.prioritaet === "dringend" ? "Dringend" : t.prioritaet === "hoch" ? "Hoch" : "Normal"}
                         </span>
                         <span className="text-[10px] text-[#8C857B]">
-                          Gesch\u00E4tzte Kosten: <span className="text-[#2D2A26] font-medium">{kosten} EUR</span>
+                          Geschaetzte Kosten: <span className="text-[#2D2A26] font-medium">{kosten} EUR</span>
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mt-3">
@@ -130,10 +130,10 @@ export default function VerwalterDashboard() {
         </div>
       )}
 
-      {/* Marktplatz-Buchungen */}
+      {/* Handwerker-Auftraege-Buchungen */}
       {marktplatz.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xs uppercase tracking-wider text-[#8C857B] font-medium mb-3">Marktplatz-Buchungen ({marktplatz.length})</h2>
+          <h2 className="text-xs uppercase tracking-wider text-[#8C857B] font-medium mb-3">Handwerker-Auftraege-Buchungen ({marktplatz.length})</h2>
           <div className="flex flex-col gap-2">
             {marktplatz.map(t => (
               <Card key={t.id} className="hover:bg-[#F7F4F0] cursor-pointer transition-all"
@@ -184,8 +184,8 @@ export default function VerwalterDashboard() {
             <span className="text-2xl text-[#8C857B]">INBOX</span>
           </div>
           <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Noch keine Meldungen</h2>
-          <p className="text-sm text-[#8C857B] mb-6">Sobald Mieter Sch\u00E4den melden, erscheinen sie hier. Buche Handwerker-Stunden auf dem Marktplatz.</p>
-          <Button onClick={() => router.push("/dashboard-verwalter/marktplatz")}>Marktplatz \u00F6ffnen</Button>
+          <p className="text-sm text-[#8C857B] mb-6">Sobald Mieter Schaeden melden, erscheinen sie hier. Buche Handwerker-Stunden auf dem Handwerker-Auftraege.</p>
+          <Button onClick={() => router.push("/dashboard-verwalter/marktplatz")}>Handwerker-Auftraege oeffnen</Button>
         </div>
       )}
 
@@ -194,7 +194,7 @@ export default function VerwalterDashboard() {
         <div className="text-center mt-4">
           <button onClick={() => router.push("/dashboard-verwalter/tickets")}
             className="text-xs text-[#B5AEA4] hover:text-[#3D8B7A] transition-colors">
-            {erledigt.length} erledigte Tickets anzeigen
+            {erledigt.length} erledigte Vorgaenge anzeigen
           </button>
         </div>
       )}
