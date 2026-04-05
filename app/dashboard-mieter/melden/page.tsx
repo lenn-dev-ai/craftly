@@ -346,11 +346,11 @@ export default function MeldenPage() {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <div className="w-4 h-4 rounded-full bg-[#00D4AA]/20 flex items-center justify-center text-[8px] text-[#00D4AA] font-bold">2</div>
-                  KI schlaegt passende Handwerker vor
+                  Verwalter prueft und bewertet deine Meldung
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <div className="w-4 h-4 rounded-full bg-[#00D4AA]/20 flex items-center justify-center text-[8px] text-[#00D4AA] font-bold">3</div>
-                  Handwerker bieten per Smart-Auktion
+                  Passende Handwerker-Stunden werden auf dem Marktplatz gebucht
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <div className="w-4 h-4 rounded-full bg-[#00D4AA]/20 flex items-center justify-center text-[8px] text-[#00D4AA] font-bold">4</div>
@@ -381,7 +381,7 @@ export default function MeldenPage() {
 
             {/* Mini Pipeline */}
             <div className="flex items-center justify-center gap-2 mb-10">
-              {["Gemeldet", "Freigabe", "Handwerker", "Reparatur", "Fertig"].map((s, i) => (
+              {["Gemeldet", "Pruefung", "Marktplatz", "Reparatur", "Fertig"].map((s, i) => (
                 <div key={s} className="flex items-center gap-2">
                   <div className={"w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium " + (i === 0 ? "bg-[#00D4AA] text-black" : "bg-white/5 text-gray-600")}>
                     {i + 1}
