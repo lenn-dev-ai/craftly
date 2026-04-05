@@ -12,7 +12,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(true)
 
-  // Check if user is already logged in and redirect to dashboard
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -55,7 +54,6 @@ export default function LoginPage() {
         return
       }
 
-      // Fetch user role from profiles table
       const { data: profile } = await supabase
         .from("profiles")
         .select("rolle")
@@ -64,7 +62,6 @@ export default function LoginPage() {
 
       const rolle = profile?.rolle
 
-      // Redirect based on role
       const dashMap: Record<string, string> = {
         admin: "/dashboard-admin",
         verwalter: "/dashboard-verwalter",
@@ -82,9 +79,12 @@ export default function LoginPage() {
   if (checking) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <div className="logo text-4xl">
-          <span className="text-white">Repa</span>
-          <span className="gradient-text">ro</span>
+        <div className="flex flex-col items-center gap-3">
+          <div className="logo text-4xl">
+            <span className="text-white">Repa</span>
+            <span className="gradient-text">ro</span>
+          </div>
+          <div className="w-6 h-6 border-2 border-[#00D4AA]/30 border-t-[#00D4AA] rounded-full animate-spin" />
         </div>
       </div>
     )
@@ -92,17 +92,19 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8">
+      <Card className="w-full max-w-md p-8 animate-fade-in">
         <div className="text-center mb-8">
           <div className="logo text-4xl mb-2">
             <span className="text-white">Repa</span>
             <span className="gradient-text">ro</span>
           </div>
-          <p className="text-gray-400">Melden Sie sich an</p>
+          <p className="text-gray-400 text-sm">
+            Verwalter, Handwerker & Mieter verbinden
+          </p>
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 mb-4">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4 animate-fade-in">
             <p className="text-red-400 text-sm">{error}</p>
           </div>
         )}
@@ -117,7 +119,7 @@ export default function LoginPage() {
               placeholder="ihre@email.de"
               value={email}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-              onFocus={(e: React.FocusEvent<HTMLInputElement>) => setEmail(e.target.value)}
+              onKeyDown={(e: React.KeyboardEvent) => e.key === "Enter" && handleLogin()}
             />
           </div>
 
@@ -130,7 +132,7 @@ export default function LoginPage() {
               placeholder="Ihr Passwort"
               value={password}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-              onFocus={(e: React.FocusEvent<HTMLInputElement>) => setPassword(e.target.value)}
+              onKeyDown={(e: React.KeyboardEvent) => e.key === "Enter" && handleLogin()}
             />
           </div>
 
@@ -146,8 +148,11 @@ export default function LoginPage() {
         <div className="mt-6 text-center">
           <p className="text-gray-400 text-sm">
             Noch kein Konto?{" "}
-            <Link href="/register" className="text-blue-400 hover:text-blue-300">
-              Registrieren
+            <Link
+              href="/registrierung"
+              className="text-[#00D4AA] hover:text-[#00E4BA] font-medium"
+            >
+              Jetzt registrieren
             </Link>
           </p>
         </div>
