@@ -7,14 +7,14 @@ import { Badge, Button, Card, LoadingSpinner } from "@/components/ui"
 
 const PIPELINE_STEPS = [
   { key: "offen", label: "Gemeldet", icon: "1" },
-  { key: "auktion", label: "Handwerker", icon: "2" },
+  { key: "marktplatz", label: "Marktplatz", icon: "2" },
   { key: "in_bearbeitung", label: "Reparatur", icon: "3" },
   { key: "erledigt", label: "Fertig", icon: "4" },
 ]
 
 function getStepIndex(status: string): number {
   if (status === "offen") return 0
-  if (status === "auktion") return 1
+  if (status === "marktplatz") return 1
   if (status === "in_bearbeitung") return 2
   if (status === "erledigt") return 3
   return 0
@@ -27,10 +27,10 @@ function getKiInsight(ticket: Ticket): string {
     return "Deine Meldung hat Priorität — Hausverwaltung wird umgehend informiert."
   if (s === "offen")
     return "Deine Hausverwaltung prüft die Meldung. Normalerweise innerhalb weniger Stunden."
-  if (s === "auktion" && p === "dringend")
-    return "Eilauftrag! Handwerker werden per Sofort-Vergabe kontaktiert."
-  if (s === "auktion")
-    return "Handwerker bieten gerade auf deinen Auftrag. Bestes Angebot wird ausgewählt."
+  if (s === "marktplatz" && p === "dringend")
+    return "Eilauftrag! Deine Hausverwaltung bucht per Sofort-Buchung auf dem Marktplatz."
+  if (s === "marktplatz")
+    return "Deine Hausverwaltung bucht passende Handwerker-Stunden auf dem Zeitslot-Marktplatz."
   if (s === "in_bearbeitung")
     return "Ein Handwerker arbeitet bereits an der Lösung. Du wirst informiert sobald es fertig ist."
   if (s === "erledigt")
@@ -43,7 +43,7 @@ function getEstimate(ticket: Ticket): string {
   const p = ticket.prioritaet
   if (s === "erledigt") return "Abgeschlossen"
   if (s === "in_bearbeitung") return p === "dringend" ? "Heute" : "1–2 Tage"
-  if (s === "auktion") return p === "dringend" ? "~4 Stunden" : "1–3 Tage"
+  if (s === "marktplatz") return p === "dringend" ? "~4 Stunden" : "1–3 Tage"
   if (s === "offen") return p === "dringend" ? "~1 Tag" : "3–5 Tage"
   return ""
 }
