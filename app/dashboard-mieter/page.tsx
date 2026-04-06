@@ -81,8 +81,8 @@ export default function MieterDashboard() {
         </h1>
         <p className="text-[#8C857B] mt-1">
           {aktiv.length === 0
-            ? "Keine offenen Vorgaenge - alles in Ordnung."
-            : `${aktiv.length} ${aktiv.length === 1 ? "offener Vorgang" : "offene Vorgaenge"}`}
+            ? "Keine offenen Vorgänge - alles in Ordnung."
+            : `${aktiv.length} ${aktiv.length === 1 ? "offener Vorgang" : "offene Vorgänge"}`}
         </p>
       </div>
 
@@ -116,7 +116,7 @@ export default function MieterDashboard() {
             </div>
             <div>
               <div className="text-sm font-medium text-[#3D8B7A]">Alles in Ordnung</div>
-              <div className="text-xs text-[#8C857B]">Keine offenen Schaeden. {erledigt.length} erledigte {erledigt.length > 1 ? "Meldungen" : "Meldung"}.</div>
+              <div className="text-xs text-[#8C857B]">Keine offenen Schäden. {erledigt.length} erledigte {erledigt.length > 1 ? "Meldungen" : "Meldung"}.</div>
             </div>
           </div>
         </Card>
@@ -125,7 +125,7 @@ export default function MieterDashboard() {
       {/* Active Tickets */}
       {aktiv.length > 0 && (
         <div className="mt-6">
-          <h2 className="text-lg font-semibold text-[#2D2A26] mb-4">Ihre offenen Vorgaenge</h2>
+          <h2 className="text-lg font-semibold text-[#2D2A26] mb-4">Ihre offenen Vorgänge</h2>
           <div className="space-y-3">
             {aktiv.map(t => {
               const stepIdx = getStepIndex(t.status)
@@ -168,7 +168,7 @@ export default function MieterDashboard() {
                             <circle cx="12" cy="12" r="10" />
                             <polyline points="12 6 12 12 16 14" />
                           </svg>
-                          <span className="text-xs text-[#8C857B]">Geschaetzt: {estimate}</span>
+                          <span className="text-xs text-[#8C857B]">Geschätzt: {estimate}</span>
                         </div>
                       )}
                       <span className="text-xs text-[#B5AEA4]">{new Date(t.created_at).toLocaleDateString("de")}</span>
@@ -190,7 +190,7 @@ export default function MieterDashboard() {
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
           <div>
-            <span className="text-[10px] text-[#3D8B7A] font-semibold">KI-Einschaetzung</span>
+            <span className="text-[10px] text-[#3D8B7A] font-semibold">KI-Einschätzung</span>
             <p className="text-xs text-[#8C857B]">{insight}</p>
           </div>
         </div>
@@ -199,7 +199,7 @@ export default function MieterDashboard() {
       {/* Completed section */}
       {erledigt.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-sm font-semibold text-[#8C857B] mb-3">Erledigte Vorgaenge</h2>
+          <h2 className="text-sm font-semibold text-[#8C857B] mb-3">Erledigte Vorgänge</h2>
           <div className="space-y-2">
             {erledigt.slice(0, 5).map(t => (
               <Card key={t.id} className="hover:bg-[#F7F4F0] cursor-pointer transition-all opacity-60"
