@@ -65,7 +65,7 @@ function kiPreisempfehlung(titel: string): string {
   if (t.includes("heizung") || t.includes("therme")) return "800–2.500"
   if (t.includes("wasser") || t.includes("rohr") || t.includes("leck")) return "300–1.200"
   if (t.includes("elektr") || t.includes("strom")) return "150–600"
-  if (t.includes("tuer") || t.includes("schloss") || t.includes("fenster")) return "200–800"
+  if (t.includes("tür") || t.includes("schloss") || t.includes("fenster")) return "200–800"
   if (t.includes("schimmel") || t.includes("feucht")) return "500–2.000"
   return "250–600"
 }
