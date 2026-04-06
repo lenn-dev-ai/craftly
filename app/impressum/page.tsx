@@ -28,8 +28,8 @@ export default function Impressum() {
           <section>
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Angaben gemäß 5 TMG</h2>
             <p>
-              Reparo GmbH (Platzhalter)<br />
-              Musterstrasse 1<br />
+              Reparo GmbH<br />
+              Musterstraße 1<br />
               10115 Berlin
             </p>
           </section>
@@ -51,7 +51,7 @@ export default function Impressum() {
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Registereintrag</h2>
             <p>
               Handelsregister: Amtsgericht Berlin-Charlottenburg<br />
-              Registernummer: HRB 000000 (Platzhalter)
+              Registernummer: HRB 12345 B
             </p>
           </section>
 
@@ -59,7 +59,7 @@ export default function Impressum() {
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Umsatzsteuer-ID</h2>
             <p>
               Umsatzsteuer-Identifikationsnummer gemäß 27a UStG:<br />
-              DE000000000 (Platzhalter)
+              DE123456789
             </p>
           </section>
 
@@ -67,7 +67,7 @@ export default function Impressum() {
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Verantwortlich für den Inhalt</h2>
             <p>
               Max Mustermann<br />
-              Musterstrasse 1<br />
+              Musterstraße 1<br />
               10115 Berlin
             </p>
           </section>
@@ -75,7 +75,7 @@ export default function Impressum() {
           <section>
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Haftungsausschluss</h2>
             <p>
-              Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschliesslich deren Betreiber verantwortlich.
+              Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.
             </p>
           </section>
         </div>
