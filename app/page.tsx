@@ -16,8 +16,8 @@ export default function LandingPage() {
             <span className="text-xl font-semibold tracking-tight">Reparo</span>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm text-[#6B665E] hover:text-[#2D2A26] transition-colors">
-              Anmelden
+            <Link href="/login" className="text-sm py-2 px-1 text-[#6B665E] hover:text-[#2D2A26] transition-colors">
+                  Anmelden
             </Link>
             <Link href="/registrierung" className="text-sm px-4 py-2 bg-[#3D8B7A] text-white rounded-lg hover:bg-[#347A6A] transition-colors font-medium">
               Kostenlos starten
@@ -40,7 +40,7 @@ export default function LandingPage() {
           </h1>
           <p className="text-lg sm:text-xl text-[#6B665E] max-w-2xl mx-auto mb-10 leading-relaxed">
             Reparo verbindet Verwalter, Mieter und Handwerker auf einer Plattform.
-            Meldungen, Auftraege und Kommunikation - alles an einem Ort.
+            Meldungen, Aufträge und Kommunikation - alles an einem Ort.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/registrierung" className="w-full sm:w-auto px-8 py-3.5 bg-[#3D8B7A] text-white rounded-xl hover:bg-[#347A6A] transition-colors font-semibold text-base shadow-sm">
@@ -63,7 +63,7 @@ export default function LandingPage() {
             </div>
             <div className="flex items-center gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              Keine Einrichtungsgebuehr
+              Keine Einrichtungsgebühr
             </div>
             <div className="flex items-center gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -92,7 +92,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-semibold mb-3">Verwalter</h3>
               <p className="text-[#6B665E] leading-relaxed mb-4">
-                Behalten Sie den Ueberblick ueber alle Objekte, Meldungen und Auftraege. Automatische Benachrichtigungen und klare Dashboards.
+                Behalten Sie den Überblick ueber alle Objekte, Meldungen und Aufträge. Automatische Benachrichtigungen und klare Dashboards.
               </p>
               <ul className="space-y-2 text-sm text-[#6B665E]">
                 <li className="flex items-center gap-2">
@@ -119,7 +119,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-semibold mb-3">Mieter</h3>
               <p className="text-[#6B665E] leading-relaxed mb-4">
-                Melden Sie Schaeden in wenigen Klicks und verfolgen Sie den Status in Echtzeit. Kein Anruf, keine E-Mail noetig.
+                Melden Sie Schäden in wenigen Klicks und verfolgen Sie den Status in Echtzeit. Kein Anruf, keine E-Mail nötig.
               </p>
               <ul className="space-y-2 text-sm text-[#6B665E]">
                 <li className="flex items-center gap-2">
@@ -146,7 +146,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-semibold mb-3">Handwerker</h3>
               <p className="text-[#6B665E] leading-relaxed mb-4">
-                Erhalten Sie Auftraege digital, mit allen Details und Fotos. Dokumentieren Sie Ihre Arbeit direkt in der App.
+                Erhalten Sie Aufträge digital, mit allen Details und Fotos. Dokumentieren Sie Ihre Arbeit direkt in der App.
               </p>
               <ul className="space-y-2 text-sm text-[#6B665E]">
                 <li className="flex items-center gap-2">
@@ -178,12 +178,12 @@ export default function LandingPage() {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { title: "Schadensmeldungen", desc: "Mieter melden Schaeden mit Fotos und Beschreibung. Verwalter sehen alles sofort.", icon: "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01" },
+              { title: "Schadensmeldungen", desc: "Mieter melden Schäden mit Fotos und Beschreibung. Verwalter sehen alles sofort.", icon: "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01" },
               { title: "Auftragsvergabe", desc: "Beauftragen Sie Handwerker mit einem Klick. Alle Details werden automatisch weitergeleitet.", icon: "M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M20 8v6 M23 11h-6 M12.5 7a4 4 0 1 0-8 0 4 4 0 0 0 8 0z" },
-              { title: "Echtzeit-Status", desc: "Jeder sieht den aktuellen Stand. Keine Nachfragen, keine Missverstaendnisse.", icon: "M22 12h-4l-3 9L9 3l-3 9H2" },
-              { title: "Dokumentenablage", desc: "Mietvertraege, Protokolle und Rechnungen sicher an einem Ort gespeichert.", icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8" },
-              { title: "Benachrichtigungen", desc: "Automatische Updates per E-Mail bei Statusaenderungen und neuen Meldungen.", icon: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0" },
-              { title: "Analyse-Dashboard", desc: "Auswertungen zu Kosten, Reaktionszeiten und offenen Vorgaengen auf einen Blick.", icon: "M18 20V10 M12 20V4 M6 20v-6" },
+              { title: "Echtzeit-Status", desc: "Jeder sieht den aktuellen Stand. Keine Nachfragen, keine Missverständnisse.", icon: "M22 12h-4l-3 9L9 3l-3 9H2" },
+              { title: "Dokumentenablage", desc: "Mietverträge, Protokolle und Rechnungen sicher an einem Ort gespeichert.", icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8" },
+              { title: "Benachrichtigungen", desc: "Automatische Updates per E-Mail bei Statusänderungen und neuen Meldungen.", icon: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0" },
+              { title: "Analyse-Dashboard", desc: "Auswertungen zu Kosten, Reaktionszeiten und offenen Vorgängen auf einen Blick.", icon: "M18 20V10 M12 20V4 M6 20v-6" },
             ].map((feature, i) => (
               <div key={i} className="p-6 rounded-xl border border-[#EDE8E1] bg-white hover:shadow-md transition-shadow">
                 <div className="w-10 h-10 rounded-lg bg-[#3D8B7A]/10 flex items-center justify-center mb-4">
@@ -195,6 +195,62 @@ export default function LandingPage() {
                 <p className="text-sm text-[#6B665E] leading-relaxed">{feature.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+
+      {/* KI-Funktionen */}
+      <section className="py-20 bg-gradient-to-b from-[#FAF8F5] to-white">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <span className="inline-block px-3 py-1 bg-[#3D8B7A]/10 text-[#3D8B7A] text-sm font-medium rounded-full mb-4">
+              Neu: KI-gestützt
+            </span>
+            <h2 className="text-3xl font-bold mb-4">
+              Intelligente Automatisierung
+            </h2>
+            <p className="text-[#6B665E] max-w-2xl mx-auto">
+              Unsere KI-Funktionen helfen Ihnen, schneller und effizienter zu arbeiten.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white rounded-xl p-6 border border-[#EDE8E1] shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-10 h-10 bg-[#3D8B7A]/10 rounded-lg flex items-center justify-center mb-4">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D8B7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-lg mb-2">KI-Triage</h3>
+              <p className="text-[#6B665E] text-sm">
+                Automatische Priorisierung eingehender Aufträge nach Dringlichkeit und Kategorie.
+              </p>
+            </div>
+            <div className="bg-white rounded-xl p-6 border border-[#EDE8E1] shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-10 h-10 bg-[#C4956A]/10 rounded-lg flex items-center justify-center mb-4">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C4956A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 6v6l4 2" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Smart-Auktionen</h3>
+              <p className="text-[#6B665E] text-sm">
+                Handwerker-Matching mit intelligenter Preisoptimierung für beste Ergebnisse.
+              </p>
+            </div>
+            <div className="bg-white rounded-xl p-6 border border-[#EDE8E1] shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-10 h-10 bg-[#3D8B7A]/10 rounded-lg flex items-center justify-center mb-4">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D8B7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Echtzeit-Analyse</h3>
+              <p className="text-[#6B665E] text-sm">
+                Live-Dashboards mit KI-Vorhersagen zu Kosten, Auslastung und Trends.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -233,11 +289,11 @@ export default function LandingPage() {
               <span className="font-semibold">Reparo</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-[#6B665E]">
-              <Link href="/impressum" className="hover:text-[#2D2A26] transition-colors">Impressum</Link>
-              <Link href="/datenschutz" className="hover:text-[#2D2A26] transition-colors">Datenschutz</Link>
+              <Link href="/impressum" className="hover:text-[#2D2A26] transition-colors py-2 px-1 inline-block">Impressum</Link>
+              <Link href="/datenschutz" className="hover:text-[#2D2A26] transition-colors py-2 px-1 inline-block">Datenschutz</Link>
             </div>
             <p className="text-sm text-[#8C857B]">
-              &copy; 2025 Reparo. Alle Rechte vorbehalten.
+              &copy; 2026 Reparo. Alle Rechte vorbehalten.
             </p>
           </div>
         </div>
