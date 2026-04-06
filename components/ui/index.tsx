@@ -124,7 +124,7 @@ export function Input({ label, ...props }: { label?: string } & React.InputHTMLA
       {label && <label className="text-sm font-medium text-[#736B62]">{label}</label>}
       <input
         {...props}
-        className="w-full px-4 py-3 bg-white border border-[#EDE8E1] rounded-xl text-sm text-[#2D2A26] placeholder:text-[#B5AEA4] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3D8B7A] focus-visible:border-[#3D8B7A] transition-colors"
+        className="w-full px-4 py-3 bg-white border border-[#EDE8E1] rounded-xl text-sm text-[#2D2A26] placeholder:text-[#6B665E] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3D8B7A] focus-visible:border-[#3D8B7A] transition-colors"
       />
     </div>
   )
@@ -150,7 +150,7 @@ export function Textarea({ label, ...props }: { label?: string } & React.Textare
       {label && <label className="text-sm font-medium text-[#736B62]">{label}</label>}
       <textarea
         {...props}
-        className="w-full px-4 py-3 bg-white border border-[#EDE8E1] rounded-xl text-sm text-[#2D2A26] placeholder:text-[#B5AEA4] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3D8B7A] focus-visible:border-[#3D8B7A] transition-colors"
+        className="w-full px-4 py-3 bg-white border border-[#EDE8E1] rounded-xl text-sm text-[#2D2A26] placeholder:text-[#6B665E] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3D8B7A] focus-visible:border-[#3D8B7A] transition-colors"
       />
     </div>
   )
@@ -203,7 +203,7 @@ export function Toast({ message, onClose, type }: {
       <span className="text-sm font-medium">{message}</span>
       <button
         onClick={onClose}
-        aria-label="Benachrichtigung schliessen"
+        aria-label="Benachrichtigung schließen"
         className="text-[#B5AEA4] hover:text-[#2D2A26] ml-2 text-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3D8B7A] rounded"
       >
         {"\u00D7"}
