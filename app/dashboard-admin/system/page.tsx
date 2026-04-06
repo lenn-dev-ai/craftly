@@ -36,7 +36,7 @@ function kiSystemHealth(data: any): { score: number; checks: { name: string; ok:
 function kiOptimierung(data: any): string[] {
   const tips: string[] = []
   if (!data) return tips
-  if (data.avgPreis > 0 && data.avgPreis > 1000) tips.push("Durchschnittspreis ueber 1000 EUR - Budget-Limits pruefen")
+  if (data.avgPreis > 0 && data.avgPreis > 1000) tips.push("Durchschnittspreis über 1000 EUR - Budget-Limits prüfen")
   if (data.erledigungsRate < 50 && data.totalTickets > 3) tips.push("Erledigungsrate unter 50% - Eskalations-Workflow einrichten")
   const gewerke = Object.keys(data.gewerkCount)
   if (gewerke.length < 3 && data.rollenCount.handwerker > 0) tips.push("Nur " + gewerke.length + " Gewerke - breitere Abdeckung empfohlen")
