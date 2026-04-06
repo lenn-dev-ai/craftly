@@ -38,23 +38,16 @@ export default function RegistrierungPage() {
       setError("Passwort muss mindestens 8 Zeichen lang sein.")
       return
     }
+    if (form.password !== form.passwordConfirm) {
+      setError("Passwörter stimmen nicht überein")
+      return
+    }
 
     setLoading(true)
     setError("")
 
     try {
       const supabase = createClient()
-    // Password validation
-    if (form.password.length < 8) {
-      setError("Passwort muss mindestens 8 Zeichen lang sein")
-      setLoading(false)
-      return
-    }
-    if (form.password !== form.passwordConfirm) {
-      setError("Passwörter stimmen nicht überein")
-      setLoading(false)
-      return
-    }
 
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: form.email,
