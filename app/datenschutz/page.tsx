@@ -22,13 +22,13 @@ export default function Datenschutz() {
       </nav>
 
       <main className="max-w-3xl mx-auto px-6 py-16">
-        <h1 className="text-3xl font-bold mb-8">Datenschutzerklaerung</h1>
+        <h1 className="text-3xl font-bold mb-8">Datenschutzerklärung</h1>
 
         <div className="space-y-8 text-[#6B665E] leading-relaxed">
           <section>
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">1. Verantwortlicher</h2>
             <p>
-              Verantwortlich fuer die Datenverarbeitung auf dieser Website ist:<br />
+              Verantwortlich für die Datenverarbeitung auf dieser Website ist:<br />
               Reparo GmbH (Platzhalter)<br />
               Musterstrasse 1, 10115 Berlin<br />
               E-Mail: datenschutz@reparo-app.de
@@ -45,42 +45,42 @@ export default function Datenschutz() {
           <section>
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">3. Rechtsgrundlage</h2>
             <p>
-              Die Verarbeitung personenbezogener Daten erfolgt auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO (Vertragserfuellung) sowie Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der Bereitstellung und Verbesserung unserer Dienste).
+              Die Verarbeitung personenbezogener Daten erfolgt auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung) sowie Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der Bereitstellung und Verbesserung unserer Dienste).
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">4. Datenweitergabe</h2>
             <p>
-              Wir geben Ihre Daten nur weiter, soweit dies zur Vertragserfuellung erforderlich ist. Unsere Infrastruktur wird von Supabase (Datenbank) und Netlify (Hosting) bereitgestellt. Eine darueber hinausgehende Weitergabe an Dritte findet nicht statt.
+              Wir geben Ihre Daten nur weiter, soweit dies zur Vertragserfüllung erforderlich ist. Unsere Infrastruktur wird von Supabase (Datenbank) und Netlify (Hosting) bereitgestellt. Eine darüber hinausgehende Weitergabe an Dritte findet nicht statt.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">5. Cookies</h2>
             <p>
-              Wir verwenden ausschliesslich technisch notwendige Cookies fuer die Authentifizierung und Sitzungsverwaltung. Tracking-Cookies oder Analyse-Tools von Drittanbietern werden nicht eingesetzt.
+              Wir verwenden ausschliesslich technisch notwendige Cookies für die Authentifizierung und Sitzungsverwaltung. Tracking-Cookies oder Analyse-Tools von Drittanbietern werden nicht eingesetzt.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">6. Ihre Rechte</h2>
             <p>
-              Sie haben das Recht auf Auskunft, Berichtigung, Loeschung und Einschraenkung der Verarbeitung Ihrer Daten. Zudem koennen Sie der Verarbeitung widersprechen und haben ein Recht auf Datenuebertragbarkeit. Zur Ausuebung Ihrer Rechte wenden Sie sich bitte an datenschutz@reparo-app.de.
+              Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer Daten. Zudem können Sie der Verarbeitung widersprechen und haben ein Recht auf Datenübertragbarkeit. Zur Ausübung Ihrer Rechte wenden Sie sich bitte an datenschutz@reparo-app.de.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">7. Datensicherheit</h2>
             <p>
-              Wir setzen technische und organisatorische Sicherheitsmassnahmen ein, um Ihre Daten gegen Manipulation, Verlust oder unberechtigten Zugriff zu schuetzen. Die Uebertragung erfolgt verschluesselt ueber HTTPS.
+              Wir setzen technische und organisatorische Sicherheitsmassnahmen ein, um Ihre Daten gegen Manipulation, Verlust oder unberechtigten Zugriff zu schützen. Die Übertragung erfolgt verschlüsselt über HTTPS.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">8. Beschwerderecht</h2>
             <p>
-              Sie haben das Recht, sich bei einer Datenschutz-Aufsichtsbehoerde ueber die Verarbeitung Ihrer personenbezogenen Daten zu beschweren.
+              Sie haben das Recht, sich bei einer Datenschutz-Aufsichtsbehörde über die Verarbeitung Ihrer personenbezogenen Daten zu beschweren.
             </p>
           </section>
         </div>
