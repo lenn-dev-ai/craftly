@@ -54,7 +54,7 @@ export default function HandwerkerDashboard() {
     <div className="flex items-center justify-center h-64">
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-2 border-[#3D8B7A]/30 border-t-[#3D8B7A] rounded-full animate-spin" />
-        <span className="text-sm text-[#8C857B]">L\u00E4dt...</span>
+        <span className="text-sm text-[#8C857B]">Lädt...</span>
       </div>
     </div>
   )
@@ -68,9 +68,9 @@ export default function HandwerkerDashboard() {
         </h1>
         <p className="text-sm text-[#8C857B] mt-1">
           {profile?.gewerk && <span className="text-[#6B665E]">{profile.gewerk}</span>}
-          {profile?.gewerk && profile?.bewertung_avg && " \u00B7 "}
+          {profile?.gewerk && profile?.bewertung_avg && " · "}
           {profile?.bewertung_avg ? (
-            <span className="text-[#C4956A]">\u2605 {profile.bewertung_avg}</span>
+            <span className="text-[#C4956A]">★ {profile.bewertung_avg}</span>
           ) : (
             "Noch keine Bewertungen"
           )}
@@ -85,17 +85,17 @@ export default function HandwerkerDashboard() {
           <div className="text-xs text-[#8C857B] mt-1">in deiner Region</div>
         </div>
         <div className="bg-white rounded-2xl border border-[#EDE8E1] p-5 hover:shadow-sm transition-shadow">
-          <div className="text-xs text-[#8C857B] font-medium mb-1">Meine Auftr\u00E4ge</div>
+          <div className="text-xs text-[#8C857B] font-medium mb-1">Meine Aufträge</div>
           <div className="text-3xl font-bold text-[#2D2A26]">{meineAuftraege.length}</div>
           <div className="text-xs text-[#8C857B] mt-1">zugewiesen</div>
         </div>
         <div className="bg-white rounded-2xl border border-[#EDE8E1] p-5 hover:shadow-sm transition-shadow">
           <div className="text-xs text-[#8C857B] font-medium mb-1">Bewertung</div>
           <div className="text-3xl font-bold text-[#C4956A]">
-            {profile?.bewertung_avg ? `${profile.bewertung_avg}` : "\u2014"}
+            {profile?.bewertung_avg ? `${profile.bewertung_avg}` : "—"}
           </div>
           <div className="text-xs text-[#8C857B] mt-1">
-            {profile?.bewertung_avg ? `\u2605 Durchschnitt` : "Noch keine"}
+            {profile?.bewertung_avg ? `★ Durchschnitt` : "Noch keine"}
           </div>
         </div>
       </div>
@@ -103,19 +103,19 @@ export default function HandwerkerDashboard() {
       {/* Quick Actions */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
         <Link href="/dashboard-handwerker/zeitslots" className="bg-white rounded-xl border border-[#EDE8E1] p-4 text-center hover:border-[#3D8B7A]/30 hover:shadow-sm transition-all group">
-          <div className="text-lg mb-1">\u25A6</div>
+          <div className="text-lg mb-1">▦</div>
           <div className="text-xs font-medium text-[#6B665E] group-hover:text-[#3D8B7A] transition-colors">Zeitslots</div>
         </Link>
         <Link href="/dashboard-handwerker/einnahmen" className="bg-white rounded-xl border border-[#EDE8E1] p-4 text-center hover:border-[#3D8B7A]/30 hover:shadow-sm transition-all group">
-          <div className="text-lg mb-1">\u20AC</div>
+          <div className="text-lg mb-1">€</div>
           <div className="text-xs font-medium text-[#6B665E] group-hover:text-[#3D8B7A] transition-colors">Einnahmen</div>
         </Link>
         <Link href="/dashboard-handwerker/kalender" className="bg-white rounded-xl border border-[#EDE8E1] p-4 text-center hover:border-[#3D8B7A]/30 hover:shadow-sm transition-all group">
-          <div className="text-lg mb-1">\u25A4</div>
+          <div className="text-lg mb-1">▤</div>
           <div className="text-xs font-medium text-[#6B665E] group-hover:text-[#3D8B7A] transition-colors">Kalender</div>
         </Link>
         <Link href="/dashboard-handwerker/profil" className="bg-white rounded-xl border border-[#EDE8E1] p-4 text-center hover:border-[#3D8B7A]/30 hover:shadow-sm transition-all group">
-          <div className="text-lg mb-1">\u25CE</div>
+          <div className="text-lg mb-1">◎</div>
           <div className="text-xs font-medium text-[#6B665E] group-hover:text-[#3D8B7A] transition-colors">Profil</div>
         </Link>
       </div>
@@ -147,7 +147,7 @@ export default function HandwerkerDashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-[#2D2A26] truncate">{t.titel}</div>
                     <div className="text-xs text-[#8C857B] mt-0.5">
-                      {t.wohnung && `${t.wohnung} \u00B7 `}
+                      {t.wohnung && `${t.wohnung} · `}
                       {(t.angebote as any[])?.length || 0} Angebote
                     </div>
                   </div>
@@ -164,13 +164,13 @@ export default function HandwerkerDashboard() {
         )}
       </div>
 
-      {/* Meine Auftr\u00E4ge */}
+      {/* Meine Aufträge */}
       {meineAuftraege.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-[#2D2A26]">Meine laufenden Auftr\u00E4ge</h2>
+            <h2 className="text-sm font-semibold text-[#2D2A26]">Meine laufenden Aufträge</h2>
             <Link href="/dashboard-handwerker/auftraege" className="text-xs text-[#3D8B7A] hover:text-[#2D7A6A] transition-colors font-medium">
-              Alle anzeigen \u2192
+              Alle anzeigen →
             </Link>
           </div>
           <div className="flex flex-col gap-2">
