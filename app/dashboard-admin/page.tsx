@@ -24,8 +24,8 @@ function kiAnomalien(stats: any): string[] {
   const w: string[] = []
   if (!stats) return w
   if (stats.handwerker === 0) w.push("Keine Handwerker registriert - Auktionen funktionieren nicht")
-  if (stats.totalTickets > 0 && stats.erledigteTickets === 0) w.push("Kein Ticket abgeschlossen - Workflow pruefen")
-  if (stats.verwalter === 0) w.push("Kein Verwalter vorhanden - Tickets koennen nicht erstellt werden")
+  if (stats.totalTickets > 0 && stats.erledigteTickets === 0) w.push("Kein Ticket abgeschlossen - Workflow prüfen")
+  if (stats.verwalter === 0) w.push("Kein Verwalter vorhanden - Tickets können nicht erstellt werden")
   if (stats.totalTickets > 5 && stats.totalAngebote === 0) w.push("Viele Tickets aber keine Angebote")
   if (stats.offeneTickets > stats.totalTickets * 0.7) w.push("Ueber 70% der Tickets sind offen - Kapazitaetsengpass?")
   return w
@@ -34,7 +34,7 @@ function kiAnomalien(stats: any): string[] {
 function kiEmpfehlungen(stats: any): string[] {
   const t: string[] = []
   if (!stats) return t
-  if (stats.handwerker < 3) t.push("Mehr Handwerker einladen fuer besseren Wettbewerb")
+  if (stats.handwerker < 3) t.push("Mehr Handwerker einladen für besseren Wettbewerb")
   if (stats.mieter === 0) t.push("Mieter-Accounts anlegen fuer Schadensmeldungen")
   if (stats.totalTickets > 0 && stats.erledigteTickets / stats.totalTickets < 0.3) t.push("Erledigungsrate unter 30% - Erinnerungen aktivieren")
   if (stats.verwalter > 0 && stats.handwerker > 0 && stats.mieter > 0 && stats.totalTickets === 0) t.push("Alle Rollen da - erstelle ein Test-Ticket")
@@ -96,7 +96,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-extrabold text-white tracking-tight">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">Plattform-Uebersicht in Echtzeit</p>
+          <p className="text-sm text-gray-500 mt-1">Plattform-Übersicht in Echtzeit</p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 rounded-xl">
           <div className="relative w-8 h-8">
