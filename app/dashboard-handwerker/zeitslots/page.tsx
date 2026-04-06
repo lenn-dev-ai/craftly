@@ -119,7 +119,7 @@ export default function ZeitslotsPage() {
 
     const { error } = await supabase.from("zeitslots").insert({
       handwerker_id: profile.id,
-      titel: `L\u00FCcken-Slot (${luecke.vorher} \u2192 ${luecke.nachher})`,
+      titel: `Lücken-Slot (${luecke.vorher} → ${luecke.nachher})`,
       gewerk: profile.gewerk || "allgemein",
       datum: luecke.datum,
       von: luecke.von,
@@ -130,13 +130,13 @@ export default function ZeitslotsPage() {
       preisfaktor: preisInfo.gesamtFaktor,
       status: "verfuegbar",
       ist_luecke: true,
-      notizen: `Automatisch erkannte L\u00FCcke zwischen "${luecke.vorher}" und "${luecke.nachher}"`,
+      notizen: `Automatisch erkannte Lücke zwischen "${luecke.vorher}" und "${luecke.nachher}"`,
     })
 
     if (error) {
       setToast("Fehler: " + error.message)
     } else {
-      setToast("L\u00FCcken-Slot erstellt! (-15% Rabatt f\u00FCr schnelle Buchung)")
+      setToast("Lücken-Slot erstellt! (-15% Rabatt für schnelle Buchung)")
       await loadData()
     }
     setSaving(false)
@@ -144,10 +144,10 @@ export default function ZeitslotsPage() {
   }
 
   async function deleteSlot(id: string) {
-    if (!window.confirm("Zeitslot wirklich l\u00F6schen?")) return
+    if (!window.confirm("Zeitslot wirklich löschen?")) return
     const supabase = createClient()
     await supabase.from("zeitslots").delete().eq("id", id)
-    setToast("Slot gel\u00F6scht")
+    setToast("Slot gelöscht")
     await loadData()
     setTimeout(() => setToast(""), 3000)
   }
@@ -191,7 +191,7 @@ export default function ZeitslotsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[#2D2A26]">Meine Zeitslots</h1>
-          <p className="text-sm text-[#8C857B] mt-1">Verwalte deine Verf\u00FCgbarkeit \u2014 Dynamisches Pricing inklusive</p>
+          <p className="text-sm text-[#8C857B] mt-1">Verwalte deine Verfügbarkeit — Dynamisches Pricing inklusive</p>
         </div>
         <button
           onClick={() => setTab("erstellen")}
@@ -222,15 +222,15 @@ export default function ZeitslotsPage() {
         ))}
       </div>
 
-      {/* L\u00FCcken-Erkennung Banner */}
+      {/* Lücken-Erkennung Banner */}
       {luecken.length > 0 && tab === "aktiv" && (
         <div className="bg-[#C4956A]/5 border border-[#C4956A]/15 rounded-xl p-4 mb-6">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xs bg-[#C4956A]/15 text-[#C4956A] px-2 py-0.5 rounded-full font-bold">AI</span>
             <span className="text-sm font-semibold text-[#2D2A26]">
-              {luecken.length} L\u00FCcke{luecken.length > 1 ? "n" : ""} erkannt
+              {luecken.length} Lücke{luecken.length > 1 ? "n" : ""} erkannt
             </span>
-            <span className="text-xs text-[#8C857B]">\u2014 Monetarisiere leere Zeitfenster mit \u201315% Rabatt</span>
+            <span className="text-xs text-[#8C857B]">— Monetarisiere leere Zeitfenster mit –15% Rabatt</span>
           </div>
           <div className="flex flex-col gap-2">
             {luecken.slice(0, 3).map((l, i) => (
@@ -238,7 +238,7 @@ export default function ZeitslotsPage() {
                 <div>
                   <div className="text-xs font-medium text-[#2D2A26]">
                     {new Date(l.datum).toLocaleDateString("de", { weekday: "short", day: "numeric", month: "short" })}
-                    {" \u2014 "}
+                    {" — "}
                     {formatZeit(l.von)} bis {formatZeit(l.bis)} ({l.stunden}h)
                   </div>
                   <div className="text-[10px] text-[#8C857B] mt-0.5">
@@ -269,7 +269,7 @@ export default function ZeitslotsPage() {
                 type="text"
                 value={form.titel}
                 onChange={(e) => setForm({ ...form, titel: e.target.value })}
-                placeholder="z.B. Sanit\u00E4r-Einsatz Vormittag"
+                placeholder="z.B. Sanitär-Einsatz Vormittag"
                 className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-4 py-2.5 text-sm text-[#2D2A26] placeholder:text-[#8C857B]/60 focus:border-[#3D8B7A]/40 focus:outline-none focus:ring-1 focus:ring-[#3D8B7A]/20 transition-colors"
               />
             </div>
@@ -342,10 +342,10 @@ export default function ZeitslotsPage() {
                   <div className="flex items-center gap-4">
                     <div>
                       <div className="text-2xl font-bold" style={{ color: preisInfo.farbe }}>
-                        {preisInfo.dynamischerPreis} \u20AC/h
+                        {preisInfo.dynamischerPreis} €/h
                       </div>
                       <div className="text-xs text-[#8C857B]">
-                        Basis: {basisPreis} \u20AC \u00D7 {preisInfo.gesamtFaktor}
+                        Basis: {basisPreis} € × {preisInfo.gesamtFaktor}
                       </div>
                     </div>
                     <div
@@ -356,9 +356,9 @@ export default function ZeitslotsPage() {
                     </div>
                     <div className="flex-1 text-right">
                       <div className="text-xs text-[#8C857B] space-y-0.5">
-                        <div>Tageszeit: \u00D7{preisInfo.faktoren.tageszeit}</div>
-                        <div>Wochentag: \u00D7{preisInfo.faktoren.wochentag}</div>
-                        <div>Knappheit: \u00D7{preisInfo.faktoren.knappheit}</div>
+                        <div>Tageszeit: ×{preisInfo.faktoren.tageszeit}</div>
+                        <div>Wochentag: ×{preisInfo.faktoren.wochentag}</div>
+                        <div>Knappheit: ×{preisInfo.faktoren.knappheit}</div>
                       </div>
                     </div>
                   </div>
@@ -373,7 +373,7 @@ export default function ZeitslotsPage() {
               disabled={saving}
               className="flex-1 text-sm font-bold bg-[#3D8B7A] text-white py-3 rounded-xl hover:bg-[#2D7A6A] transition-colors disabled:opacity-50"
             >
-              {saving ? "Wird erstellt..." : "Zeitslot ver\u00F6ffentlichen"}
+              {saving ? "Wird erstellt..." : "Zeitslot veröffentlichen"}
             </button>
             <button
               type="button"
@@ -436,12 +436,12 @@ export default function ZeitslotsPage() {
                               {s.titel}
                               {s.ist_luecke && (
                                 <span className="text-[9px] bg-[#C4956A]/10 text-[#C4956A] px-1.5 py-0.5 rounded-full font-medium">
-                                  L\u00FCcke
+                                  Lücke
                                 </span>
                               )}
                             </div>
                             <div className="text-xs text-[#8C857B]">
-                              {formatZeit(s.von)} \u2013 {formatZeit(s.bis)} ({s.stunden}h) \u00B7 {GEWERK_LABELS[s.gewerk || "allgemein"]}
+                              {formatZeit(s.von)} – {formatZeit(s.bis)} ({s.stunden}h) · {GEWERK_LABELS[s.gewerk || "allgemein"]}
                             </div>
                           </div>
                         </div>
@@ -452,9 +452,9 @@ export default function ZeitslotsPage() {
                             </span>
                           )}
                           <div className="text-right">
-                            <div className="text-lg font-bold text-[#3D8B7A]">{preis} \u20AC/h</div>
+                            <div className="text-lg font-bold text-[#3D8B7A]">{preis} €/h</div>
                             {s.preisfaktor > 1.0 && (
-                              <div className="text-xs text-[#C4956A]">\u00D7{s.preisfaktor} Surge</div>
+                              <div className="text-xs text-[#C4956A]">×{s.preisfaktor} Surge</div>
                             )}
                           </div>
                           <span className={`text-xs px-2 py-1 rounded-full font-medium border ${statusColors[s.status]}`}>
@@ -464,9 +464,9 @@ export default function ZeitslotsPage() {
                             <button
                               onClick={() => deleteSlot(s.id)}
                               className="text-xs text-[#8C857B] hover:text-[#C4574B] transition-colors ml-1"
-                              title="Slot l\u00F6schen"
+                              title="Slot löschen"
                             >
-                              \u2715
+                              ✕
                             </button>
                           )}
                         </div>
@@ -506,12 +506,12 @@ export default function ZeitslotsPage() {
                         <div>
                           <div className="text-sm font-medium text-[#2D2A26]">{s.titel}</div>
                           <div className="text-xs text-[#8C857B]">
-                            {formatZeit(s.von)} \u2013 {formatZeit(s.bis)} ({s.stunden}h)
+                            {formatZeit(s.von)} – {formatZeit(s.bis)} ({s.stunden}h)
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="text-lg font-bold text-[#8C857B]">{preis} \u20AC/h</div>
+                        <div className="text-lg font-bold text-[#8C857B]">{preis} €/h</div>
                         <span className={`text-xs px-2 py-1 rounded-full font-medium border ${statusColors[s.status]}`}>
                           {statusLabels[s.status]}
                         </span>
