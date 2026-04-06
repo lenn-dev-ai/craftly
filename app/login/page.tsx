@@ -71,7 +71,7 @@ export default function LoginPage() {
         window.location.href = dashboardMap[rolle] || "/dashboard-mieter"
       }
     } catch {
-      setError("Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es spaeter erneut.")
+      setError("Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.")
       setLoading(false)
     }
   }
@@ -113,7 +113,7 @@ export default function LoginPage() {
             Immobilienverwaltung,<br />die einfach funktioniert.
           </h1>
           <p className="text-white/80 text-lg leading-relaxed max-w-md">
-            Schadensmeldungen, Auftragsvergabe und Kommunikation - alles an einem Ort. Fuer Verwalter, Mieter und Handwerker.
+            Schadensmeldungen, Auftragsvergabe und Kommunikation - alles an einem Ort. Für Verwalter, Mieter und Handwerker.
           </p>
 
           <div className="space-y-4 pt-4">
@@ -125,7 +125,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <p className="font-semibold">Schnelle Schadensmeldung</p>
-                <p className="text-white/70 text-sm">Mieter melden Schaeden in unter 2 Minuten</p>
+                <p className="text-white/70 text-sm">Mieter melden Schäden in unter 2 Minuten</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -135,8 +135,8 @@ export default function LoginPage() {
                 </svg>
               </div>
               <div>
-                <p className="font-semibold">Transparente Vorgaenge</p>
-                <p className="text-white/70 text-sm">Echtzeit-Status fuer alle Beteiligten</p>
+                <p className="font-semibold">Transparente Vorgänge</p>
+                <p className="text-white/70 text-sm">Echtzeit-Status für alle Beteiligten</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -147,14 +147,14 @@ export default function LoginPage() {
               </div>
               <div>
                 <p className="font-semibold">DSGVO-konform</p>
-                <p className="text-white/70 text-sm">Hosting in der EU, verschluesselte Uebertragung</p>
+                <p className="text-white/70 text-sm">Hosting in der EU, verschlüsselte Übertragung</p>
               </div>
             </div>
           </div>
         </div>
 
         <p className="text-white/50 text-sm">
-          Bereits ueber 500 verwaltete Einheiten auf der Plattform
+          Bereits über 500 verwaltete Einheiten auf der Plattform
         </p>
       </div>
 
@@ -176,7 +176,7 @@ export default function LoginPage() {
 
           <Card className="w-full p-8 animate-fade-in">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-[#2D2A26] mb-2">Willkommen zurueck</h2>
+              <h2 className="text-2xl font-bold text-[#2D2A26] mb-2">Willkommen zurück</h2>
               <p className="text-[#6B665E]">Melden Sie sich in Ihrem Konto an</p>
             </div>
 
@@ -246,13 +246,13 @@ export default function LoginPage() {
           </Card>
 
           {/* Trust badges below the card */}
-          <div className="mt-6 flex items-center justify-center gap-6 text-xs text-[#8C857B]">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-[#8C857B]">
             <div className="flex items-center gap-1.5">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
-              SSL-verschluesselt
+              SSL-verschlüsselt
             </div>
             <div className="flex items-center gap-1.5">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -270,8 +270,8 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-8 flex justify-center gap-4 text-xs text-[#8C857B]">
-            <Link href="/impressum" className="hover:text-[#2D2A26] transition-colors">Impressum</Link>
-            <Link href="/datenschutz" className="hover:text-[#2D2A26] transition-colors">Datenschutz</Link>
+            <Link href="/impressum" className="hover:text-[#2D2A26] transition-colors py-2 px-3">Impressum</Link>
+            <Link href="/datenschutz" className="hover:text-[#2D2A26] transition-colors py-2 px-3">Datenschutz</Link>
           </div>
         </div>
       </div>
