@@ -38,7 +38,7 @@ export default function RegistrierungPage() {
       setError("Passwort muss mindestens 8 Zeichen lang sein.")
       return
     if (form.password !== form.passwordConfirm) {
-      setError("Passw\u00f6rter stimmen nicht \u00fcberein")
+      setError("Passwörter stimmen nicht überein")
       return
     }
     }
@@ -174,14 +174,14 @@ export default function RegistrierungPage() {
             )}
 
             <Input
-              label="Passwort best\u00e4tigen"
+              label="Passwort bestätigen"
               type="password"
               placeholder="Passwort wiederholen"
               value={form.passwordConfirm}
               onChange={e => set("passwordConfirm", e.target.value)}
             />
             {form.passwordConfirm && form.password !== form.passwordConfirm && (
-              <p className="text-xs text-[#C4574B] -mt-2">Passw\u00f6rter stimmen nicht \u00fcberein</p>
+              <p className="text-xs text-[#C4574B] -mt-2">Passwörter stimmen nicht überein</p>
             )}
 
             {form.rolle === "handwerker" && (
@@ -228,7 +228,7 @@ export default function RegistrierungPage() {
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" strokeWidth="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" strokeWidth="2" />
                 </svg>
-                SSL-verschl\u00fcsselt
+                SSL-verschlüsselt
               </div>
               <div className="flex items-center gap-1">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
