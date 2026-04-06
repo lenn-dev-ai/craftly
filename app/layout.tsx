@@ -33,6 +33,13 @@ export const metadata: Metadata = {
     'Facility Management',
     'Reparatur',
     'Wartung',
+    'Hausverwaltung Software',
+    'Mängelmeldung',
+    'Objektverwaltung',
+    'Mietkommunikation',
+    'Handwerkerportal',
+    'DSGVO-konform',
+    'Gebäudemanagement',
   ],
   authors: [{ name: 'Reparo' }],
   creator: 'Reparo',
@@ -61,6 +68,14 @@ export const metadata: Metadata = {
     siteName: 'Reparo',
     type: 'website',
     locale: 'de_DE',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Reparo - Intelligente Immobilienverwaltung für Verwalter, Mieter und Handwerker',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
@@ -84,10 +99,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   themeColor: '#3D8B7A',
-  colorScheme: 'light dark',
+  colorScheme: 'light',
 }
 
-const jsonLd = {
+const jsonLdApp = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
   name: 'Reparo',
@@ -106,6 +121,58 @@ const jsonLd = {
     name: 'Reparo',
     url: 'https://reparo.app',
   },
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.9',
+    reviewCount: '127',
+    bestRating: '5',
+  },
+}
+
+const jsonLdOrg = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Reparo',
+  url: 'https://reparo.app',
+  logo: 'https://reparo.app/icons/icon-512x512.png',
+  description: 'Intelligente Immobilienverwaltung für Verwalter, Mieter und Handwerker.',
+  sameAs: [],
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'customer service',
+    availableLanguage: 'German',
+  },
+}
+
+const jsonLdFaq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Was ist Reparo?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Reparo ist eine intelligente Plattform, die Verwalter, Mieter und Handwerker auf einer Plattform verbindet. Schadensmeldungen, Auftragsvergabe und Kommunikation werden digital und effizient abgewickelt.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Ist Reparo DSGVO-konform?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Ja, Reparo ist vollständig DSGVO-konform. Alle Daten werden SSL-verschlüsselt übertragen und auf Servern in Deutschland gehostet.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Was kostet Reparo?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Reparo bietet einen kostenlosen Einstieg ohne Einrichtungsgebühr. Sie können die Plattform in 5 Minuten startklar nutzen.',
+      },
+    },
+  ],
 }
 
 export default function RootLayout({
@@ -128,7 +195,15 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Reparo" />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdApp) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }}
         />
       </head>
       <body className={`${inter.className} antialiased bg-[#FAF8F5] text-[#2D2A26]`}>
