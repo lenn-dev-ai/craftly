@@ -410,57 +410,120 @@ export default function ZeitslotsPage() {
                 return (
                   <div key={s.id}>
                     {showDateHeader && (
-                      <div className={`flex items-center gap-3 ${idxÈ]MHXLO]Û\ÜÓ[YOH^^ÈÛ\Ù[ZXÛ^VÈÍQWHÛ]È]JË][JKÓØØ[Q]TÝ[ÊHÈÙYZÙ^NÛÈ^N[Y\XÈ[ÛÛÈJ_BÙ]]Û\ÜÓ[YOH^LH\ËVÈÑQNLWHÏ]Û\ÜÓ[YOH^^È^VÈÎÎ
-MÐHØZÝ]TÛÝË[\ÛOÛ][HOOHË][JK[ÝHÛÝÂÙ]Ù]
-_B]Û\ÜÓ[YOHË]Ú]HÜ\Ü\VÈÑQNLWHÝ[Y^MÝ\Ü\VÈÌÑÐWKÌÝ\ÚYÝË\ÛH[Ú][ÛX[]Û\ÜÓ[YOH^][\ËXÙ[\\ÝYKX]ÙY[^]Ü\Ø\LÈ]Û\ÜÓ[YOH^][\ËXÙ[\Ø\LÈ]Û\ÜÓ[YOH^XÙ[\Z[]ËVÍLH]Û\ÜÓ[YOH^^È^VÈÎÎ
-MÐHÛ]È]JË][JKÓØØ[Q]TÝ[ÊHÈÙYZÙ^NÚÜJ_BÙ]]Û\ÜÓ[YOH^[ÈÛXÛ^VÈÌLHÛ]È]JË][JKÙ]]J
-_KÛ]È]JË][JKÙ][Û
+                      <div className={`flex items-center gap-3 ${idx>> 0 ? "mt-4" : ""} mb-2`}>
+                        <div className="text-xs font-semibold text-[#6B665E]">
+                          {new Date(s.datum).toLocaleDateString("de", { weekday: "long", day: "numeric", month: "long" })}
+                        </div>
+                        <div className="flex-1 h-px bg-[#EDE8E1]" />
+                        <div className="text-xs text-[#8C857B]">
+                          {aktiveSlots.filter(sl => sl.datum === s.datum).length} Slots
+                        </div>
+                      </div>
+                    )}
+                    <div className="bg-white border border-[#EDE8E1] rounded-xl p-4 hover:border-[#3D8B7A]/20 hover:shadow-sm transition-all">
+                      <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="text-center min-w-[50px]">
+                            <div className="text-xs text-[#8C857B]">
+                              {new Date(s.datum).toLocaleDateString("de", { weekday: "short" })}
+                            </div>
+                            <div className="text-lg font-bold text-[#2D2A26]">
+                              {new Date(s.datum).getDate()}.{new Date(s.datum).getMonth() + 1}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-[#2D2A26] flex items-center gap-2">
+                              {s.titel}
+                              {s.ist_luecke && (
+                                <span className="text-[9px] bg-[#C4956A]/10 text-[#C4956A] px-1.5 py-0.5 rounded-full font-medium">
+                                  L\u00FCcke
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-[#8C857B]">
+                              {formatZeit(s.von)} \u2013 {formatZeit(s.bis)} ({s.stunden}h) \u00B7 {GEWERK_LABELS[s.gewerk || "allgemein"]}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {gebotsCount > 0 && (
+                            <span className="text-xs bg-[#C4956A]/10 text-[#C4956A] px-2 py-0.5 rounded-full font-medium animate-pulse">
+                              {gebotsCount} {gebotsCount === 1 ? "Anfrage" : "Anfragen"}
+                            </span>
+                          )}
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-[#3D8B7A]">{preis} \u20AC/h</div>
+                            {s.preisfaktor > 1.0 && (
+                              <div className="text-xs text-[#C4956A]">\u00D7{s.preisfaktor} Surge</div>
+                            )}
+                          </div>
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium border ${statusColors[s.status]}`}>
+                            {statusLabels[s.status]}
+                          </span>
+                          {s.status === "verfuegbar" && (
+                            <button
+                              onClick={() => deleteSlot(s.id)}
+                              className="text-xs text-[#8C857B] hover:text-[#C4574B] transition-colors ml-1"
+                              title="Slot l\u00F6schen"
+                            >
+                              \u2715
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
-H
-È_BÙ]Ù]]]Û\ÜÓ[YOH^\ÛHÛ[YY][H^VÈÌLH^][\ËXÙ[\Ø\LÜË][BÜË\ÝÛYXÚÙH	
-Ü[Û\ÜÓ[YOH^VÎ\HËVÈÐÍMMWKÌL^VÈÐÍMMWHLKHKLHÝ[YY[Û[YY][HLØÚÙBÜÜ[
-_BÙ]]Û\ÜÓ[YOH^^È^VÈÎÎ
-MÐHÙÜX]Z]
-ËÛ_HLLÈÙÜX]Z]
-Ë\Ê_H
-ÜËÝ[[Z
-HLÈÑÑUÑT×ÓPSÖÜËÙ]Ù\È[Ù[YZ[_BÙ]Ù]Ù]]Û\ÜÓ[YOH^][\ËXÙ[\Ø\LÈÙÙXÝÐÛÝ[	
-Ü[Û\ÜÓ[YOH^^ÈËVÈÐÍMMWKÌL^VÈÐÍMMWHLKLHÝ[YY[Û[YY][H[[X]K\[ÙHÙÙXÝÐÛÝ[HÙÙXÝÐÛÝ[OOHHÈ[YÙH[YÙ[BÜÜ[
-_B]Û\ÜÓ[YOH^\YÚ]Û\ÜÓ[YOH^[ÈÛXÛ^VÈÌÑÐWHÜZ\ßHLPËÚÙ]ÜËZ\ÙZÝÜK	
-]Û\ÜÓ[YOH^^È^VÈÐÍMMWHL
-ÞÜËZ\ÙZÝÜHÝ\ÙOÙ]
-_BÙ]Ü[Û\ÜÓ[YO^Ø^^ÈLKLHÝ[YY[Û[YY][HÜ\	ÜÝ]\ÐÛÛÜÖÜËÝ]\×_XOÜÝ]\ÓX[ÖÜËÝ]\×_BÜÜ[ÜËÝ]\ÈOOH\YYØ\	
-]ÛÛÛXÚÏ^Ê
-HO[]TÛÝ
-ËY
-_BÛ\ÜÓ[YOH^^È^VÈÎÎ
-MÐHÝ\^VÈÐÍ
-MÍH[Ú][ÛXÛÛÜÈ[LH]OHÛÝLØÚ[LÌMBØ]Û
-_BÙ]Ù]Ù]Ù]
-BJ_BÙ]
-_BÙ]
-_BËÊX\Ø[Ù[HÛÝÈ
-ßBÝXOOH\Ø[Ù[	
-]Ý\Ø[Ù[TÛÝË[ÝOOHÈ
-]Û\ÜÓ[YOHË]Ú]HÜ\Ü\VÈÑQNLWHÝ[YLN^XÙ[\]Û\ÜÓ[YOH^\ÛH^VÈÎÎ
-MÐHÙZ[H\Ø[Ù[[ÛÝÈÜ[[Ù]Ù]
-H
-]Û\ÜÓ[YOH^^XÛÛØ\LÝ\Ø[Ù[TÛÝËX\
-
-ÊHOÂÛÛÝZ\ÈHË[[Z\ØÚ\ÜZ\ÈË\Ú\×ÜZ\×ÜÝ[B]\
-]Ù^O^ÜËYHÛ\ÜÓ[YOHË]Ú]HÜ\Ü\VÈÑQNLWHÝ[Y^MÜXÚ]KM]Û\ÜÓ[YOH^][\ËXÙ[\\ÝYKX]ÙY[^]Ü\Ø\LÈ]Û\ÜÓ[YOH^][\ËXÙ[\Ø\LÈ]Û\ÜÓ[YOH^XÙ[\Z[]ËVÍLH]Û\ÜÓ[YOH^^È^VÈÎÎ
-MÐHÛ]È]JË][JKÓØØ[Q]TÝ[ÊHÈÙYZÙ^NÚÜJ_BÙ]]Û\ÜÓ[YOH^[ÈÛXÛ^VÈÌLHÛ]È]JË][JKÙ]]J
-_KÛ]È]JË][JKÙ][Û
-
-H
-È_BÙ]Ù]]]Û\ÜÓ[YOH^\ÛHÛ[YY][H^VÈÌLHÜË][OÙ]]Û\ÜÓ[YOH^^È^VÈÎÎ
-MÐHÙÜX]Z]
-ËÛ_HLLÈÙÜX]Z]
-Ë\Ê_H
-ÜËÝ[[Z
-BÙ]Ù]Ù]]Û\ÜÓ[YOH^][\ËXÙ[\Ø\LÈ]Û\ÜÓ[YOH^[ÈÛXÛ^VÈÎÎ
-MÐHÜZ\ßHLPËÚÙ]Ü[Û\ÜÓ[YO^Ø^^ÈLKLHÝ[YY[Û[YY][HÜ\	ÜÝ]\ÐÛÛÜÖÜËÝ]\×_XOÜÝ]\ÓX[ÖÜËÝ]\×_BÜÜ[Ù]Ù]Ù]
-BJ_BÙ]
-_BÙ]
-_BÙ]
-BB
+      {/* Tab: Vergangene Slots */}
+      {tab === "vergangen" && (
+        <div>
+          {vergangeneSlots.length === 0 ? (
+            <div className="bg-white border border-[#EDE8E1] rounded-2xl p-8 text-center">
+              <div className="text-sm text-[#8C857B]">Keine vergangenen Slots vorhanden</div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {vergangeneSlots.map((s) => {
+                const preis = s.dynamischer_preis || s.basis_preis_stunde
+                return (
+                  <div key={s.id} className="bg-white border border-[#EDE8E1] rounded-xl p-4 opacity-60">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="text-center min-w-[50px]">
+                          <div className="text-xs text-[#8C857B]">
+                            {new Date(s.datum).toLocaleDateString("de", { weekday: "short" })}
+                          </div>
+                          <div className="text-lg font-bold text-[#2D2A26]">
+                            {new Date(s.datum).getDate()}.{new Date(s.datum).getMonth() + 1}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-[#2D2A26]">{s.titel}</div>
+                          <div className="text-xs text-[#8C857B]">
+                            {formatZeit(s.von)} \u2013 {formatZeit(s.bis)} ({s.stunden}h)
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-lg font-bold text-[#8C857B]">{preis} \u20AC/h</div>
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium border ${statusColors[s.status]}`}>
+                          {statusLabels[s.status]}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
