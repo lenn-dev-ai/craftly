@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 
 const NAV_ITEMS = [
-  { label: "Uebersicht", href: "/dashboard-admin", icon: "D" },
+  { label: "Übersicht", href: "/dashboard-admin", icon: "D" },
   { label: "Nutzer", href: "/dashboard-admin/nutzer", icon: "N" },
-  { label: "Aktivitaet", href: "/dashboard-admin/aktivitaet", icon: "A" },
+  { label: "Aktivität", href: "/dashboard-admin/aktivitaet", icon: "A" },
   { label: "System", href: "/dashboard-admin/system", icon: "S" },
 ]
 
