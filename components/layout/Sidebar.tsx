@@ -112,8 +112,52 @@ export default function Sidebar() {
     rolle === "mieter" ? "Mieter" :
     rolle === "admin" ? "Admin" : "";
 
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setIsMobileOpen(false)
+  }, [pathname])
+
+  // Lock body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (isMobileOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [isMobileOpen])
+
   return (
-    <aside className="w-64 h-screen bg-white border-r border-[#EDE8E1] flex flex-col">
+    {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile Hamburger Button */}
+      <button
+        className="fixed top-4 left-4 z-50 md:hidden bg-white rounded-lg p-2 shadow-md border border-[#EDE8E1]"
+        onClick={() => setIsMobileOpen(!isMobileOpen)}
+        aria-label="Menü öffnen"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2D2A26" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          {isMobileOpen ? (
+            <path d="M18 6L6 18M6 6l12 12" />
+          ) : (
+            <>
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </>
+          )}
+        </svg>
+      </button>
+
+      <aside className={`w-64 fixed md:sticky top-0 h-screen z-40 transition-transform duration-300 md:translate-x-0 h-screen bg-white border-r border-[#EDE8E1] flex flex-col ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
       <div className="p-5 border-b border-[#EDE8E1]">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-[#3D8B7A] flex items-center justify-center">
