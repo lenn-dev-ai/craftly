@@ -92,7 +92,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-semibold mb-3">Verwalter</h3>
               <p className="text-[#6B665E] leading-relaxed mb-4">
-                Behalten Sie den Überblick ueber alle Objekte, Meldungen und Aufträge. Automatische Benachrichtigungen und klare Dashboards.
+                Behalten Sie den Überblick über alle Objekte, Meldungen und Aufträge. Automatische Benachrichtigungen und klare Dashboards.
               </p>
               <ul className="space-y-2 text-sm text-[#6B665E]">
                 <li className="flex items-center gap-2">
@@ -259,7 +259,7 @@ export default function LandingPage() {
       <section className="py-20 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <div className="p-12 rounded-2xl bg-[#3D8B7A] text-white">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Bereit fuer effiziente Verwaltung?</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Bereit für effiziente Verwaltung?</h2>
             <p className="text-white/80 text-lg mb-8 max-w-lg mx-auto">
               Starten Sie kostenlos und erleben Sie, wie einfach Immobilienverwaltung sein kann.
             </p>
