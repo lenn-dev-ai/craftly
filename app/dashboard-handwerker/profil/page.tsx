@@ -46,7 +46,7 @@ export default function ProfilPage() {
     <div className="flex items-center justify-center h-64">
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-2 border-[#3D8B7A]/30 border-t-[#3D8B7A] rounded-full animate-spin" />
-        <span className="text-sm text-[#8C857B]">L\u00E4dt...</span>
+        <span className="text-sm text-[#8C857B]">Lädt...</span>
       </div>
     </div>
   )
@@ -55,7 +55,7 @@ export default function ProfilPage() {
     <div className="p-6 md:p-8 max-w-2xl mx-auto pt-16 md:pt-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#2D2A26]">Mein Profil</h1>
-        <p className="text-sm text-[#8C857B] mt-1">Angaben f\u00FCr Hausverwaltungen sichtbar</p>
+        <p className="text-sm text-[#8C857B] mt-1">Angaben für Hausverwaltungen sichtbar</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-[#EDE8E1] p-6">
@@ -69,7 +69,7 @@ export default function ProfilPage() {
             <div className="text-sm text-[#8C857B]">{profile.email}</div>
             <div className="text-xs mt-1">
               {profile.bewertung_avg ? (
-                <span className="text-[#C4956A]">\u2605 {profile.bewertung_avg} \u00B7 {profile.auftraege_anzahl} Auftr\u00E4ge</span>
+                <span className="text-[#C4956A]">★ {profile.bewertung_avg} · {profile.auftraege_anzahl} Aufträge</span>
               ) : (
                 <span className="text-[#8C857B]">Noch keine Bewertungen</span>
               )}
@@ -80,7 +80,7 @@ export default function ProfilPage() {
         {/* Form Fields */}
         <div className="flex flex-col gap-4">
           <div>
-            <label className="text-xs text-[#8C857B] mb-1.5 block font-medium">Vollst\u00E4ndiger Name</label>
+            <label className="text-xs text-[#8C857B] mb-1.5 block font-medium">Vollständiger Name</label>
             <input
               type="text"
               value={form.name}
@@ -103,7 +103,7 @@ export default function ProfilPage() {
               type="text"
               value={form.gewerk}
               onChange={e => setForm(f => ({ ...f, gewerk: e.target.value }))}
-              placeholder="z.B. Heizung, Sanit\u00E4r, Klimaanlagen"
+              placeholder="z.B. Heizung, Sanitär, Klimaanlagen"
               className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-4 py-2.5 text-sm text-[#2D2A26] placeholder:text-[#8C857B]/60 focus:border-[#3D8B7A]/40 focus:outline-none focus:ring-1 focus:ring-[#3D8B7A]/20 transition-colors"
             />
           </div>
@@ -136,7 +136,7 @@ export default function ProfilPage() {
               {saving ? "Speichert..." : "Profil speichern"}
             </button>
             {saved && (
-              <span className="text-xs text-[#3D8B7A] font-medium">\u2713 Gespeichert</span>
+              <span className="text-xs text-[#3D8B7A] font-medium">✓ Gespeichert</span>
             )}
           </div>
         </div>
