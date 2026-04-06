@@ -19,7 +19,7 @@ export default function LandingPage() {
             <Link href="/login" className="text-sm py-3 px-3 text-[#6B665E] hover:text-[#2D2A26] transition-colors">
                   Anmelden
             </Link>
-            <Link href="/registrierung" className="text-sm px-4 py-2 bg-[#3D8B7A] text-white rounded-lg hover:bg-[#347A6A] transition-colors font-medium">
+            <Link href="/registrierung" className="text-sm px-4 py-3 bg-[#3D8B7A] text-white rounded-lg hover:bg-[#347A6A] transition-colors font-medium">
               Kostenlos starten
             </Link>
           </div>
