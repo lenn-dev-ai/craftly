@@ -11,14 +11,14 @@ function kiKosten(t: Ticket): string {
   if (titel.match(/heiz|warm/)) return "250-600"
   if (titel.match(/wasser|feucht|rohr/)) return "150-800"
   if (titel.match(/elektr|strom|sicher/)) return "100-400"
-  if (titel.match(/tuer|fenster|schloss/)) return "80-350"
+  if (titel.match(/tür|fenster|schloss/)) return "80-350"
   if (titel.match(/schimmel/)) return "200-900"
   return "100-500"
 }
 
 export default function VerwalterDashboard() {
   const router = useRouter()
-  const [tickets, setVorgaenge] = useState<Ticket[]>([])
+  const [tickets, setVorgänge] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function VerwalterDashboard() {
       const { data } = await supabase
         .from("tickets").select("*")
         .order("created_at", { ascending: false })
-      setVorgaenge(data || [])
+      setVorgänge(data || [])
       setLoading(false)
     }
     load()
@@ -49,9 +49,9 @@ export default function VerwalterDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-0 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[#2D2A26]">Dashboard</h1>
-          <p className="text-sm text-[#8C857B] mt-1">{tickets.length} Vorgaenge  -  {offene.length + marktplatz.length} aktiv</p>
+          <p className="text-sm text-[#8C857B] mt-1">{tickets.length} Vorgänge  -  {offene.length + marktplatz.length} aktiv</p>
         </div>
-        <Button onClick={() => router.push("/dashboard-verwalter/marktplatz")}>Zum Handwerker-Auftraege</Button>
+        <Button onClick={() => router.push("/dashboard-verwalter/marktplatz")}>Zum Handwerker-Aufträge</Button>
       </div>
 
       {/* KPI Grid */}
@@ -109,7 +109,7 @@ export default function VerwalterDashboard() {
                           {t.prioritaet === "dringend" ? "Dringend" : t.prioritaet === "hoch" ? "Hoch" : "Normal"}
                         </span>
                         <span className="text-[10px] text-[#8C857B]">
-                          Geschaetzte Kosten: <span className="text-[#2D2A26] font-medium">{kosten} EUR</span>
+                          Geschätzte Kosten: <span className="text-[#2D2A26] font-medium">{kosten} EUR</span>
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mt-3">
@@ -130,10 +130,10 @@ export default function VerwalterDashboard() {
         </div>
       )}
 
-      {/* Handwerker-Auftraege-Buchungen */}
+      {/* Handwerker-Aufträge-Buchungen */}
       {marktplatz.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xs uppercase tracking-wider text-[#8C857B] font-medium mb-3">Handwerker-Auftraege-Buchungen ({marktplatz.length})</h2>
+          <h2 className="text-xs uppercase tracking-wider text-[#8C857B] font-medium mb-3">Handwerker-Aufträge-Buchungen ({marktplatz.length})</h2>
           <div className="flex flex-col gap-2">
             {marktplatz.map(t => (
               <Card key={t.id} className="hover:bg-[#F7F4F0] cursor-pointer transition-all"
@@ -184,8 +184,8 @@ export default function VerwalterDashboard() {
             <span className="text-2xl text-[#8C857B]">INBOX</span>
           </div>
           <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Noch keine Meldungen</h2>
-          <p className="text-sm text-[#8C857B] mb-6">Sobald Mieter Schaeden melden, erscheinen sie hier. Buche Handwerker-Stunden auf dem Handwerker-Auftraege.</p>
-          <Button onClick={() => router.push("/dashboard-verwalter/marktplatz")}>Handwerker-Auftraege oeffnen</Button>
+          <p className="text-sm text-[#8C857B] mb-6">Sobald Mieter Schäden melden, erscheinen sie hier. Buche Handwerker-Stunden auf dem Handwerker-Aufträge.</p>
+          <Button onClick={() => router.push("/dashboard-verwalter/marktplatz")}>Handwerker-Aufträge öffnen</Button>
         </div>
       )}
 
@@ -194,7 +194,7 @@ export default function VerwalterDashboard() {
         <div className="text-center mt-4">
           <button onClick={() => router.push("/dashboard-verwalter/tickets")}
             className="text-xs text-[#B5AEA4] hover:text-[#3D8B7A] transition-colors">
-            {erledigt.length} erledigte Vorgaenge anzeigen
+            {erledigt.length} erledigte Vorgänge anzeigen
           </button>
         </div>
       )}
