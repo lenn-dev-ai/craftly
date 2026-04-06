@@ -167,7 +167,8 @@ export default function ZeitslotsPage() {
 
   const statusColors: Record<string, string> = {
     verfuegbar: "bg-[#3D8B7A]/8 text-[#3D8B7A] border-[#3D8B7A]/15",
-    reserviert: "bg-[#C4956A]/10 text-[#C4956A] border-[#C4956A]/15",(    vergeben: "bg-[#2D2A26]/8 text-[#2D2A26] border-[#2D2A26]/15",
+    reserviert: "bg-[#C4956A]/10 text-[#C4956A] border-[#C4956A]/15",
+    vergeben: "bg-[#2D2A26]/8 text-[#2D2A26] border-[#2D2A26]/15",
     abgelaufen: "bg-[#EDE8E1] text-[#8C857B] border-[#EDE8E1]",
   }
   const statusLabels: Record<string, string> = {
