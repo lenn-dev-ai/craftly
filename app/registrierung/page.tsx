@@ -37,10 +37,10 @@ export default function RegistrierungPage() {
     if (form.password.length < 8) {
       setError("Passwort muss mindestens 8 Zeichen lang sein.")
       return
-    if (form.password !== form.passwordConfirm) {
-      setError("Passwörter stimmen nicht überein")
-      return
     }
+    if (form.password !== form.passwordConfirm) {
+      setError("Passwörter stimmen nicht überein.")
+      return
     }
 
     setLoading(true)
@@ -137,6 +137,18 @@ export default function RegistrierungPage() {
               onChange={e => set("password", e.target.value)}
             />
 
+            {/* Password Requirements */}
+            <div className="text-xs text-gray-500 -mt-2 space-y-0.5">
+              <p className={form.password.length >= 8 ? "text-[#3D8B7A]" : ""}>
+                {form.password.length >= 8 ? "✓" : "○"} Mindestens 8 Zeichen
+              </p>
+              <p className={/[A-Z]/.test(form.password) ? "text-[#3D8B7A]" : ""}>
+                {/[A-Z]/.test(form.password) ? "✓" : "○"} Ein Großbuchstabe
+              </p>
+              <p className={/[0-9]/.test(form.password) ? "text-[#3D8B7A]" : ""}>
+                {/[0-9]/.test(form.password) ? "✓" : "○"} Eine Zahl
+              </p>
+            </div>
             {/* Password Show/Hide Toggle */}
             <button
               type="button"
@@ -208,7 +220,7 @@ export default function RegistrierungPage() {
             )}
 
             {error && (
-              <p className="text-xs text-[#FF6363] bg-[#FF6363]/10 border border-[#FF6363]/20 px-4 py-2.5 rounded-xl font-medium">
+              <p className="text-xs text-[#C4574B] bg-[#C4574B]/10 border border-[#C4574B]/20 px-4 py-2.5 rounded-xl font-medium">
                 {error}
               </p>
             )}
