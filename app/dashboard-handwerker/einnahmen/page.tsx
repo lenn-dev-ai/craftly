@@ -99,28 +99,28 @@ export default function EinnahmenDashboard() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#2D2A26]">Meine Einnahmen</h1>
-        <p className="text-sm text-[#8C857B] mt-1">Yield Management \u2014 Deine Zeit, dein Preis</p>
+        <p className="text-sm text-[#8C857B] mt-1">Yield Management — Deine Zeit, dein Preis</p>
       </div>
 
-      {/* HERO: Einnahmen-\u00DCbersicht */}
+      {/* HERO: Einnahmen-Übersicht */}
       <div className="bg-white rounded-2xl border border-[#EDE8E1] p-6 mb-6 shadow-sm">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div>
             <div className="text-xs text-[#8C857B] font-medium mb-1">Diese Woche verdient</div>
             <div className="text-3xl font-bold text-[#3D8B7A]">
-              {prognose.dieseWoche > 0 ? prognose.dieseWoche.toLocaleString("de") : "0"} <span className="text-base font-medium">\u20AC</span>
+              {prognose.dieseWoche > 0 ? prognose.dieseWoche.toLocaleString("de") : "0"} <span className="text-base font-medium">€</span>
             </div>
           </div>
           <div>
-            <div className="text-xs text-[#8C857B] font-medium mb-1">N\u00E4chste Woche geplant</div>
+            <div className="text-xs text-[#8C857B] font-medium mb-1">Nächste Woche geplant</div>
             <div className="text-3xl font-bold text-[#2D2A26]">
-              {prognose.naechsteWoche > 0 ? prognose.naechsteWoche.toLocaleString("de") : "0"} <span className="text-base font-medium">\u20AC</span>
+              {prognose.naechsteWoche > 0 ? prognose.naechsteWoche.toLocaleString("de") : "0"} <span className="text-base font-medium">€</span>
             </div>
           </div>
           <div>
             <div className="text-xs text-[#8C857B] font-medium mb-1">Offenes Potenzial</div>
             <div className="text-3xl font-bold text-[#C4956A]">
-              +{prognose.potenzialNaechsteWoche.toLocaleString("de")} <span className="text-base font-medium">\u20AC</span>
+              +{prognose.potenzialNaechsteWoche.toLocaleString("de")} <span className="text-base font-medium">€</span>
             </div>
             <div className="text-xs text-[#8C857B] mt-0.5">{prognose.offeneSlots} offene Slots</div>
           </div>
@@ -136,9 +136,9 @@ export default function EinnahmenDashboard() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <div className="bg-white rounded-xl border border-[#EDE8E1] p-4">
-          <div className="text-xs text-[#8C857B] mb-1">\u00D8 Stundensatz</div>
-          <div className="text-2xl font-bold text-[#2D2A26]">{avgStundensatz} \u20AC</div>
-          <div className="text-xs text-[#3D8B7A]">Markt: {basisPreis} \u20AC</div>
+          <div className="text-xs text-[#8C857B] mb-1">Ø Stundensatz</div>
+          <div className="text-2xl font-bold text-[#2D2A26]">{avgStundensatz} €</div>
+          <div className="text-xs text-[#3D8B7A]">Markt: {basisPreis} €</div>
         </div>
         <div className="bg-white rounded-xl border border-[#EDE8E1] p-4">
           <div className="text-xs text-[#8C857B] mb-1">Aktive Slots</div>
@@ -153,7 +153,7 @@ export default function EinnahmenDashboard() {
         <div className="bg-white rounded-xl border border-[#EDE8E1] p-4">
           <div className="text-xs text-[#8C857B] mb-1">Vergeben</div>
           <div className="text-2xl font-bold text-[#2D2A26]">{vergebeneSlots.length}</div>
-          <div className="text-xs text-[#8C857B]">Gebuchte Auftr\u00E4ge</div>
+          <div className="text-xs text-[#8C857B]">Gebuchte Aufträge</div>
         </div>
       </div>
 
@@ -164,7 +164,7 @@ export default function EinnahmenDashboard() {
             <div>
               <div className="text-sm font-semibold text-[#2D2A26]">
                 {verfuegbareSlots.length === 0
-                  ? "Starte jetzt \u2014 Stell deine ersten Zeitslots ein!"
+                  ? "Starte jetzt — Stell deine ersten Zeitslots ein!"
                   : `Noch ${5 - verfuegbareSlots.length} Slots bis zur optimalen Sichtbarkeit`
                 }
               </div>
@@ -195,7 +195,7 @@ export default function EinnahmenDashboard() {
                     <span className="text-xs text-[#6B665E] font-medium">{(g as any).zeitslot.titel}</span>
                     <span className="text-xs text-[#8C857B]">
                       {new Date((g as any).zeitslot.datum).toLocaleDateString("de", { weekday: "short", day: "numeric", month: "short" })}
-                      {" \u00B7 "}{(g as any).zeitslot.von} \u2013 {(g as any).zeitslot.bis}
+                      {" · "}{(g as any).zeitslot.von} – {(g as any).zeitslot.bis}
                     </span>
                   </div>
                 )}
@@ -203,12 +203,12 @@ export default function EinnahmenDashboard() {
                   <div>
                     <div className="text-sm font-medium text-[#2D2A26]">{g.verwalter?.firma || g.verwalter?.name || "Hausverwaltung"}</div>
                     <div className="text-xs text-[#8C857B] mt-1">
-                      {g.wunsch_stunden ? `${g.wunsch_stunden}h gew\u00FCnscht` : ""}
-                      {g.nachricht && ` \u2014 "${g.nachricht}"`}
+                      {g.wunsch_stunden ? `${g.wunsch_stunden}h gewünscht` : ""}
+                      {g.nachricht && ` — "${g.nachricht}"`}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xl font-bold text-[#3D8B7A]">{g.gebotener_preis} \u20AC</div>
+                    <div className="text-xl font-bold text-[#3D8B7A]">{g.gebotener_preis} €</div>
                     <div className="text-xs text-[#8C857B]">Geboten</div>
                   </div>
                 </div>
@@ -232,21 +232,21 @@ export default function EinnahmenDashboard() {
         </div>
       )}
 
-      {/* N\u00E4chste Slots Timeline */}
+      {/* Nächste Slots Timeline */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-[#2D2A26]">N\u00E4chste 7 Tage</h2>
+          <h2 className="text-sm font-semibold text-[#2D2A26]">Nächste 7 Tage</h2>
           <Link
             href="/dashboard-handwerker/zeitslots"
             className="text-xs text-[#3D8B7A] hover:text-[#2D7A6A] transition-colors font-medium"
           >
-            Alle verwalten \u2192
+            Alle verwalten →
           </Link>
         </div>
         {naechsteSlots.length === 0 ? (
           <div className="bg-white rounded-xl border border-[#EDE8E1] p-8 text-center">
             <div className="text-2xl mb-2">&#128197;</div>
-            <div className="text-sm text-[#6B665E]">Keine Slots f\u00FCr die n\u00E4chsten 7 Tage</div>
+            <div className="text-sm text-[#6B665E]">Keine Slots für die nächsten 7 Tage</div>
             <Link
               href="/dashboard-handwerker/zeitslots"
               className="mt-3 inline-block text-xs text-[#3D8B7A] border border-[#3D8B7A]/20 px-4 py-2 rounded-lg hover:bg-[#3D8B7A]/5 transition-colors"
@@ -284,7 +284,7 @@ export default function EinnahmenDashboard() {
                       </div>
                       <div>
                         <div className="text-sm font-medium text-[#2D2A26]">{s.titel}</div>
-                        <div className="text-xs text-[#8C857B]">{formatZeit(s.von)} \u2013 {formatZeit(s.bis)} ({s.stunden}h)</div>
+                        <div className="text-xs text-[#8C857B]">{formatZeit(s.von)} – {formatZeit(s.bis)} ({s.stunden}h)</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -294,10 +294,10 @@ export default function EinnahmenDashboard() {
                         </span>
                       )}
                       <div className="text-right">
-                        <div className="text-lg font-bold text-[#3D8B7A]">{preis} \u20AC/h</div>
+                        <div className="text-lg font-bold text-[#3D8B7A]">{preis} €/h</div>
                         {s.preisfaktor > 1.0 && (
                           <div className="text-xs text-[#C4956A]">
-                            \u00D7{s.preisfaktor} Surge
+                            ×{s.preisfaktor} Surge
                           </div>
                         )}
                       </div>
