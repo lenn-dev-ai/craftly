@@ -7,9 +7,9 @@ function kiTrend(timeline: any[]): { trend: string; text: string } {
   if (timeline.length < 3) return { trend: "neutral", text: "Nicht genug Daten" }
   const first = timeline.slice(0, 3).reduce((s, d) => s + d.tickets + d.users + d.angebote, 0)
   const last = timeline.slice(-3).reduce((s, d) => s + d.tickets + d.users + d.angebote, 0)
-  if (last > first * 1.3) return { trend: "up", text: "Steigende Aktivitaet (+30%)" }
-  if (last < first * 0.7) return { trend: "down", text: "Sinkende Aktivitaet (-30%)" }
-  return { trend: "neutral", text: "Stabile Aktivitaet" }
+  if (last > first * 1.3) return { trend: "up", text: "Steigende Aktivität (+30%)" }
+  if (last < first * 0.7) return { trend: "down", text: "Sinkende Aktivität (-30%)" }
+  return { trend: "neutral", text: "Stabile Aktivität" }
 }
 
 /* KI: Peak-Erkennung */
@@ -82,8 +82,8 @@ export default function AktivitaetPage() {
     <div className="p-8 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">Aktivitaet</h1>
-          <p className="text-sm text-gray-500 mt-1">Plattform-Aktivitaet der letzten 7 Tage</p>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight">Aktivität</h1>
+          <p className="text-sm text-gray-500 mt-1">Plattform-Aktivität der letzten 7 Tage</p>
         </div>
         <div className="flex gap-3">
           {[
@@ -117,7 +117,7 @@ export default function AktivitaetPage() {
 
       {/* Chart */}
       <div className="bg-[#12121a] border border-white/[0.06] rounded-2xl p-5 mb-6">
-        <h3 className="text-sm font-semibold text-white mb-6">Aktivitaets-Verlauf (7 Tage)</h3>
+        <h3 className="text-sm font-semibold text-white mb-6">Aktivitäts-Verlauf (7 Tage)</h3>
         <div className="flex items-end gap-3 h-40">
           {data.timeline.map((d: any, i: number) => {
             const total = d.tickets + d.users + d.angebote
@@ -142,7 +142,7 @@ export default function AktivitaetPage() {
 
       {/* Activity Feed */}
       <div className="bg-[#12121a] border border-white/[0.06] rounded-2xl p-5">
-        <h3 className="text-sm font-semibold text-white mb-4">Letzte Aktivitaeten</h3>
+        <h3 className="text-sm font-semibold text-white mb-4">Letzte Aktivitäten</h3>
         <div className="space-y-2">
           {data.activity.map((a: any, i: number) => {
             const cfg = TYPE_CONFIG[a.type] || { color: "#666", label: a.type }
