@@ -90,7 +90,7 @@ export default function RegistrierungPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4 relative overflow-y-auto">
       {/* Background gradient orbs */}
       <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-[#00D4AA]/[0.07] rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-[#00B4D8]/[0.05] rounded-full blur-[120px] pointer-events-none" />
