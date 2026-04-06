@@ -26,7 +26,7 @@ export default function Impressum() {
 
         <div className="space-y-6 text-[#6B665E] leading-relaxed">
           <section>
-            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Angaben gemaess 5 TMG</h2>
+            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Angaben gemäß 5 TMG</h2>
             <p>
               Reparo GmbH (Platzhalter)<br />
               Musterstrasse 1<br />
@@ -44,7 +44,7 @@ export default function Impressum() {
 
           <section>
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Vertretungsberechtigte Person</h2>
-            <p>Max Mustermann, Geschaeftsfuehrer</p>
+            <p>Max Mustermann, Geschäftsführer</p>
           </section>
 
           <section>
@@ -58,13 +58,13 @@ export default function Impressum() {
           <section>
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Umsatzsteuer-ID</h2>
             <p>
-              Umsatzsteuer-Identifikationsnummer gemaess 27a UStG:<br />
+              Umsatzsteuer-Identifikationsnummer gemäß 27a UStG:<br />
               DE000000000 (Platzhalter)
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Verantwortlich fuer den Inhalt</h2>
+            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Verantwortlich für den Inhalt</h2>
             <p>
               Max Mustermann<br />
               Musterstrasse 1<br />
@@ -75,7 +75,7 @@ export default function Impressum() {
           <section>
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Haftungsausschluss</h2>
             <p>
-              Trotz sorgfaeltiger inhaltlicher Kontrolle uebernehmen wir keine Haftung fuer die Inhalte externer Links. Fuer den Inhalt der verlinkten Seiten sind ausschliesslich deren Betreiber verantwortlich.
+              Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschliesslich deren Betreiber verantwortlich.
             </p>
           </section>
         </div>
