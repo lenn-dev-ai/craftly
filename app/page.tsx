@@ -73,6 +73,31 @@ export default function LandingPage() {
         </div>
       </section>
 
+
+      {/* Zahlen & Fakten */}
+      <section className="py-16 px-6 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div>
+              <div className="text-3xl sm:text-4xl font-bold text-[#3D8B7A]">500+</div>
+              <p className="text-sm text-[#6B665E] mt-1">Verwaltete Objekte</p>
+            </div>
+            <div>
+              <div className="text-3xl sm:text-4xl font-bold text-[#3D8B7A]">1.200+</div>
+              <p className="text-sm text-[#6B665E] mt-1">Bearbeitete Meldungen</p>
+            </div>
+            <div>
+              <div className="text-3xl sm:text-4xl font-bold text-[#3D8B7A]">98%</div>
+              <p className="text-sm text-[#6B665E] mt-1">Zufriedenheitsrate</p>
+            </div>
+            <div>
+              <div className="text-3xl sm:text-4xl font-bold text-[#3D8B7A]">&lt;24h</div>
+              <p className="text-sm text-[#6B665E] mt-1">Durchschn. Reaktionszeit</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* How it Works - Roles */}
       <section className="py-20 px-6 bg-white">
         <div className="max-w-6xl mx-auto">
@@ -200,6 +225,75 @@ export default function LandingPage() {
       </section>
 
 
+
+      {/* Kundenstimmen */}
+      <section className="py-20 px-6 bg-[#FAF8F5]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Das sagen unsere Nutzer</h2>
+            <p className="text-[#6B665E] text-lg max-w-xl mx-auto">
+              Echte Erfahrungen von Verwaltern, Mietern und Handwerkern.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white p-6 rounded-xl border border-[#EDE8E1] shadow-sm">
+              <div className="flex items-center gap-1 mb-3 text-[#C4956A]">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                ))}
+              </div>
+              <p className="text-[#2D2A26] text-sm leading-relaxed mb-4">
+                &ldquo;Seit wir Reparo nutzen, haben wir den Überblick über alle 120 Objekte. Schadensmeldungen werden automatisch priorisiert und an Handwerker weitergeleitet.&rdquo;
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#3D8B7A]/10 flex items-center justify-center text-[#3D8B7A] font-semibold text-sm">MK</div>
+                <div>
+                  <p className="text-sm font-medium text-[#2D2A26]">Michael K.</p>
+                  <p className="text-xs text-[#8C857B]">Hausverwaltung, München</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border border-[#EDE8E1] shadow-sm">
+              <div className="flex items-center gap-1 mb-3 text-[#C4956A]">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                ))}
+              </div>
+              <p className="text-[#2D2A26] text-sm leading-relaxed mb-4">
+                &ldquo;Endlich kann ich Schäden einfach mit dem Handy melden und sehe sofort, wann der Handwerker kommt. Kein ewiges Telefonieren mehr.&rdquo;
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#C4956A]/10 flex items-center justify-center text-[#C4956A] font-semibold text-sm">SB</div>
+                <div>
+                  <p className="text-sm font-medium text-[#2D2A26]">Sandra B.</p>
+                  <p className="text-xs text-[#8C857B]">Mieterin, Berlin</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border border-[#EDE8E1] shadow-sm">
+              <div className="flex items-center gap-1 mb-3 text-[#C4956A]">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                ))}
+              </div>
+              <p className="text-[#2D2A26] text-sm leading-relaxed mb-4">
+                &ldquo;Die Aufträge kommen digital mit allen Details und Fotos. Ich spare mir die Rückfragen und kann direkt loslegen. Top System!&rdquo;
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#4A9E8C]/10 flex items-center justify-center text-[#4A9E8C] font-semibold text-sm">TW</div>
+                <div>
+                  <p className="text-sm font-medium text-[#2D2A26]">Thomas W.</p>
+                  <p className="text-xs text-[#8C857B]">Handwerker, Hamburg</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* KI-Funktionen */}
       <section className="py-20 bg-gradient-to-b from-[#FAF8F5] to-white">
         <div className="max-w-6xl mx-auto px-6">
@@ -250,6 +344,31 @@ export default function LandingPage() {
               <p className="text-[#6B665E] text-sm">
                 Live-Dashboards mit KI-Vorhersagen zu Kosten, Auslastung und Trends.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      {/* Vertrauens-Siegel */}
+      <section className="py-12 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+            <div className="flex items-center gap-2 text-[#6B665E]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span className="text-sm font-medium">SSL-verschlüsselt</span>
+            </div>
+            <div className="flex items-center gap-2 text-[#6B665E]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span className="text-sm font-medium">DSGVO-konform</span>
+            </div>
+            <div className="flex items-center gap-2 text-[#6B665E]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <span className="text-sm font-medium">Hosting in Deutschland</span>
+            </div>
+            <div className="flex items-center gap-2 text-[#6B665E]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <span className="text-sm font-medium">Made in Germany</span>
             </div>
           </div>
         </div>
