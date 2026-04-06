@@ -24,12 +24,12 @@ function kiAktivitaetsScore(user: any, tickets: any[], angebote: any[]): number 
 function kiRisiko(users: any[]): string[] {
   const w: string[] = []
   const admins = users.filter(u => u.rolle === "admin")
-  if (admins.length > 3) w.push(admins.length + " Admin-Accounts - zu viele Admins erhoehen Sicherheitsrisiko")
+  if (admins.length > 3) w.push(admins.length + " Admin-Accounts - zu viele Admins erhöhen Sicherheitsrisiko")
   const noName = users.filter(u => !u.name || u.name.trim() === "")
-  if (noName.length > 0) w.push(noName.length + " Nutzer ohne Namen - Profil unvollstaendig")
+  if (noName.length > 0) w.push(noName.length + " Nutzer ohne Namen - Profil unvollständig")
   const hw = users.filter(u => u.rolle === "handwerker")
   const hwNoGewerk = hw.filter(u => !u.gewerk)
-  if (hwNoGewerk.length > 0) w.push(hwNoGewerk.length + " Handwerker ohne Gewerk - koennen nicht zugeordnet werden")
+  if (hwNoGewerk.length > 0) w.push(hwNoGewerk.length + " Handwerker ohne Gewerk - können nicht zugeordnet werden")
   return w
 }
 
