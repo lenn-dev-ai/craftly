@@ -130,6 +130,7 @@ export default function Sidebar() {
   }, [isMobileOpen])
 
   return (
+    <>
     {/* Mobile Overlay */}
       {isMobileOpen && (
         <div 
@@ -212,5 +213,6 @@ export default function Sidebar() {
         </button>
       </div>
     </aside>
+      </>
   );
 }
