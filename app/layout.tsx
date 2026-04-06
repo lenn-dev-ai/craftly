@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     template: '%s | Reparo',
   },
   description:
-    'Die intelligente Plattform fuer Hausverwaltungen, Handwerker und Mieter. Schadensmeldungen, Auftragsvergabe und Kommunikation - alles an einem Ort.',
+    'Die intelligente Plattform für Hausverwaltungen, Handwerker und Mieter. Schadensmeldungen, Auftragsvergabe und Kommunikation - alles an einem Ort.',
   keywords: [
     'Hausverwaltung',
     'Schadensmeldung',
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Reparo - Intelligente Immobilienverwaltung',
     description:
-      'Schadensmeldungen, Auftragsvergabe und Kommunikation - alles an einem Ort. Fuer Verwalter, Handwerker und Mieter.',
+      'Schadensmeldungen, Auftragsvergabe und Kommunikation - alles an einem Ort. Für Verwalter, Handwerker und Mieter.',
     url: 'https://reparo.app',
     siteName: 'Reparo',
     type: 'website',
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Reparo - Intelligente Immobilienverwaltung',
     description:
-      'Die intelligente Plattform fuer Hausverwaltungen, Handwerker und Mieter.',
+      'Die intelligente Plattform für Hausverwaltungen, Handwerker und Mieter.',
   },
   icons: {
     icon: '/icons/favicon.ico',
@@ -94,7 +94,7 @@ const jsonLd = {
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web',
   description:
-    'Intelligente Plattform fuer Schadensmeldungen, Auftragsvergabe und Kommunikation in der Immobilienverwaltung.',
+    'Intelligente Plattform für Schadensmeldungen, Auftragsvergabe und Kommunikation in der Immobilienverwaltung.',
   url: 'https://reparo.app',
   offers: {
     '@type': 'Offer',
