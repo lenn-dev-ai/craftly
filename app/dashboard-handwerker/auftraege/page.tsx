@@ -26,7 +26,7 @@ export default function AuftraegePage() {
     <div className="flex items-center justify-center h-64">
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-2 border-[#3D8B7A]/30 border-t-[#3D8B7A] rounded-full animate-spin" />
-        <span className="text-sm text-[#8C857B]">L\u00E4dt...</span>
+        <span className="text-sm text-[#8C857B]">Lädt...</span>
       </div>
     </div>
   )
@@ -34,13 +34,13 @@ export default function AuftraegePage() {
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto pt-16 md:pt-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#2D2A26]">Meine Auftr\u00E4ge</h1>
-        <p className="text-sm text-[#8C857B] mt-1">{tickets.length} zugewiesene Auftr\u00E4ge</p>
+        <h1 className="text-2xl font-bold text-[#2D2A26]">Meine Aufträge</h1>
+        <p className="text-sm text-[#8C857B] mt-1">{tickets.length} zugewiesene Aufträge</p>
       </div>
       {tickets.length === 0 ? (
         <div className="bg-white rounded-2xl border border-[#EDE8E1] p-12 text-center">
           <div className="text-4xl mb-3">&#128203;</div>
-          <div className="text-lg font-semibold text-[#2D2A26] mb-1">Noch keine Auftr\u00E4ge</div>
+          <div className="text-lg font-semibold text-[#2D2A26] mb-1">Noch keine Aufträge</div>
           <div className="text-sm text-[#8C857B]">
             Du wirst hier benachrichtigt sobald dir ein Auftrag vergeben wird.
           </div>
@@ -60,7 +60,7 @@ export default function AuftraegePage() {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-[#2D2A26] truncate">{t.titel}</div>
                   <div className="text-xs text-[#8C857B] mt-0.5">
-                    {t.wohnung && `${t.wohnung} \u00B7 `}
+                    {t.wohnung && `${t.wohnung} · `}
                     {new Date(t.created_at).toLocaleDateString("de")}
                   </div>
                 </div>
