@@ -40,7 +40,7 @@ export default function TicketsPage() {
     <div className="p-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-semibold text-white">Alle Tickets</h1>
+          <h1 className="text-xl font-semibold text-[#2D2A26]">Alle Tickets</h1>
           <p className="text-sm text-gray-400 mt-0.5">{tickets.length} Tickets insgesamt</p>
         </div>
         <Button onClick={() => router.push("/dashboard-verwalter/neues-ticket")}>+ Neues Ticket</Button>
@@ -51,8 +51,8 @@ export default function TicketsPage() {
           <button key={opt.value} onClick={() => setFilter(opt.value)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
               filter === opt.value
-                ? "bg-[#00D4AA] text-white border-[#00D4AA]"
-                : "bg-white/[0.04] text-gray-400 border-white/[0.08] hover:border-white/[0.15] hover:bg-white/[0.08]"
+                ? "bg-[#3D8B7A] text-[#2D2A26] border-[#3D8B7A]"
+                : "bg-white/[0.04] text-gray-400 border-[#EDE8E1]/[0.08] hover:border-[#EDE8E1]/[0.15] hover:bg-white/[0.08]"
             }`}>
             {opt.label}
             <span className="ml-1.5 opacity-70">
@@ -69,12 +69,12 @@ export default function TicketsPage() {
       ) : (
         <div className="flex flex-col gap-2">
           {shown.map(t => (
-            <Card key={t.id} className="cursor-pointer hover:border-[#00D4AA]/30 transition-colors !p-3"
+            <Card key={t.id} className="cursor-pointer hover:border-[#3D8B7A]/30 transition-colors !p-3"
               onClick={() => router.push(`/ticket/${t.id}`)}>
               <div className="flex items-center gap-3">
                 <StatusDot status={t.status} />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate text-white">{t.titel}</div>
+                  <div className="text-sm font-medium truncate text-[#2D2A26]">{t.titel}</div>
                   <div className="text-xs text-gray-500 mt-0.5">
                     {t.wohnung && `${t.wohnung} `}
                     {new Date(t.created_at).toLocaleDateString("de")}
@@ -83,7 +83,7 @@ export default function TicketsPage() {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {t.angebote && t.angebote.length > 0 && (
-                    <span className="text-sm font-medium text-[#00D4AA]">
+                    <span className="text-sm font-medium text-[#3D8B7A]">
                       ab {Math.min(...t.angebote.map((a: any) => a.preis)).toLocaleString("de")} EUR
                     </span>
                   )}
