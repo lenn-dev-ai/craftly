@@ -76,7 +76,7 @@ export default function ReportingPage() {
             {erledigt.slice(0, 10).map(t => (
               <div key={t.id} className="flex items-center justify-between text-sm py-1.5 border-b border-gray-50 last:border-0">
                 <div>
-                  <div className="font-medium text-white">{t.titel}</div>
+                  <div className="font-medium text-[#2D2A26]">{t.titel}</div>
                   <div className="text-xs text-gray-400">{new Date(t.created_at).toLocaleDateString("de")}</div>
                 </div>
                 {t.kosten_final ? (
