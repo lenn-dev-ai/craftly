@@ -14,7 +14,7 @@ export default function NeuesTicketRedirect() {
   }, [router])
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+    <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
       <p className="text-gray-500 text-sm">Weiterleitung zum Marktplatz...</p>
     </div>
   )
