@@ -81,10 +81,10 @@ export default function MarktplatzPage() {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
+    <div className="flex items-center justify-center h-screen bg-[#FAF8F5]">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-2 border-[#00D4AA]/30 border-t-[#00D4AA] rounded-full animate-spin" />
-        <span className="text-sm text-white/40">Marktplatz laden...</span>
+        <div className="w-8 h-8 border-2 border-[#3D8B7A]/30 border-t-[#3D8B7A] rounded-full animate-spin" />
+        <span className="text-sm text-[#8C857B]">Marktplatz laden...</span>
       </div>
     </div>
   )
@@ -96,11 +96,11 @@ export default function MarktplatzPage() {
   const gewerke = Array.from(new Set(slots.map(s => s.gewerk).filter(Boolean))) as string[]
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
+    <div className="min-h-screen bg-[#FAF8F5] text-[#2D2A26]">
       <div className="max-w-5xl mx-auto p-6 md:p-6 pt-16 md:pt-6">
         {/* Toast */}
         {toast && (
-          <div className="fixed top-4 right-4 z-50 bg-[#12121a] border border-[#00D4AA]/30 text-white text-sm px-4 py-3 rounded-xl shadow-lg shadow-[#00D4AA]/10">
+          <div className="fixed top-4 right-4 z-50 bg-white border border-[#3D8B7A]/30 text-[#2D2A26] text-sm px-4 py-3 rounded-xl shadow-lg shadow-[#3D8B7A]/10">
             {toast}
           </div>
         )}
@@ -108,24 +108,24 @@ export default function MarktplatzPage() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Handwerker-Marktplatz</h1>
-          <p className="text-white/40 text-sm mt-1">
+          <p className="text-[#8C857B] text-sm mt-1">
             Verfügbare Zeitslots — Biete auf Handwerker deiner Wahl
           </p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <div className="bg-[#12121a] border border-white/5 rounded-xl p-4">
-            <div className="text-xs text-white/40 mb-1">Verfügbare Slots</div>
-            <div className="text-2xl font-bold text-[#00D4AA]">{slots.length}</div>
+          <div className="bg-white border border-[#EDE8E1] rounded-xl p-4">
+            <div className="text-xs text-[#8C857B] mb-1">Verfügbare Slots</div>
+            <div className="text-2xl font-bold text-[#3D8B7A]">{slots.length}</div>
           </div>
-          <div className="bg-[#12121a] border border-white/5 rounded-xl p-4">
-            <div className="text-xs text-white/40 mb-1">Gewerke</div>
-            <div className="text-2xl font-bold text-[#00B4D8]">{gewerke.length}</div>
+          <div className="bg-white border border-[#EDE8E1] rounded-xl p-4">
+            <div className="text-xs text-[#8C857B] mb-1">Gewerke</div>
+            <div className="text-2xl font-bold text-[#C4956A]">{gewerke.length}</div>
           </div>
-          <div className="bg-[#12121a] border border-white/5 rounded-xl p-4 hidden sm:block">
-            <div className="text-xs text-white/40 mb-1">Ø Preis/h</div>
-            <div className="text-2xl font-bold text-white">
+          <div className="bg-white border border-[#EDE8E1] rounded-xl p-4 hidden sm:block">
+            <div className="text-xs text-[#8C857B] mb-1">Ø Preis/h</div>
+            <div className="text-2xl font-bold text-[#2D2A26]">
               {slots.length > 0
                 ? Math.round(slots.reduce((s, sl) => s + (sl.dynamischer_preis || sl.basis_preis_stunde), 0) / slots.length)
                 : 0
@@ -140,8 +140,8 @@ export default function MarktplatzPage() {
             onClick={() => setFilter("alle")}
             className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
               filter === "alle"
-                ? "bg-[#00D4AA]/15 text-[#00D4AA] border border-[#00D4AA]/20"
-                : "text-white/40 border border-white/10 hover:text-white/60 hover:border-white/20"
+                ? "bg-[#3D8B7A]/15 text-[#3D8B7A] border border-[#3D8B7A]/20"
+                : "text-[#8C857B] border border-[#EDE8E1] hover:text-[#6B665E] hover:border-[#3D8B7A]/20"
             }`}
           >
             Alle ({slots.length})
@@ -154,8 +154,8 @@ export default function MarktplatzPage() {
                 onClick={() => setFilter(g as Filter)}
                 className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
                   filter === g
-                    ? "bg-[#00D4AA]/15 text-[#00D4AA] border border-[#00D4AA]/20"
-                    : "text-white/40 border border-white/10 hover:text-white/60 hover:border-white/20"
+                    ? "bg-[#3D8B7A]/15 text-[#3D8B7A] border border-[#3D8B7A]/20"
+                    : "text-[#8C857B] border border-[#EDE8E1] hover:text-[#6B665E] hover:border-[#3D8B7A]/20"
                 }`}
               >
                 {GEWERK_LABELS[g] || g} ({count})
@@ -166,10 +166,10 @@ export default function MarktplatzPage() {
 
         {/* Slots Grid */}
         {filteredSlots.length === 0 ? (
-          <div className="bg-[#12121a] border border-white/5 rounded-2xl p-12 text-center">
+          <div className="bg-white border border-[#EDE8E1] rounded-2xl p-12 text-center">
             <div className="text-4xl mb-3">🔍</div>
             <div className="text-lg font-semibold mb-1">Keine Slots gefunden</div>
-            <div className="text-sm text-white/40">
+            <div className="text-sm text-[#8C857B]">
               {filter !== "alle"
                 ? `Keine verfügbaren Slots für ${GEWERK_LABELS[filter]}. Probiere einen anderen Filter.`
                 : "Aktuell sind keine Handwerker-Slots verfügbar. Schau später nochmal vorbei!"
@@ -188,15 +188,15 @@ export default function MarktplatzPage() {
               return (
                 <div
                   key={s.id}
-                  className={`bg-[#12121a] border rounded-xl transition-all ${
-                    isExpanded ? "border-[#00D4AA]/30 shadow-lg shadow-[#00D4AA]/5" : "border-white/5 hover:border-white/10"
+                  className={`bg-white border rounded-xl transition-all ${
+                    isExpanded ? "border-[#3D8B7A]/30 shadow-lg shadow-[#3D8B7A]/5" : "border-[#EDE8E1] hover:border-[#EDE8E1]"
                   }`}
                 >
                   <div className="p-4">
                     <div className="flex items-start justify-between flex-wrap gap-3">
                       {/* Left: Handwerker Info */}
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-[#00D4AA]/20 to-[#00B4D8]/20 rounded-xl flex items-center justify-center text-sm font-bold text-[#00D4AA] flex-shrink-0">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#3D8B7A]/20 to-[#C4956A]/20 rounded-xl flex items-center justify-center text-sm font-bold text-[#3D8B7A] flex-shrink-0">
                           {hw?.name?.charAt(0) || "H"}
                         </div>
                         <div>
@@ -208,16 +208,16 @@ export default function MarktplatzPage() {
                               </span>
                             )}
                             {hw?.auftraege_anzahl > 0 && (
-                              <span className="text-[10px] text-white/30">
+                              <span className="text-[10px] text-[#2D2A26]/30">
                                 ({hw.auftraege_anzahl} Aufträge)
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-white/40 mt-0.5">
+                          <div className="text-xs text-[#8C857B] mt-0.5">
                             {GEWERK_LABELS[s.gewerk || "allgemein"]}
                             {hw?.plz_bereich && ` · PLZ ${hw.plz_bereich}`}
                           </div>
-                          <div className="text-xs text-white/50 mt-1">
+                          <div className="text-xs text-[#2D2A26]/50 mt-1">
                             <span className="font-medium">
                               {new Date(s.datum).toLocaleDateString("de", { weekday: "short", day: "numeric", month: "short" })}
                             </span>
@@ -234,14 +234,14 @@ export default function MarktplatzPage() {
 
                       {/* Right: Price + Action */}
                       <div className="text-right flex-shrink-0">
-                        <div className="text-2xl font-bold text-[#00D4AA]">{preis} €<span className="text-sm text-white/40">/h</span></div>
+                        <div className="text-2xl font-bold text-[#3D8B7A]">{preis} €<span className="text-sm text-[#8C857B]">/h</span></div>
                         {s.preisfaktor > 1.0 && (
                           <div className="text-[10px] text-[#F59E0B]">×{s.preisfaktor} Surge</div>
                         )}
                         {s.preisfaktor <= 1.0 && preis < basisPreis && (
                           <div className="text-[10px] text-[#8B5CF6]">Unter Marktpreis</div>
                         )}
-                        <div className="text-[10px] text-white/20 mt-0.5">
+                        <div className="text-[10px] text-[#8C857B] mt-0.5">
                           Markt: {basisPreis} €/h
                         </div>
                         {gebotsCount > 0 && (
@@ -253,8 +253,8 @@ export default function MarktplatzPage() {
                           onClick={() => setExpandedSlot(isExpanded ? null : s.id)}
                           className={`mt-2 text-xs font-bold px-4 py-2 rounded-lg transition-all ${
                             isExpanded
-                              ? "bg-white/10 text-white/60"
-                              : "bg-gradient-to-r from-[#00D4AA] to-[#00B4D8] text-black hover:brightness-110"
+                              ? "bg-[#F5F0EB] text-[#6B665E]"
+                              : "bg-gradient-to-r from-[#3D8B7A] to-[#C4956A] text-black hover:brightness-110"
                           }`}
                         >
                           {isExpanded ? "Schließen" : "Gebot abgeben"}
@@ -265,18 +265,18 @@ export default function MarktplatzPage() {
 
                   {/* Expanded: Gebot Form */}
                   {isExpanded && (
-                    <div className="border-t border-white/5 p-4 bg-white/[0.02]">
+                    <div className="border-t border-[#EDE8E1] p-4 bg-white/[0.02]">
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
-                          <label className="text-xs text-white/40 mb-1 block">Dein Gebot (€/h) *</label>
+                          <label className="text-xs text-[#8C857B] mb-1 block">Dein Gebot (€/h) *</label>
                           <input
                             type="number"
                             min={1}
                             value={gebotPreise[s.id] || preis}
                             onChange={e => setGebotPreise({ ...gebotPreise, [s.id]: Number(e.target.value) })}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#00D4AA]/40 focus:outline-none transition-colors"
+                            className="w-full bg-[#F5F0EB] border border-[#EDE8E1] rounded-xl px-4 py-2.5 text-sm text-[#2D2A26] focus:border-[#3D8B7A]/40 focus:outline-none transition-colors"
                           />
-                          <div className="text-[10px] text-white/30 mt-1">
+                          <div className="text-[10px] text-[#2D2A26]/30 mt-1">
                             {(gebotPreise[s.id] || preis) >= preis
                               ? "✓ Gebot liegt beim oder über dem aktuellen Preis"
                               : "⚠ Unter dem aktuellen Preis — Annahme unwahrscheinlich"
@@ -284,29 +284,29 @@ export default function MarktplatzPage() {
                           </div>
                         </div>
                         <div className="sm:col-span-2">
-                          <label className="text-xs text-white/40 mb-1 block">Nachricht (optional)</label>
+                          <label className="text-xs text-[#8C857B] mb-1 block">Nachricht (optional)</label>
                           <input
                             type="text"
                             value={gebotNachrichten[s.id] || ""}
                             onChange={e => setGebotNachrichten({ ...gebotNachrichten, [s.id]: e.target.value })}
                             placeholder="z.B. Für Sanitär-Reparatur in Musterstraße 12..."
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/20 focus:border-[#00D4AA]/40 focus:outline-none transition-colors"
+                            className="w-full bg-[#F5F0EB] border border-[#EDE8E1] rounded-xl px-4 py-2.5 text-sm text-[#2D2A26] placeholder:text-[#8C857B] focus:border-[#3D8B7A]/40 focus:outline-none transition-colors"
                           />
                         </div>
                       </div>
 
                       {/* Gesamt-Vorschau */}
-                      <div className="mt-3 bg-white/5 rounded-lg p-3 flex items-center justify-between">
-                        <div className="text-xs text-white/40">
-                          Geschätzte Gesamtkosten: <span className="font-bold text-white">
+                      <div className="mt-3 bg-[#F5F0EB] rounded-lg p-3 flex items-center justify-between">
+                        <div className="text-xs text-[#8C857B]">
+                          Geschätzte Gesamtkosten: <span className="font-bold text-[#2D2A26]">
                             {Math.round((gebotPreise[s.id] || preis) * s.stunden)} €
                           </span>
-                          <span className="text-white/20"> ({s.stunden}h × {gebotPreise[s.id] || preis} €)</span>
+                          <span className="text-[#8C857B]"> ({s.stunden}h × {gebotPreise[s.id] || preis} €)</span>
                         </div>
                         <button
                           onClick={() => submitGebot(s.id)}
                           disabled={sending === s.id}
-                          className="text-xs font-bold bg-gradient-to-r from-[#00D4AA] to-[#00B4D8] text-black px-6 py-2.5 rounded-lg hover:brightness-110 transition-all disabled:opacity-50"
+                          className="text-xs font-bold bg-gradient-to-r from-[#3D8B7A] to-[#C4956A] text-black px-6 py-2.5 rounded-lg hover:brightness-110 transition-all disabled:opacity-50"
                         >
                           {sending === s.id ? "Wird gesendet..." : "Gebot senden"}
                         </button>
