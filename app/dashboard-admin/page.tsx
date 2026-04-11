@@ -80,7 +80,7 @@ export default function AdminDashboard() {
   }, [])
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+    <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-[#8B5CF6]/20 border-t-[#8B5CF6] rounded-full animate-spin" />
     </div>
   )
@@ -95,7 +95,7 @@ export default function AdminDashboard() {
     <div className="p-8 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-extrabold text-[#2D2A26] tracking-tight">Dashboard</h1>
           <p className="text-sm text-gray-500 mt-1">Plattform-Übersicht in Echtzeit</p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 rounded-xl">
@@ -138,15 +138,15 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         {[
           { label: "Nutzer gesamt", value: stats.totalUsers, color: "#8B5CF6" },
-          { label: "Verwalter", value: stats.verwalter, color: "#00D4AA" },
-          { label: "Handwerker", value: stats.handwerker, color: "#00B4D8" },
+          { label: "Verwalter", value: stats.verwalter, color: "#3D8B7A" },
+          { label: "Handwerker", value: stats.handwerker, color: "#C4956A" },
           { label: "Mieter", value: stats.mieter, color: "#F59E0B" },
         ].map((kpi, i) => (
-          <div key={i} className="bg-[#12121a] border border-white/[0.06] rounded-2xl p-5">
+          <div key={i} className="bg-[#FFFFFF] border border-[#EDE8E1]/[0.06] rounded-2xl p-5">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style={{ background: kpi.color + "15" }}>
               <div className="w-2.5 h-2.5 rounded-full" style={{ background: kpi.color }} />
             </div>
-            <div className="text-2xl font-bold text-white tracking-tight">{kpi.value}</div>
+            <div className="text-2xl font-bold text-[#2D2A26] tracking-tight">{kpi.value}</div>
             <div className="text-[11px] text-gray-500 mt-1 font-medium uppercase tracking-wider">{kpi.label}</div>
           </div>
         ))}
@@ -156,43 +156,43 @@ export default function AdminDashboard() {
         {[
           { label: "Tickets gesamt", value: stats.totalTickets, color: "#8B5CF6" },
           { label: "Offen", value: stats.offeneTickets, color: "#FF6363" },
-          { label: "Erledigt", value: stats.erledigteTickets, color: "#00D4AA" },
+          { label: "Erledigt", value: stats.erledigteTickets, color: "#3D8B7A" },
           { label: "Gesamtkosten", value: stats.totalKosten.toLocaleString("de") + " EUR", color: "#F59E0B" },
         ].map((kpi, i) => (
-          <div key={i} className="bg-[#12121a] border border-white/[0.06] rounded-2xl p-5">
+          <div key={i} className="bg-[#FFFFFF] border border-[#EDE8E1]/[0.06] rounded-2xl p-5">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style={{ background: kpi.color + "15" }}>
               <div className="w-2.5 h-2.5 rounded-full" style={{ background: kpi.color }} />
             </div>
-            <div className="text-2xl font-bold text-white tracking-tight">{kpi.value}</div>
+            <div className="text-2xl font-bold text-[#2D2A26] tracking-tight">{kpi.value}</div>
             <div className="text-[11px] text-gray-500 mt-1 font-medium uppercase tracking-wider">{kpi.label}</div>
           </div>
         ))}
       </div>
 
-      <div className="bg-[#12121a] border border-white/[0.06] rounded-2xl p-5 mb-8">
+      <div className="bg-[#FFFFFF] border border-[#EDE8E1]/[0.06] rounded-2xl p-5 mb-8">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-semibold text-white">Erledigungsrate</span>
-          <span className={"text-sm font-bold " + (erlRate >= 50 ? "text-[#00D4AA]" : erlRate >= 25 ? "text-[#F59E0B]" : "text-[#FF6363]")}>{erlRate}%</span>
+          <span className="text-sm font-semibold text-[#2D2A26]">Erledigungsrate</span>
+          <span className={"text-sm font-bold " + (erlRate >= 50 ? "text-[#3D8B7A]" : erlRate >= 25 ? "text-[#F59E0B]" : "text-[#FF6363]")}>{erlRate}%</span>
         </div>
         <div className="w-full h-3 bg-white/[0.06] rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500" style={{ width: erlRate + "%", background: erlRate >= 50 ? "linear-gradient(90deg, #00D4AA, #00B4D8)" : erlRate >= 25 ? "#F59E0B" : "#FF6363" }} />
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: erlRate + "%", background: erlRate >= 50 ? "linear-gradient(90deg, #3D8B7A, #C4956A)" : erlRate >= 25 ? "#F59E0B" : "#FF6363" }} />
         </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        <div className="bg-[#12121a] border border-white/[0.06] rounded-2xl p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">Neueste Nutzer</h3>
+        <div className="bg-[#FFFFFF] border border-[#EDE8E1]/[0.06] rounded-2xl p-5">
+          <h3 className="text-sm font-semibold text-[#2D2A26] mb-4">Neueste Nutzer</h3>
           {stats.recentUsers.length === 0 ? (
             <p className="text-sm text-gray-600 text-center py-4">Keine Nutzer vorhanden</p>
           ) : (
             <div className="space-y-3">
               {stats.recentUsers.map((u: any) => (
                 <div key={u.id} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: "linear-gradient(135deg, #8B5CF6, #00B4D8)", color: "#fff" }}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: "linear-gradient(135deg, #8B5CF6, #C4956A)", color: "#fff" }}>
                     {(u.name || u.email || "?").charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white truncate">{u.name || u.email}</div>
+                    <div className="text-sm font-medium text-[#2D2A26] truncate">{u.name || u.email}</div>
                     <div className="text-[11px] text-gray-500">{u.rolle} - {new Date(u.created_at).toLocaleDateString("de")}</div>
                   </div>
                   <span className={"text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider " + (u.rolle === "admin" ? "bg-purple-500/15 text-purple-400" : u.rolle === "verwalter" ? "bg-emerald-500/15 text-emerald-400" : u.rolle === "handwerker" ? "bg-blue-500/15 text-blue-400" : "bg-amber-500/15 text-amber-400")}>{u.rolle}</span>
@@ -202,21 +202,21 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        <div className="bg-[#12121a] border border-white/[0.06] rounded-2xl p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">Neueste Tickets</h3>
+        <div className="bg-[#FFFFFF] border border-[#EDE8E1]/[0.06] rounded-2xl p-5">
+          <h3 className="text-sm font-semibold text-[#2D2A26] mb-4">Neueste Tickets</h3>
           {stats.recentTickets.length === 0 ? (
             <p className="text-sm text-gray-600 text-center py-4">Keine Tickets vorhanden</p>
           ) : (
             <div className="space-y-3">
               {stats.recentTickets.map((t: any) => (
                 <div key={t.id} className="flex items-center gap-3">
-                  <div className={"w-2.5 h-2.5 rounded-full flex-shrink-0 " + (t.status === "offen" ? "bg-[#FF6363]" : t.status === "auktion" ? "bg-[#00B4D8]" : t.status === "erledigt" ? "bg-[#00D4AA]" : "bg-[#F59E0B]")} />
+                  <div className={"w-2.5 h-2.5 rounded-full flex-shrink-0 " + (t.status === "offen" ? "bg-[#FF6363]" : t.status === "auktion" ? "bg-[#C4956A]" : t.status === "erledigt" ? "bg-[#3D8B7A]" : "bg-[#F59E0B]")} />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white truncate">{t.titel}</div>
+                    <div className="text-sm font-medium text-[#2D2A26] truncate">{t.titel}</div>
                     <div className="text-[11px] text-gray-500">{t.status} - {new Date(t.created_at).toLocaleDateString("de")}</div>
                   </div>
                   {t.angebote?.length > 0 && (
-                    <span className="text-xs font-semibold text-[#00D4AA]">{t.angebote.length} Angebote</span>
+                    <span className="text-xs font-semibold text-[#3D8B7A]">{t.angebote.length} Angebote</span>
                   )}
                 </div>
               ))}
