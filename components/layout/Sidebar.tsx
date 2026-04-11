@@ -9,29 +9,29 @@ import { useRouter } from "next/navigation"
 
 const menus: Record<Rolle, { href: string; label: string; icon: string }[]> = {
   verwalter: [
-    { href: "/dashboard-verwalter", label: "Dashboard", icon: "\u2B21" },
-    { href: "/dashboard-verwalter/tickets", label: "Tickets", icon: "\u25C9" },
-    { href: "/dashboard-verwalter/neues-ticket", label: "Neues Ticket", icon: "\uFF0B" },
-    { href: "/dashboard-verwalter/marktplatz", label: "Marktplatz", icon: "\u26A1" },
-    { href: "/dashboard-verwalter/handwerker", label: "Handwerker", icon: "\u26ED" },
-    { href: "/dashboard-verwalter/reporting", label: "Reporting", icon: "\u25C8" },
+    { href: "/dashboard-verwalter", label: "Dashboard", icon: "⬡" },
+    { href: "/dashboard-verwalter/tickets", label: "Tickets", icon: "◉" },
+    { href: "/dashboard-verwalter/neues-ticket", label: "Neues Ticket", icon: "＋" },
+    { href: "/dashboard-verwalter/marktplatz", label: "Marktplatz", icon: "⚡" },
+    { href: "/dashboard-verwalter/handwerker", label: "Handwerker", icon: "⛭" },
+    { href: "/dashboard-verwalter/reporting", label: "Reporting", icon: "◈" },
   ],
   handwerker: [
-    { href: "/dashboard-handwerker", label: "Dashboard", icon: "\u2B21" },
-    { href: "/dashboard-handwerker/einnahmen", label: "Einnahmen", icon: "\u20AC" },
-    { href: "/dashboard-handwerker/zeitslots", label: "Zeitslots", icon: "\u25A6" },
-    { href: "/dashboard-handwerker/auftraege", label: "Auftr\u00E4ge", icon: "\u25C9" },
-    { href: "/dashboard-handwerker/kalender", label: "Kalender", icon: "\u25A4" },
-    { href: "/dashboard-handwerker/profil", label: "Mein Profil", icon: "\u25CE" },
+    { href: "/dashboard-handwerker", label: "Dashboard", icon: "⬡" },
+    { href: "/dashboard-handwerker/einnahmen", label: "Einnahmen", icon: "€" },
+    { href: "/dashboard-handwerker/zeitslots", label: "Zeitslots", icon: "▦" },
+    { href: "/dashboard-handwerker/auftraege", label: "Aufträge", icon: "◉" },
+    { href: "/dashboard-handwerker/kalender", label: "Kalender", icon: "▤" },
+    { href: "/dashboard-handwerker/profil", label: "Mein Profil", icon: "◎" },
   ],
   mieter: [
-    { href: "/dashboard-mieter", label: "\u00DCbersicht", icon: "\u2B21" },
-    { href: "/dashboard-mieter/melden", label: "Schaden melden", icon: "\uFF0B" },
-    { href: "/dashboard-mieter/tickets", label: "Meine Tickets", icon: "\u25C9" },
+    { href: "/dashboard-mieter", label: "Übersicht", icon: "⬡" },
+    { href: "/dashboard-mieter/melden", label: "Schaden melden", icon: "＋" },
+    { href: "/dashboard-mieter/tickets", label: "Meine Tickets", icon: "◉" },
   ],
   admin: [
-    { href: "/dashboard-admin", label: "Dashboard", icon: "\u2B21" },
-    { href: "/dashboard-verwalter", label: "Verwaltung", icon: "\u25C8" },
+    { href: "/dashboard-admin", label: "Dashboard", icon: "⬡" },
+    { href: "/dashboard-verwalter", label: "Verwaltung", icon: "◈" },
   ],
 }
 
@@ -115,7 +115,7 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
           onClick={handleLogout}
           className="w-full text-left text-xs text-[#8C857B] hover:text-[#C4574B] py-2 px-3 rounded-lg hover:bg-[#C4574B]/5 transition-all font-medium"
         >
-          \u2190 Abmelden
+          ← Abmelden
         </button>
       </div>
     </>
@@ -130,7 +130,7 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
         aria-label="Menu"
       >
         {mobileOpen ? (
-          <span className="text-lg">\u2715</span>
+          <span className="text-lg">✕</span>
         ) : (
           <div className="flex flex-col gap-1">
             <div className="w-4 h-0.5 bg-[#2D2A26] rounded-full" />
