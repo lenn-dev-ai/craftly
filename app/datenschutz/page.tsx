@@ -24,6 +24,13 @@ export default function Datenschutz() {
       <main className="max-w-3xl mx-auto px-6 py-16">
         <h1 className="text-3xl font-bold mb-8">Datenschutzerklärung</h1>
 
+        {process.env.NEXT_PUBLIC_REPARO_LIVE_DATA !== "true" && (
+          <div className="mb-8 p-4 rounded-xl border-2 border-[#C4956A] bg-[#FAF1DE] text-[#854F0B] text-sm">
+            <strong className="block mb-1">⚠️ Platzhalter-Daten</strong>
+            Verantwortliche Stelle und Kontaktdaten sind noch Beispiele. Vor dem öffentlichen Launch müssen sie durch echte Angaben ersetzt werden (DSGVO Art. 13).
+          </div>
+        )}
+
         <div className="space-y-8 text-[#6B665E] leading-relaxed">
           <section>
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">1. Verantwortlicher</h2>

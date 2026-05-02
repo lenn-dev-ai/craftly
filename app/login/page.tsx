@@ -250,6 +250,15 @@ export default function LoginPage() {
               {loading ? "Anmeldung..." : "Anmelden"}
             </Button>
 
+            <div className="mt-4 text-center">
+              <Link
+                href="/passwort-vergessen"
+                className="text-sm text-[#6B665E] hover:text-[#3D8B7A] transition-colors"
+              >
+                Passwort vergessen?
+              </Link>
+            </div>
+
             <div className="mt-6 text-center">
               <p className="text-sm text-[#6B665E]">
                 Noch kein Konto?{" "}

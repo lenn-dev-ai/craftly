@@ -24,9 +24,16 @@ export default function Impressum() {
       <main className="max-w-3xl mx-auto px-6 py-16">
         <h1 className="text-3xl font-bold mb-8">Impressum</h1>
 
+        {process.env.NEXT_PUBLIC_REPARO_LIVE_DATA !== "true" && (
+          <div className="mb-8 p-4 rounded-xl border-2 border-[#C4956A] bg-[#FAF1DE] text-[#854F0B] text-sm">
+            <strong className="block mb-1">⚠️ Platzhalter-Daten</strong>
+            Diese Seite enthält noch Beispieldaten. Vor dem öffentlichen Launch müssen alle mit „Muster“ gekennzeichneten Angaben durch echte Firmendaten ersetzt werden (§ 5 TMG).
+          </div>
+        )}
+
         <div className="space-y-6 text-[#6B665E] leading-relaxed">
           <section>
-            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Angaben gemäß 5 TMG</h2>
+            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Angaben gemäß § 5 TMG</h2>
             <p>
               Reparo GmbH<br />
               Musterstraße 1<br />
