@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import AdminButton from '@/components/AdminButton'
+import CookieBanner from '@/components/CookieBanner'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -209,6 +210,7 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased bg-[#FAF8F5] text-[#2D2A26]`}>
         <AdminButton />
         {children}
+        <CookieBanner />
         <script
           dangerouslySetInnerHTML={{
             __html: `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}`,

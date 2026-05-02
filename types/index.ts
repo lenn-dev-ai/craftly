@@ -20,12 +20,15 @@ export interface UserProfile {
   id: string; email: string; name: string; rolle: Rolle
   telefon?: string; firma?: string; gewerk?: string; plz_bereich?: string
   basis_preis?: number; bewertung_avg?: number; auftraege_anzahl?: number
+  adresse?: string; lat?: number; lng?: number; radius_km?: number
   created_at: string
 }
 
 export interface Objekt {
   id: string; name: string; adresse: string; plz: string
-  verwalter_id: string; einheiten_anzahl?: number; created_at: string
+  verwalter_id: string; einheiten_anzahl?: number
+  lat?: number; lng?: number
+  created_at: string
 }
 
 export interface Ticket {
@@ -35,6 +38,7 @@ export interface Ticket {
   objekt_id?: string; wohnung?: string; raum?: string
   erstellt_von: string; zugewiesener_hw?: string
   auktion_ende?: string; kosten_final?: number; created_at: string
+  einsatzort_adresse?: string; einsatzort_lat?: number; einsatzort_lng?: number
   objekt?: Objekt; objekte?: Objekt; ersteller?: UserProfile
   handwerker?: UserProfile; angebote?: Angebot[]
   einladungen?: Einladung[]; nachrichten?: Nachricht[]
