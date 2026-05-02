@@ -102,6 +102,22 @@ export default function EinnahmenDashboard() {
         <p className="text-sm text-[#8C857B] mt-1">Yield Management — Deine Zeit, dein Preis</p>
       </div>
 
+      {/* 100%-Banner: Klarstellung über Provisions-Modell */}
+      <div className="mb-6 p-4 rounded-2xl bg-[#3D8B7A]/8 border border-[#3D8B7A]/25 flex items-center gap-3">
+        <div className="w-12 h-12 rounded-xl bg-[#3D8B7A] text-white flex items-center justify-center flex-shrink-0 font-bold text-sm">
+          100%
+        </div>
+        <div className="flex-1">
+          <div className="text-sm font-semibold text-[#2D2A26]">
+            Du bekommst den vollen Auftragswert
+          </div>
+          <div className="text-xs text-[#6B665E] mt-0.5">
+            Reparo finanziert sich über eine Provision der Verwalter — bei dir wird nichts abgezogen.
+            Wenn du 50 €/h bietest und der Auftrag 4 Std dauert, bekommst du 200 €.
+          </div>
+        </div>
+      </div>
+
       {/* HERO: Einnahmen-Übersicht */}
       <div className="bg-white rounded-2xl border border-[#EDE8E1] p-6 mb-6 shadow-sm">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">

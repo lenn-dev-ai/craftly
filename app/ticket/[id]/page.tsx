@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase"
 import { Ticket, Angebot, Nachricht, UserProfile, Einladung, Bewertung } from "@/types"
 import { Badge, PrioBadge, Avatar, Button, Card, Input, LoadingSpinner } from "@/components/ui"
 import { Timer } from "@/components/ui/Timer"
+import { berechneProvision, formatiereGeld } from "@/lib/provision"
 
 function berechneValueScore(angebot: Angebot, alleAngebote: Angebot[]): number {
   if (alleAngebote.length === 0) return 0
@@ -380,6 +381,17 @@ export default function TicketDetail() {
           </div>
         )}
 
+        {/* Provisions-Aufschlüsselung — sichtbar für Verwalter wenn kosten_final gesetzt */}
+        {isVerwalter
+          && ticket.kosten_final != null
+          && ticket.kosten_final > 0
+          && (ticket.status === "in_bearbeitung" || ticket.status === "erledigt") && (
+          <ProvisionBreakdown
+            kostenFinal={ticket.kosten_final}
+            verwalterCreatedAt={currentUser?.created_at}
+          />
+        )}
+
         {/* Bewertung-UI: nur Mieter, nur wenn erledigt + nicht schon bewertet */}
         {ticket.status === "erledigt"
           && currentUser?.id === ticket.erstellt_von
@@ -687,6 +699,60 @@ export default function TicketDetail() {
             <Button onClick={sendChat} disabled={sending}>{sending ? "..." : "Senden"}</Button>
           </div>
         </Card>
+      </div>
+    </div>
+  )
+}
+
+function ProvisionBreakdown({
+  kostenFinal,
+  verwalterCreatedAt,
+}: {
+  kostenFinal: number
+  verwalterCreatedAt: string | null | undefined
+}) {
+  const p = berechneProvision(kostenFinal, verwalterCreatedAt)
+  return (
+    <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-[#2D2A26] uppercase tracking-wide">Kosten-Aufschlüsselung</h3>
+        {p.earlyAdopter && (
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#854F0B] bg-[#FAF1DE] border border-[#C4956A]/30 px-2 py-0.5 rounded">
+            Early Adopter
+          </span>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-sm">
+          <div>
+            <div className="text-[#2D2A26]">Auftragswert</div>
+            <div className="text-[10px] text-[#8C857B]">Geht 1:1 an den Handwerker</div>
+          </div>
+          <div className="text-[#2D2A26] tabular-nums">{formatiereGeld(kostenFinal)}</div>
+        </div>
+
+        <div className="flex items-center justify-between text-sm">
+          <div>
+            <div className="text-[#2D2A26]">
+              Plattform-Provision
+              <span className="text-[#8C857B] font-normal ml-1">({p.prozent} %)</span>
+            </div>
+            <div className="text-[10px] text-[#8C857B]">
+              {p.earlyAdopter
+                ? `Noch ${p.earlyAdopterTageVerbleibend} Tage Bonus — danach ${5} %`
+                : "Davon trägt Repara Server, Support, Plattform"}
+            </div>
+          </div>
+          <div className={`tabular-nums ${p.earlyAdopter ? "text-[#3D8B7A] font-semibold" : "text-[#2D2A26]"}`}>
+            {formatiereGeld(p.betrag)}
+          </div>
+        </div>
+
+        <div className="border-t border-[#EDE8E1] pt-2 mt-2 flex items-center justify-between">
+          <div className="text-sm font-semibold text-[#2D2A26]">Du zahlst gesamt</div>
+          <div className="text-lg font-bold text-[#3D8B7A] tabular-nums">{formatiereGeld(p.netto)}</div>
+        </div>
       </div>
     </div>
   )
