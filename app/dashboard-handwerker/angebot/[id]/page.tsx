@@ -93,6 +93,10 @@ export default function AngebotAbgeben() {
       return
     }
 
+    // Einladung auf "angebot" setzen damit Verwalter sieht wer reagiert hat
+    await supabase.from("einladungen").update({ status: "angebot" })
+      .eq("ticket_id", id).eq("handwerker_id", user.id)
+
     setSuccess(true)
     setSubmitting(false)
     setTimeout(() => router.push("/dashboard-handwerker"), 2000)

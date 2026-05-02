@@ -185,6 +185,9 @@ export default function TicketDetail() {
       geschaetzte_dauer: angebotForm.dauer || null, nachricht: angebotForm.nachricht || null,
       status: "eingereicht",
     })
+    // Einladung auf "angebot" setzen damit Verwalter sieht wer reagiert hat
+    await supabase.from("einladungen").update({ status: "angebot" })
+      .eq("ticket_id", id).eq("handwerker_id", currentUser.id)
     setAngebotForm({ preis: "", termin: "", dauer: "", nachricht: "" })
     await load()
     setSubmittingBid(false)
@@ -260,6 +263,8 @@ export default function TicketDetail() {
   async function bewertenSpeichern(sterne: number, kommentar: string) {
     if (!ticket?.zugewiesener_hw || !currentUser) return
     const supabase = createClient()
+    // Profil-Aggregat (bewertung_avg, auftraege_anzahl) wird per
+    // SECURITY-DEFINER-Trigger im Postgres automatisch aktualisiert.
     const { error: insertErr } = await supabase.from("bewertungen").insert({
       ticket_id: id,
       handwerker_id: ticket.zugewiesener_hw,
@@ -270,18 +275,6 @@ export default function TicketDetail() {
     if (insertErr) {
       alert("Bewertung konnte nicht gespeichert werden: " + insertErr.message)
       return
-    }
-    // Aggregate auf Profil aktualisieren
-    const { data: alle } = await supabase
-      .from("bewertungen")
-      .select("sterne")
-      .eq("handwerker_id", ticket.zugewiesener_hw)
-    if (alle && alle.length > 0) {
-      const avg = alle.reduce((s, b) => s + (b.sterne || 0), 0) / alle.length
-      await supabase.from("profiles").update({
-        bewertung_avg: Math.round(avg * 10) / 10,
-        auftraege_anzahl: alle.length,
-      }).eq("id", ticket.zugewiesener_hw)
     }
     await load()
   }

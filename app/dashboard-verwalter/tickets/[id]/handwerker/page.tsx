@@ -204,7 +204,18 @@ export default function HandwerkerAuswahlPage() {
     }))
     const { error } = await supabase.from("einladungen").upsert(einladungen, { onConflict: "ticket_id,handwerker_id" })
     if (error) { showToast("Fehler beim Senden: " + error.message); setSending(false); return }
-    await supabase.from("tickets").update({ status: "auktion" }).eq("id", ticketId)
+
+    // Auktions-Laufzeit nach Dringlichkeit: dringend 4h, hoch 24h, sonst 72h
+    const laufzeitStunden = ticket?.prioritaet === "dringend" ? 4
+      : ticket?.prioritaet === "hoch" ? 24
+      : 72
+    const auktionEnde = new Date(Date.now() + laufzeitStunden * 60 * 60 * 1000).toISOString()
+
+    await supabase.from("tickets").update({
+      status: "auktion",
+      auktion_ende: auktionEnde,
+    }).eq("id", ticketId)
+
     showToast(selected.length + " Einladung(en) gesendet!")
     setTimeout(() => router.push("/ticket/" + ticketId), 1500)
   }
