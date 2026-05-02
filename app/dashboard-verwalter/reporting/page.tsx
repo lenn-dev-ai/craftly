@@ -4,12 +4,27 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket, UserProfile } from "@/types"
 import { Card, LoadingSpinner } from "@/components/ui"
-import { berechneProvision, summiereProvision, formatiereGeld } from "@/lib/provision"
+import {
+  calculateCommission,
+  isEarlyAdopter,
+  formatEUR,
+} from "@/lib/pricing/commission"
+
+type ProvisionRow = {
+  ticket_id: string
+  auftragswert: number
+  provision_rate: number
+  provision_betrag: number
+  gesamt: number
+  is_early_adopter: boolean
+  created_at: string
+}
 
 export default function ReportingPage() {
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [tickets, setTickets] = useState<Ticket[]>([])
+  const [provisionen, setProvisionen] = useState<ProvisionRow[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -17,12 +32,14 @@ export default function ReportingPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push("/login"); return }
-      const [{ data: prof }, { data: ts }] = await Promise.all([
+      const [{ data: prof }, { data: ts }, { data: provs }] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).single(),
         supabase.from("tickets").select("*, angebote(*)").eq("erstellt_von", user.id),
+        supabase.from("provisionen").select("*").eq("verwalter_id", user.id),
       ])
       setProfile(prof)
       setTickets(ts || [])
+      setProvisionen(provs || [])
       setLoading(false)
     }
     load()
@@ -32,14 +49,16 @@ export default function ReportingPage() {
 
   const erledigt = tickets.filter(t => t.status === "erledigt")
 
-  // Provisions-Aggregat insgesamt
-  const provGesamt = summiereProvision(tickets, profile?.created_at)
+  // Aggregat aus DB-Snapshots — autoritative Quelle
+  const provisionGesamt = provisionen.reduce((s, p) => s + Number(p.provision_betrag || 0), 0)
+  const auftragswertGesamt = provisionen.reduce((s, p) => s + Number(p.auftragswert || 0), 0)
 
   // Diesen Monat
   const heute = new Date()
   const monatsstart = new Date(heute.getFullYear(), heute.getMonth(), 1)
-  const dieserMonat = erledigt.filter(t => new Date(t.created_at) >= monatsstart)
-  const provMonat = summiereProvision(dieserMonat, profile?.created_at)
+  const provisionMonat = provisionen
+    .filter(p => new Date(p.created_at) >= monatsstart)
+    .reduce((s, p) => s + Number(p.provision_betrag || 0), 0)
 
   // Ersparnis durch Auktion (vs. teuerstes Angebot)
   const mitAngeboten = tickets.filter(t => t.angebote && t.angebote.length > 1)
@@ -48,9 +67,10 @@ export default function ReportingPage() {
     return s + (Math.max(...preise) - Math.min(...preise))
   }, 0)
 
-  const earlyAdopterInfo = profile ? berechneProvision(0, profile.created_at) : null
-  const istEarlyAdopter = earlyAdopterInfo?.earlyAdopter ?? false
-  const tageVerbleibend = earlyAdopterInfo?.earlyAdopterTageVerbleibend ?? 0
+  const istEarlyAdopter = isEarlyAdopter(profile)
+  const tageVerbleibend = profile?.early_adopter_bis
+    ? Math.max(0, Math.ceil((new Date(profile.early_adopter_bis).getTime() - Date.now()) / 86_400_000))
+    : 0
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto pt-16 md:pt-8">
@@ -85,12 +105,12 @@ export default function ReportingPage() {
         <Kpi label="Erledigt" value={erledigt.length.toString()} />
         <Kpi
           label="Auftragswerte"
-          value={formatiereGeld(provGesamt.auftragswertGesamt)}
+          value={formatEUR(auftragswertGesamt)}
           sub="kumuliert"
         />
         <Kpi
           label="Provision diesen Monat"
-          value={formatiereGeld(provMonat.provisionGesamt)}
+          value={formatEUR(provisionMonat)}
           sub={istEarlyAdopter ? "0 % aktiv" : "5 % vom Auftragswert"}
           accent={istEarlyAdopter ? "warm" : "primary"}
         />
@@ -100,7 +120,7 @@ export default function ReportingPage() {
       {ersparnis > 0 && (
         <div className="mb-6 p-4 rounded-2xl bg-[#3D8B7A]/5 border border-[#3D8B7A]/20">
           <div className="text-xs text-[#8C857B] uppercase tracking-wide font-medium mb-1">Auktions-Ersparnis</div>
-          <div className="text-2xl font-bold text-[#3D8B7A] tabular-nums">{formatiereGeld(ersparnis)}</div>
+          <div className="text-2xl font-bold text-[#3D8B7A] tabular-nums">{formatEUR(ersparnis)}</div>
           <div className="text-xs text-[#6B665E] mt-1">
             Differenz zwischen höchstem und gewähltem Angebot über alle Auktionen
           </div>
@@ -142,7 +162,9 @@ export default function ReportingPage() {
           </div>
           <div className="flex flex-col gap-2">
             {erledigt.slice(0, 20).map(t => {
-              if (!t.kosten_final) {
+              // Bevorzugt DB-Snapshot, sonst on-the-fly
+              const snap = provisionen.find(p => p.ticket_id === t.id)
+              if (!t.kosten_final && !snap) {
                 return (
                   <div key={t.id} className="flex items-center justify-between text-sm py-2 border-b border-[#EDE8E1] last:border-0">
                     <div>
@@ -153,7 +175,9 @@ export default function ReportingPage() {
                   </div>
                 )
               }
-              const p = berechneProvision(t.kosten_final, profile?.created_at)
+              const auftragswert = snap?.auftragswert ?? t.kosten_final ?? 0
+              const rate = snap?.provision_rate ?? (istEarlyAdopter ? 0 : 0.05)
+              const calc = calculateCommission(auftragswert, rate)
               return (
                 <div key={t.id} className="text-sm py-2 border-b border-[#EDE8E1] last:border-0">
                   <div className="flex items-start justify-between gap-3">
@@ -163,10 +187,10 @@ export default function ReportingPage() {
                     </div>
                     <div className="text-right tabular-nums flex-shrink-0">
                       <div className="text-xs text-[#8C857B]">
-                        {formatiereGeld(t.kosten_final)} + {formatiereGeld(p.betrag)}
+                        {formatEUR(auftragswert)} + {formatEUR(calc.provisionBetrag)}
                       </div>
                       <div className="text-sm font-semibold text-[#3D8B7A]">
-                        = {formatiereGeld(p.netto)}
+                        = {formatEUR(calc.gesamt)}
                       </div>
                     </div>
                   </div>

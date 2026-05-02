@@ -24,6 +24,8 @@ export interface UserProfile {
   // Route-Optimierung
   basis_stundensatz?: number; mindest_stundensatz?: number; fahrtkosten_pro_km?: number
   startort_adresse?: string; startort_lat?: number; startort_lng?: number
+  // Provisions-Modell
+  early_adopter_bis?: string | null
   created_at: string
 }
 
