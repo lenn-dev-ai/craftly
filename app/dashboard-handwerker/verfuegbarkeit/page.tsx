@@ -122,7 +122,7 @@ export default function VerfuegbarkeitPage() {
                 key={s.wochentag}
                 className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium ${
                   s.aktiv
-                    ? "bg-[#1D9E75] text-white"
+                    ? "bg-[#3D8B7A] text-white"
                     : "bg-gray-100 text-gray-400"
                 }`}
               >
@@ -142,7 +142,7 @@ export default function VerfuegbarkeitPage() {
               <button
                 onClick={() => updateSlot(slot.wochentag!, "aktiv", !slot.aktiv)}
                 className={`w-10 h-6 rounded-full relative transition-colors ${
-                  slot.aktiv ? "bg-[#1D9E75]" : "bg-gray-200"
+                  slot.aktiv ? "bg-[#3D8B7A]" : "bg-gray-200"
                 }`}
               >
                 <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${

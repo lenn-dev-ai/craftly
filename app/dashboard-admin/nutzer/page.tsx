@@ -72,7 +72,7 @@ export default function NutzerPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+    <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-[#8B5CF6]/20 border-t-[#8B5CF6] rounded-full animate-spin" />
     </div>
   )
@@ -83,16 +83,16 @@ export default function NutzerPage() {
     <div className="p-8 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">Nutzer-Verwaltung</h1>
+          <h1 className="text-2xl font-extrabold text-[#2D2A26] tracking-tight">Nutzer-Verwaltung</h1>
           <p className="text-sm text-gray-500 mt-1">{users.length} registrierte Accounts</p>
         </div>
         <div className="flex gap-2">
           {[
-            { label: "Verwalter", count: users.filter(u => u.rolle === "verwalter").length, color: "#00D4AA" },
+            { label: "Verwalter", count: users.filter(u => u.rolle === "verwalter").length, color: "#3D8B7A" },
             { label: "Handwerker", count: users.filter(u => u.rolle === "handwerker").length, color: "#00B4D8" },
             { label: "Mieter", count: users.filter(u => u.rolle === "mieter").length, color: "#F59E0B" },
           ].map((r, i) => (
-            <div key={i} className="px-3 py-1.5 bg-[#12121a] border border-white/[0.06] rounded-xl flex items-center gap-2">
+            <div key={i} className="px-3 py-1.5 bg-white border border-white/[0.06] rounded-xl flex items-center gap-2">
               <div className="w-2 h-2 rounded-full" style={{ background: r.color }} />
               <span className="text-[11px] text-gray-400">{r.count}</span>
             </div>
@@ -115,19 +115,19 @@ export default function NutzerPage() {
 
       <div className="flex gap-3 mb-6 flex-wrap items-center">
         <input type="text" placeholder="Suche nach Name, E-Mail, Firma..." value={search} onChange={e => setSearch(e.target.value)}
-          className="px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#8B5CF6]/40 w-72" />
+          className="px-4 py-2.5 bg-[#FAF8F5] border border-white/[0.08] rounded-xl text-sm text-[#2D2A26] placeholder:text-gray-600 focus:outline-none focus:border-[#8B5CF6]/40 w-72" />
         {["alle", "verwalter", "handwerker", "mieter", "admin"].map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className={"px-3 py-1.5 rounded-full text-xs font-medium border transition-all " + (filter === f
-              ? "bg-[#8B5CF6] text-white border-[#8B5CF6]"
-              : "bg-white/[0.04] text-gray-400 border-white/[0.08] hover:border-white/[0.15]")}>
+              ? "bg-[#8B5CF6] text-[#2D2A26] border-[#8B5CF6]"
+              : "bg-[#FAF8F5] text-gray-400 border-white/[0.08] hover:border-white/[0.15]")}>
             {f.charAt(0).toUpperCase() + f.slice(1)}
             <span className="ml-1 opacity-70">{f === "alle" ? users.length : users.filter(u => u.rolle === f).length}</span>
           </button>
         ))}
       </div>
 
-      <div className="bg-[#12121a] border border-white/[0.06] rounded-2xl overflow-hidden">
+      <div className="bg-white border border-white/[0.06] rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -144,7 +144,7 @@ export default function NutzerPage() {
               {filtered.map(u => {
                 const score = kiAktivitaetsScore(u, tickets, angebote)
                 return (
-                  <tr key={u.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                  <tr key={u.id} className="border-b border-white/[0.04] hover:bg-[#FAF8F5] transition-colors">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -152,7 +152,7 @@ export default function NutzerPage() {
                           {(u.name || u.email || "?").charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-white">{u.name || "---"}</div>
+                          <div className="text-sm font-medium text-[#2D2A26]">{u.name || "---"}</div>
                           <div className="text-[11px] text-gray-500">{u.email}</div>
                         </div>
                       </div>
@@ -162,25 +162,25 @@ export default function NutzerPage() {
                         u.rolle === "admin" ? "bg-purple-500/15 text-purple-400"
                         : u.rolle === "verwalter" ? "bg-emerald-500/15 text-emerald-400"
                         : u.rolle === "handwerker" ? "bg-blue-500/15 text-blue-400"
-                        : "bg-amber-500/15 text-amber-400"
+                        : "bg-[#C4956A]/15 text-[#C4956A]"
                       )}>{u.rolle}</span>
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
-                        <div className="w-12 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
-                          <div className="h-full rounded-full" style={{ width: score + "%", background: score >= 60 ? "#00D4AA" : score >= 30 ? "#F59E0B" : "#FF6363" }} />
+                        <div className="w-12 h-1.5 bg-[#FAF8F5] rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: score + "%", background: score >= 60 ? "#3D8B7A" : score >= 30 ? "#F59E0B" : "#FF6363" }} />
                         </div>
-                        <span className={"text-[10px] font-bold " + (score >= 60 ? "text-[#00D4AA]" : score >= 30 ? "text-[#F59E0B]" : "text-[#FF6363]")}>{score}</span>
+                        <span className={"text-[10px] font-bold " + (score >= 60 ? "text-[#3D8B7A]" : score >= 30 ? "text-[#C4956A]" : "text-[#FF6363]")}>{score}</span>
                       </div>
                     </td>
                     <td className="px-5 py-3.5 text-sm text-gray-400">{new Date(u.created_at).toLocaleDateString("de")}</td>
                     <td className="px-5 py-3.5 text-sm text-gray-500">
                       {u.firma && <span className="text-gray-400">{u.firma}</span>}
-                      {u.gewerk && <span className="ml-2 text-[11px] bg-white/[0.06] px-2 py-0.5 rounded">{u.gewerk}</span>}
+                      {u.gewerk && <span className="ml-2 text-[11px] bg-[#FAF8F5] px-2 py-0.5 rounded">{u.gewerk}</span>}
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <select value={u.rolle} onChange={e => changeRolle(u.id, e.target.value)}
-                        className="text-xs bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1 text-gray-300 cursor-pointer focus:outline-none">
+                        className="text-xs bg-[#FAF8F5] border border-white/[0.08] rounded-lg px-2 py-1 text-gray-300 cursor-pointer focus:outline-none">
                         <option value="verwalter">Verwalter</option>
                         <option value="handwerker">Handwerker</option>
                         <option value="mieter">Mieter</option>

@@ -7,35 +7,27 @@ import { Ticket } from "@/types"
 import { Badge, Button, Card, LoadingSpinner } from "@/components/ui"
 
 const PIPELINE_STEPS = [
-  { key: "offen", label: "Gemeldet", icon: "1" },
-  { key: "vergeben", label: "Vergeben", icon: "2" },
-  { key: "in_bearbeitung", label: "Reparatur", icon: "3" },
-  { key: "erledigt", label: "Fertig", icon: "4" },
+  { label: "Gemeldet" },
+  { label: "Auktion" },
+  { label: "Reparatur" },
+  { label: "Fertig" },
 ]
 
+// Status-Übergang: offen → auktion → in_bearbeitung/in_arbeit/vergeben → erledigt
 function getStepIndex(status: string): number {
   if (status === "offen") return 0
-  if (status === "vergeben") return 1
-  if (status === "in_bearbeitung") return 2
+  if (status === "auktion" || status === "marktplatz") return 1
+  if (status === "in_bearbeitung" || status === "in_arbeit" || status === "vergeben") return 2
   if (status === "erledigt") return 3
   return 0
-}
-
-function getKiInsight(ticket: Ticket): string {
-  const s = ticket.status
-  const p = ticket.prioritaet
-  if (s === "in_bearbeitung") return p === "dringend" ? "Heute erwartet - 4 Stunden" : "1-3 Tage"
-  if (s === "vergeben") return p === "dringend" ? "Circa 4 Stunden" : "1-3 Tage"
-  if (s === "offen") return p === "dringend" ? "Circa 1 Tag" : "3-5 Tage"
-  return ""
 }
 
 function getEstimate(ticket: Ticket): string {
   const s = ticket.status
   const p = ticket.prioritaet
-  if (s === "in_bearbeitung") return p === "dringend" ? "Heute" : "1-3 Tage"
-  if (s === "vergeben") return p === "dringend" ? "Circa 4 Stunden" : "1-3 Tage"
-  if (s === "offen") return p === "dringend" ? "Circa 1 Tag" : "3-5 Tage"
+  if (s === "in_bearbeitung" || s === "in_arbeit" || s === "vergeben") return p === "dringend" ? "Heute" : "1–3 Tage"
+  if (s === "auktion" || s === "marktplatz") return p === "dringend" ? "Wenige Stunden" : "1–2 Tage bis Vergabe"
+  if (s === "offen") return p === "dringend" ? "Innerhalb 24 Std" : "2–5 Tage"
   return ""
 }
 
@@ -70,7 +62,6 @@ export default function MieterDashboard() {
 
   const aktiv = tickets.filter(t => t.status !== "erledigt")
   const erledigt = tickets.filter(t => t.status === "erledigt")
-  const insight = aktiv.length > 0 ? getKiInsight(aktiv[0]) : null
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -149,14 +140,14 @@ export default function MieterDashboard() {
                     {/* Mini Pipeline */}
                     <div className="flex items-center gap-1 mb-3">
                       {PIPELINE_STEPS.map((ps, i) => (
-                        <div key={ps.key} className="flex items-center flex-1">
+                        <div key={ps.label} className="flex items-center flex-1">
                           <div className={"h-1.5 flex-1 rounded-full " + (i <= stepIdx ? "bg-[#3D8B7A]" : "bg-[#EDE8E1]")} />
                         </div>
                       ))}
                     </div>
                     <div className="flex justify-between text-[9px] text-[#B5AEA4] mb-3">
                       {PIPELINE_STEPS.map((ps, i) => (
-                        <span key={ps.key} className={i <= stepIdx ? "text-[#3D8B7A]" : ""}>{ps.label}</span>
+                        <span key={ps.label} className={i <= stepIdx ? "text-[#3D8B7A]" : ""}>{ps.label}</span>
                       ))}
                     </div>
 
@@ -177,21 +168,6 @@ export default function MieterDashboard() {
                 </Card>
               )
             })}
-          </div>
-        </div>
-      )}
-
-      {/* KI Insight */}
-      {insight && (
-        <div className="mt-4 flex items-start gap-2 bg-[#F5F3F0] rounded-lg px-3 py-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3D8B7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="16" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
-          <div>
-            <span className="text-[10px] text-[#3D8B7A] font-semibold">KI-Einschätzung</span>
-            <p className="text-xs text-[#8C857B]">{insight}</p>
           </div>
         </div>
       )}

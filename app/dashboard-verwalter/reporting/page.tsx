@@ -52,7 +52,7 @@ export default function ReportingPage() {
           { label: "Offen", count: tickets.filter(t => t.status === "offen").length, color: "#E24B4A" },
           { label: "Auktion", count: tickets.filter(t => t.status === "auktion").length, color: "#378ADD" },
           { label: "In Bearbeitung", count: tickets.filter(t => t.status === "in_bearbeitung").length, color: "#EF9F27" },
-          { label: "Erledigt", count: erledigt.length, color: "#1D9E75" },
+          { label: "Erledigt", count: erledigt.length, color: "#3D8B7A" },
         ].map(({ label, count, color }) => (
           <div key={label} className="mb-3">
             <div className="flex justify-between text-xs mb-1.5">
@@ -80,7 +80,7 @@ export default function ReportingPage() {
                   <div className="text-xs text-gray-400">{new Date(t.created_at).toLocaleDateString("de")}</div>
                 </div>
                 {t.kosten_final ? (
-                  <span className="text-[#1D9E75] font-medium">€ {t.kosten_final.toLocaleString("de")}</span>
+                  <span className="text-[#3D8B7A] font-medium">€ {t.kosten_final.toLocaleString("de")}</span>
                 ) : <span className="text-gray-400 text-xs">Kosten nicht erfasst</span>}
               </div>
             ))}
