@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 
 const NAV_ITEMS = [
@@ -13,8 +13,8 @@ const NAV_ITEMS = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [authorized, setAuthorized] = useState(false)
-  const [currentPath, setCurrentPath] = useState("")
 
   useEffect(() => {
     async function check() {
@@ -24,7 +24,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const { data: profile } = await supabase.from("profiles").select("rolle").eq("id", user.id).single()
       if (profile?.rolle !== "admin") { router.push("/login"); return }
       setAuthorized(true)
-      setCurrentPath(window.location.pathname)
     }
     check()
   }, [router])
@@ -46,9 +45,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {NAV_ITEMS.map(item => (
             <button
               key={item.href}
-              onClick={() => { router.push(item.href); setCurrentPath(item.href) }}
+              onClick={() => router.push(item.href)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                currentPath === item.href
+                pathname === item.href
                   ? "bg-[#3D8B7A]/10 text-[#3D8B7A] border border-[#3D8B7A]/20"
                   : "text-[#6B665E] hover:text-[#2D2A26] hover:bg-[#F5F0EB]"
               }`}>

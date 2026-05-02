@@ -90,18 +90,20 @@ export default function RegistrierungPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4 relative overflow-y-auto">
-      {/* Background gradient orbs */}
-      <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-[#00D4AA]/[0.07] rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-[#00B4D8]/[0.05] rounded-full blur-[120px] pointer-events-none" />
-
-      <div className="w-full max-w-md relative z-10">
+    <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center p-4 overflow-y-auto">
+      <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="logo text-3xl mb-2">
-            <span className="text-white">Repa</span>
-            <span className="gradient-text">ro</span>
-          </div>
-          <p className="text-sm text-gray-500">Konto erstellen</p>
+          <Link href="/" className="inline-flex items-center gap-2.5 mb-3">
+            <div className="w-9 h-9 rounded-lg bg-[#3D8B7A] flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+            </div>
+            <span className="text-xl font-bold text-[#2D2A26]">Reparo</span>
+          </Link>
+          <h1 className="text-2xl font-bold text-[#2D2A26]">Kostenlos registrieren</h1>
+          <p className="text-sm text-[#6B665E] mt-1">In 2 Minuten startklar</p>
         </div>
 
         <Card>
@@ -138,7 +140,7 @@ export default function RegistrierungPage() {
             />
 
             {/* Password Requirements */}
-            <div className="text-xs text-gray-500 -mt-2 space-y-0.5">
+            <div className="text-xs text-[#8C857B] -mt-2 space-y-0.5">
               <p className={form.password.length >= 8 ? "text-[#3D8B7A]" : ""}>
                 {form.password.length >= 8 ? "✓" : "○"} Mindestens 8 Zeichen
               </p>
@@ -152,7 +154,7 @@ export default function RegistrierungPage() {
             {/* Password Show/Hide Toggle */}
             <button
               type="button"
-              className="text-xs text-[#00D4AA] hover:text-[#00D4AA]/80 mt-1"
+              className="text-xs text-[#3D8B7A] hover:text-[#2D6B5A] mt-1 self-start"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? "Verbergen" : "Anzeigen"}
@@ -167,15 +169,15 @@ export default function RegistrierungPage() {
                       key={i}
                       className={`h-1 flex-1 rounded ${
                         form.password.length < 8
-                          ? i <= 1 ? "bg-[#C4574B]" : "bg-gray-700"
+                          ? i <= 1 ? "bg-[#C4574B]" : "bg-[#EDE8E1]"
                           : form.password.length < 12
-                          ? i <= 2 ? "bg-[#C4956A]" : "bg-gray-700"
-                          : i <= 4 ? "bg-[#3D8B7A]" : "bg-gray-700"
+                          ? i <= 2 ? "bg-[#C4956A]" : "bg-[#EDE8E1]"
+                          : i <= 4 ? "bg-[#3D8B7A]" : "bg-[#EDE8E1]"
                       }`}
                     />
                   ))}
                 </div>
-                <p className="text-xs mt-1 text-gray-500">
+                <p className="text-xs mt-1 text-[#8C857B]">
                   {form.password.length < 8
                     ? "Mindestens 8 Zeichen"
                     : form.password.length < 12
@@ -234,7 +236,7 @@ export default function RegistrierungPage() {
             </Button>
 
             {/* Trust Signals */}
-            <div className="flex items-center justify-center gap-4 mt-2 text-xs text-gray-500">
+            <div className="flex items-center justify-center gap-4 mt-2 text-xs text-[#8C857B]">
               <div className="flex items-center gap-1">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" strokeWidth="2" />
@@ -250,25 +252,30 @@ export default function RegistrierungPage() {
               </div>
             </div>
 
-            <p className="text-xs text-center text-gray-500 mt-2">
+            <p className="text-xs text-center text-[#8C857B] mt-2">
               Mit der Registrierung akzeptieren Sie unsere{" "}
-              <Link href="/datenschutz" className="text-[#00D4AA] hover:underline">
+              <Link href="/datenschutz" className="text-[#3D8B7A] hover:underline">
                 Datenschutzbestimmungen
               </Link>
               .
             </p>
 
-            <p className="text-center text-xs text-gray-600">
+            <p className="text-center text-xs text-[#6B665E]">
               Bereits registriert?{" "}
               <Link
                 href="/login"
-                className="text-[#00D4AA] hover:text-[#00B4D8] font-medium transition-colors"
+                className="text-[#3D8B7A] hover:text-[#2D6B5A] font-medium transition-colors"
               >
                 Einloggen
               </Link>
             </p>
           </div>
         </Card>
+
+        <div className="mt-6 flex justify-center gap-4 text-xs text-[#8C857B]">
+          <Link href="/impressum" className="hover:text-[#2D2A26] transition-colors py-2 px-3">Impressum</Link>
+          <Link href="/datenschutz" className="hover:text-[#2D2A26] transition-colors py-2 px-3">Datenschutz</Link>
+        </div>
       </div>
     </div>
   )

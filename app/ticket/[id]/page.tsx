@@ -437,7 +437,7 @@ export default function TicketDetail() {
                       {/* Message */}
                       {a.nachricht && (
                         <div className="bg-white/[0.02] rounded-lg p-3 mb-4 border-l-2 border-[#00B4D8]/30">
-                          <div className="text-xs text-white/50 italic">"{a.nachricht}"</div>
+                          <div className="text-xs text-white/50 italic">„{a.nachricht}“</div>
                         </div>
                       )}
 

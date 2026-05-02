@@ -198,7 +198,7 @@ export default function HandwerkerAuswahlPage() {
             </div>
             <div className="text-white/60 text-sm font-medium mb-1">Keine Handwerker fuer dieses Gewerk gefunden</div>
             <div className="text-white/30 text-xs mb-4">
-              Fuer "{GEWERK_LABELS[ticket.gewerk || "allgemein"] || ticket.gewerk}" sind aktuell keine Handwerker registriert.
+              Fuer „{GEWERK_LABELS[ticket.gewerk || "allgemein"] || ticket.gewerk}“ sind aktuell keine Handwerker registriert.
             </div>
             <button onClick={loadOhneFilter}
               className="text-xs text-[#00D4AA] border border-[#00D4AA]/20 px-4 py-2 rounded-lg hover:bg-[#00D4AA]/10 transition-colors">
