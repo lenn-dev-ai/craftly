@@ -118,6 +118,22 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
         >
           ← Abmelden
         </button>
+        <div className="mt-3 flex gap-3 px-3 text-[11px] text-[#A8A29A]">
+          <Link
+            href="/impressum"
+            onClick={() => setMobileOpen(false)}
+            className="hover:text-[#2D2A26] transition-colors"
+          >
+            Impressum
+          </Link>
+          <Link
+            href="/datenschutz"
+            onClick={() => setMobileOpen(false)}
+            className="hover:text-[#2D2A26] transition-colors"
+          >
+            Datenschutz
+          </Link>
+        </div>
       </div>
     </>
   )

@@ -4,6 +4,13 @@ export const metadata = {
   title: "Impressum - Reparo",
 }
 
+const BETREIBER_NAME = process.env.NEXT_PUBLIC_REPARO_BETREIBER_NAME || "Lennart [DEIN-NACHNAME]"
+const BETREIBER_STRASSE = process.env.NEXT_PUBLIC_REPARO_BETREIBER_STRASSE || "[DEINE-STRASSE-UND-NR]"
+const BETREIBER_PLZORT = process.env.NEXT_PUBLIC_REPARO_BETREIBER_PLZORT || "[DEINE-PLZ] [DEINE-STADT]"
+const KONTAKT_EMAIL = process.env.NEXT_PUBLIC_REPARO_KONTAKT_EMAIL || "[DEINE-EMAIL]"
+const KONTAKT_TELEFON = process.env.NEXT_PUBLIC_REPARO_KONTAKT_TELEFON || ""
+const LIVE = process.env.NEXT_PUBLIC_REPARO_LIVE_DATA === "true"
+
 export default function Impressum() {
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-[#2D2A26]">
@@ -24,10 +31,10 @@ export default function Impressum() {
       <main className="max-w-3xl mx-auto px-6 py-16">
         <h1 className="text-3xl font-bold mb-8">Impressum</h1>
 
-        {process.env.NEXT_PUBLIC_REPARO_LIVE_DATA !== "true" && (
+        {!LIVE && (
           <div className="mb-8 p-4 rounded-xl border-2 border-[#C4956A] bg-[#FAF1DE] text-[#854F0B] text-sm">
-            <strong className="block mb-1">⚠️ Platzhalter-Daten</strong>
-            Diese Seite enthält noch Beispieldaten. Vor dem öffentlichen Launch müssen alle mit „Muster“ gekennzeichneten Angaben durch echte Firmendaten ersetzt werden (§ 5 TMG).
+            <strong className="block mb-1">Platzhalter-Daten</strong>
+            Diese Seite zeigt noch eckige Klammer-Platzhalter. Vor dem öffentlichen Launch müssen Name, Anschrift und E-Mail über die Umgebungsvariablen <code>NEXT_PUBLIC_REPARO_BETREIBER_NAME</code>, <code>_STRASSE</code>, <code>_PLZORT</code> und <code>NEXT_PUBLIC_REPARO_KONTAKT_EMAIL</code> mit den echten Daten gefüllt werden (§ 5 TMG). Anschließend <code>NEXT_PUBLIC_REPARO_LIVE_DATA=true</code> setzen, um diesen Hinweis auszublenden.
           </div>
         )}
 
@@ -35,54 +42,56 @@ export default function Impressum() {
           <section>
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Angaben gemäß § 5 TMG</h2>
             <p>
-              Reparo GmbH<br />
-              Musterstraße 1<br />
-              10115 Berlin
+              {BETREIBER_NAME}<br />
+              {BETREIBER_STRASSE}<br />
+              {BETREIBER_PLZORT}<br />
+              Deutschland
+            </p>
+            <p className="mt-3 text-sm text-[#8C857B]">
+              Reparo wird derzeit als Einzelperson betrieben (kein eingetragenes Unternehmen). Daher entfallen Angaben zu Handelsregister, Umsatzsteuer-Identifikationsnummer und Vertretungsberechtigten.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Kontakt</h2>
             <p>
-              E-Mail: info@reparo-app.de<br />
-              Telefon: +49 (0) 30 123456789
+              E-Mail: <a href={`mailto:${KONTAKT_EMAIL}`} className="text-[#3D8B7A] hover:underline">{KONTAKT_EMAIL}</a>
+              {KONTAKT_TELEFON && (
+                <>
+                  <br />
+                  Telefon: {KONTAKT_TELEFON}
+                </>
+              )}
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Vertretungsberechtigte Person</h2>
-            <p>Max Mustermann, Geschäftsführer</p>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Registereintrag</h2>
+            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
             <p>
-              Handelsregister: Amtsgericht Berlin-Charlottenburg<br />
-              Registernummer: HRB 12345 B
+              {BETREIBER_NAME}<br />
+              {BETREIBER_STRASSE}<br />
+              {BETREIBER_PLZORT}
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Umsatzsteuer-ID</h2>
+            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Haftung für Inhalte</h2>
             <p>
-              Umsatzsteuer-Identifikationsnummer gemäß 27a UStG:<br />
-              DE123456789
+              Die Inhalte dieser Plattform werden mit größtmöglicher Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte kann jedoch keine Gewähr übernommen werden. Als Diensteanbieter bin ich gemäß § 7 Abs. 1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG bin ich als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Verantwortlich für den Inhalt</h2>
+            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Haftung für Links</h2>
             <p>
-              Max Mustermann<br />
-              Musterstraße 1<br />
-              10115 Berlin
+              Diese Plattform enthält ggf. Links zu externen Websites Dritter, auf deren Inhalte ich keinen Einfluss habe. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich. Bei Bekanntwerden von Rechtsverstößen werden derartige Links umgehend entfernt.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Haftungsausschluss</h2>
+            <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Urheberrecht</h2>
             <p>
-              Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.
+              Die durch den Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechts bedürfen der schriftlichen Zustimmung des Verfassers.
             </p>
           </section>
 
@@ -93,10 +102,10 @@ export default function Impressum() {
               <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="text-[#3D8B7A] hover:underline">
                 ec.europa.eu/consumers/odr
               </a>
-              . Unsere E-Mail-Adresse finden Sie oben.
+              . Meine E-Mail-Adresse finden Sie oben.
             </p>
             <p className="mt-3">
-              Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen (§ 36 Abs. 1 Nr. 1 VSBG).
+              Ich bin nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen (§ 36 Abs. 1 Nr. 1 VSBG).
             </p>
           </section>
         </div>
