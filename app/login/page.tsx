@@ -2,15 +2,31 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { createClient } from "@/lib/supabase"
 import { Button, Input, Card } from "@/components/ui"
+import { loginSchema, type LoginInput } from "@/lib/schemas"
+
+const dashboardMap: Record<string, string> = {
+  admin: "/dashboard-admin",
+  verwalter: "/dashboard-verwalter",
+  handwerker: "/dashboard-handwerker",
+  mieter: "/dashboard-mieter",
+}
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [serverError, setServerError] = useState("")
   const [checking, setChecking] = useState(true)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+  })
 
   useEffect(() => {
     const supabase = createClient()
@@ -23,12 +39,6 @@ export default function LoginPage() {
           .single()
           .then(({ data: profile }) => {
             const rolle = profile?.rolle || "mieter"
-            const dashboardMap: Record<string, string> = {
-              admin: "/dashboard-admin",
-              verwalter: "/dashboard-verwalter",
-              handwerker: "/dashboard-handwerker",
-              mieter: "/dashboard-mieter",
-            }
             window.location.href = dashboardMap[rolle] || "/dashboard-mieter"
           })
       } else {
@@ -37,42 +47,29 @@ export default function LoginPage() {
     })
   }, [])
 
-  async function handleLogin() {
-    setLoading(true)
-    setError("")
-
+  async function onSubmit(values: LoginInput) {
+    setServerError("")
     try {
       const supabase = createClient()
       const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: values.email,
+        password: values.password,
       })
-
       if (authError) {
-        setError("E-Mail oder Passwort ist falsch. Bitte versuchen Sie es erneut.")
-        setLoading(false)
+        setServerError("E-Mail oder Passwort ist falsch. Bitte versuchen Sie es erneut.")
         return
       }
-
       if (data.user) {
         const { data: profile } = await supabase
           .from("profiles")
           .select("rolle")
           .eq("id", data.user.id)
           .single()
-
         const rolle = profile?.rolle || "mieter"
-        const dashboardMap: Record<string, string> = {
-          admin: "/dashboard-admin",
-          verwalter: "/dashboard-verwalter",
-          handwerker: "/dashboard-handwerker",
-          mieter: "/dashboard-mieter",
-        }
         window.location.href = dashboardMap[rolle] || "/dashboard-mieter"
       }
     } catch {
-      setError("Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.")
-      setLoading(false)
+      setServerError("Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.")
     }
   }
 
@@ -198,57 +195,63 @@ export default function LoginPage() {
               <p className="text-[#6B665E]">Melden Sie sich in Ihrem Konto an</p>
             </div>
 
-            {error && (
-              <div className="mb-6 p-3 rounded-lg bg-[#C4574B]/10 border border-[#C4574B]/20">
+            {serverError && (
+              <div className="mb-6 p-3 rounded-lg bg-[#C4574B]/10 border border-[#C4574B]/20" role="alert">
                 <p className="text-sm text-[#C4574B] flex items-center gap-2">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="12" />
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
-                  {error}
+                  {serverError}
                 </p>
               </div>
             )}
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[#2D2A26] mb-1.5" htmlFor="email">
-                  E-Mail-Adresse
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@beispiel.de"
-                  value={email}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                  onKeyDown={(e: React.KeyboardEvent) => e.key === "Enter" && handleLogin()}
-                  autoComplete="email"
-                />
+            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#2D2A26] mb-1.5" htmlFor="email">
+                    E-Mail-Adresse
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@beispiel.de"
+                    autoComplete="email"
+                    aria-invalid={!!errors.email}
+                    {...register("email")}
+                  />
+                  {errors.email && (
+                    <p className="text-xs text-[#C4574B] mt-1.5" role="alert">{errors.email.message}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#2D2A26] mb-1.5" htmlFor="password">
+                    Passwort
+                  </label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Ihr Passwort"
+                    autoComplete="current-password"
+                    aria-invalid={!!errors.password}
+                    {...register("password")}
+                  />
+                  {errors.password && (
+                    <p className="text-xs text-[#C4574B] mt-1.5" role="alert">{errors.password.message}</p>
+                  )}
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-[#2D2A26] mb-1.5" htmlFor="password">
-                  Passwort
-                </label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Ihr Passwort"
-                  value={password}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                  onKeyDown={(e: React.KeyboardEvent) => e.key === "Enter" && handleLogin()}
-                  autoComplete="current-password"
-                />
-              </div>
-            </div>
 
-            <Button
-              onClick={handleLogin}
-              disabled={loading}
-              className="w-full mt-6"
-            >
-              {loading ? "Anmeldung..." : "Anmelden"}
-            </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full mt-6"
+              >
+                {isSubmitting ? "Anmeldung…" : "Anmelden"}
+              </Button>
+            </form>
 
             <div className="mt-4 text-center">
               <Link

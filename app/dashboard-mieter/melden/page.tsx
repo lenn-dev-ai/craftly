@@ -5,6 +5,9 @@ import { createClient } from "@/lib/supabase"
 import { Button, Card } from "@/components/ui"
 import AddressAutocomplete from "@/components/AddressAutocomplete"
 
+const MAX_FOTO_BYTES = 5 * 1024 * 1024 // 5 MB
+const ERLAUBTE_FOTO_TYPEN = ["image/jpeg", "image/png", "image/webp", "image/heic"]
+
 type Step = "foto" | "analyse" | "details" | "ort" | "dringlichkeit" | "zusammenfassung" | "gesendet"
 
 const KI_ANALYSEN: Record<string, { titel: string; gewerk: string; dringlichkeit: string; tipp: string; zeit: string }> = {
@@ -45,6 +48,41 @@ export default function MeldenPage() {
   const [loading, setLoading] = useState(false)
   const [analyseProgress, setAnalyseProgress] = useState(0)
   const [error, setError] = useState("")
+  // Foto-Upload State
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [fotoFile, setFotoFile] = useState<File | null>(null)
+  const [fotoPreviewUrl, setFotoPreviewUrl] = useState<string | null>(null)
+  const [fotoFehler, setFotoFehler] = useState<string | null>(null)
+
+  function fotoWaehlen(file: File | null) {
+    setFotoFehler(null)
+    if (!file) {
+      setFotoFile(null)
+      setFotoPreviewUrl(null)
+      return
+    }
+    if (!ERLAUBTE_FOTO_TYPEN.includes(file.type)) {
+      setFotoFehler("Bitte ein JPG, PNG, WebP oder HEIC auswählen.")
+      return
+    }
+    if (file.size > MAX_FOTO_BYTES) {
+      setFotoFehler(`Datei zu groß (max. ${MAX_FOTO_BYTES / 1024 / 1024} MB).`)
+      return
+    }
+    setFotoFile(file)
+    setFotoPreviewUrl(URL.createObjectURL(file))
+  }
+
+  // Cleanup ObjectURL um Memory-Leak zu vermeiden
+  useEffect(() => {
+    return () => {
+      if (fotoPreviewUrl) URL.revokeObjectURL(fotoPreviewUrl)
+    }
+  }, [fotoPreviewUrl])
+
+  // TODO: sobald Supabase Storage Bucket "ticket-fotos" konfiguriert ist,
+  // hier den eigentlichen Upload einbauen und die URL ans Ticket schreiben.
+  // Beispiel: supabase.storage.from('ticket-fotos').upload(`${user.id}/${Date.now()}_${fotoFile.name}`, fotoFile)
 
   function startAnalyse() {
     if (!beschreibung.trim()) return
@@ -130,11 +168,65 @@ export default function MeldenPage() {
             </div>
 
             {/* Foto Upload Area */}
-            <div className="border-2 border-dashed border-[#EDE8E1] rounded-2xl p-8 text-center mb-6 hover:border-[#3D8B7A]/30 transition-colors cursor-pointer">
-              <div className="text-3xl mb-2">CAM</div>
-              <p className="text-sm text-[#8C857B]">Foto aufnehmen oder hochladen</p>
-              <p className="text-xs text-[#B5AEA4] mt-1">KI erkennt Schaeden automatisch aus Bildern</p>
-            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/heic"
+              capture="environment"
+              onChange={e => fotoWaehlen(e.target.files?.[0] || null)}
+              className="hidden"
+              aria-label="Foto auswählen"
+            />
+
+            {fotoPreviewUrl ? (
+              <div className="mb-6">
+                <div className="relative rounded-2xl overflow-hidden border border-[#EDE8E1] bg-[#FAF8F5]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={fotoPreviewUrl}
+                    alt="Foto vom Schaden, Vorschau"
+                    className="w-full max-h-64 object-contain"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fotoWaehlen(null)}
+                    aria-label="Foto entfernen"
+                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-[#2D2A26]/80 text-white flex items-center justify-center hover:bg-[#2D2A26] transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="flex items-center justify-between mt-2 text-xs text-[#8C857B]">
+                  <span className="truncate">{fotoFile?.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-[#3D8B7A] hover:text-[#2D6B5A] font-medium flex-shrink-0 ml-2"
+                  >
+                    Anderes Foto
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full border-2 border-dashed border-[#EDE8E1] rounded-2xl p-8 text-center mb-6 hover:border-[#3D8B7A]/40 hover:bg-[#FAF8F5] transition-colors cursor-pointer flex flex-col items-center"
+              >
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3D8B7A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="mb-2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                <p className="text-sm text-[#2D2A26] font-medium">Foto aufnehmen oder hochladen</p>
+                <p className="text-xs text-[#8C857B] mt-1">JPG, PNG, WebP — max. 5 MB · optional</p>
+              </button>
+            )}
+
+            {fotoFehler && (
+              <div className="mb-4 p-3 rounded-lg bg-[#C4574B]/10 border border-[#C4574B]/20 text-xs text-[#C4574B]">
+                {fotoFehler}
+              </div>
+            )}
 
             {/* Text Beschreibung */}
             <div className="mb-4">

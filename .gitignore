@@ -7,3 +7,7 @@ node_modules/
 tsconfig.tsbuildinfo
 craftly-backup-*/
 .claude/
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/

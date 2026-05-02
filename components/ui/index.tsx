@@ -1,5 +1,6 @@
 "use client"
 
+import { forwardRef } from "react"
 import { TicketStatus, Prioritaet } from "@/types"
 
 export function Badge({ status }: { status: TicketStatus }) {
@@ -118,23 +119,31 @@ export function Button({ children, onClick, disabled, className = "", variant = 
   )
 }
 
-export function Input({ label, ...props }: { label?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+export const Input = forwardRef<
+  HTMLInputElement,
+  { label?: string } & React.InputHTMLAttributes<HTMLInputElement>
+>(function Input({ label, ...props }, ref) {
   return (
     <div className="flex flex-col gap-1.5">
       {label && <label className="text-sm font-medium text-[#736B62]">{label}</label>}
       <input
+        ref={ref}
         {...props}
         className="w-full px-4 py-3 bg-white border border-[#EDE8E1] rounded-xl text-sm text-[#2D2A26] placeholder:text-[#6B665E] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3D8B7A] focus-visible:border-[#3D8B7A] transition-colors"
       />
     </div>
   )
-}
+})
 
-export function Select({ label, children, ...props }: { label?: string } & React.SelectHTMLAttributes<HTMLSelectElement>) {
+export const Select = forwardRef<
+  HTMLSelectElement,
+  { label?: string } & React.SelectHTMLAttributes<HTMLSelectElement>
+>(function Select({ label, children, ...props }, ref) {
   return (
     <div className="flex flex-col gap-1.5">
       {label && <label className="text-sm font-medium text-[#736B62]">{label}</label>}
       <select
+        ref={ref}
         {...props}
         className="w-full px-4 py-3 bg-white border border-[#EDE8E1] rounded-xl text-sm text-[#2D2A26] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3D8B7A] focus-visible:border-[#3D8B7A] transition-colors appearance-none"
       >
@@ -142,7 +151,7 @@ export function Select({ label, children, ...props }: { label?: string } & React
       </select>
     </div>
   )
-}
+})
 
 export function Textarea({ label, ...props }: { label?: string } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
