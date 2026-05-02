@@ -206,6 +206,15 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }}
         />
+        {/* Plausible Analytics — DSGVO-friendly, cookie-frei.
+            Aktiv nur wenn NEXT_PUBLIC_PLAUSIBLE_DOMAIN gesetzt ist. */}
+        {process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN && (
+          <script
+            defer
+            data-domain={process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN}
+            src={process.env.NEXT_PUBLIC_PLAUSIBLE_SRC || "https://plausible.io/js/script.js"}
+          />
+        )}
       </head>
       <body className={`${inter.className} antialiased bg-[#FAF8F5] text-[#2D2A26]`}>
         <AdminButton />

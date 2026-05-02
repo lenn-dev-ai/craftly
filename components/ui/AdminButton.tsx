@@ -6,9 +6,9 @@ import Link from "next/link"
 
 export default function AdminButton() {
   const [isAdmin, setIsAdmin] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => {
+    const supabase = createClient()
     const checkAdmin = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return

@@ -1,7 +1,7 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase"
 import type { Ticket, Angebot } from "@/types"
 
@@ -30,12 +30,7 @@ export default function AngebotAbgeben() {
   // Existing bids count for market info
   const [bidCount, setBidCount] = useState(0)
 
-  useEffect(() => {
-    if (!id) return
-    loadTicket()
-  }, [id])
-
-  async function loadTicket() {
+  const loadTicket = useCallback(async () => {
     setLoading(true)
     const { data, error } = await supabase
       .from("tickets")
@@ -55,7 +50,11 @@ export default function AngebotAbgeben() {
     setTicket(data as Ticket)
     setBidCount(data.angebote?.length || 0)
     setLoading(false)
-  }
+  }, [id, supabase])
+
+  useEffect(() => {
+    if (id) loadTicket()
+  }, [id, loadTicket])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

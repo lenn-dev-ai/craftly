@@ -124,16 +124,36 @@ export default function TerminePage() {
   useEffect(() => { load() }, [load])
 
   async function privatSpeichern() {
-    setPrivatSaving(true)
     setError("")
     if (privatForm.bis <= privatForm.von) {
       setError("Endzeit muss nach Startzeit liegen.")
-      setPrivatSaving(false)
       return
     }
+    setPrivatSaving(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+
+    // Optimistic Update: sofort in der Liste anzeigen
+    const optimisticId = `optimistic-${Date.now()}`
+    const optimistisch: Termin = {
+      id: optimisticId,
+      source: "privat",
+      datum,
+      von: privatForm.von,
+      bis: privatForm.bis,
+      titel: privatForm.bezeichnung || "Privat",
+      adresse: privatForm.adresse || null,
+      lat: privatForm.lat,
+      lng: privatForm.lng,
+    }
+    const vorherigerStand = termine
+    setTermine(prev =>
+      [...prev, optimistisch].sort((a, b) => parseTimeToMin(a.von) - parseTimeToMin(b.von))
+    )
+    setShowPrivatForm(false)
+    const formBackup = { ...privatForm }
+    setPrivatForm({ bezeichnung: "Privat", von: "12:00", bis: "13:00", adresse: "", lat: null, lng: null })
 
     const { error: insertErr } = await supabase.from("private_termine").insert({
       handwerker_id: user.id,
@@ -145,21 +165,33 @@ export default function TerminePage() {
       lng: privatForm.lng,
       bezeichnung: privatForm.bezeichnung || "Privat",
     })
+
     if (insertErr) {
+      // Rollback bei Fehler
+      setTermine(vorherigerStand)
+      setPrivatForm(formBackup)
+      setShowPrivatForm(true)
       setError("Speichern fehlgeschlagen: " + insertErr.message)
       setPrivatSaving(false)
       return
     }
-    setShowPrivatForm(false)
-    setPrivatForm({ bezeichnung: "Privat", von: "12:00", bis: "13:00", adresse: "", lat: null, lng: null })
     setPrivatSaving(false)
+    // Real-Data nachladen, ersetzt den Optimistic
     await load()
   }
 
   async function privatLoeschen(id: string) {
     if (!confirm("Privattermin löschen?")) return
+    // Optimistic delete
+    const vorher = termine
+    setTermine(prev => prev.filter(t => t.id !== id))
     const supabase = createClient()
-    await supabase.from("private_termine").delete().eq("id", id)
+    const { error: deleteErr } = await supabase.from("private_termine").delete().eq("id", id)
+    if (deleteErr) {
+      setTermine(vorher) // Rollback
+      setError("Löschen fehlgeschlagen: " + deleteErr.message)
+      return
+    }
     await load()
   }
 

@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState, useRef } from "react"
+import { useCallback, useEffect, useState, useRef } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket, Angebot, Nachricht, UserProfile, Einladung } from "@/types"
@@ -142,7 +142,7 @@ export default function TicketDetail() {
   const [vergebenConfirm, setVergebenConfirm] = useState<string | null>(null)
   const chatRef = useRef<HTMLDivElement>(null)
 
-  async function load() {
+  const load = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
@@ -158,9 +158,9 @@ export default function TicketDetail() {
     setEinladungen(einl || [])
     setLoading(false)
     setTimeout(() => chatRef.current?.scrollTo(0, chatRef.current.scrollHeight), 100)
-  }
+  }, [id, router])
 
-  useEffect(() => { load() }, [id])
+  useEffect(() => { load() }, [load])
 
   async function sendChat() {
     if (!chatText.trim() || !currentUser) return

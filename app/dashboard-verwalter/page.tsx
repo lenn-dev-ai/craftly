@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase"
 import { Ticket } from "@/types"
+import { CardListSkeleton, KpiGridSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
 
 function kostenSchaetzung(t: Ticket): string {
   const titel = (t.titel || "").toLowerCase()
@@ -31,27 +32,44 @@ export default function VerwalterDashboard() {
   const router = useRouter()
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
+  const [neueLive, setNeueLive] = useState(0)
 
-  useEffect(() => {
-    async function load() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push("/login"); return }
-      const { data } = await supabase
-        .from("tickets")
-        .select("*")
-        .order("created_at", { ascending: false })
-      setTickets(data || [])
-      setLoading(false)
-    }
-    load()
+  const load = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push("/login"); return }
+    const { data } = await supabase
+      .from("tickets")
+      .select("*")
+      .order("created_at", { ascending: false })
+    setTickets(data || [])
+    setLoading(false)
   }, [router])
 
+  useEffect(() => {
+    load()
+    // Realtime: bei jeder Änderung an tickets neu laden, Counter bumpen
+    const supabase = createClient()
+    const channel = supabase
+      .channel("verwalter-tickets-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tickets" },
+        () => {
+          setNeueLive(n => n + 1)
+          load()
+        }
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [load])
+
   if (loading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-2 border-[#3D8B7A]/30 border-t-[#3D8B7A] rounded-full animate-spin" />
-        <span className="text-sm text-[#8C857B]">Lädt…</span>
+    <div className="p-6 md:p-8 max-w-5xl mx-auto pt-16 md:pt-8">
+      <PageHeaderSkeleton />
+      <KpiGridSkeleton />
+      <div className="mt-10">
+        <CardListSkeleton count={3} rows={3} />
       </div>
     </div>
   )
@@ -72,7 +90,20 @@ export default function VerwalterDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-[#2D2A26]">Übersicht</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-[#2D2A26]">Übersicht</h1>
+            <span
+              title="Live-Updates aktiv"
+              aria-label="Live-Updates aktiv"
+              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#3D8B7A]"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-[#3D8B7A] opacity-50 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#3D8B7A]" />
+              </span>
+              Live
+            </span>
+          </div>
           <p className="text-sm text-[#8C857B] mt-1.5">
             {tickets.length} {tickets.length === 1 ? "Vorgang" : "Vorgänge"}
             {hatAttention && ` · `}
@@ -81,6 +112,7 @@ export default function VerwalterDashboard() {
                 {offene.length} {offene.length === 1 ? "wartet" : "warten"} auf dich
               </span>
             )}
+            {neueLive > 0 && ` · ${neueLive} Live-Update${neueLive === 1 ? "" : "s"}`}
           </p>
         </div>
         <Link

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { UserProfile, Zeitslot, GEWERK_LABELS } from "@/types"
@@ -21,11 +21,7 @@ export default function MarktplatzPage() {
   const [gebotNachrichten, setGebotNachrichten] = useState<Record<string, string>>({})
   const [expandedSlot, setExpandedSlot] = useState<string | null>(null)
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
@@ -43,7 +39,9 @@ export default function MarktplatzPage() {
     setProfile(prof)
     setSlots(verfuegbareSlots || [])
     setLoading(false)
-  }
+  }, [router])
+
+  useEffect(() => { loadData() }, [loadData])
 
   async function submitGebot(slotId: string) {
     if (!profile) return

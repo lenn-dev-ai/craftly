@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { UserProfile, Zeitslot, Gewerk, GEWERK_LABELS } from "@/types"
@@ -33,11 +33,7 @@ export default function ZeitslotsPage() {
     notizen: "",
   })
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
@@ -58,7 +54,9 @@ export default function ZeitslotsPage() {
       setLuecken(gefundeneLuecken)
     }
     setLoading(false)
-  }
+  }, [router])
+
+  useEffect(() => { loadData() }, [loadData])
 
   async function createSlot(e: React.FormEvent) {
     e.preventDefault()
