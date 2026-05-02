@@ -1,11 +1,43 @@
 "use client"
 import { useEffect, useRef, useState } from "react"
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+// Photon (Komoot) — kein API-Key, kein Account, EU-Hosting (München)
+// Docs: https://photon.komoot.io/
+const PHOTON_URL = "https://photon.komoot.io/api/"
+
+type PhotonFeature = {
+  type: "Feature"
+  geometry: { type: "Point"; coordinates: [number, number] }
+  properties: {
+    name?: string
+    street?: string
+    housenumber?: string
+    postcode?: string
+    city?: string
+    state?: string
+    country?: string
+    countrycode?: string
+    type?: string
+    osm_value?: string
+  }
+}
 
 type Vorschlag = {
-  place_name: string
-  center: [number, number]
+  label: string
+  lat: number
+  lng: number
+}
+
+function formatiereAdresse(p: PhotonFeature["properties"]): string {
+  const strasse = [p.street, p.housenumber].filter(Boolean).join(" ")
+  const ort = [p.postcode, p.city].filter(Boolean).join(" ")
+  const teile = [strasse, ort, p.country].filter(t => t && t.length > 0)
+
+  // Falls Straße fehlt aber name vorhanden (z. B. POI), nimm den Namen
+  if (!strasse && p.name) {
+    teile.unshift(p.name)
+  }
+  return teile.join(", ")
 }
 
 type Props = {
@@ -42,21 +74,30 @@ export default function AddressAutocomplete({
 
   function suchen(eingabe: string) {
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    if (!eingabe || eingabe.length < 3 || !MAPBOX_TOKEN) {
+    if (!eingabe || eingabe.length < 3) {
       setVorschlaege([])
       return
     }
     debounceRef.current = setTimeout(async () => {
       setLoading(true)
       try {
-        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          eingabe
-        )}.json?access_token=${MAPBOX_TOKEN}&country=de&autocomplete=true&types=address&language=de&limit=6`
+        // Photon — lang=de, limit=6, layer=address bevorzugt Adressen vor POIs
+        const url = `${PHOTON_URL}?q=${encodeURIComponent(eingabe)}&lang=de&limit=6&layer=house&layer=street`
         const res = await fetch(url)
-        if (!res.ok) throw new Error("Geocoding fehlgeschlagen")
-        const data = await res.json()
-        setVorschlaege(data.features || [])
-        setOpen(true)
+        if (!res.ok) throw new Error("Photon-Geocoding fehlgeschlagen")
+        const data = await res.json() as { features?: PhotonFeature[] }
+
+        const treffer: Vorschlag[] = (data.features || [])
+          .filter(f => f.properties.countrycode === "DE" || !f.properties.countrycode)
+          .map(f => ({
+            label: formatiereAdresse(f.properties),
+            lng: f.geometry.coordinates[0],
+            lat: f.geometry.coordinates[1],
+          }))
+          .filter(v => v.label.length > 3)
+
+        setVorschlaege(treffer)
+        setOpen(treffer.length > 0)
       } catch {
         setVorschlaege([])
       } finally {
@@ -66,9 +107,9 @@ export default function AddressAutocomplete({
   }
 
   function waehlen(v: Vorschlag) {
-    setText(v.place_name)
+    setText(v.label)
     setOpen(false)
-    onSelect({ adresse: v.place_name, lng: v.center[0], lat: v.center[1] })
+    onSelect({ adresse: v.label, lat: v.lat, lng: v.lng })
   }
 
   return (
@@ -78,19 +119,15 @@ export default function AddressAutocomplete({
         type="text"
         value={text}
         placeholder={placeholder}
-        disabled={disabled || !MAPBOX_TOKEN}
+        disabled={disabled}
         onChange={(e) => {
           setText(e.target.value)
           suchen(e.target.value)
         }}
         onFocus={() => vorschlaege.length > 0 && setOpen(true)}
         className="w-full px-3 py-2.5 border border-[#EDE8E1] rounded-lg text-sm bg-white focus:outline-none focus:border-[#3D8B7A] transition-colors disabled:bg-[#FAF8F5] disabled:cursor-not-allowed"
+        autoComplete="off"
       />
-      {!MAPBOX_TOKEN && (
-        <p className="text-xs text-[#C4574B]">
-          Adress-Suche deaktiviert: <code>NEXT_PUBLIC_MAPBOX_TOKEN</code> nicht gesetzt.
-        </p>
-      )}
       {open && vorschlaege.length > 0 && (
         <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#EDE8E1] rounded-lg shadow-lg z-20 max-h-72 overflow-auto">
           {vorschlaege.map((v, i) => (
@@ -100,7 +137,7 @@ export default function AddressAutocomplete({
                 onClick={() => waehlen(v)}
                 className="w-full text-left px-3 py-2 text-sm hover:bg-[#FAF8F5] transition-colors"
               >
-                {v.place_name}
+                {v.label}
               </button>
             </li>
           ))}

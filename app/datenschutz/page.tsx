@@ -69,7 +69,7 @@ export default function Datenschutz() {
                 <strong className="text-[#2D2A26]">Netlify Inc.</strong> (Hosting &amp; Content-Delivery) - betrieben in den USA mit globalem CDN.
               </li>
               <li>
-                <strong className="text-[#2D2A26]">Mapbox Inc.</strong> (Karten- und Geocoding-Dienste, sofern verwendet) - betrieben in den USA. Bei der Nutzung der Adress-Suche wird Ihre Eingabe an Mapbox übermittelt.
+                <strong className="text-[#2D2A26]">Photon (Komoot GmbH)</strong> (Adress-Autocomplete) - betrieben in München, Deutschland. Bei der Nutzung der Adress-Suche wird Ihre Eingabe an Photon übermittelt, um Vorschläge zu erhalten. Es werden keine Cookies gesetzt und keine Nutzerprofile gebildet.
               </li>
             </ul>
           </section>
