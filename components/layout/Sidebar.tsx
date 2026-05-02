@@ -21,7 +21,8 @@ const menus: Record<Rolle, { href: string; label: string; icon: string }[]> = {
     { href: "/dashboard-handwerker/einnahmen", label: "Einnahmen", icon: "€" },
     { href: "/dashboard-handwerker/zeitslots", label: "Zeitslots", icon: "▦" },
     { href: "/dashboard-handwerker/auftraege", label: "Aufträge", icon: "◉" },
-    { href: "/dashboard-handwerker/kalender", label: "Kalender", icon: "▤" },
+    { href: "/dashboard-handwerker/termine", label: "Termine & Route", icon: "📍" },
+    { href: "/dashboard-handwerker/kalender", label: "Verfügbarkeit", icon: "▤" },
     { href: "/dashboard-handwerker/profil", label: "Mein Profil", icon: "◎" },
   ],
   mieter: [

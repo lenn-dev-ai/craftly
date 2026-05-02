@@ -21,6 +21,9 @@ export interface UserProfile {
   telefon?: string; firma?: string; gewerk?: string; plz_bereich?: string
   basis_preis?: number; bewertung_avg?: number; auftraege_anzahl?: number
   adresse?: string; lat?: number; lng?: number; radius_km?: number
+  // Route-Optimierung
+  basis_stundensatz?: number; mindest_stundensatz?: number; fahrtkosten_pro_km?: number
+  startort_adresse?: string; startort_lat?: number; startort_lng?: number
   created_at: string
 }
 
@@ -48,6 +51,9 @@ export interface Angebot {
   id: string; ticket_id: string; handwerker_id: string
   preis: number; fruehester_termin?: string; nachricht?: string
   status: AngebotStatus; created_at: string; handwerker?: UserProfile
+  // Route-Daten (berechnet beim Einreichen)
+  routen_score?: number; fahrzeit_minuten?: number
+  fahrzeit_delta_minuten?: number; effektiv_preis?: number
 }
 
 export interface Einladung {
@@ -77,7 +83,15 @@ export interface Termin {
   id: string; handwerker_id: string; ticket_id?: string
   titel: string; datum: string; von: string; bis: string
   notizen?: string; google_event_id?: string; created_at: string
+  einsatzort_adresse?: string; einsatzort_lat?: number; einsatzort_lng?: number
   ticket?: Ticket
+}
+
+export interface PrivatTermin {
+  id: string; handwerker_id: string
+  datum: string; von: string; bis: string
+  adresse?: string; lat?: number; lng?: number
+  bezeichnung?: string; created_at: string
 }
 
 /* ============ YIELD MANAGEMENT TYPES ============ */
