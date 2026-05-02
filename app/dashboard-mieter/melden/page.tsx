@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Button, Card } from "@/components/ui"
+import AddressAutocomplete from "@/components/AddressAutocomplete"
 
 type Step = "foto" | "analyse" | "details" | "ort" | "dringlichkeit" | "zusammenfassung" | "gesendet"
 
@@ -30,7 +31,17 @@ export default function MeldenPage() {
   const [step, setStep] = useState<Step>("foto")
   const [beschreibung, setBeschreibung] = useState("")
   const [kiResult, setKiResult] = useState<string | null>(null)
-  const [form, setForm] = useState({ titel: "", beschreibung: "", wohnung: "", prioritaet: "normal", gewerk: "allgemein" })
+  const [form, setForm] = useState<{
+    titel: string; beschreibung: string; wohnung: string
+    prioritaet: string; gewerk: string
+    einsatzort_adresse: string
+    einsatzort_lat: number | null
+    einsatzort_lng: number | null
+  }>({
+    titel: "", beschreibung: "", wohnung: "",
+    prioritaet: "normal", gewerk: "allgemein",
+    einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null,
+  })
   const [loading, setLoading] = useState(false)
   const [analyseProgress, setAnalyseProgress] = useState(0)
   const [error, setError] = useState("")
@@ -77,6 +88,9 @@ export default function MeldenPage() {
       gewerk: form.gewerk,
       status: "offen",
       erstellt_von: user.id,
+      einsatzort_adresse: form.einsatzort_adresse || null,
+      einsatzort_lat: form.einsatzort_lat,
+      einsatzort_lng: form.einsatzort_lng,
     })
     if (dbError) { setError("Fehler: " + dbError.message); setLoading(false); return }
     setStep("gesendet")
@@ -265,9 +279,28 @@ export default function MeldenPage() {
         {step === "ort" && (
           <div className="animate-fade-in">
             <h2 className="text-lg font-semibold mb-2">Wo ist das Problem?</h2>
-            <p className="text-sm text-[#8C857B] mb-6">Wohnung, Raum oder Bereich angeben</p>
+            <p className="text-sm text-[#8C857B] mb-6">Adresse und Raum angeben — damit der Handwerker dich findet.</p>
+
+            <div className="mb-5">
+              <AddressAutocomplete
+                label="Adresse des Gebäudes"
+                placeholder="Straße, Hausnummer, Ort"
+                initialAdresse={form.einsatzort_adresse}
+                onSelect={({ adresse, lat, lng }) =>
+                  setForm(f => ({
+                    ...f,
+                    einsatzort_adresse: adresse,
+                    einsatzort_lat: lat,
+                    einsatzort_lng: lng,
+                  }))
+                }
+              />
+            </div>
 
             <div className="mb-4">
+              <label className="text-xs text-[#8C857B] mb-1.5 block font-medium">
+                Wohnung / Raum
+              </label>
               <input
                 value={form.wohnung}
                 onChange={e => setForm(f => ({ ...f, wohnung: e.target.value }))}
@@ -277,9 +310,9 @@ export default function MeldenPage() {
             </div>
 
             <div className="mb-6">
-              <p className="text-xs text-[#8C857B] mb-2">Schnellauswahl:</p>
+              <p className="text-xs text-[#8C857B] mb-2">Schnellauswahl Raum:</p>
               <div className="flex flex-wrap gap-2">
-                {["Kueche", "Bad", "Wohnzimmer", "Schlafzimmer", "Flur", "Keller", "Balkon"].map(r => (
+                {["Küche", "Bad", "Wohnzimmer", "Schlafzimmer", "Flur", "Keller", "Balkon"].map(r => (
                   <button
                     key={r}
                     onClick={() => setForm(f => ({ ...f, wohnung: f.wohnung ? f.wohnung + ", " + r : r }))}
@@ -291,8 +324,12 @@ export default function MeldenPage() {
               </div>
             </div>
 
-            <Button onClick={() => setStep("zusammenfassung")} disabled={!form.wohnung.trim()} className="w-full justify-center">
-              Weiter -- Zusammenfassung
+            <Button
+              onClick={() => setStep("zusammenfassung")}
+              disabled={!form.wohnung.trim()}
+              className="w-full justify-center"
+            >
+              Weiter — Zusammenfassung
             </Button>
           </div>
         )}
@@ -393,7 +430,7 @@ export default function MeldenPage() {
 
             <div className="flex gap-3 justify-center">
               <Button onClick={() => router.push("/dashboard-mieter")}>Meine Meldungen</Button>
-              <Button variant="ghost" onClick={() => { setStep("foto"); setBeschreibung(""); setKiResult(null); setForm({ titel: "", beschreibung: "", wohnung: "", prioritaet: "normal", gewerk: "allgemein" }) }}>
+              <Button variant="ghost" onClick={() => { setStep("foto"); setBeschreibung(""); setKiResult(null); setForm({ titel: "", beschreibung: "", wohnung: "", prioritaet: "normal", gewerk: "allgemein", einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null }) }}>
                 Weiteren Schaden melden
               </Button>
             </div>
