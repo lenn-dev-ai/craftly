@@ -184,16 +184,24 @@ export default function TicketDetail() {
   async function submitAngebot() {
     if (!angebotForm.preis || !currentUser) return
     setSubmittingBid(true)
-    const supabase = createClient()
-    await supabase.from("angebote").insert({
-      ticket_id: id, handwerker_id: currentUser.id,
-      preis: Number(angebotForm.preis), fruehester_termin: angebotForm.termin || null,
-      geschaetzte_dauer: angebotForm.dauer || null, nachricht: angebotForm.nachricht || null,
-      status: "eingereicht",
+    // API-Route: schreibt Bid, markiert Einladung, triggert Smart-Score-Recompute
+    const res = await fetch("/api/auction/bid", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ticket_id: id,
+        preis: Number(angebotForm.preis),
+        fruehester_termin: angebotForm.termin || null,
+        geschaetzte_dauer: angebotForm.dauer || null,
+        nachricht: angebotForm.nachricht || null,
+      }),
     })
-    // Einladung auf "angebot" setzen damit Verwalter sieht wer reagiert hat
-    await supabase.from("einladungen").update({ status: "angebot" })
-      .eq("ticket_id", id).eq("handwerker_id", currentUser.id)
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({ error: "Unbekannter Fehler" }))
+      alert("Angebot konnte nicht eingereicht werden: " + error)
+      setSubmittingBid(false)
+      return
+    }
     setAngebotForm({ preis: "", termin: "", dauer: "", nachricht: "" })
     await load()
     setSubmittingBid(false)
@@ -215,16 +223,19 @@ export default function TicketDetail() {
     await supabase.from("angebote").update({ status: "angenommen" }).eq("id", angebotId)
     await supabase.from("angebote").update({ status: "abgelehnt" }).eq("ticket_id", id).neq("id", angebotId)
 
-    // 3) Provisions-Snapshot in `provisionen` (Audit-Trail)
-    const { rate, isEarlyAdopter } = await getEffectiveRate(supabase, currentUser)
-    const { provisionBetrag, gesamt } = calculateCommission(angebot.preis, rate)
+    // 3) Provisions-Snapshot mit Surge-Faktor (aus Auktions-Konfig)
+    const { rate: basisRate, isEarlyAdopter } = await getEffectiveRate(supabase, currentUser)
+    const surge = (ticket as { surge_faktor?: number } | null)?.surge_faktor ?? 1.0
+    // basisRate ist 0 für Early-Adopter — dann bleibt 0. Sonst Surge anwenden.
+    const finalRate = basisRate === 0 ? 0 : Math.round(basisRate * surge * 10000) / 10000
+    const { provisionBetrag, gesamt } = calculateCommission(angebot.preis, finalRate)
     await supabase.from("provisionen").upsert(
       {
         ticket_id: id,
         verwalter_id: currentUser.id,
         handwerker_id: handwerkerId,
         auftragswert: angebot.preis,
-        provision_rate: rate,
+        provision_rate: finalRate,
         provision_betrag: provisionBetrag,
         gesamt,
         is_early_adopter: isEarlyAdopter,
@@ -413,7 +424,7 @@ export default function TicketDetail() {
                 currentUser?.early_adopter_bis &&
                 new Date(currentUser.early_adopter_bis).getTime() > Date.now()
                   ? 0
-                  : 0.05
+                  : Math.round(0.05 * ((ticket as { surge_faktor?: number }).surge_faktor ?? 1) * 10000) / 10000
               }
               earlyAdopterBis={currentUser?.early_adopter_bis ?? null}
             />
@@ -684,19 +695,53 @@ export default function TicketDetail() {
         {/* Handwerker: eigenes Angebot anzeigen */}
         {isHandwerker && hatBereitsAngebot && (
           <Card className="mb-6 bg-[#3D8B7A]/5 border border-[#3D8B7A]/20">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center text-[#3D8B7A] font-bold text-sm">✓</div>
-              <div>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center text-[#3D8B7A] font-bold text-sm flex-shrink-0">✓</div>
+              <div className="flex-1">
                 <div className="text-sm font-medium text-[#3D8B7A]">Dein Angebot wurde eingereicht</div>
                 {(() => {
-                  const meinAngebot = alleAngebote.find(a => a.handwerker_id === currentUser?.id)
+                  const meinAngebot = alleAngebote.find(a => a.handwerker_id === currentUser?.id) as
+                    (typeof alleAngebote[number] & {
+                      smart_score?: number | null
+                      entfernung_km?: number | null
+                      fahrzeit_min?: number | null
+                      ist_routen_bonus?: boolean | null
+                    }) | undefined
                   if (!meinAngebot) return null
                   return (
-                    <div className="text-xs text-[#8C857B] mt-0.5">
-                      {meinAngebot.preis.toLocaleString("de")} EUR
-                      {meinAngebot.status === "angenommen" && <span className="ml-2 text-[#3D8B7A] font-medium">— Angenommen!</span>}
-                      {meinAngebot.status === "abgelehnt" && <span className="ml-2 text-[#C4574B] font-medium">— Leider nicht ausgewählt</span>}
-                    </div>
+                    <>
+                      <div className="text-xs text-[#8C857B] mt-0.5">
+                        {meinAngebot.preis.toLocaleString("de")} EUR
+                        {meinAngebot.status === "angenommen" && <span className="ml-2 text-[#3D8B7A] font-medium">— Angenommen!</span>}
+                        {meinAngebot.status === "abgelehnt" && <span className="ml-2 text-[#C4574B] font-medium">— Leider nicht ausgewählt</span>}
+                      </div>
+                      {meinAngebot.smart_score != null && (
+                        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <div className="bg-white rounded-lg p-2.5 border border-[#EDE8E1]">
+                            <div className="text-[10px] text-[#8C857B] uppercase tracking-wide">Smart-Score</div>
+                            <div className="text-lg font-bold text-[#3D8B7A] tabular-nums">{meinAngebot.smart_score.toFixed(1)}</div>
+                          </div>
+                          {meinAngebot.entfernung_km != null && (
+                            <div className="bg-white rounded-lg p-2.5 border border-[#EDE8E1]">
+                              <div className="text-[10px] text-[#8C857B] uppercase tracking-wide">Distanz</div>
+                              <div className="text-sm font-semibold text-[#2D2A26] tabular-nums">{meinAngebot.entfernung_km.toFixed(1)} km</div>
+                            </div>
+                          )}
+                          {meinAngebot.fahrzeit_min != null && (
+                            <div className="bg-white rounded-lg p-2.5 border border-[#EDE8E1]">
+                              <div className="text-[10px] text-[#8C857B] uppercase tracking-wide">Fahrzeit</div>
+                              <div className="text-sm font-semibold text-[#2D2A26] tabular-nums">{meinAngebot.fahrzeit_min} min</div>
+                            </div>
+                          )}
+                          {meinAngebot.ist_routen_bonus && (
+                            <div className="bg-[#C4956A]/10 rounded-lg p-2.5 border border-[#C4956A]/30">
+                              <div className="text-[10px] text-[#C4956A] uppercase tracking-wide font-bold">Routen-Bonus</div>
+                              <div className="text-sm font-semibold text-[#C4956A]">+10 %</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
                   )
                 })()}
               </div>

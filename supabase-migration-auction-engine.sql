@@ -27,11 +27,23 @@ ALTER TABLE public.tickets
   ADD COLUMN IF NOT EXISTS surge_faktor numeric(3,2) DEFAULT 1.00 CHECK (surge_faktor >= 1.00 AND surge_faktor <= 2.00),
   ADD COLUMN IF NOT EXISTS auktion_start timestamptz;
 
--- 3) Profiles: max_radius_km für die Auktions-Suche
---    (radius_km als Property existiert in der App-Logik bereits, aber
---     nicht als DB-Spalte — daher hier explizit anlegen)
+-- 3) Profiles: radius_km für die Auktions-Suche (Konsistenz-Schritt)
+--    Spalte wird im Profil-Form bereits live geschrieben (radius_km).
+--    Diese Migration dokumentiert sie für reproduzierbare Setups.
 ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS max_radius_km integer DEFAULT 25 CHECK (max_radius_km BETWEEN 1 AND 100);
+  ADD COLUMN IF NOT EXISTS radius_km integer DEFAULT 25;
+-- CHECK getrennt anlegen (idempotent über pg_constraint-Lookup)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'profiles_radius_km_range'
+  ) THEN
+    ALTER TABLE public.profiles
+      ADD CONSTRAINT profiles_radius_km_range
+      CHECK (radius_km IS NULL OR (radius_km BETWEEN 1 AND 100));
+  END IF;
+END $$;
 
 -- 4) Angebote: Smart-Score und Routen-Daten
 ALTER TABLE public.angebote
@@ -72,9 +84,9 @@ CREATE POLICY "routen_planung_modify_own"
   USING (handwerker_id = auth.uid())
   WITH CHECK (handwerker_id = auth.uid());
 
--- 6) RLS: Sicherstellen dass max_radius_km nur vom Handwerker selbst
---    gesetzt wird. Vorhandene profiles_update_own-Policy (auth.uid() = id)
---    deckt das bereits ab — keine zusätzliche Policy nötig.
+-- 6) RLS: profiles_update_own (auth.uid() = id) deckt bereits ab,
+--    dass nur der Handwerker selbst seinen radius_km ändern kann.
+--    Keine zusätzliche Policy nötig.
 
 -- 7) Helper: berechnet effektive Provisions-Rate inkl. Surge.
 --    Wird von der App-Schicht (lib/pricing/commission.ts) gespiegelt;
@@ -99,7 +111,7 @@ $$;
 --   - tickets.dringlichkeit (notfall|zeitnah|planbar)
 --   - tickets.surge_faktor (1.00 .. 2.00)
 --   - tickets.auktion_start (auktion_ende existiert bereits)
---   - profiles.max_radius_km (1..100, default 25)
+--   - profiles.radius_km (1..100, default 25) — falls nicht vorhanden
 --   - angebote.smart_score, entfernung_km, fahrzeit_min, ist_routen_bonus
 --   - routen_planung (Tagesbündelung)
 --   - effektive_provision_rate(basis, surge, early_adopter)

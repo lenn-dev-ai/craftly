@@ -7,6 +7,8 @@ import { LoadingSpinner, Toast } from "@/components/ui"
 import { berechnePreisfaktor, berechneRichtpreis } from "@/lib/preisfaktor"
 import { haversineKm, schaetzeFahrzeitMin, formatiereDistanz, formatiereFahrzeit } from "@/lib/distance"
 import { analysiereRoute, routenLabel, routenFarbe, type Termin as RouteTermin } from "@/lib/route-optimizer"
+import { AUKTIONS_CONFIGS } from "@/lib/auction/auction-manager"
+import type { Dringlichkeit } from "@/lib/auction/smart-score"
 import DistanceBadge from "@/components/DistanceBadge"
 
 type SortKey = "effektiv" | "stundensatz" | "distanz" | "bewertung" | "score"
@@ -32,6 +34,7 @@ export default function HandwerkerAuswahlPage() {
   const [sending, setSending] = useState(false)
   const [toast, setToast] = useState("")
   const [sortKey, setSortKey] = useState<SortKey>("effektiv")
+  const [dringlichkeit, setDringlichkeit] = useState<Dringlichkeit>("planbar")
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(""), 3000) }
 
@@ -46,6 +49,15 @@ export default function HandwerkerAuswahlPage() {
         .eq("id", ticketId).single()
       if (!t) { router.push("/dashboard-verwalter"); return }
       setTicket(t)
+      // Vorbelegung der Dringlichkeit: aus DB übernehmen, sonst aus prioritaet ableiten
+      const tt = t as { dringlichkeit?: Dringlichkeit; prioritaet?: string }
+      if (tt.dringlichkeit) {
+        setDringlichkeit(tt.dringlichkeit)
+      } else if (tt.prioritaet === "dringend") {
+        setDringlichkeit("notfall")
+      } else if (tt.prioritaet === "hoch") {
+        setDringlichkeit("zeitnah")
+      }
 
       let query = supabase.from("profiles").select("*").eq("rolle", "handwerker")
       if (t.gewerk && t.gewerk !== "allgemein") {
@@ -205,15 +217,19 @@ export default function HandwerkerAuswahlPage() {
     const { error } = await supabase.from("einladungen").upsert(einladungen, { onConflict: "ticket_id,handwerker_id" })
     if (error) { showToast("Fehler beim Senden: " + error.message); setSending(false); return }
 
-    // Auktions-Laufzeit nach Dringlichkeit: dringend 4h, hoch 24h, sonst 72h
-    const laufzeitStunden = ticket?.prioritaet === "dringend" ? 4
-      : ticket?.prioritaet === "hoch" ? 24
-      : 72
-    const auktionEnde = new Date(Date.now() + laufzeitStunden * 60 * 60 * 1000).toISOString()
+    // Auktions-Konfig aus gewählter Dringlichkeit
+    const config = AUKTIONS_CONFIGS[dringlichkeit]
+    const startIso = new Date().toISOString()
+    const endeIso = config.auktionsDauerStunden > 0
+      ? new Date(Date.now() + config.auktionsDauerStunden * 3600 * 1000).toISOString()
+      : null
 
     await supabase.from("tickets").update({
       status: "auktion",
-      auktion_ende: auktionEnde,
+      dringlichkeit,
+      surge_faktor: config.surgeFaktor,
+      auktion_start: startIso,
+      auktion_ende: endeIso,
     }).eq("id", ticketId)
 
     showToast(selected.length + " Einladung(en) gesendet!")
@@ -241,6 +257,57 @@ export default function HandwerkerAuswahlPage() {
             📍 <span>{ticket.einsatzort_adresse}</span>
           </p>
         )}
+      </div>
+
+      {/* Dringlichkeits-Auswahl: steuert Radius, Auktions-Laufzeit, Surge */}
+      <div className="bg-white rounded-2xl border border-[#EDE8E1] p-4 mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs text-[#8C857B] font-medium uppercase tracking-wide">
+            Dringlichkeit der Auktion
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {([
+            {
+              key: "notfall" as Dringlichkeit,
+              titel: "🔴 Notfall",
+              desc: "Sofort-Match · 10 km · +20 % Aufschlag",
+              accent: "#C4574B",
+            },
+            {
+              key: "zeitnah" as Dringlichkeit,
+              titel: "🟡 Zeitnah",
+              desc: "48 h · 15 km · +10 % Aufschlag",
+              accent: "#C4956A",
+            },
+            {
+              key: "planbar" as Dringlichkeit,
+              titel: "🟢 Planbar",
+              desc: "7 Tage · 25 km · Standard-Provision",
+              accent: "#3D8B7A",
+            },
+          ]).map(opt => {
+            const aktiv = dringlichkeit === opt.key
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setDringlichkeit(opt.key)}
+                aria-pressed={aktiv}
+                className={`text-left rounded-xl border p-3 transition-all ${
+                  aktiv
+                    ? "border-[#3D8B7A] bg-[#3D8B7A]/5 shadow-sm"
+                    : "border-[#EDE8E1] hover:border-[#3D8B7A]/30"
+                }`}
+              >
+                <div className="text-sm font-semibold text-[#2D2A26] mb-0.5" style={{ color: aktiv ? opt.accent : undefined }}>
+                  {opt.titel}
+                </div>
+                <div className="text-[11px] text-[#8C857B] leading-snug">{opt.desc}</div>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Sort-Bar */}

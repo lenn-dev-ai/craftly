@@ -22,7 +22,6 @@ interface HandwerkerZeile {
   startort_lng: number | null
   lat: number | null
   lng: number | null
-  max_radius_km: number | null
   radius_km: number | null
 }
 
@@ -71,7 +70,7 @@ export async function reScoreTicket(
   const hwIds = angebote.map(a => a.handwerker_id)
   const { data: handwerker } = await supabase
     .from("profiles")
-    .select("id, bewertung_avg, startort_lat, startort_lng, lat, lng, max_radius_km, radius_km")
+    .select("id, bewertung_avg, startort_lat, startort_lng, lat, lng, radius_km")
     .in("id", hwIds)
     .returns<HandwerkerZeile[]>()
 
@@ -135,7 +134,7 @@ export async function reScoreTicket(
         )
       : false
 
-    const radius = hw.max_radius_km ?? hw.radius_km ?? config.radiusKm
+    const radius = hw.radius_km ?? config.radiusKm
 
     const score = berechneSmartScore({
       angebotPreis: a.preis,
