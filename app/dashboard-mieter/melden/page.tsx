@@ -11,12 +11,12 @@ const ERLAUBTE_FOTO_TYPEN = ["image/jpeg", "image/png", "image/webp", "image/hei
 type Step = "foto" | "analyse" | "details" | "ort" | "dringlichkeit" | "zusammenfassung" | "gesendet"
 
 const KI_ANALYSEN: Record<string, { titel: string; gewerk: string; dringlichkeit: string; tipp: string; zeit: string }> = {
-  heizung: { titel: "Heizung / Warmwasser ausgefallen", gewerk: "heizung_sanitaer", dringlichkeit: "hoch", tipp: "Pruefen Sie ob der Thermostat auf mind. Stufe 3 steht und ob andere Heizkoerper betroffen sind.", zeit: "~24h" },
-  wasser: { titel: "Wasserschaden / Feuchtigkeit", gewerk: "heizung_sanitaer", dringlichkeit: "dringend", tipp: "Hauptwasserhahn zudrehen falls moeglich! Handtuecher unterlegen um Ausbreitung zu verhindern.", zeit: "~4h" },
-  elektro: { titel: "Elektroproblem", gewerk: "elektro", dringlichkeit: "hoch", tipp: "Beruehren Sie keine freiliegenden Kabel. Schalten Sie die betroffene Sicherung aus.", zeit: "~12h" },
-  tuer: { titel: "Tuer / Fenster defekt", gewerk: "schreiner", dringlichkeit: "normal", tipp: "Sichern Sie die Stelle provisorisch ab, besonders bei Zugluft oder Einbruchgefahr.", zeit: "~3 Tage" },
-  schimmel: { titel: "Schimmel entdeckt", gewerk: "maler", dringlichkeit: "hoch", tipp: "Gut lueften! Nicht selbst mit Bleiche behandeln - das verschlimmert es oft.", zeit: "~5 Tage" },
-  sonstiges: { titel: "Sonstiger Schaden", gewerk: "allgemein", dringlichkeit: "normal", tipp: "Je genauer die Beschreibung, desto schneller die Loesung.", zeit: "~3-5 Tage" },
+  heizung: { titel: "Heizung / Warmwasser ausgefallen", gewerk: "heizung_sanitaer", dringlichkeit: "hoch", tipp: "Prüfen Sie ob der Thermostat auf mind. Stufe 3 steht und ob andere Heizkörper betroffen sind.", zeit: "~24h" },
+  wasser: { titel: "Wasserschaden / Feuchtigkeit", gewerk: "heizung_sanitaer", dringlichkeit: "dringend", tipp: "Hauptwasserhahn zudrehen falls möglich! Handtücher unterlegen um Ausbreitung zu verhindern.", zeit: "~4h" },
+  elektro: { titel: "Elektroproblem", gewerk: "elektro", dringlichkeit: "hoch", tipp: "Berühren Sie keine freiliegenden Kabel. Schalten Sie die betroffene Sicherung aus.", zeit: "~12h" },
+  tuer: { titel: "Tür / Fenster defekt", gewerk: "schreiner", dringlichkeit: "normal", tipp: "Sichern Sie die Stelle provisorisch ab, besonders bei Zugluft oder Einbruchgefahr.", zeit: "~3 Tage" },
+  schimmel: { titel: "Schimmel entdeckt", gewerk: "maler", dringlichkeit: "hoch", tipp: "Gut lüften! Nicht selbst mit Bleiche behandeln - das verschlimmert es oft.", zeit: "~5 Tage" },
+  sonstiges: { titel: "Sonstiger Schaden", gewerk: "allgemein", dringlichkeit: "normal", tipp: "Je genauer die Beschreibung, desto schneller die Lösung.", zeit: "~3-5 Tage" },
 }
 
 function analyseText(text: string): string {
@@ -242,13 +242,13 @@ export default function MeldenPage() {
 
             {/* Quick-Select Buttons */}
             <div className="mb-6">
-              <p className="text-xs text-[#8C857B] mb-2">Oder schnell auswaehlen:</p>
+              <p className="text-xs text-[#8C857B] mb-2">Oder schnell auswählen:</p>
               <div className="flex flex-wrap gap-2">
                 {[
                   { label: "Heizung aus", icon: "!", val: "Heizung funktioniert nicht mehr, Wohnung wird kalt" },
-                  { label: "Wasserschaden", icon: "~", val: "Wasser tropft oder laeuft aus, Feuchtigkeit an Wand" },
+                  { label: "Wasserschaden", icon: "~", val: "Wasser tropft oder läuft aus, Feuchtigkeit an Wand" },
                   { label: "Strom/Elektrik", icon: "#", val: "Strom ausgefallen oder Steckdose funktioniert nicht" },
-                  { label: "Tuer/Fenster", icon: "|", val: "Tuer oder Fenster laesst sich nicht richtig schliessen" },
+                  { label: "Tür/Fenster", icon: "|", val: "Tür oder Fenster lässt sich nicht richtig schließen" },
                   { label: "Schimmel", icon: "o", val: "Schimmelflecken an Wand oder Decke entdeckt" },
                 ].map(item => (
                   <button
@@ -308,12 +308,12 @@ export default function MeldenPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-[#8C857B] uppercase tracking-wider mb-1">Geschaetzte Zeit</div>
+                  <div className="text-[10px] text-[#8C857B] uppercase tracking-wider mb-1">Geschätzte Zeit</div>
                   <div className="text-sm font-semibold text-[#2D2A26]">{analyse.zeit}</div>
                 </div>
                 <div>
                   <div className="text-[10px] text-[#8C857B] uppercase tracking-wider mb-1">Fachgebiet</div>
-                  <div className="text-sm font-semibold text-[#2D2A26]">{form.gewerk === "heizung_sanitaer" ? "Sanitaer" : form.gewerk === "elektro" ? "Elektro" : form.gewerk === "schreiner" ? "Schreiner" : form.gewerk === "maler" ? "Maler" : "Allgemein"}</div>
+                  <div className="text-sm font-semibold text-[#2D2A26]">{form.gewerk === "heizung_sanitaer" ? "Sanitär" : form.gewerk === "elektro" ? "Elektro" : form.gewerk === "schreiner" ? "Schreiner" : form.gewerk === "maler" ? "Maler" : "Allgemein"}</div>
                 </div>
               </div>
             </Card>
@@ -430,7 +430,7 @@ export default function MeldenPage() {
         {step === "zusammenfassung" && analyse && (
           <div className="animate-fade-in">
             <div className="text-center mb-6">
-              <h2 className="text-lg font-semibold">Meldung pruefen</h2>
+              <h2 className="text-lg font-semibold">Meldung prüfen</h2>
               <p className="text-sm text-[#8C857B]">Alles korrekt? Dann ab damit.</p>
             </div>
 
@@ -459,7 +459,7 @@ export default function MeldenPage() {
                 </div>
                 <div className="border-t border-[#EDE8E1]" />
                 <div className="flex justify-between">
-                  <span className="text-xs text-[#8C857B]">Geschaetzte Bearbeitung</span>
+                  <span className="text-xs text-[#8C857B]">Geschätzte Bearbeitung</span>
                   <span className="text-sm text-[#2D2A26]">{analyse.zeit}</span>
                 </div>
               </div>
@@ -475,7 +475,7 @@ export default function MeldenPage() {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-[#8C857B]">
                   <div className="w-4 h-4 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center text-[8px] text-[#3D8B7A] font-bold">2</div>
-                  Verwalter prueft und bewertet deine Meldung
+                  Verwalter prüft und bewertet deine Meldung
                 </div>
                 <div className="flex items-center gap-2 text-xs text-[#8C857B]">
                   <div className="w-4 h-4 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center text-[8px] text-[#3D8B7A] font-bold">3</div>
@@ -483,7 +483,7 @@ export default function MeldenPage() {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-[#8C857B]">
                   <div className="w-4 h-4 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center text-[8px] text-[#3D8B7A] font-bold">4</div>
-                  Du wirst ueber jeden Schritt informiert
+                  Du wirst über jeden Schritt informiert
                 </div>
               </div>
             </div>
@@ -510,7 +510,7 @@ export default function MeldenPage() {
 
             {/* Mini Pipeline */}
             <div className="flex items-center justify-center gap-2 mb-10">
-              {["Gemeldet", "Pruefung", "Marktplatz", "Reparatur", "Fertig"].map((s, i) => (
+              {["Gemeldet", "Prüfung", "Marktplatz", "Reparatur", "Fertig"].map((s, i) => (
                 <div key={s} className="flex items-center gap-2">
                   <div className={"w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium " + (i === 0 ? "bg-[#3D8B7A] text-white" : "bg-[#F5F3F0] text-[#B5AEA4]")}>
                     {i + 1}

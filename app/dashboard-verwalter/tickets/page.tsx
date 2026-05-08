@@ -65,7 +65,7 @@ export default function TicketsPage() {
       {loading ? (
         <LoadingSpinner />
       ) : shown.length === 0 ? (
-        <EmptyState icon="T" title="Keine Tickets" desc="Fuer diesen Filter gibt es keine Tickets." />
+        <EmptyState icon="T" title="Keine Tickets" desc="Für diesen Filter gibt es keine Tickets." />
       ) : (
         <div className="flex flex-col gap-2">
           {shown.map(t => (

@@ -9,7 +9,7 @@ const rollen = [
     rolle: "admin",
     label: "Admin Dashboard",
     icon: "[A]",
-    desc: "Nutzer verwalten, Rollen aendern, Plattform-Einstellungen, Statistiken",
+    desc: "Nutzer verwalten, Rollen ändern, Plattform-Einstellungen, Statistiken",
     color: "#7C6CAB",
     href: "/dashboard-admin",
   },
@@ -25,7 +25,7 @@ const rollen = [
     rolle: "handwerker",
     label: "Handwerker",
     icon: "[W]",
-    desc: "Auftraege annehmen, Angebote abgeben, Verfuegbarkeit verwalten",
+    desc: "Aufträge annehmen, Angebote abgeben, Verfügbarkeit verwalten",
     color: "#C4956A",
     href: "/dashboard-handwerker",
   },
@@ -33,7 +33,7 @@ const rollen = [
     rolle: "mieter",
     label: "Mieter",
     icon: "[M]",
-    desc: "Schaeden melden, Ticket-Status verfolgen, Bewertungen abgeben",
+    desc: "Schäden melden, Ticket-Status verfolgen, Bewertungen abgeben",
     color: "#D4A24E",
     href: "/dashboard-mieter",
   },
@@ -72,8 +72,8 @@ export default function AdminPage() {
         <div className="mb-10">
           <h1 className="text-2xl font-semibold">Admin-Panel</h1>
           <p className="text-sm text-[#6B665E] mt-1.5 max-w-lg">
-            Waehle ein Dashboard, um es zu testen. Du bleibst als Admin eingeloggt und
-            kannst jederzeit ueber den Button unten rechts hierher zurueckkehren.
+            Wähle ein Dashboard, um es zu testen. Du bleibst als Admin eingeloggt
+            und kannst diese Seite jederzeit über /admin erreichen.
           </p>
         </div>
 
@@ -96,7 +96,7 @@ export default function AdminPage() {
                 <div
                   className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
                   style={{ backgroundColor: r.color + "12", color: r.color }}>
-                  Dashboard oeffnen
+                  Dashboard öffnen
                 </div>
               </div>
             </div>
