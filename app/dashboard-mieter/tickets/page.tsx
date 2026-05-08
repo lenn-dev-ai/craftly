@@ -3,7 +3,8 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket } from "@/types"
-import { Badge, StatusDot, Button, Card, EmptyState, LoadingSpinner } from "@/components/ui"
+import { Badge, StatusDot, Button, Card, EmptyState } from "@/components/ui"
+import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
 
 export default function MieterTicketsPage() {
   const router = useRouter()
@@ -23,7 +24,12 @@ export default function MieterTicketsPage() {
     load()
   }, [router])
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return (
+    <div className="p-6 max-w-3xl mx-auto">
+      <PageHeaderSkeleton />
+      <CardListSkeleton count={4} rows={2} />
+    </div>
+  )
 
   return (
     <div className="p-6 max-w-3xl mx-auto">

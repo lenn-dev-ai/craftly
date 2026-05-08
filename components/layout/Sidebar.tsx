@@ -126,6 +126,13 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
             Impressum
           </Link>
           <Link
+            href="/agb"
+            onClick={() => setMobileOpen(false)}
+            className="hover:text-[#2D2A26] transition-colors"
+          >
+            AGB
+          </Link>
+          <Link
             href="/datenschutz"
             onClick={() => setMobileOpen(false)}
             className="hover:text-[#2D2A26] transition-colors"

@@ -169,6 +169,7 @@ export default function Datenschutz() {
         <div className="mt-12 pt-8 border-t border-[#EDE8E1] flex gap-6 text-sm text-[#8C857B]">
           <Link href="/" className="hover:text-[#2D2A26] transition-colors">Startseite</Link>
           <Link href="/impressum" className="hover:text-[#2D2A26] transition-colors">Impressum</Link>
+          <Link href="/agb" className="hover:text-[#2D2A26] transition-colors">AGB</Link>
         </div>
       </main>
     </div>

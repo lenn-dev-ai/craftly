@@ -313,6 +313,7 @@ export default function LoginPage() {
 
           <div className="mt-8 flex justify-center gap-4 text-xs text-[#8C857B]">
             <Link href="/impressum" className="hover:text-[#2D2A26] transition-colors py-2 px-3">Impressum</Link>
+            <Link href="/agb" className="hover:text-[#2D2A26] transition-colors py-2 px-3">AGB</Link>
             <Link href="/datenschutz" className="hover:text-[#2D2A26] transition-colors py-2 px-3">Datenschutz</Link>
           </div>
         </div>

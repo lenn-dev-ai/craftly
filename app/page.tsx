@@ -778,6 +778,7 @@ function Footer() {
           </div>
           <div className="flex items-center gap-6 text-sm text-[#6B665E]">
             <Link href="/impressum" className="hover:text-[#2D2A26] transition-colors py-3 px-3 inline-block">Impressum</Link>
+            <Link href="/agb" className="hover:text-[#2D2A26] transition-colors py-3 px-3 inline-block">AGB</Link>
             <Link href="/datenschutz" className="hover:text-[#2D2A26] transition-colors py-3 px-3 inline-block">Datenschutz</Link>
           </div>
           <p className="text-sm text-[#8C857B]">

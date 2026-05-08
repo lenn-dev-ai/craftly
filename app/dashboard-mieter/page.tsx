@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket } from "@/types"
-import { Badge, Button, Card, LoadingSpinner } from "@/components/ui"
+import { Badge, Button, Card } from "@/components/ui"
+import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
 
 const PIPELINE_STEPS = [
   { label: "Gemeldet" },
@@ -54,8 +55,9 @@ export default function MieterDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <LoadingSpinner />
+      <div className="p-6 max-w-4xl mx-auto">
+        <PageHeaderSkeleton />
+        <CardListSkeleton count={3} rows={3} />
       </div>
     )
   }

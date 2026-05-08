@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket, TicketStatus } from "@/types"
-import { Badge, StatusDot, Button, Card, EmptyState, LoadingSpinner } from "@/components/ui"
+import { Badge, StatusDot, Button, Card, EmptyState } from "@/components/ui"
+import { CardListSkeleton } from "@/components/ui/Skeleton"
 
 const FILTER_OPTIONS: { label: string; value: TicketStatus | "alle" }[] = [
   { label: "Alle", value: "alle" },
@@ -63,7 +64,7 @@ export default function TicketsPage() {
       </div>
 
       {loading ? (
-        <LoadingSpinner />
+        <CardListSkeleton count={4} rows={2} />
       ) : shown.length === 0 ? (
         <EmptyState icon="T" title="Keine Tickets" desc="Für diesen Filter gibt es keine Tickets." />
       ) : (
