@@ -11,7 +11,6 @@ const menus: Record<Rolle, { href: string; label: string; icon: string }[]> = {
   verwalter: [
     { href: "/dashboard-verwalter", label: "Dashboard", icon: "⬡" },
     { href: "/dashboard-verwalter/tickets", label: "Tickets", icon: "◉" },
-    { href: "/dashboard-verwalter/neues-ticket", label: "Neues Ticket", icon: "＋" },
     { href: "/dashboard-verwalter/marktplatz", label: "Marktplatz", icon: "⚡" },
     { href: "/dashboard-verwalter/handwerker", label: "Handwerker", icon: "⛭" },
     { href: "/dashboard-verwalter/reporting", label: "Reporting", icon: "◈" },

@@ -15,6 +15,16 @@ const dashboardMap: Record<string, string> = {
   mieter: "/dashboard-mieter",
 }
 
+// Honoriert ?redirectTo aus der Middleware nur wenn das Ziel zur Rolle passt
+// (z.B. Mieter darf nicht auf /dashboard-handwerker landen).
+function zielFuerRolle(rolle: string, redirectTo: string | null): string {
+  const fallback = dashboardMap[rolle] || "/dashboard-mieter"
+  if (!redirectTo || !redirectTo.startsWith("/")) return fallback
+  if (redirectTo.startsWith(fallback)) return redirectTo
+  if (rolle === "admin") return redirectTo
+  return fallback
+}
+
 export default function LoginPage() {
   const [serverError, setServerError] = useState("")
   const [checking, setChecking] = useState(true)
@@ -39,7 +49,8 @@ export default function LoginPage() {
           .single()
           .then(({ data: profile }) => {
             const rolle = profile?.rolle || "mieter"
-            window.location.href = dashboardMap[rolle] || "/dashboard-mieter"
+            const redirectTo = new URLSearchParams(window.location.search).get("redirectTo")
+            window.location.href = zielFuerRolle(rolle, redirectTo)
           })
       } else {
         setChecking(false)
@@ -66,7 +77,8 @@ export default function LoginPage() {
           .eq("id", data.user.id)
           .single()
         const rolle = profile?.rolle || "mieter"
-        window.location.href = dashboardMap[rolle] || "/dashboard-mieter"
+        const redirectTo = new URLSearchParams(window.location.search).get("redirectTo")
+        window.location.href = zielFuerRolle(rolle, redirectTo)
       }
     } catch {
       setServerError("Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.")
