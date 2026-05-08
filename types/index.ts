@@ -56,6 +56,11 @@ export interface Angebot {
   // Route-Daten (berechnet beim Einreichen)
   routen_score?: number; fahrzeit_minuten?: number
   fahrzeit_delta_minuten?: number; effektiv_preis?: number
+  // Auction-Engine: gepflegt von lib/auction/scoring-pipeline.ts
+  smart_score?: number | null
+  entfernung_km?: number | null
+  fahrzeit_min?: number | null
+  ist_routen_bonus?: boolean | null
 }
 
 export interface Einladung {

@@ -45,11 +45,18 @@ function formatStunden(min: number): string {
   return m === 0 ? `${h} Std` : `${h} Std ${m} min`
 }
 
+interface OptimierteRoute {
+  reihenfolge: Array<{ ticketId: string; latitude: number; longitude: number; adresse?: string }>
+  gesamtDistanzKm: number
+  gesamtFahrzeitMin: number
+}
+
 export default function TerminePage() {
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [datum, setDatum] = useState(isoHeute())
   const [termine, setTermine] = useState<Termin[]>([])
+  const [optimierteRoute, setOptimierteRoute] = useState<OptimierteRoute | null>(null)
   const [loading, setLoading] = useState(true)
   const [showPrivatForm, setShowPrivatForm] = useState(false)
   const [privatForm, setPrivatForm] = useState({
@@ -118,6 +125,28 @@ export default function TerminePage() {
     }
     liste.sort((a, b) => parseTimeToMin(a.von) - parseTimeToMin(b.von))
     setTermine(liste)
+
+    // Optimierte Tagesroute aus /api/route — best-effort, blockiert nicht
+    setOptimierteRoute(null)
+    const auftragsStops = liste.filter(t => t.source === "auftrag" && t.lat != null && t.lng != null)
+    if (auftragsStops.length >= 2) {
+      try {
+        const res = await fetch(`/api/route/${user.id}?datum=${datum}`)
+        if (res.ok) {
+          const data = await res.json() as OptimierteRoute & { handwerkerId: string }
+          if (Array.isArray(data.reihenfolge) && data.reihenfolge.length > 0) {
+            setOptimierteRoute({
+              reihenfolge: data.reihenfolge,
+              gesamtDistanzKm: data.gesamtDistanzKm,
+              gesamtFahrzeitMin: data.gesamtFahrzeitMin,
+            })
+          }
+        }
+      } catch {
+        // Stille — Tagesplan funktioniert auch ohne Optimierung
+      }
+    }
+
     setLoading(false)
   }, [datum, router])
 
@@ -276,10 +305,59 @@ export default function TerminePage() {
         </div>
       )}
 
-      {/* Routen-Übersicht */}
+      {/* Bündel-Optimierung (aus routen_planung / /api/route) */}
+      {optimierteRoute && optimierteRoute.reihenfolge.length >= 2 && (
+        <div className="bg-gradient-to-br from-[#3D8B7A]/5 to-[#5B6ABF]/5 rounded-2xl border border-[#3D8B7A]/20 p-5 mb-4">
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider font-bold text-[#3D8B7A] mb-1">Routen-Optimierung</div>
+              <h2 className="text-base font-semibold text-[#2D2A26]">Empfohlene Reihenfolge</h2>
+              <p className="text-xs text-[#8C857B] mt-1">Bündelt {optimierteRoute.reihenfolge.length} Aufträge in der kürzesten Tour ab Startort.</p>
+            </div>
+          </div>
+
+          {/* KPI-Reihe */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="bg-white rounded-xl p-3 border border-[#EDE8E1]">
+              <div className="text-[10px] text-[#8C857B] uppercase tracking-wide">Stops</div>
+              <div className="text-xl font-bold text-[#2D2A26] tabular-nums">{optimierteRoute.reihenfolge.length}</div>
+            </div>
+            <div className="bg-white rounded-xl p-3 border border-[#EDE8E1]">
+              <div className="text-[10px] text-[#8C857B] uppercase tracking-wide">Fahrzeit</div>
+              <div className="text-xl font-bold text-[#3D8B7A] tabular-nums">{formatiereFahrzeit(optimierteRoute.gesamtFahrzeitMin)}</div>
+            </div>
+            <div className="bg-white rounded-xl p-3 border border-[#EDE8E1]">
+              <div className="text-[10px] text-[#8C857B] uppercase tracking-wide">Distanz</div>
+              <div className="text-xl font-bold text-[#5B6ABF] tabular-nums">{formatiereDistanz(optimierteRoute.gesamtDistanzKm)}</div>
+            </div>
+          </div>
+
+          {/* Reihenfolge der Stops */}
+          <ol className="space-y-1.5">
+            {optimierteRoute.reihenfolge.map((stop, i) => {
+              const t = termine.find(t => t.ticket_id === stop.ticketId)
+              return (
+                <li key={stop.ticketId} className="flex items-center gap-3 text-xs">
+                  <span className="w-5 h-5 rounded-full bg-[#3D8B7A] text-white flex items-center justify-center text-[10px] font-bold tabular-nums flex-shrink-0">
+                    {i + 1}
+                  </span>
+                  <span className="text-[#2D2A26] truncate">
+                    {stop.adresse || t?.titel || stop.ticketId.slice(0, 8)}
+                  </span>
+                  {t && (
+                    <span className="text-[#8C857B] tabular-nums ml-auto flex-shrink-0">{t.von}</span>
+                  )}
+                </li>
+              )
+            })}
+          </ol>
+        </div>
+      )}
+
+      {/* Routen-Übersicht (chronologisch nach Termin-Zeit) */}
       {termine.length > 0 && (
         <div className="bg-white rounded-2xl border border-[#EDE8E1] p-5 mb-4">
-          <h2 className="text-sm font-semibold text-[#2D2A26] uppercase tracking-wide mb-3">Tagesroute</h2>
+          <h2 className="text-sm font-semibold text-[#2D2A26] uppercase tracking-wide mb-3">Tagesroute (chronologisch)</h2>
           <div className="space-y-3">
             {/* Startort */}
             {startortGesetzt && (

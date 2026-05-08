@@ -5,6 +5,7 @@ import {
   effektiveProvisionsRate,
 } from "@/lib/auction/auction-manager"
 import { calculateCommission } from "@/lib/pricing/commission"
+import { fuegeTicketZuTagesplan } from "@/lib/auction/routen-planung-sync"
 
 // POST /api/auction/close
 // Body: { ticket_id, angebot_id? }
@@ -88,10 +89,16 @@ export async function POST(request: NextRequest) {
 
   const { data: angebot } = await supabase
     .from("angebote")
-    .select("id, ticket_id, handwerker_id, preis")
+    .select("id, ticket_id, handwerker_id, preis, fruehester_termin")
     .eq("id", pickedAngebotId)
     .eq("ticket_id", ticketId)
-    .single()
+    .single<{
+      id: string
+      ticket_id: string
+      handwerker_id: string
+      preis: number
+      fruehester_termin: string | null
+    }>()
   if (!angebot) {
     return NextResponse.json({ error: "Angebot nicht gefunden" }, { status: 404 })
   }
@@ -138,6 +145,20 @@ export async function POST(request: NextRequest) {
     { onConflict: "ticket_id" },
   )
 
+  // Tagesplan aktualisieren — best-effort, blockiert die Vergabe nicht
+  let plannerStatus: string | undefined
+  if (angebot.fruehester_termin) {
+    const result = await fuegeTicketZuTagesplan(
+      supabase,
+      angebot.handwerker_id,
+      ticketId,
+      angebot.fruehester_termin,
+    )
+    if (!result.ok) plannerStatus = result.skipped
+  } else {
+    plannerStatus = "kein-termin"
+  }
+
   return NextResponse.json({
     ok: true,
     ticketId,
@@ -149,5 +170,6 @@ export async function POST(request: NextRequest) {
     gesamt: calc.gesamt,
     surgeFaktor: surge,
     isEarlyAdopter,
+    plannerStatus,
   })
 }

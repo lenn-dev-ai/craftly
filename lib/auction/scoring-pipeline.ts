@@ -78,13 +78,16 @@ export async function reScoreTicket(
     (handwerker ?? []).map(h => [h.id, h]),
   )
 
-  // Routen-Bonus-Daten: bestehende Termine pro Handwerker pro Datum.
-  // Wir gruppieren nach datum (fruehester_termin) und prüfen dann ob im
-  // termine-Kalender bereits ein Job in der Nähe an dem Tag liegt.
+  // Routen-Bonus-Daten: bestehende Stops pro Handwerker pro Datum.
+  // Quellen:
+  //   1) termine — feste Auftrags-Termine (mit einsatzort_lat/lng)
+  //   2) routen_planung — gebündelte Tagespläne (ticket_ids → tickets join)
+  // Beide werden zusammengeführt; Duplikate sind unkritisch (gleicher Bonus).
   const termineMap = new Map<string, BestehenderJob[]>()
   const bidsMitDatum = angebote.filter(a => a.fruehester_termin)
   const datums = Array.from(new Set(bidsMitDatum.map(a => a.fruehester_termin!)))
   if (datums.length > 0) {
+    // Quelle 1: termine
     const { data: termine } = await supabase
       .from("termine")
       .select("handwerker_id, datum, einsatzort_lat, einsatzort_lng")
@@ -103,6 +106,47 @@ export async function reScoreTicket(
       const arr = termineMap.get(key) ?? []
       arr.push({ latitude: t.einsatzort_lat, longitude: t.einsatzort_lng })
       termineMap.set(key, arr)
+    }
+
+    // Quelle 2: routen_planung (geplante Bündel — kann Stops enthalten,
+    // bevor sie als termine firm sind)
+    const { data: planeintraege } = await supabase
+      .from("routen_planung")
+      .select("handwerker_id, datum, ticket_ids")
+      .in("handwerker_id", hwIds)
+      .in("datum", datums)
+      .returns<Array<{
+        handwerker_id: string
+        datum: string
+        ticket_ids: string[] | null
+      }>>()
+
+    const alleTicketIds = Array.from(
+      new Set((planeintraege ?? []).flatMap(p => p.ticket_ids ?? [])),
+    )
+    if (alleTicketIds.length > 0) {
+      const { data: planTickets } = await supabase
+        .from("tickets")
+        .select("id, einsatzort_lat, einsatzort_lng")
+        .in("id", alleTicketIds)
+        .returns<Array<{
+          id: string
+          einsatzort_lat: number | null
+          einsatzort_lng: number | null
+        }>>()
+      const ticketGeoById = new Map(
+        (planTickets ?? []).map(t => [t.id, t]),
+      )
+      for (const p of planeintraege ?? []) {
+        const key = `${p.handwerker_id}|${p.datum}`
+        const arr = termineMap.get(key) ?? []
+        for (const tid of p.ticket_ids ?? []) {
+          const geo = ticketGeoById.get(tid)
+          if (!geo || geo.einsatzort_lat == null || geo.einsatzort_lng == null) continue
+          arr.push({ latitude: geo.einsatzort_lat, longitude: geo.einsatzort_lng })
+        }
+        if (arr.length > 0) termineMap.set(key, arr)
+      }
     }
   }
 

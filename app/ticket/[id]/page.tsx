@@ -243,7 +243,7 @@ export default function TicketDetail() {
       { onConflict: "ticket_id" },
     )
 
-    // 4) Termin im Handwerker-Kalender (wenn fruehester_termin gesetzt)
+    // 4) Termin im Handwerker-Kalender + Tagesplan-Sync
     if (angebot.fruehester_termin) {
       await supabase.from("termine").insert({
         handwerker_id: handwerkerId,
@@ -256,6 +256,8 @@ export default function TicketDetail() {
         einsatzort_lat: ticket?.einsatzort_lat ?? null,
         einsatzort_lng: ticket?.einsatzort_lng ?? null,
       })
+      const { fuegeTicketZuTagesplan } = await import("@/lib/auction/routen-planung-sync")
+      await fuegeTicketZuTagesplan(supabase, handwerkerId, id, angebot.fruehester_termin)
     }
 
     // 5) System-Nachricht im Ticket-Chat

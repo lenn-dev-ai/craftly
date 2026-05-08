@@ -28,11 +28,20 @@ function Timer({ end }: { end: string }) {
   )
 }
 
+type Dringlichkeit = "notfall" | "zeitnah" | "planbar"
+
+const DRINGLICHKEITS_BADGE: Record<Dringlichkeit, { label: string; cls: string }> = {
+  notfall: { label: "🔴 Notfall", cls: "bg-[#C4574B]/10 text-[#C4574B] border border-[#C4574B]/20" },
+  zeitnah: { label: "🟡 Zeitnah", cls: "bg-[#C4956A]/10 text-[#C4956A] border border-[#C4956A]/20" },
+  planbar: { label: "🟢 Planbar", cls: "bg-[#3D8B7A]/10 text-[#3D8B7A] border border-[#3D8B7A]/20" },
+}
+
 export default function HandwerkerDashboard() {
   const router = useRouter()
   const [auktionen, setAuktionen] = useState<Ticket[]>([])
   const [meineAuftraege, setMeineAuftraege] = useState<Ticket[]>([])
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [zeigeAusserhalb, setZeigeAusserhalb] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -66,27 +75,39 @@ export default function HandwerkerDashboard() {
   )
 
   const standortGesetzt = profile?.lat != null && profile?.lng != null
+  const radiusKm = profile?.radius_km ?? 25
 
-  // Auktionen nach Distanz sortieren wenn Standort gesetzt
-  const auktionenSortiert = standortGesetzt
-    ? [...auktionen].sort((a, b) => {
-        const dA = a.einsatzort_lat && a.einsatzort_lng
-          ? haversineKm(profile!.lat!, profile!.lng!, a.einsatzort_lat, a.einsatzort_lng)
-          : 99999
-        const dB = b.einsatzort_lat && b.einsatzort_lng
-          ? haversineKm(profile!.lat!, profile!.lng!, b.einsatzort_lat, b.einsatzort_lng)
-          : 99999
-        return dA - dB
-      })
+  // Distanz-Map für effizientes Filtern + Sortieren
+  const distanzVon = (t: Ticket): number => {
+    if (!standortGesetzt || t.einsatzort_lat == null || t.einsatzort_lng == null) return Infinity
+    return haversineKm(profile!.lat!, profile!.lng!, t.einsatzort_lat, t.einsatzort_lng)
+  }
+
+  // Im-Radius-Filter: ohne Standort zeigen wir alles
+  const imRadiusListe = standortGesetzt
+    ? auktionen.filter(t => distanzVon(t) <= radiusKm)
+    : auktionen
+  const imRadius = imRadiusListe.length
+  const ausserhalb = auktionen.length - imRadius
+
+  // Anzeige-Liste: standardmäßig Im-Radius, optional alle
+  const sichtbareAuktionen = standortGesetzt && !zeigeAusserhalb
+    ? imRadiusListe
     : auktionen
 
-  // Auktionen im Radius zählen
-  const imRadius = standortGesetzt && profile?.radius_km
-    ? auktionen.filter(t => {
-        if (!t.einsatzort_lat || !t.einsatzort_lng) return false
-        return haversineKm(profile.lat!, profile.lng!, t.einsatzort_lat, t.einsatzort_lng) <= profile.radius_km!
-      }).length
-    : auktionen.length
+  // Sortierung:
+  //  Primär: Smart-Score absteigend (wenn der Handwerker schon ein Bid hat)
+  //  Sekundär: Distanz aufsteigend
+  // Smart-Score-Vorgriff: liegt nur am eigenen Bid vor — falls noch keiner
+  // existiert, sortieren wir reine Distanz.
+  const auktionenSortiert = [...sichtbareAuktionen].sort((a, b) => {
+    const aBid = a.angebote?.find(x => x.handwerker_id === profile?.id)
+    const bBid = b.angebote?.find(x => x.handwerker_id === profile?.id)
+    const sa = aBid?.smart_score ?? null
+    const sb = bBid?.smart_score ?? null
+    if (sa != null && sb != null && sa !== sb) return sb - sa
+    return distanzVon(a) - distanzVon(b)
+  })
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto pt-16 md:pt-8">
@@ -177,11 +198,29 @@ export default function HandwerkerDashboard() {
 
       {/* Auktionen — der Hauptcontent */}
       <div className="mb-10">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h2 className="text-lg font-semibold text-[#2D2A26]">Aktuelle Ausschreibungen</h2>
-          {auktionenSortiert.length > 0 && standortGesetzt && (
-            <span className="text-xs text-[#8C857B]">Nach Distanz sortiert</span>
-          )}
+          <div className="flex items-center gap-3 text-xs">
+            {standortGesetzt && (
+              zeigeAusserhalb ? (
+                <button
+                  onClick={() => setZeigeAusserhalb(false)}
+                  className="text-[#3D8B7A] hover:underline font-medium"
+                >
+                  Nur im Radius zeigen ({imRadius})
+                </button>
+              ) : ausserhalb > 0 ? (
+                <button
+                  onClick={() => setZeigeAusserhalb(true)}
+                  className="text-[#8C857B] hover:text-[#2D2A26] font-medium"
+                >
+                  + {ausserhalb} außerhalb anzeigen
+                </button>
+              ) : (
+                <span className="text-[#8C857B]">Nach Smart-Score sortiert</span>
+              )
+            )}
+          </div>
         </div>
 
         {auktionenSortiert.length === 0 ? (
@@ -209,7 +248,19 @@ export default function HandwerkerDashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <h3 className="text-base font-semibold text-[#2D2A26] truncate">{t.titel}</h3>
-                        {t.auktion_ende && <Timer end={t.auktion_ende} />}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {(() => {
+                            const d = (t as Ticket & { dringlichkeit?: Dringlichkeit }).dringlichkeit
+                            if (!d) return null
+                            const badge = DRINGLICHKEITS_BADGE[d]
+                            return (
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${badge.cls}`}>
+                                {badge.label}
+                              </span>
+                            )
+                          })()}
+                          {t.auktion_ende && <Timer end={t.auktion_ende} />}
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2 flex-wrap mb-3">
