@@ -6,11 +6,8 @@ import { TicketStatus, Prioritaet } from "@/types"
 export function Badge({ status }: { status: TicketStatus }) {
   const map: Record<TicketStatus, { label: string; cls: string }> = {
     offen:            { label: "Offen",            cls: "badge-offen" },
-    marktplatz:       { label: "Marktplatz",       cls: "badge-progress" },
     auktion:          { label: "Auktion aktiv",    cls: "badge-auktion" },
-    vergeben:         { label: "Vergeben",          cls: "badge-progress" },
     in_bearbeitung:   { label: "In Bearbeitung",   cls: "badge-progress" },
-    in_arbeit:        { label: "In Arbeit",        cls: "badge-progress" },
     erledigt:         { label: "Erledigt",          cls: "badge-erledigt" },
   }
   const { label, cls } = map[status]
@@ -31,7 +28,6 @@ export function PrioBadge({ prio }: { prio: Prioritaet }) {
     dringend: { label: "Dringend", icon: "!!", cls: "badge-dringend" },
     hoch:     { label: "Hoch",     icon: "!",  cls: "badge-hoch" },
     normal:   { label: "Normal",   icon: "-",  cls: "badge-normal" },
-    niedrig:  { label: "Niedrig",  icon: "~",  cls: "badge-niedrig" },
   }
   const { label, icon, cls } = map[prio]
   return (
@@ -48,11 +44,8 @@ export function PrioBadge({ prio }: { prio: Prioritaet }) {
 export function StatusDot({ status }: { status: TicketStatus }) {
   const colors: Record<TicketStatus, string> = {
     offen:            "bg-[#C4574B]",
-    marktplatz:       "bg-[#3D8B7A]",
     auktion:          "bg-[#5B6ABF]",
-    vergeben:         "bg-[#8B7ABF]",
     in_bearbeitung:   "bg-[#5B6ABF]",
-    in_arbeit:        "bg-[#5B6ABF]",
     erledigt:         "bg-[#3D8B7A]",
   }
   return (

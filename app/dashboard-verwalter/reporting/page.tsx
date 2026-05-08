@@ -133,7 +133,7 @@ export default function ReportingPage() {
         {[
           { label: "Offen", count: tickets.filter(t => t.status === "offen").length, color: "#C4574B" },
           { label: "Auktion", count: tickets.filter(t => t.status === "auktion").length, color: "#5B6ABF" },
-          { label: "In Bearbeitung", count: tickets.filter(t => t.status === "in_bearbeitung" || t.status === "in_arbeit").length, color: "#C4956A" },
+          { label: "In Bearbeitung", count: tickets.filter(t => t.status === "in_bearbeitung").length, color: "#C4956A" },
           { label: "Erledigt", count: erledigt.length, color: "#3D8B7A" },
         ].map(({ label, count, color }) => (
           <div key={label} className="mb-3 last:mb-0">

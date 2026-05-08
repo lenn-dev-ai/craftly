@@ -13,11 +13,11 @@ const PIPELINE_STEPS = [
   { label: "Fertig" },
 ]
 
-// Status-Übergang: offen → auktion → in_bearbeitung/in_arbeit/vergeben → erledigt
+// Status-Übergang: offen → auktion → in_bearbeitung → erledigt
 function getStepIndex(status: string): number {
   if (status === "offen") return 0
-  if (status === "auktion" || status === "marktplatz") return 1
-  if (status === "in_bearbeitung" || status === "in_arbeit" || status === "vergeben") return 2
+  if (status === "auktion") return 1
+  if (status === "in_bearbeitung") return 2
   if (status === "erledigt") return 3
   return 0
 }
@@ -25,8 +25,8 @@ function getStepIndex(status: string): number {
 function getEstimate(ticket: Ticket): string {
   const s = ticket.status
   const p = ticket.prioritaet
-  if (s === "in_bearbeitung" || s === "in_arbeit" || s === "vergeben") return p === "dringend" ? "Heute" : "1–3 Tage"
-  if (s === "auktion" || s === "marktplatz") return p === "dringend" ? "Wenige Stunden" : "1–2 Tage bis Vergabe"
+  if (s === "in_bearbeitung") return p === "dringend" ? "Heute" : "1–3 Tage"
+  if (s === "auktion") return p === "dringend" ? "Wenige Stunden" : "1–2 Tage bis Vergabe"
   if (s === "offen") return p === "dringend" ? "Innerhalb 24 Std" : "2–5 Tage"
   return ""
 }

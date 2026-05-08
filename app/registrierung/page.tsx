@@ -66,7 +66,6 @@ export default function RegistrierungPage() {
       })
 
       if (profileError) {
-        console.error("Profile creation failed:", profileError)
         setServerError("Profil konnte nicht erstellt werden. Bitte kontaktieren Sie den Support.")
         return
       }

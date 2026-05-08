@@ -75,8 +75,8 @@ export default function VerwalterDashboard() {
   )
 
   const offene = tickets.filter(t => t.status === "offen")
-  const marktplatz = tickets.filter(t => t.status === "marktplatz" || t.status === "auktion")
-  const inArbeit = tickets.filter(t => t.status === "in_bearbeitung" || t.status === "in_arbeit" || t.status === "vergeben")
+  const marktplatz = tickets.filter(t => t.status === "auktion")
+  const inArbeit = tickets.filter(t => t.status === "in_bearbeitung")
   const erledigt = tickets.filter(t => t.status === "erledigt")
   const monatsKosten = tickets
     .filter(t => t.kosten_final && new Date(t.created_at).getMonth() === new Date().getMonth())

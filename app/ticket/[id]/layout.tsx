@@ -1,10 +1,11 @@
-import Sidebar from "@/components/layout/Sidebar"
+import type { Metadata } from "next"
+import TicketShell from "@/components/layout/TicketShell"
+
+export const metadata: Metadata = {
+  title: "Ticket",
+  robots: { index: false, follow: false },
+}
 
 export default function TicketLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex min-h-screen bg-[#FAF8F5]">
-      <Sidebar rolle="mieter" />
-      <main className="flex-1 overflow-auto">{children}</main>
-    </div>
-  )
+  return <TicketShell>{children}</TicketShell>
 }

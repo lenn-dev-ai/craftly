@@ -282,12 +282,12 @@ export default function HandwerkerDashboard() {
                   <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                     t.status === "erledigt"
                       ? "bg-[#3D8B7A]/10 text-[#3D8B7A]"
-                      : t.status === "in_bearbeitung" || t.status === "in_arbeit"
+                      : t.status === "in_bearbeitung"
                       ? "bg-[#C4956A]/10 text-[#C4956A]"
                       : "bg-[#EDE8E1] text-[#6B665E]"
                   }`}>
                     {t.status === "erledigt" ? "Erledigt"
-                      : t.status === "in_bearbeitung" || t.status === "in_arbeit" ? "In Arbeit"
+                      : t.status === "in_bearbeitung" ? "In Arbeit"
                       : t.status}
                   </span>
                 </div>

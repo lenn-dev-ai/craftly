@@ -10,6 +10,8 @@ interface ErrorPageProps {
 
 export default function Error({ error, reset }: ErrorPageProps) {
   useEffect(() => {
+    // App-Error-Boundary: Loggt den Fehler in DevTools/Server-Logs.
+    // Hier später ein Error-Reporting wie Sentry anschließen.
     console.error('Application error:', error);
   }, [error]);
 
