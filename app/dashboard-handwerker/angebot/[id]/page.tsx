@@ -68,34 +68,24 @@ export default function AngebotAbgeben() {
       return
     }
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      setError("Nicht eingeloggt")
-      setSubmitting(false)
-      return
-    }
-
-    const { error: insertError } = await supabase
-      .from("angebote")
-      .insert({
+    // API-Route nutzen: schreibt Bid, markiert Einladung, triggert
+    // Smart-Score-Recompute. Direct-Insert würde den Score überspringen.
+    const res = await fetch("/api/auction/bid", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         ticket_id: id,
-        handwerker_id: user.id,
         preis: preisNum,
         fruehester_termin: fruehesterTermin || null,
         nachricht: nachricht || null,
-        status: "eingereicht",
-      })
-
-    if (insertError) {
-      setError("Fehler beim Senden: " + insertError.message)
+      }),
+    })
+    if (!res.ok) {
+      const { error: msg } = await res.json().catch(() => ({ error: "Unbekannter Fehler" }))
+      setError("Fehler beim Senden: " + msg)
       setSubmitting(false)
       return
     }
-
-    // Einladung auf "angebot" setzen damit Verwalter sieht wer reagiert hat
-    await supabase.from("einladungen").update({ status: "angebot" })
-      .eq("ticket_id", id).eq("handwerker_id", user.id)
 
     setSuccess(true)
     setSubmitting(false)

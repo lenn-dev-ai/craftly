@@ -5,28 +5,8 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase"
 import { Ticket, UserProfile } from "@/types"
 import DistanceBadge from "@/components/DistanceBadge"
+import { Timer } from "@/components/ui/Timer"
 import { haversineKm } from "@/lib/distance"
-
-function Timer({ end }: { end: string }) {
-  const [secs, setSecs] = useState(0)
-  useEffect(() => {
-    const calc = () => Math.max(0, Math.floor((new Date(end).getTime() - Date.now()) / 1000))
-    setSecs(calc())
-    const id = setInterval(() => setSecs(calc()), 1000)
-    return () => clearInterval(id)
-  }, [end])
-  const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = secs % 60
-  const fmt = (n: number) => String(n).padStart(2, "0")
-  if (secs === 0) return <span className="text-xs text-[#C4574B] font-medium">Abgelaufen</span>
-  const dringend = secs < 3600
-  return (
-    <span className={`text-xs px-2.5 py-1 rounded-full font-medium tabular-nums ${
-      dringend ? "bg-[#C4574B]/10 text-[#C4574B] animate-pulse" : "bg-[#C4956A]/10 text-[#C4956A]"
-    }`}>
-      {h > 0 && `${fmt(h)}:`}{fmt(m)}:{fmt(s)}
-    </span>
-  )
-}
 
 type Dringlichkeit = "notfall" | "zeitnah" | "planbar"
 
@@ -76,11 +56,22 @@ export default function HandwerkerDashboard() {
 
   const standortGesetzt = profile?.lat != null && profile?.lng != null
   const radiusKm = profile?.radius_km ?? 25
+  const meinGewerk = profile?.gewerk?.toLowerCase()
 
   // Distanz-Map für effizientes Filtern + Sortieren
   const distanzVon = (t: Ticket): number => {
     if (!standortGesetzt || t.einsatzort_lat == null || t.einsatzort_lng == null) return Infinity
     return haversineKm(profile!.lat!, profile!.lng!, t.einsatzort_lat, t.einsatzort_lng)
+  }
+
+  // Gewerk-Match: Ticket-Gewerk gleicht Handwerker-Gewerk oder ist
+  // 'allgemein' (offen für alle Gewerke). Ohne gepflegtes Gewerk auf
+  // beiden Seiten zählt als Match.
+  const passtZumGewerk = (t: Ticket): boolean => {
+    if (!meinGewerk) return true
+    const tg = t.gewerk?.toLowerCase()
+    if (!tg || tg === "allgemein") return true
+    return tg.includes(meinGewerk) || meinGewerk.includes(tg)
   }
 
   // Im-Radius-Filter: ohne Standort zeigen wir alles
@@ -90,10 +81,14 @@ export default function HandwerkerDashboard() {
   const imRadius = imRadiusListe.length
   const ausserhalb = auktionen.length - imRadius
 
-  // Anzeige-Liste: standardmäßig Im-Radius, optional alle
-  const sichtbareAuktionen = standortGesetzt && !zeigeAusserhalb
+  // Anzeige-Liste: standardmäßig Im-Radius + Gewerk-Match, optional alle
+  const sichtbareAuktionen = (standortGesetzt && !zeigeAusserhalb
     ? imRadiusListe
     : auktionen
+  ).filter(passtZumGewerk)
+  const ausgeblendetWegenGewerk =
+    (standortGesetzt && !zeigeAusserhalb ? imRadiusListe : auktionen).length -
+    sichtbareAuktionen.length
 
   // Sortierung:
   //  Primär: Smart-Score absteigend (wenn der Handwerker schon ein Bid hat)
@@ -232,6 +227,15 @@ export default function HandwerkerDashboard() {
             <div className="text-sm text-[#8C857B] max-w-sm mx-auto">
               Sobald Verwalter neue Aufträge ausschreiben, erscheinen sie hier — du wirst auch per E-Mail informiert.
             </div>
+            {ausgeblendetWegenGewerk > 0 && (
+              <div className="text-xs text-[#8C857B] mt-4">
+                {ausgeblendetWegenGewerk} weitere Auktion(en) passen nicht zu deinem Gewerk
+                {profile?.gewerk && <> ({profile.gewerk})</>}.
+                <Link href="/dashboard-handwerker/profil" className="ml-1 text-[#3D8B7A] hover:underline">
+                  Gewerk ändern
+                </Link>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col gap-3">

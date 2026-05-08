@@ -4,7 +4,6 @@ import { useRouter, useParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket, Angebot, Nachricht, UserProfile, Einladung, Bewertung } from "@/types"
 import { Badge, PrioBadge, Avatar, Button, Card, Input, LoadingSpinner } from "@/components/ui"
-import { Timer } from "@/components/ui/Timer"
 import {
   calculateCommission,
   getEffectiveRate,
