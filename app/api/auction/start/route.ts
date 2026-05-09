@@ -10,6 +10,8 @@ import { berechneSmartScore } from "@/lib/auction/smart-score"
 import { haversineKm, schaetzeFahrzeitMin } from "@/lib/distance"
 import { calculateCommission } from "@/lib/pricing/commission"
 import { fuegeTicketZuTagesplan } from "@/lib/auction/routen-planung-sync"
+import { sendEmailFireAndForget } from "@/lib/email/send"
+import { einladungEmail, zuschlagEmail } from "@/lib/email/templates"
 
 const DEFAULT_NOTFALL_STUNDEN = 2
 const DEFAULT_STUNDENSATZ = 50
@@ -57,11 +59,12 @@ export async function POST(request: NextRequest) {
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, titel, erstellt_von, status, einsatzort_lat, einsatzort_lng, einsatzort_adresse, gewerk")
+    .select("id, titel, beschreibung, erstellt_von, status, einsatzort_lat, einsatzort_lng, einsatzort_adresse, gewerk")
     .eq("id", ticketId)
     .single<{
       id: string
       titel: string
+      beschreibung: string | null
       erstellt_von: string
       status: string
       einsatzort_lat: number | null
@@ -244,6 +247,25 @@ export async function POST(request: NextRequest) {
     // Tagesplan-Sync (best-effort)
     await fuegeTicketZuTagesplan(supabase, top.id, ticketId, heute)
 
+    // Fire-and-forget: Zuschlag-Mail an den auto-zugewiesenen Handwerker
+    void (async () => {
+      const { data: hw } = await supabase
+        .from("profiles")
+        .select("email, name")
+        .eq("id", top.id)
+        .single<{ email: string | null; name: string | null }>()
+      if (!hw?.email) return
+      const { subject, html } = zuschlagEmail({
+        handwerkerName: hw.name || "Handwerker",
+        ticketTitel: `🔴 Notfall: ${ticket.titel}`,
+        ticketBeschreibung: "Direktauftrag (Notfall-Match) — bitte umgehend kontaktieren.",
+        einsatzort: ticket.einsatzort_adresse || "",
+        angebotPreis: auftragswert,
+        ticketId: ticket.id,
+      })
+      sendEmailFireAndForget({ to: hw.email, subject, html })
+    })().catch(err => console.error("[Email] Notfall-Zuschlag-Mail fehlgeschlagen:", err))
+
     return NextResponse.json({
       ok: true,
       ticketId,
@@ -279,6 +301,61 @@ export async function POST(request: NextRequest) {
   if (updateErr) {
     return NextResponse.json({ error: updateErr.message }, { status: 500 })
   }
+
+  // Fire-and-forget: Einladungs-Mails an passende Handwerker im Radius
+  void (async () => {
+    let query = supabase
+      .from("profiles")
+      .select("id, email, name, gewerk, startort_lat, startort_lng, lat, lng, radius_km")
+      .eq("rolle", "handwerker")
+    if (ticket.gewerk && ticket.gewerk !== "allgemein") {
+      query = query.ilike("gewerk", `%${ticket.gewerk}%`)
+    }
+    const { data: handwerker } = await query.returns<Array<{
+      id: string
+      email: string | null
+      name: string | null
+      gewerk: string | null
+      startort_lat: number | null
+      startort_lng: number | null
+      lat: number | null
+      lng: number | null
+      radius_km: number | null
+    }>>()
+
+    const auktionEndeFormatiert = ende
+      ? ende.toLocaleString("de-DE", {
+          day: "2-digit", month: "long", year: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        })
+      : "—"
+
+    for (const hw of handwerker ?? []) {
+      if (!hw.email) continue
+      const hwLat = hw.startort_lat ?? hw.lat
+      const hwLng = hw.startort_lng ?? hw.lng
+      if (hwLat == null || hwLng == null) continue
+      const distanz = haversineKm(
+        hwLat, hwLng,
+        ticket.einsatzort_lat as number, ticket.einsatzort_lng as number,
+      )
+      const radius = hw.radius_km ?? config.radiusKm
+      if (distanz > radius) continue
+
+      const { subject, html } = einladungEmail({
+        handwerkerName: hw.name || "Handwerker",
+        ticketTitel: ticket.titel,
+        ticketBeschreibung: ticket.beschreibung || "",
+        gewerk: ticket.gewerk || "allgemein",
+        dringlichkeit,
+        einsatzort: ticket.einsatzort_adresse || "",
+        distanzKm: distanz,
+        auktionEnde: auktionEndeFormatiert,
+        ticketId: ticket.id,
+      })
+      sendEmailFireAndForget({ to: hw.email, subject, html })
+    }
+  })().catch(err => console.error("[Email] Einladungs-Mails fehlgeschlagen:", err))
 
   return NextResponse.json({
     ok: true,

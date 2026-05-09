@@ -6,6 +6,8 @@ import {
 } from "@/lib/auction/auction-manager"
 import { calculateCommission } from "@/lib/pricing/commission"
 import { fuegeTicketZuTagesplan } from "@/lib/auction/routen-planung-sync"
+import { sendEmailFireAndForget } from "@/lib/email/send"
+import { zuschlagEmail, absageEmail } from "@/lib/email/templates"
 
 // POST /api/auction/close
 // Body: { ticket_id, angebot_id? }
@@ -40,9 +42,17 @@ export async function POST(request: NextRequest) {
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, erstellt_von, status, surge_faktor")
+    .select("id, titel, beschreibung, einsatzort_adresse, erstellt_von, status, surge_faktor")
     .eq("id", ticketId)
-    .single()
+    .single<{
+      id: string
+      titel: string
+      beschreibung: string | null
+      einsatzort_adresse: string | null
+      erstellt_von: string
+      status: string
+      surge_faktor: number | null
+    }>()
   if (!ticket) return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 })
   if (ticket.erstellt_von !== user.id && profile.rolle !== "admin") {
     return NextResponse.json({ error: "Nicht dein Ticket" }, { status: 403 })
@@ -158,6 +168,45 @@ export async function POST(request: NextRequest) {
   } else {
     plannerStatus = "kein-termin"
   }
+
+  // Fire-and-forget: Zuschlag-Mail an Gewinner + Absage-Mails an andere
+  void (async () => {
+    const { data: gewinnerProfil } = await supabase
+      .from("profiles")
+      .select("email, name")
+      .eq("id", angebot.handwerker_id)
+      .single<{ email: string | null; name: string | null }>()
+    if (gewinnerProfil?.email) {
+      const { subject, html } = zuschlagEmail({
+        handwerkerName: gewinnerProfil.name || "Handwerker",
+        ticketTitel: ticket.titel,
+        ticketBeschreibung: ticket.beschreibung || "",
+        einsatzort: ticket.einsatzort_adresse || "",
+        angebotPreis: angebot.preis,
+        ticketId: ticket.id,
+      })
+      sendEmailFireAndForget({ to: gewinnerProfil.email, subject, html })
+    }
+
+    const { data: andere } = await supabase
+      .from("angebote")
+      .select("handwerker_id, handwerker:profiles(email, name)")
+      .eq("ticket_id", ticket.id)
+      .neq("id", angebot.id)
+      .returns<Array<{
+        handwerker_id: string
+        handwerker: { email: string | null; name: string | null } | null
+      }>>()
+    for (const a of andere ?? []) {
+      const email = a.handwerker?.email
+      if (!email) continue
+      const { subject, html } = absageEmail({
+        handwerkerName: a.handwerker?.name || "Handwerker",
+        ticketTitel: ticket.titel,
+      })
+      sendEmailFireAndForget({ to: email, subject, html })
+    }
+  })().catch(err => console.error("[Email] close-Mails fehlgeschlagen:", err))
 
   return NextResponse.json({
     ok: true,

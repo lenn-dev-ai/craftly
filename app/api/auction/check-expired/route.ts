@@ -4,6 +4,12 @@ import { reScoreTicket } from "@/lib/auction/scoring-pipeline"
 import { effektiveProvisionsRate } from "@/lib/auction/auction-manager"
 import { calculateCommission } from "@/lib/pricing/commission"
 import { fuegeTicketZuTagesplan } from "@/lib/auction/routen-planung-sync"
+import { sendEmailFireAndForget } from "@/lib/email/send"
+import {
+  auktionAbgelaufenEmail,
+  zuschlagEmail,
+  absageEmail,
+} from "@/lib/email/templates"
 
 // POST /api/auction/check-expired
 // Cron-Endpoint. Geht über alle Tickets mit status='auktion' und
@@ -52,10 +58,13 @@ export async function POST(request: NextRequest) {
   const jetzt = new Date().toISOString()
   const { data: abgelaufen } = await supabase
     .from("tickets")
-    .select("id, titel, erstellt_von, surge_faktor, auktion_ende")
+    .select("id, titel, beschreibung, einsatzort_adresse, erstellt_von, surge_faktor, auktion_ende")
     .eq("status", "auktion")
     .lt("auktion_ende", jetzt)
-    .returns<AbgelaufenesTicket[]>()
+    .returns<Array<AbgelaufenesTicket & {
+      beschreibung: string | null
+      einsatzort_adresse: string | null
+    }>>()
 
   const ergebnisse: Array<{
     ticketId: string
@@ -79,8 +88,7 @@ export async function POST(request: NextRequest) {
       .returns<BidZeile[]>()
 
     if (!bids || bids.length === 0) {
-      // Keine Angebote → Status zurück auf 'offen', Verwalter informieren
-      // (E-Mail-Notification ist separate Pipeline — nicht in diesem Endpoint)
+      // Keine Angebote → Status zurück auf 'offen', Verwalter benachrichtigen
       await supabase
         .from("tickets")
         .update({ status: "offen", auktion_ende: null })
@@ -90,6 +98,22 @@ export async function POST(request: NextRequest) {
         titel: ticket.titel,
         aktion: "zurueck-auf-offen",
       })
+      // Fire-and-forget: Verwalter informieren
+      void (async () => {
+        const { data: verwalter } = await supabase
+          .from("profiles")
+          .select("email, name")
+          .eq("id", ticket.erstellt_von)
+          .single<{ email: string | null; name: string | null }>()
+        if (!verwalter?.email) return
+        const { subject, html } = auktionAbgelaufenEmail({
+          verwalterName: verwalter.name || "Verwalter",
+          ticketTitel: ticket.titel,
+          angebotAnzahl: 0,
+          ticketId: ticket.id,
+        })
+        sendEmailFireAndForget({ to: verwalter.email, subject, html })
+      })().catch(err => console.error("[Email] Auktion-leer-Mail fehlgeschlagen:", err))
       continue
     }
 
@@ -186,6 +210,45 @@ export async function POST(request: NextRequest) {
       auftragswert: winner.preis,
       provisionBetrag: calc.provisionBetrag,
     })
+
+    // Fire-and-forget: Zuschlag an Gewinner + Absagen an andere
+    void (async () => {
+      const { data: gewinnerProfil } = await supabase
+        .from("profiles")
+        .select("email, name")
+        .eq("id", winner.handwerker_id)
+        .single<{ email: string | null; name: string | null }>()
+      if (gewinnerProfil?.email) {
+        const { subject, html } = zuschlagEmail({
+          handwerkerName: gewinnerProfil.name || "Handwerker",
+          ticketTitel: ticket.titel,
+          ticketBeschreibung: ticket.beschreibung || "",
+          einsatzort: ticket.einsatzort_adresse || "",
+          angebotPreis: winner.preis,
+          ticketId: ticket.id,
+        })
+        sendEmailFireAndForget({ to: gewinnerProfil.email, subject, html })
+      }
+
+      const { data: andere } = await supabase
+        .from("angebote")
+        .select("handwerker_id, handwerker:profiles(email, name)")
+        .eq("ticket_id", ticket.id)
+        .neq("id", winner.id)
+        .returns<Array<{
+          handwerker_id: string
+          handwerker: { email: string | null; name: string | null } | null
+        }>>()
+      for (const a of andere ?? []) {
+        const email = a.handwerker?.email
+        if (!email) continue
+        const { subject, html } = absageEmail({
+          handwerkerName: a.handwerker?.name || "Handwerker",
+          ticketTitel: ticket.titel,
+        })
+        sendEmailFireAndForget({ to: email, subject, html })
+      }
+    })().catch(err => console.error("[Email] check-expired-Vergabe-Mails fehlgeschlagen:", err))
   }
 
   return NextResponse.json({

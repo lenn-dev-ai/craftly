@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase-server"
 import { reScoreTicket } from "@/lib/auction/scoring-pipeline"
+import { sendEmailFireAndForget } from "@/lib/email/send"
+import { neuesAngebotEmail } from "@/lib/email/templates"
 
 // POST /api/auction/bid
 // Body: { ticket_id, preis, fruehester_termin?, geschaetzte_dauer?, nachricht? }
@@ -44,9 +46,15 @@ export async function POST(request: NextRequest) {
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, status, auktion_ende")
+    .select("id, titel, status, auktion_ende, erstellt_von")
     .eq("id", ticketId)
-    .single()
+    .single<{
+      id: string
+      titel: string
+      status: string
+      auktion_ende: string | null
+      erstellt_von: string
+    }>()
   if (!ticket) return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 })
   if (ticket.status !== "auktion") {
     return NextResponse.json({ error: "Auktion nicht aktiv" }, { status: 422 })
@@ -80,6 +88,37 @@ export async function POST(request: NextRequest) {
 
   // Re-Score aller Bids dieses Tickets
   const result = await reScoreTicket(supabase, ticketId)
+
+  // Fire-and-forget: Mail an den Verwalter mit Live-Bid-Counter
+  void (async () => {
+    const [{ data: verwalter }, { data: handwerker }, { count }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("email, name")
+        .eq("id", ticket.erstellt_von)
+        .single<{ email: string | null; name: string | null }>(),
+      supabase
+        .from("profiles")
+        .select("name, firma")
+        .eq("id", user.id)
+        .single<{ name: string | null; firma: string | null }>(),
+      supabase
+        .from("angebote")
+        .select("id", { count: "exact", head: true })
+        .eq("ticket_id", ticketId),
+    ])
+    if (!verwalter?.email) return
+    const { subject, html } = neuesAngebotEmail({
+      verwalterName: verwalter.name || "Verwalter",
+      handwerkerName: handwerker?.name || "Handwerker",
+      handwerkerFirma: handwerker?.firma || "",
+      ticketTitel: ticket.titel,
+      angebotPreis: preis,
+      angebotAnzahl: count ?? 1,
+      ticketId: ticket.id,
+    })
+    sendEmailFireAndForget({ to: verwalter.email, subject, html })
+  })().catch(err => console.error("[Email] bid-mail Vorbereitung fehlgeschlagen:", err))
 
   return NextResponse.json({
     ok: true,
