@@ -1,11 +1,14 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useActiveRole, type ActiveRolle } from "@/lib/context/ActiveRoleContext"
 
 // Toggle zwischen Verwaltungs-, Handwerker- und Mieter-Sicht. Sichtbar
-// nur für Admins (profiles.rolle === 'admin'). Beim Wechsel wird auf die
-// passende Dashboard-Route navigiert und die Rolle im Query gemerkt.
+// nur für Admins (profiles.rolle === 'admin').
+//
+// Hard-Navigation via window.location: Soft-Navigation mit router.push
+// hatte beim Sibling-Layout-Wechsel (verwalter ↔ handwerker) den Effekt,
+// dass Sidebar/ActiveRoleProvider den alten State behielt. Hard-Reload
+// mountet alles frisch — Auth ist via Cookie, daher kein Round-Trip-Kost.
 
 const OPTIONEN: Array<{
   rolle: ActiveRolle
@@ -19,14 +22,12 @@ const OPTIONEN: Array<{
 ]
 
 export function RollenWechsel() {
-  const router = useRouter()
-  const { rolle, setRolle, istAdmin } = useActiveRole()
+  const { rolle, istAdmin } = useActiveRole()
   if (!istAdmin) return null
 
   function wechsel(opt: typeof OPTIONEN[number]) {
     if (opt.rolle === rolle) return
-    setRolle(opt.rolle)
-    router.push(opt.ziel)
+    window.location.href = opt.ziel
   }
 
   return (
