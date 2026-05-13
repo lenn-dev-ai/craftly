@@ -4,6 +4,8 @@
 
 export type Dringlichkeit = "notfall" | "zeitnah" | "planbar"
 
+export type SichtbarkeitsStufe = "gold" | "silber" | "bronze"
+
 export interface ScoreInput {
   /** Angebotspreis dieses Handwerkers */
   angebotPreis: number
@@ -21,6 +23,8 @@ export interface ScoreInput {
   dringlichkeit: Dringlichkeit
   /** Anzahl abgeschlossener Aufträge — nur für Tie-Break */
   erfahrung?: number
+  /** Optional: Sichtbarkeits-Stufe aus Verfügbarkeits-Score. Default 'bronze' (× 1.00). */
+  sichtbarkeitsStufe?: SichtbarkeitsStufe
 }
 
 export interface ScoreBreakdown {
@@ -28,6 +32,7 @@ export interface ScoreBreakdown {
   naeheScore: number
   bewertungScore: number
   routenBonus: number
+  sichtbarkeitsBonus: number
   total: number
 }
 
@@ -46,6 +51,12 @@ const GEWICHTE: Record<Dringlichkeit, Gewicht> = {
 }
 
 const ROUTEN_BONUS_MULTIPLIER = 1.1
+
+const SICHTBARKEITS_MULTIPLIER: Record<SichtbarkeitsStufe, number> = {
+  gold: 1.10,
+  silber: 1.05,
+  bronze: 1.00,
+}
 
 function clamp(value: number, min: number, max: number): number {
   if (!isFinite(value)) return min
@@ -84,16 +95,23 @@ export function berechneSmartScoreBreakdown(input: ScoreInput): ScoreBreakdown {
   const grundScore =
     preisScore * g.preis + naeheScore * g.naehe + bewertungScore * g.bewertung
 
-  const mitBonus = input.istRoutenBonus
+  const mitRoutenBonus = input.istRoutenBonus
     ? grundScore * ROUTEN_BONUS_MULTIPLIER
     : grundScore
+
+  const stufe = input.sichtbarkeitsStufe ?? "bronze"
+  const sichtbarkeitsMult = SICHTBARKEITS_MULTIPLIER[stufe]
+  const mitBonus = mitRoutenBonus * sichtbarkeitsMult
 
   return {
     preisScore: Math.round(preisScore * 100) / 100,
     naeheScore: Math.round(naeheScore * 100) / 100,
     bewertungScore: Math.round(bewertungScore * 100) / 100,
     routenBonus: input.istRoutenBonus
-      ? Math.round((mitBonus - grundScore) * 100) / 100
+      ? Math.round((mitRoutenBonus - grundScore) * 100) / 100
+      : 0,
+    sichtbarkeitsBonus: sichtbarkeitsMult > 1.0
+      ? Math.round((mitBonus - mitRoutenBonus) * 100) / 100
       : 0,
     total: Math.round(clamp(mitBonus, 0, 100) * 100) / 100,
   }

@@ -23,6 +23,7 @@ interface HandwerkerZeile {
   lat: number | null
   lng: number | null
   radius_km: number | null
+  sichtbarkeit_stufe: "gold" | "silber" | "bronze" | null
 }
 
 interface TicketZeile {
@@ -70,7 +71,7 @@ export async function reScoreTicket(
   const hwIds = angebote.map(a => a.handwerker_id)
   const { data: handwerker } = await supabase
     .from("profiles")
-    .select("id, bewertung_avg, startort_lat, startort_lng, lat, lng, radius_km")
+    .select("id, bewertung_avg, startort_lat, startort_lng, lat, lng, radius_km, sichtbarkeit_stufe")
     .in("id", hwIds)
     .returns<HandwerkerZeile[]>()
 
@@ -188,6 +189,7 @@ export async function reScoreTicket(
       bewertung: hw.bewertung_avg ?? 3.0,
       istRoutenBonus,
       dringlichkeit,
+      sichtbarkeitsStufe: hw.sichtbarkeit_stufe ?? "bronze",
     })
 
     await supabase

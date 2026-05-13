@@ -14,6 +14,29 @@ import { formatZeit } from "@/lib/format"
 
 type Tab = "aktiv" | "vergangen" | "erstellen"
 
+type SichtbarkeitsInfo = {
+  score: number
+  stufe: "gold" | "silber" | "bronze"
+  freieSlots: number
+  streak: number
+}
+
+async function triggerSichtbarkeitsUpdate(): Promise<SichtbarkeitsInfo | null> {
+  try {
+    const res = await fetch("/api/verfuegbarkeit/update-score", { method: "POST" })
+    if (!res.ok) return null
+    const data = await res.json()
+    return {
+      score: data.score,
+      stufe: data.stufe,
+      freieSlots: data.freieSlots,
+      streak: data.streak,
+    }
+  } catch {
+    return null
+  }
+}
+
 export default function ZeitslotsPage() {
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -23,6 +46,7 @@ export default function ZeitslotsPage() {
   const [luecken, setLuecken] = useState<Luecke[]>([])
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState("")
+  const [sichtbarkeit, setSichtbarkeit] = useState<SichtbarkeitsInfo | null>(null)
 
   const [form, setForm] = useState({
     titel: "",
@@ -53,6 +77,22 @@ export default function ZeitslotsPage() {
       const gefundeneLuecken = erkenneLuecken(mySlots, termine)
       setLuecken(gefundeneLuecken)
     }
+
+    // Sichtbarkeit aus Profil-Cache anzeigen (ohne Streak-Increment)
+    if (prof?.sichtbarkeit_stufe) {
+      const profExtended = prof as UserProfile & {
+        sichtbarkeit_stufe?: "gold" | "silber" | "bronze"
+        verfuegbarkeit_score?: number | null
+        kalender_streak?: number | null
+      }
+      setSichtbarkeit({
+        score: Math.round(profExtended.verfuegbarkeit_score ?? 0),
+        stufe: profExtended.sichtbarkeit_stufe ?? "bronze",
+        freieSlots: (mySlots ?? []).filter((s: Zeitslot) => s.status === "verfuegbar").length,
+        streak: profExtended.kalender_streak ?? 0,
+      })
+    }
+
     setLoading(false)
   }, [router])
 
@@ -100,6 +140,8 @@ export default function ZeitslotsPage() {
       setToast("Zeitslot erfolgreich erstellt!")
       setForm({ titel: "", datum: "", von: "08:00", bis: "16:00", gewerk: "", notizen: "" })
       setTab("aktiv")
+      const neu = await triggerSichtbarkeitsUpdate()
+      if (neu) setSichtbarkeit(neu)
       await loadData()
     }
     setSaving(false)
@@ -135,6 +177,8 @@ export default function ZeitslotsPage() {
       setToast("Fehler: " + error.message)
     } else {
       setToast("Lücken-Slot erstellt! (-15% Rabatt für schnelle Buchung)")
+      const neu = await triggerSichtbarkeitsUpdate()
+      if (neu) setSichtbarkeit(neu)
       await loadData()
     }
     setSaving(false)
@@ -146,6 +190,8 @@ export default function ZeitslotsPage() {
     const supabase = createClient()
     await supabase.from("zeitslots").delete().eq("id", id)
     setToast("Slot gelöscht")
+    const neu = await triggerSichtbarkeitsUpdate()
+    if (neu) setSichtbarkeit(neu)
     await loadData()
     setTimeout(() => setToast(""), 3000)
   }
@@ -198,6 +244,9 @@ export default function ZeitslotsPage() {
           + Neuer Slot
         </button>
       </div>
+
+      {/* Sichtbarkeits-Card */}
+      {sichtbarkeit && <SichtbarkeitsCard info={sichtbarkeit} />}
 
       {/* Tabs */}
       <div className="flex gap-1 bg-white p-1 rounded-xl mb-6 border border-[#EDE8E1]">
@@ -522,6 +571,50 @@ export default function ZeitslotsPage() {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+function SichtbarkeitsCard({ info }: { info: SichtbarkeitsInfo }) {
+  const config = {
+    gold:   { bg: "from-[#C4956A]/15 to-[#C4956A]/5", border: "border-[#C4956A]/40", badge: "bg-[#C4956A] text-white", emoji: "🏆", label: "Gold" },
+    silber: { bg: "from-[#94A3B8]/15 to-[#94A3B8]/5", border: "border-[#94A3B8]/40", badge: "bg-[#94A3B8] text-white", emoji: "🥈", label: "Silber" },
+    bronze: { bg: "from-[#78716C]/10 to-[#78716C]/5", border: "border-[#EDE8E1]",     badge: "bg-[#78716C] text-white", emoji: "🥉", label: "Bronze" },
+  }[info.stufe]
+
+  const motivationsText: Record<typeof info.stufe, string> = {
+    gold:   "Du wirst aktiv in allen Auktionen bevorzugt eingeladen.",
+    silber: "Trag noch ein paar Slots ein, um in den Gold-Status zu kommen — dort bekommst du mehr Einladungen.",
+    bronze: "Trag freie Slots ein, um in Auktionen sichtbar zu werden.",
+  }
+
+  return (
+    <div className={`mb-6 rounded-2xl border bg-gradient-to-br ${config.bg} ${config.border} p-5`}>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="text-3xl" aria-hidden>{config.emoji}</div>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${config.badge}`}>
+                {config.label}-Sichtbarkeit
+              </span>
+              {info.streak >= 2 && (
+                <span className="text-[11px] font-semibold text-[#C4574B]">🔥 {info.streak} Wochen Streak</span>
+              )}
+            </div>
+            <div className="text-sm text-[#2D2A26]">
+              Diese Woche <strong>{info.freieSlots}</strong> freie Slots eingetragen
+            </div>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-[10px] uppercase tracking-wider text-[#8C857B]">Score</div>
+          <div className="text-3xl font-bold text-[#2D2A26] tabular-nums">{info.score}<span className="text-sm text-[#8C857B] font-normal">/100</span></div>
+        </div>
+      </div>
+      <p className="text-xs text-[#6B665E] mt-3 leading-relaxed">
+        {motivationsText[info.stufe]}
+      </p>
     </div>
   )
 }

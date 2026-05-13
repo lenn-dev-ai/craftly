@@ -158,6 +158,45 @@ console.log("\n=== Smart-Score: Routen-Bonus +10 % ===")
     `verhältnis=${(mitBonus / ohneBonus).toFixed(3)}`)
 }
 
+console.log("\n=== Smart-Score: Sichtbarkeits-Bonus (Gold + 10 %, Silber + 5 %) ===")
+{
+  const bronze = berechneSmartScore({
+    angebotPreis: 100, durchschnittPreis: 100, entfernungKm: 5, maxRadius: 25,
+    bewertung: 4.0, istRoutenBonus: false, dringlichkeit: "planbar",
+  })
+  const silber = berechneSmartScore({
+    angebotPreis: 100, durchschnittPreis: 100, entfernungKm: 5, maxRadius: 25,
+    bewertung: 4.0, istRoutenBonus: false, dringlichkeit: "planbar",
+    sichtbarkeitsStufe: "silber",
+  })
+  const gold = berechneSmartScore({
+    angebotPreis: 100, durchschnittPreis: 100, entfernungKm: 5, maxRadius: 25,
+    bewertung: 4.0, istRoutenBonus: false, dringlichkeit: "planbar",
+    sichtbarkeitsStufe: "gold",
+  })
+  check("Silber: ca. + 5 % über Bronze",
+    nahe(silber / bronze, 1.05, 0.01),
+    `verhältnis=${(silber / bronze).toFixed(3)}`)
+  check("Gold: ca. + 10 % über Bronze",
+    nahe(gold / bronze, 1.10, 0.01),
+    `verhältnis=${(gold / bronze).toFixed(3)}`)
+  check("Default ohne Stufe = Bronze (kein Bonus)",
+    berechneSmartScore({
+      angebotPreis: 100, durchschnittPreis: 100, entfernungKm: 5, maxRadius: 25,
+      bewertung: 4.0, istRoutenBonus: false, dringlichkeit: "planbar",
+    }) === bronze,
+    "Optional-Param greift transparent")
+
+  const breakdown = berechneSmartScoreBreakdown({
+    angebotPreis: 100, durchschnittPreis: 100, entfernungKm: 5, maxRadius: 25,
+    bewertung: 4.0, istRoutenBonus: false, dringlichkeit: "planbar",
+    sichtbarkeitsStufe: "gold",
+  })
+  check("Breakdown enthält sichtbarkeitsBonus > 0 bei Gold",
+    breakdown.sichtbarkeitsBonus > 0,
+    `bonus=${breakdown.sichtbarkeitsBonus}`)
+}
+
 console.log("\n=== Smart-Score: Cap bei 100 ===")
 {
   const max = berechneSmartScore({
