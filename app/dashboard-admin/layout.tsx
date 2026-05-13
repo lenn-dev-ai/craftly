@@ -5,12 +5,13 @@ import { useRouter, usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { ActiveRoleProvider } from "@/lib/context/ActiveRoleContext"
 import { RollenWechsel } from "@/components/RollenWechsel"
+import { LayoutDashboard, Users, Activity, Settings, LogOut } from "lucide-react"
 
 const NAV_ITEMS = [
-  { label: "Übersicht", href: "/dashboard-admin", icon: "D" },
-  { label: "Nutzer", href: "/dashboard-admin/nutzer", icon: "N" },
-  { label: "Aktivität", href: "/dashboard-admin/aktivitaet", icon: "A" },
-  { label: "System", href: "/dashboard-admin/system", icon: "S" },
+  { label: "Übersicht", href: "/dashboard-admin", Icon: LayoutDashboard },
+  { label: "Nutzer", href: "/dashboard-admin/nutzer", Icon: Users },
+  { label: "Aktivität", href: "/dashboard-admin/aktivitaet", Icon: Activity },
+  { label: "System", href: "/dashboard-admin/system", Icon: Settings },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -51,26 +52,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <nav className="flex-1 p-3 space-y-1">
-            {NAV_ITEMS.map(item => (
-              <button
-                key={item.href}
-                onClick={() => router.push(item.href)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  pathname === item.href
-                    ? "bg-[#7C6CAB]/10 text-[#7C6CAB] border border-[#7C6CAB]/20"
-                    : "text-[#6B665E] hover:text-[#2D2A26] hover:bg-[#F5F0EB]"
-                }`}>
-                <span className="text-base">{item.icon}</span>
-                {item.label}
-              </button>
-            ))}
+            {NAV_ITEMS.map(item => {
+              const aktiv = pathname === item.href
+              return (
+                <button
+                  key={item.href}
+                  onClick={() => router.push(item.href)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    aktiv
+                      ? "bg-[#7C6CAB] text-white shadow-sm"
+                      : "text-[#6B665E] hover:text-[#2D2A26] hover:bg-[#F5F0EB]"
+                  }`}>
+                  <item.Icon size={16} className={aktiv ? "text-white" : "text-[#8C857B]"} />
+                  <span>{item.label}</span>
+                </button>
+              )
+            })}
           </nav>
           <div className="p-3 border-t border-[#EDE8E1]">
             <button
               onClick={async () => { const s = createClient(); await s.auth.signOut(); router.push("/login") }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#8C857B] hover:text-[#C4574B] transition-colors">
-              <span>&#8592;</span>
-              Abmelden
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#8C857B] hover:text-[#C4574B] hover:bg-[#C4574B]/5 transition-all">
+              <LogOut size={16} />
+              <span>Abmelden</span>
             </button>
           </div>
         </aside>

@@ -2,38 +2,54 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useState, type ComponentType } from "react"
 import { Rolle } from "@/types"
 import { createClient } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { RollenWechsel } from "@/components/RollenWechsel"
+import {
+  LayoutDashboard, Ticket, Zap, Wrench, BarChart3,
+  Euro, Calendar, Briefcase, MapPin, CalendarCheck, UserCircle,
+  Plus, FileText, ShieldCheck, LogOut,
+  type LucideProps,
+} from "lucide-react"
 
-const menus: Record<Rolle, { href: string; label: string; icon: string }[]> = {
+type LucideIcon = ComponentType<LucideProps>
+
+const menus: Record<Rolle, { href: string; label: string; Icon: LucideIcon }[]> = {
   verwalter: [
-    { href: "/dashboard-verwalter", label: "Dashboard", icon: "⬡" },
-    { href: "/dashboard-verwalter/tickets", label: "Tickets", icon: "◉" },
-    { href: "/dashboard-verwalter/marktplatz", label: "Marktplatz", icon: "⚡" },
-    { href: "/dashboard-verwalter/handwerker", label: "Handwerker", icon: "⛭" },
-    { href: "/dashboard-verwalter/reporting", label: "Reporting", icon: "◈" },
+    { href: "/dashboard-verwalter", label: "Dashboard", Icon: LayoutDashboard },
+    { href: "/dashboard-verwalter/tickets", label: "Tickets", Icon: Ticket },
+    { href: "/dashboard-verwalter/marktplatz", label: "Marktplatz", Icon: Zap },
+    { href: "/dashboard-verwalter/handwerker", label: "Handwerker", Icon: Wrench },
+    { href: "/dashboard-verwalter/reporting", label: "Reporting", Icon: BarChart3 },
   ],
   handwerker: [
-    { href: "/dashboard-handwerker", label: "Dashboard", icon: "⬡" },
-    { href: "/dashboard-handwerker/einnahmen", label: "Einnahmen", icon: "€" },
-    { href: "/dashboard-handwerker/zeitslots", label: "Zeitslots", icon: "▦" },
-    { href: "/dashboard-handwerker/auftraege", label: "Aufträge", icon: "◉" },
-    { href: "/dashboard-handwerker/termine", label: "Termine & Route", icon: "📍" },
-    { href: "/dashboard-handwerker/kalender", label: "Verfügbarkeit", icon: "▤" },
-    { href: "/dashboard-handwerker/profil", label: "Mein Profil", icon: "◎" },
+    { href: "/dashboard-handwerker", label: "Dashboard", Icon: LayoutDashboard },
+    { href: "/dashboard-handwerker/einnahmen", label: "Einnahmen", Icon: Euro },
+    { href: "/dashboard-handwerker/zeitslots", label: "Zeitslots", Icon: Calendar },
+    { href: "/dashboard-handwerker/auftraege", label: "Aufträge", Icon: Briefcase },
+    { href: "/dashboard-handwerker/termine", label: "Termine & Route", Icon: MapPin },
+    { href: "/dashboard-handwerker/kalender", label: "Verfügbarkeit", Icon: CalendarCheck },
+    { href: "/dashboard-handwerker/profil", label: "Mein Profil", Icon: UserCircle },
   ],
   mieter: [
-    { href: "/dashboard-mieter", label: "Übersicht", icon: "⬡" },
-    { href: "/dashboard-mieter/melden", label: "Schaden melden", icon: "＋" },
-    { href: "/dashboard-mieter/tickets", label: "Meine Tickets", icon: "◉" },
+    { href: "/dashboard-mieter", label: "Übersicht", Icon: LayoutDashboard },
+    { href: "/dashboard-mieter/melden", label: "Schaden melden", Icon: Plus },
+    { href: "/dashboard-mieter/tickets", label: "Meine Tickets", Icon: FileText },
   ],
   admin: [
-    { href: "/dashboard-admin", label: "Dashboard", icon: "⬡" },
-    { href: "/dashboard-verwalter", label: "Verwaltung", icon: "◈" },
+    { href: "/dashboard-admin", label: "Dashboard", Icon: LayoutDashboard },
+    { href: "/dashboard-verwalter", label: "Verwaltung", Icon: ShieldCheck },
   ],
+}
+
+// Akzent-Farbe pro Rolle für aktiven Sidebar-Eintrag
+const aktivAkzent: Record<Rolle, string> = {
+  verwalter: "#3D8B7A",
+  handwerker: "#C4956A",
+  mieter: "#5B6ABF",
+  admin: "#7C6CAB",
 }
 
 const rolleLabels: Record<Rolle, string> = {
@@ -94,21 +110,21 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
           const active =
             pathname === item.href ||
             (item.href !== "/dashboard-" + rolle && pathname.startsWith(item.href))
+          const akzent = aktivAkzent[rolle]
           return (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
+              style={active ? { backgroundColor: akzent, color: "#ffffff" } : undefined}
               className={`flex items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium rounded-xl mb-0.5 transition-all ${
                 active
-                  ? "text-[#3D8B7A] bg-[#3D8B7A]/8 border border-[#3D8B7A]/15"
+                  ? "shadow-sm"
                   : "text-[#6B665E] hover:text-[#2D2A26] hover:bg-[#F5F0EB]"
               }`}
             >
-              <span className={`w-5 text-center text-sm ${active ? "text-[#3D8B7A]" : "text-[#8C857B]"}`}>
-                {item.icon}
-              </span>
-              {item.label}
+              <item.Icon size={16} className={active ? "text-white" : "text-[#8C857B]"} />
+              <span>{item.label}</span>
             </Link>
           )
         })}
@@ -121,9 +137,10 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
       <div className="p-4">
         <button
           onClick={handleLogout}
-          className="w-full text-left text-xs text-[#8C857B] hover:text-[#C4574B] py-2 px-3 rounded-lg hover:bg-[#C4574B]/5 transition-all font-medium"
+          className="w-full flex items-center gap-3 text-xs text-[#8C857B] hover:text-[#C4574B] py-2 px-3 rounded-lg hover:bg-[#C4574B]/5 transition-all font-medium"
         >
-          ← Abmelden
+          <LogOut size={14} />
+          <span>Abmelden</span>
         </button>
         <div className="mt-3 flex gap-3 px-3 text-[11px] text-[#A8A29A]">
           <Link
