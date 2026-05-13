@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { sendEmail } from "@/lib/email/send"
+import { createServerSupabaseClient } from "@/lib/supabase-server"
 import {
   einladungEmail,
   neuesAngebotEmail,
@@ -10,7 +11,11 @@ import {
 
 // POST /api/email/test
 // Body: { template: 'einladung'|'neues_angebot'|'abgelaufen'|'zuschlag'|'absage', to: 'mail@example.com' }
-// Nur in Development zugänglich. In Production: 403.
+//
+// Auth-Modell:
+//   - Development (NODE_ENV !== 'production'): offen, beliebige Empfänger
+//   - Production: muss eingeloggter Admin sein, Empfänger MUSS die eigene
+//     auth-Email sein (verhindert Quota-Missbrauch und Versand an Dritte)
 //
 // Senden ohne RESEND_API_KEY ist No-Op (siehe lib/email/send.ts).
 
@@ -56,10 +61,6 @@ const FIXTURES: Record<string, () => { subject: string; html: string }> = {
 }
 
 export async function POST(request: NextRequest) {
-  if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Nur in Development verfügbar" }, { status: 403 })
-  }
-
   let body: { template?: string; to?: string }
   try {
     body = await request.json()
@@ -74,11 +75,42 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     )
   }
-  if (!body.to || !body.to.includes("@")) {
+
+  let empfaenger = body.to
+
+  // Production: Auth + Self-Address-Lock
+  if (process.env.NODE_ENV === "production") {
+    const supabase = createServerSupabaseClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("rolle")
+      .eq("id", user.id)
+      .single<{ rolle: string }>()
+    if (profile?.rolle !== "admin") {
+      return NextResponse.json({ error: "Nur Admins dürfen Test-Mails senden" }, { status: 403 })
+    }
+    // Empfänger auf eigene Auth-Email sperren (Quota-Schutz)
+    if (!user.email) {
+      return NextResponse.json({ error: "Eigener Account hat keine Email" }, { status: 400 })
+    }
+    if (empfaenger && empfaenger !== user.email) {
+      return NextResponse.json(
+        { error: "In Production werden Test-Mails nur an die eigene Auth-Email gesendet", erlaubt: user.email },
+        { status: 403 },
+      )
+    }
+    empfaenger = user.email
+  }
+
+  if (!empfaenger || !empfaenger.includes("@")) {
     return NextResponse.json({ error: "Gültige E-Mail-Adresse in 'to' erforderlich" }, { status: 400 })
   }
 
   const { subject, html } = fixture()
-  const result = await sendEmail({ to: body.to, subject, html })
-  return NextResponse.json(result)
+  const result = await sendEmail({ to: empfaenger, subject, html })
+  return NextResponse.json({ ...result, to: empfaenger })
 }
