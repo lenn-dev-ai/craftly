@@ -49,6 +49,8 @@ interface OptimierteRoute {
   reihenfolge: Array<{ ticketId: string; latitude: number; longitude: number; adresse?: string }>
   gesamtDistanzKm: number
   gesamtFahrzeitMin: number
+  ohneOptimierung?: { gesamtDistanzKm: number; gesamtFahrzeitMin: number }
+  ersparnis?: { distanzKm: number; fahrzeitMin: number }
 }
 
 export default function TerminePage() {
@@ -139,6 +141,8 @@ export default function TerminePage() {
               reihenfolge: data.reihenfolge,
               gesamtDistanzKm: data.gesamtDistanzKm,
               gesamtFahrzeitMin: data.gesamtFahrzeitMin,
+              ohneOptimierung: data.ohneOptimierung,
+              ersparnis: data.ersparnis,
             })
           }
         }
@@ -351,6 +355,26 @@ export default function TerminePage() {
               )
             })}
           </ol>
+
+          {/* Spar-Anzeige */}
+          {optimierteRoute.ersparnis && optimierteRoute.ohneOptimierung &&
+           optimierteRoute.ersparnis.fahrzeitMin > 0 && (
+            <div className="mt-4 pt-4 border-t border-[#EDE8E1]">
+              <div className="text-xs text-[#8C857B]">
+                Ohne Optimierung (Hub-and-Spoke):{" "}
+                <span className="text-[#2D2A26] tabular-nums">
+                  {formatiereFahrzeit(optimierteRoute.ohneOptimierung.gesamtFahrzeitMin)} ·{" "}
+                  {formatiereDistanz(optimierteRoute.ohneOptimierung.gesamtDistanzKm)}
+                </span>
+              </div>
+              <div className="text-sm text-[#3D8B7A] font-semibold mt-1">
+                💡 Du sparst {formatiereFahrzeit(optimierteRoute.ersparnis.fahrzeitMin)}
+                {optimierteRoute.ersparnis.distanzKm > 0 && (
+                  <> und {formatiereDistanz(optimierteRoute.ersparnis.distanzKm)}</>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

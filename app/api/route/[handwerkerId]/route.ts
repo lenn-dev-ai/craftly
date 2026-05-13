@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase-server"
 import { optimiereRoute, type RoutenPunkt } from "@/lib/auction/route-bundling"
+import { haversineKm, schaetzeFahrzeitMin } from "@/lib/distance"
 
 // GET /api/route/[handwerkerId]?datum=YYYY-MM-DD
 // Liefert die optimierte Tagesroute (Nearest-Neighbor) für einen
@@ -90,11 +91,30 @@ export async function GET(
     )
   }
 
+  // Worst-Case-Vergleich: jeder Stop einzeln vom Startort + zurück
+  // (Hub-and-Spoke statt optimiertem Rundkurs).
+  let ohneOptDistanzKm = 0
+  for (const p of punkte) {
+    ohneOptDistanzKm += haversineKm(startLat, startLng, p.latitude, p.longitude) * 2
+  }
+  ohneOptDistanzKm = Math.round(ohneOptDistanzKm * 100) / 100
+  const ohneOptFahrzeitMin = schaetzeFahrzeitMin(ohneOptDistanzKm)
+  const ersparnisDistanzKm = Math.round((ohneOptDistanzKm - route.gesamtDistanzKm) * 100) / 100
+  const ersparnisFahrzeitMin = Math.max(0, ohneOptFahrzeitMin - route.gesamtFahrzeitMin)
+
   return NextResponse.json({
     handwerkerId,
     datum,
     startLat,
     startLng,
     ...route,
+    ohneOptimierung: {
+      gesamtDistanzKm: ohneOptDistanzKm,
+      gesamtFahrzeitMin: ohneOptFahrzeitMin,
+    },
+    ersparnis: {
+      distanzKm: ersparnisDistanzKm,
+      fahrzeitMin: ersparnisFahrzeitMin,
+    },
   })
 }
