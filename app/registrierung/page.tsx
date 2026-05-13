@@ -10,6 +10,7 @@ import { Button, Input, Select, Card } from "@/components/ui"
 import { registrierungSchema, type RegistrierungInput } from "@/lib/schemas"
 
 const dashMap: Record<string, string> = {
+  admin: "/dashboard-admin",
   verwalter: "/dashboard-verwalter",
   handwerker: "/dashboard-handwerker",
   mieter: "/dashboard-mieter",

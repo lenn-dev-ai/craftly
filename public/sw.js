@@ -1,74 +1,36 @@
-const CACHE_NAME = "reparo-v1";
-const OFFLINE_URL = "/offline.html";
+// Reparo Service Worker — Self-Destruct.
+//
+// Hintergrund: Frühere Version (reparo-v1) cached static assets cache-first
+// ohne Revalidation. Folge: Bei Deploys blieben alte JS-Chunks (z.B. die
+// Sidebar mit alter Link-Logik) im Browser-Cache, während HTML/Page-Bundle
+// neu geladen wurde — inkonsistenter Mix, der zu falschen Navigations
+// führen konnte (z.B. Mieter klickt → Admin-Panel).
+//
+// Reparo ist keine Offline-First-App. Diese Datei ist jetzt nur noch
+// dafür da, bestehende SW-Registrierungen sauber aufzuräumen.
 
-// Assets to pre-cache on install
-const PRE_CACHE = [
-  "/",
-  "/offline.html",
-  "/manifest.json",
-];
+self.addEventListener("install", () => {
+  self.skipWaiting()
+})
 
-// Install: cache shell assets
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRE_CACHE))
-  );
-  self.skipWaiting();
-});
-
-// Activate: clean old caches
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((k) => k !== CACHE_NAME)
-          .map((k) => caches.delete(k))
-      )
-    )
-  );
-  self.clients.claim();
-});
+    (async () => {
+      // Alle Caches löschen
+      const keys = await caches.keys()
+      await Promise.all(keys.map((k) => caches.delete(k)))
+      // Self-Unregister
+      await self.registration.unregister()
+      // Alle Clients refreshen, damit sie das frische Bundle bekommen
+      const clients = await self.clients.matchAll({ type: "window" })
+      for (const client of clients) {
+        // navigate() ist robuster als reload() in alten Safaris
+        if ("navigate" in client && typeof client.navigate === "function") {
+          client.navigate(client.url)
+        }
+      }
+    })(),
+  )
+})
 
-// Fetch: network-first for navigations, cache-first for static assets
-self.addEventListener("fetch", (event) => {
-  const { request } = event;
-
-  // Skip non-GET and cross-origin
-  if (request.method !== "GET") return;
-  if (!request.url.startsWith(self.location.origin)) return;
-
-  // Navigation requests: network first, fallback to offline page
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Cache successful navigations
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => caches.match(OFFLINE_URL))
-    );
-    return;
-  }
-
-  // Static assets: cache first, fallback to network
-  if (
-    request.url.match(/\.(js|css|png|jpg|jpeg|svg|woff2?|ico)$/) ||
-    request.url.includes("/_next/static/")
-  ) {
-    event.respondWith(
-      caches.match(request).then(
-        (cached) =>
-          cached ||
-          fetch(request).then((response) => {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-            return response;
-          })
-      )
-    );
-    return;
-  }
-});
+// Keine Fetch-Handler mehr — der Browser geht direkt ans Netz.

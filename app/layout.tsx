@@ -218,9 +218,13 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased bg-[#FAF8F5] text-[#2D2A26]`}>
         {children}
         <CookieBanner />
+        {/* Service-Worker-Killswitch: lädt /sw.js (jetzt Self-Destruct) bei
+            bestehenden Registrierungen einmal nach, damit der alte Cache-
+            first-SW seine Caches putzt und sich deregistriert. Neue Clients
+            bekommen über den Self-Destruct gar keinen aktiven SW mehr. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}`,
+            __html: `if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.update()})}).catch(function(){})}`,
           }}
         />
       </body>
