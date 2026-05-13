@@ -6,6 +6,7 @@ import { useState } from "react"
 import { Rolle } from "@/types"
 import { createClient } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
+import { RollenWechsel } from "@/components/RollenWechsel"
 
 const menus: Record<Rolle, { href: string; label: string; icon: string }[]> = {
   verwalter: [
@@ -76,6 +77,13 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
           {rolleLabels[rolle]}
         </div>
       </Link>
+
+      {/* Rollen-Wechsel — nur sichtbar für Admins via ActiveRoleContext */}
+      {(rolle === "verwalter" || rolle === "handwerker") && (
+        <div className="px-4 pb-3">
+          <RollenWechsel />
+        </div>
+      )}
 
       <div className="px-3 mb-2">
         <div className="h-px bg-[#EDE8E1]" />
