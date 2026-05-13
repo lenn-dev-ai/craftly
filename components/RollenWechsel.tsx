@@ -16,6 +16,7 @@ const OPTIONEN: Array<{
   ziel: string
   aktivCls: string
 }> = [
+  { rolle: "admin",      label: "Admin",      ziel: "/dashboard-admin",     aktivCls: "bg-[#7C6CAB] text-white" },
   { rolle: "verwaltung", label: "Verwaltung", ziel: "/dashboard-verwalter", aktivCls: "bg-[#3D8B7A] text-white" },
   { rolle: "handwerker", label: "Handwerker", ziel: "/dashboard-handwerker", aktivCls: "bg-[#C4956A] text-white" },
   { rolle: "mieter",     label: "Mieter",     ziel: "/dashboard-mieter",     aktivCls: "bg-[#5B6ABF] text-white" },

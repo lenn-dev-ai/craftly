@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase"
+import { ActiveRoleProvider } from "@/lib/context/ActiveRoleContext"
+import { RollenWechsel } from "@/components/RollenWechsel"
 
 const NAV_ITEMS = [
   { label: "Übersicht", href: "/dashboard-admin", icon: "D" },
@@ -35,37 +37,45 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   )
 
   return (
-    <div className="flex min-h-screen bg-[#FAF8F5]">
-      <aside className="w-56 bg-white border-r border-[#EDE8E1] flex flex-col">
-        <div className="p-5 border-b border-[#EDE8E1]">
-          <div className="text-xl tracking-tight text-[#2D2A26]">Repa<span className="text-[#3D8B7A]">ro</span></div>
-          <div className="text-[10px] font-bold text-[#3D8B7A] uppercase tracking-widest mt-1">Admin Panel</div>
-        </div>
-        <nav className="flex-1 p-3 space-y-1">
-          {NAV_ITEMS.map(item => (
+    <ActiveRoleProvider istAdmin={true} defaultRolle="admin">
+      <div className="flex min-h-screen bg-[#FAF8F5]">
+        <aside className="w-56 bg-white border-r border-[#EDE8E1] flex flex-col">
+          <div className="p-5 border-b border-[#EDE8E1]">
+            <div className="text-xl tracking-tight text-[#2D2A26]">Repa<span className="text-[#3D8B7A]">ro</span></div>
+            <div className="text-[10px] font-bold text-[#7C6CAB] uppercase tracking-widest mt-1">Admin Panel</div>
+          </div>
+
+          {/* Rollen-Wechsel — als Admin in jede Sicht springen */}
+          <div className="px-3 pt-3 pb-1">
+            <RollenWechsel />
+          </div>
+
+          <nav className="flex-1 p-3 space-y-1">
+            {NAV_ITEMS.map(item => (
+              <button
+                key={item.href}
+                onClick={() => router.push(item.href)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  pathname === item.href
+                    ? "bg-[#7C6CAB]/10 text-[#7C6CAB] border border-[#7C6CAB]/20"
+                    : "text-[#6B665E] hover:text-[#2D2A26] hover:bg-[#F5F0EB]"
+                }`}>
+                <span className="text-base">{item.icon}</span>
+                {item.label}
+              </button>
+            ))}
+          </nav>
+          <div className="p-3 border-t border-[#EDE8E1]">
             <button
-              key={item.href}
-              onClick={() => router.push(item.href)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                pathname === item.href
-                  ? "bg-[#3D8B7A]/10 text-[#3D8B7A] border border-[#3D8B7A]/20"
-                  : "text-[#6B665E] hover:text-[#2D2A26] hover:bg-[#F5F0EB]"
-              }`}>
-              <span className="text-base">{item.icon}</span>
-              {item.label}
+              onClick={async () => { const s = createClient(); await s.auth.signOut(); router.push("/login") }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#8C857B] hover:text-[#C4574B] transition-colors">
+              <span>&#8592;</span>
+              Abmelden
             </button>
-          ))}
-        </nav>
-        <div className="p-3 border-t border-[#EDE8E1]">
-          <button
-            onClick={async () => { const s = createClient(); await s.auth.signOut(); router.push("/login") }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#8C857B] hover:text-[#C4574B] transition-colors">
-            <span>&#8592;</span>
-            Abmelden
-          </button>
-        </div>
-      </aside>
-      <main className="flex-1 overflow-auto">{children}</main>
-    </div>
+          </div>
+        </aside>
+        <main className="flex-1 overflow-auto">{children}</main>
+      </div>
+    </ActiveRoleProvider>
   )
 }

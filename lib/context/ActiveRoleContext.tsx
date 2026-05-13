@@ -14,7 +14,7 @@ import {
   type ReactNode,
 } from "react"
 
-export type ActiveRolle = "verwaltung" | "handwerker" | "mieter"
+export type ActiveRolle = "verwaltung" | "handwerker" | "mieter" | "admin"
 
 interface ActiveRoleContextType {
   rolle: ActiveRolle
@@ -42,7 +42,7 @@ export function ActiveRoleProvider({
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const param = params.get("rolle")
-    if (param === "verwaltung" || param === "handwerker" || param === "mieter") {
+    if (param === "verwaltung" || param === "handwerker" || param === "mieter" || param === "admin") {
       setRolleState(param)
     }
   }, [])
