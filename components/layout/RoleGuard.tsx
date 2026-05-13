@@ -66,11 +66,12 @@ export default function RoleGuard({
     )
   }
 
-  // ActiveRoleProvider nur für Verwalter/Handwerker — Mieter und Admin
-  // haben keinen Toggle.
+  // ActiveRoleProvider für Verwalter/Handwerker/Mieter — Admin-Layout
+  // hat keinen Toggle (das eigentliche /admin-Panel hat eigene Logik).
   const defaultRolle: ActiveRolle | null =
     allowed === "verwalter" ? "verwaltung" :
-    allowed === "handwerker" ? "handwerker" : null
+    allowed === "handwerker" ? "handwerker" :
+    allowed === "mieter" ? "mieter" : null
 
   if (defaultRolle) {
     return (

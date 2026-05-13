@@ -79,7 +79,7 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
       </Link>
 
       {/* Rollen-Wechsel — nur sichtbar für Admins via ActiveRoleContext */}
-      {(rolle === "verwalter" || rolle === "handwerker") && (
+      {(rolle === "verwalter" || rolle === "handwerker" || rolle === "mieter") && (
         <div className="px-4 pb-3">
           <RollenWechsel />
         </div>

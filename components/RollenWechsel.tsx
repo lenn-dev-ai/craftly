@@ -1,54 +1,57 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useActiveRole } from "@/lib/context/ActiveRoleContext"
+import { useActiveRole, type ActiveRolle } from "@/lib/context/ActiveRoleContext"
 
-// Toggle zwischen Verwaltungs- und Handwerker-Sicht. Sichtbar nur für
-// Admins (profiles.rolle === 'admin'). Beim Wechsel wird auf die
+// Toggle zwischen Verwaltungs-, Handwerker- und Mieter-Sicht. Sichtbar
+// nur für Admins (profiles.rolle === 'admin'). Beim Wechsel wird auf die
 // passende Dashboard-Route navigiert und die Rolle im Query gemerkt.
+
+const OPTIONEN: Array<{
+  rolle: ActiveRolle
+  label: string
+  ziel: string
+  aktivCls: string
+}> = [
+  { rolle: "verwaltung", label: "Verwaltung", ziel: "/dashboard-verwalter", aktivCls: "bg-[#3D8B7A] text-white" },
+  { rolle: "handwerker", label: "Handwerker", ziel: "/dashboard-handwerker", aktivCls: "bg-[#C4956A] text-white" },
+  { rolle: "mieter",     label: "Mieter",     ziel: "/dashboard-mieter",     aktivCls: "bg-[#5B6ABF] text-white" },
+]
+
 export function RollenWechsel() {
   const router = useRouter()
   const { rolle, setRolle, istAdmin } = useActiveRole()
   if (!istAdmin) return null
 
-  function wechsel(neu: "verwaltung" | "handwerker") {
-    if (neu === rolle) return
-    setRolle(neu)
-    router.push(neu === "handwerker" ? "/dashboard-handwerker" : "/dashboard-verwalter")
+  function wechsel(opt: typeof OPTIONEN[number]) {
+    if (opt.rolle === rolle) return
+    setRolle(opt.rolle)
+    router.push(opt.ziel)
   }
 
   return (
     <div
-      className="inline-flex items-center gap-1 bg-white border border-[#EDE8E1] rounded-full p-1 shadow-sm"
+      className="inline-flex items-center gap-0.5 bg-white border border-[#EDE8E1] rounded-full p-0.5 shadow-sm"
       role="radiogroup"
       aria-label="Aktive Sicht"
     >
-      <button
-        type="button"
-        role="radio"
-        aria-checked={rolle === "verwaltung"}
-        onClick={() => wechsel("verwaltung")}
-        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-          rolle === "verwaltung"
-            ? "bg-[#3D8B7A] text-white"
-            : "text-[#6B665E] hover:text-[#2D2A26]"
-        }`}
-      >
-        Verwaltung
-      </button>
-      <button
-        type="button"
-        role="radio"
-        aria-checked={rolle === "handwerker"}
-        onClick={() => wechsel("handwerker")}
-        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-          rolle === "handwerker"
-            ? "bg-[#C4956A] text-white"
-            : "text-[#6B665E] hover:text-[#2D2A26]"
-        }`}
-      >
-        Handwerker
-      </button>
+      {OPTIONEN.map(opt => {
+        const aktiv = rolle === opt.rolle
+        return (
+          <button
+            key={opt.rolle}
+            type="button"
+            role="radio"
+            aria-checked={aktiv}
+            onClick={() => wechsel(opt)}
+            className={`px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all whitespace-nowrap ${
+              aktiv ? opt.aktivCls : "text-[#6B665E] hover:text-[#2D2A26]"
+            }`}
+          >
+            {opt.label}
+          </button>
+        )
+      })}
     </div>
   )
 }
