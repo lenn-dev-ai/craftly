@@ -146,6 +146,7 @@ export default function TicketDetail() {
   const [kostenFinal, setKostenFinal] = useState("")
   const [showKosten, setShowKosten] = useState(false)
   const [vergebenConfirm, setVergebenConfirm] = useState<string | null>(null)
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null)
   const chatRef = useRef<HTMLDivElement>(null)
 
   const load = useCallback(async () => {
@@ -160,6 +161,15 @@ export default function TicketDetail() {
     setCurrentUser(profile)
     setTicket(t)
     setNachrichten(msgs || [])
+
+    // Schadens-Foto via Signed URL (wenn vorhanden)
+    if (t?.foto_url) {
+      const { getSchadensFotoUrl } = await import("@/lib/storage/schadens-foto")
+      const url = await getSchadensFotoUrl(supabase, t.foto_url)
+      setFotoUrl(url)
+    } else {
+      setFotoUrl(null)
+    }
     const { data: einl } = await supabase.from("einladungen").select("*, handwerker:handwerker_id(id,name,firma,gewerk,bewertung_avg)").eq("ticket_id", id)
     setEinladungen(einl || [])
     const { data: bew } = await supabase.from("bewertungen").select("*").eq("ticket_id", id)
@@ -362,6 +372,20 @@ export default function TicketDetail() {
             {ticket.vergabemodus && <span>Modus: {ticket.vergabemodus === "auktion" ? "Smart-Auktion" : ticket.vergabemodus === "direkt" ? "Sofort-Vergabe" : "Planauftrag"}</span>}
           </div>
         </div>
+
+        {/* Schadens-Foto (Signed URL, 30 Min gültig) */}
+        {fotoUrl && (
+          <div className="mb-6">
+            <div className="rounded-2xl overflow-hidden border border-[#EDE8E1] bg-white">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={fotoUrl}
+                alt={`Foto vom Schaden: ${ticket.titel}`}
+                className="w-full max-h-96 object-contain bg-[#FAF8F5]"
+              />
+            </div>
+          </div>
+        )}
 
         {/* === AUCTION HERO === */}
         {ticket.status === "auktion" && ticket.auktion_ende && (

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Button, Card } from "@/components/ui"
 import AddressAutocomplete from "@/components/AddressAutocomplete"
+import { uploadSchadensFoto } from "@/lib/storage/schadens-foto"
 
 const MAX_FOTO_BYTES = 5 * 1024 * 1024 // 5 MB
 const ERLAUBTE_FOTO_TYPEN = ["image/jpeg", "image/png", "image/webp", "image/heic"]
@@ -164,6 +165,19 @@ export default function MeldenPage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
+
+    // Foto hochladen (best-effort — wenn der Upload fehlschlägt, geht das
+    // Ticket trotzdem rein, der User hat dann nur kein Bild dran).
+    let fotoPfad: string | null = null
+    if (fotoFile) {
+      const result = await uploadSchadensFoto(supabase, user.id, fotoFile)
+      if ("pfad" in result) {
+        fotoPfad = result.pfad
+      } else {
+        console.warn("[Foto-Upload]", result.fehler)
+      }
+    }
+
     const { error: dbError } = await supabase.from("tickets").insert({
       titel: form.titel,
       beschreibung: form.beschreibung,
@@ -177,6 +191,7 @@ export default function MeldenPage() {
       einsatzort_lng: form.einsatzort_lng,
       ki_confidence: kiConfidence,
       ki_schadensart: kiSchadensart,
+      foto_url: fotoPfad,
     })
     if (dbError) { setError("Fehler: " + dbError.message); setLoading(false); return }
     setStep("gesendet")
