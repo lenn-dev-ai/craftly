@@ -32,28 +32,33 @@ export function RollenWechsel() {
   }
 
   return (
-    <div
-      className="inline-flex items-center gap-0.5 bg-white border border-[#EDE8E1] rounded-full p-0.5 shadow-sm"
-      role="radiogroup"
-      aria-label="Aktive Sicht"
-    >
-      {OPTIONEN.map(opt => {
-        const aktiv = rolle === opt.rolle
-        return (
-          <button
-            key={opt.rolle}
-            type="button"
-            role="radio"
-            aria-checked={aktiv}
-            onClick={() => wechsel(opt)}
-            className={`px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all whitespace-nowrap ${
-              aktiv ? opt.aktivCls : "text-[#6B665E] hover:text-[#2D2A26]"
-            }`}
-          >
-            {opt.label}
-          </button>
-        )
-      })}
+    <div className="w-full">
+      <div className="text-[9px] font-bold uppercase tracking-wider text-[#8C857B] mb-1.5 px-1">
+        Sicht wechseln
+      </div>
+      <div
+        className="grid grid-cols-2 gap-1 bg-white border border-[#EDE8E1] rounded-xl p-1 shadow-sm"
+        role="radiogroup"
+        aria-label="Aktive Sicht"
+      >
+        {OPTIONEN.map(opt => {
+          const aktiv = rolle === opt.rolle
+          return (
+            <button
+              key={opt.rolle}
+              type="button"
+              role="radio"
+              aria-checked={aktiv}
+              onClick={() => wechsel(opt)}
+              className={`px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all text-center ${
+                aktiv ? opt.aktivCls : "text-[#6B665E] hover:text-[#2D2A26] hover:bg-[#F5F0EB]"
+              }`}
+            >
+              {opt.label}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
