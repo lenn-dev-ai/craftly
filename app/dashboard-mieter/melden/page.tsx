@@ -53,6 +53,10 @@ export default function MeldenPage() {
   const [fotoFile, setFotoFile] = useState<File | null>(null)
   const [fotoPreviewUrl, setFotoPreviewUrl] = useState<string | null>(null)
   const [fotoFehler, setFotoFehler] = useState<string | null>(null)
+  // KI-Vision-State
+  const [kiConfidence, setKiConfidence] = useState<number | null>(null)
+  const [kiSchadensart, setKiSchadensart] = useState<string | null>(null)
+  const [kiHinweis, setKiHinweis] = useState<string | null>(null)
 
   function fotoWaehlen(file: File | null) {
     setFotoFehler(null)
@@ -85,20 +89,62 @@ export default function MeldenPage() {
   // Beispiel: supabase.storage.from('ticket-fotos').upload(`${user.id}/${Date.now()}_${fotoFile.name}`, fotoFile)
 
   function startAnalyse() {
-    if (!beschreibung.trim()) return
+    if (!beschreibung.trim() && !fotoFile) return
     setStep("analyse")
     setAnalyseProgress(0)
-    const kategorie = analyseText(beschreibung)
-    const analyse = KI_ANALYSEN[kategorie]
+    setKiConfidence(null)
+    setKiSchadensart(null)
+    setKiHinweis(null)
 
     const interval = setInterval(() => {
       setAnalyseProgress(p => {
-        if (p >= 100) { clearInterval(interval); return 100 }
+        if (p >= 95) return p
         return p + Math.random() * 15 + 5
       })
     }, 200)
 
-    setTimeout(() => {
+    void (async () => {
+      // KI-Vision-Pfad wenn Foto vorhanden
+      if (fotoFile) {
+        try {
+          const fd = new FormData()
+          fd.append("foto", fotoFile)
+          const res = await fetch("/api/ki/schadenserkennung", { method: "POST", body: fd })
+          if (res.ok) {
+            const data = await res.json() as {
+              schadensart: string
+              gewerk: string
+              dringlichkeit: string
+              titel_vorschlag: string
+              beschreibung_vorschlag: string
+              confidence: number
+              hinweis?: string
+            }
+            clearInterval(interval)
+            setAnalyseProgress(100)
+            setKiConfidence(data.confidence)
+            setKiSchadensart(data.schadensart)
+            setKiHinweis(data.hinweis ?? null)
+            setKiResult(data.schadensart in KI_ANALYSEN ? data.schadensart : "sonstiges")
+            setForm(f => ({
+              ...f,
+              titel: data.titel_vorschlag,
+              beschreibung: data.beschreibung_vorschlag || beschreibung,
+              prioritaet: data.dringlichkeit,
+              gewerk: data.gewerk,
+            }))
+            setTimeout(() => setStep("details"), 500)
+            return
+          }
+          // bei nicht-ok auf Regex-Fallback runterfallen
+        } catch {
+          // ebenfalls Fallback
+        }
+      }
+
+      // Regex-Fallback (Text-Analyse) — funktioniert ohne API-Key
+      const kategorie = analyseText(beschreibung)
+      const analyse = KI_ANALYSEN[kategorie]
       clearInterval(interval)
       setAnalyseProgress(100)
       setKiResult(kategorie)
@@ -110,7 +156,7 @@ export default function MeldenPage() {
         gewerk: analyse.gewerk,
       }))
       setTimeout(() => setStep("details"), 500)
-    }, 2000)
+    })()
   }
 
   async function handleSubmit() {
@@ -129,6 +175,8 @@ export default function MeldenPage() {
       einsatzort_adresse: form.einsatzort_adresse || null,
       einsatzort_lat: form.einsatzort_lat,
       einsatzort_lng: form.einsatzort_lng,
+      ki_confidence: kiConfidence,
+      ki_schadensart: kiSchadensart,
     })
     if (dbError) { setError("Fehler: " + dbError.message); setLoading(false); return }
     setStep("gesendet")
@@ -294,8 +342,24 @@ export default function MeldenPage() {
               <div className="inline-flex items-center gap-2 bg-[#3D8B7A]/10 border border-[#3D8B7A]/20 rounded-full px-4 py-1.5 mb-4">
                 <div className="w-2 h-2 rounded-full bg-[#3D8B7A]" />
                 <span className="text-xs text-[#3D8B7A] font-medium">KI-Analyse abgeschlossen</span>
+                {kiConfidence != null && (
+                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ml-1 ${
+                    kiConfidence >= 0.8
+                      ? "bg-[#3D8B7A] text-white"
+                      : kiConfidence >= 0.5
+                      ? "bg-[#C4956A] text-white"
+                      : "bg-[#C4574B] text-white"
+                  }`}>
+                    {kiConfidence >= 0.8 ? "Sicher" : kiConfidence >= 0.5 ? "Vorschlag" : "Bitte prüfen"} · {Math.round(kiConfidence * 100)} %
+                  </span>
+                )}
               </div>
-              <h2 className="text-lg font-semibold">{analyse.titel}</h2>
+              <h2 className="text-lg font-semibold">{form.titel || analyse.titel}</h2>
+              {kiHinweis && (
+                <p className="text-xs text-[#C4956A] mt-2 italic max-w-md mx-auto">
+                  💡 Hinweis der KI: {kiHinweis}
+                </p>
+              )}
             </div>
 
             {/* KI Insight Card */}
