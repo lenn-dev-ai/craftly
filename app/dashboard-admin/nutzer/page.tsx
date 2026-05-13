@@ -40,9 +40,12 @@ export default function NutzerPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState("alle")
   const [search, setSearch] = useState("")
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   async function load() {
     const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setCurrentUserId(user?.id ?? null)
     const [{ data: p }, { data: t }, { data: a }] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("tickets").select("*"),
@@ -65,9 +68,48 @@ export default function NutzerPage() {
     return true
   })
 
-  async function changeRolle(userId: string, newRolle: string) {
+  const dashboardZiel: Record<string, string> = {
+    admin: "/dashboard-admin",
+    verwalter: "/dashboard-verwalter",
+    handwerker: "/dashboard-handwerker",
+    mieter: "/dashboard-mieter",
+  }
+
+  async function changeRolle(userId: string, newRolle: string, currentRolle: string) {
+    const istSelf = userId === currentUserId
+    const istSelfDemote = istSelf && currentRolle === "admin" && newRolle !== "admin"
+
+    if (istSelfDemote) {
+      const ok = window.confirm(
+        `Du entziehst dir selbst die Admin-Rolle und wirst zu '${newRolle}'.\n\n` +
+        `Wichtig: Danach kannst du dieses Admin-Panel nicht mehr betreten und ` +
+        `dich nicht selbst zurück zum Admin machen. Ein anderer Admin (oder direkter ` +
+        `Datenbank-Zugriff) wäre nötig.\n\n` +
+        `Wirklich fortfahren?`
+      )
+      if (!ok) return
+    } else if (istSelf && newRolle === currentRolle) {
+      return
+    } else if (istSelf) {
+      const ok = window.confirm(
+        `Du änderst deine eigene Rolle von '${currentRolle}' auf '${newRolle}'. Fortfahren?`
+      )
+      if (!ok) return
+    }
+
     const supabase = createClient()
-    await supabase.from("profiles").update({ rolle: newRolle }).eq("id", userId)
+    const { error } = await supabase.from("profiles").update({ rolle: newRolle }).eq("id", userId)
+    if (error) {
+      alert("Rolle konnte nicht geändert werden: " + error.message)
+      return
+    }
+
+    // Self-Update: Hard-Navigation auf das neue Dashboard, sonst wirft
+    // der Admin-Layout-Guard den User auf /login (rolle != admin).
+    if (istSelf) {
+      window.location.href = dashboardZiel[newRolle] || "/dashboard-mieter"
+      return
+    }
     await load()
   }
 
@@ -179,13 +221,24 @@ export default function NutzerPage() {
                       {u.gewerk && <span className="ml-2 text-[11px] bg-[#FAF8F5] px-2 py-0.5 rounded">{u.gewerk}</span>}
                     </td>
                     <td className="px-5 py-3.5 text-right">
-                      <select value={u.rolle} onChange={e => changeRolle(u.id, e.target.value)}
-                        className="text-xs bg-[#FAF8F5] border border-white/[0.08] rounded-lg px-2 py-1 text-gray-300 cursor-pointer focus:outline-none">
-                        <option value="verwalter">Verwalter</option>
-                        <option value="handwerker">Handwerker</option>
-                        <option value="mieter">Mieter</option>
-                        <option value="admin">Admin</option>
-                      </select>
+                      <div className="inline-flex items-center gap-2 justify-end">
+                        {u.id === currentUserId && (
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#7C6CAB]/15 text-[#7C6CAB]">
+                            Du
+                          </span>
+                        )}
+                        <select
+                          value={u.rolle}
+                          onChange={e => changeRolle(u.id, e.target.value, u.rolle)}
+                          className="text-xs bg-[#FAF8F5] border border-[#EDE8E1] rounded-lg px-2 py-1 text-[#2D2A26] cursor-pointer focus:outline-none focus:border-[#7C6CAB]/40"
+                          aria-label={`Rolle für ${u.name || u.email} ändern`}
+                        >
+                          <option value="verwalter">Verwalter</option>
+                          <option value="handwerker">Handwerker</option>
+                          <option value="mieter">Mieter</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      </div>
                     </td>
                   </tr>
                 )
