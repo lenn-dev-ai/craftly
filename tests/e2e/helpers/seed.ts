@@ -119,6 +119,23 @@ export async function resetTestDaten(userIds: string[]): Promise<void> {
 export async function seedTestUsers(): Promise<SeedResult> {
   const admin = adminClient()
 
+  // Smoke-Check: kann der Admin-Client tatsächlich mit der DB sprechen?
+  // Wenn der service_role-Key zu einem anderen Supabase-Projekt gehört
+  // (z. B. Cloud-Prod statt lokal), kommt hier eine klare Meldung statt
+  // weiter unten ein generisches "requires Bearer token".
+  {
+    const probe = await admin.auth.admin.listUsers({ page: 1, perPage: 1 })
+    if (probe.error) {
+      throw new Error(
+        `Admin-API nicht erreichbar (URL=${process.env.E2E_SUPABASE_URL}): ${probe.error.message}\n` +
+        `Mögliche Ursachen:\n` +
+        `  - Service-Role-Key gehört zu einem anderen Supabase-Projekt\n` +
+        `  - E2E_SUPABASE_URL zeigt nicht auf die lokale Instanz\n` +
+        `  - 'supabase status' ausführen und beide Werte neu kopieren`,
+      )
+    }
+  }
+
   // Phase 1: Auth-User anlegen
   const mieterId = await createOrFindUser(TEST_USERS.mieter)
   const hwDiagId = await createOrFindUser(TEST_USERS.hw_diagnose)

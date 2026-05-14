@@ -27,7 +27,8 @@ test.describe("Landing Page", () => {
     await page.goBack()
     await page.getByRole("link", { name: "Datenschutz" }).first().click()
     await expect(page).toHaveURL(/\/datenschutz$/)
-    await expect(page.getByRole("heading", { name: /Datenschutzerklärung/i })).toBeVisible()
+    // h1 ist eindeutig "Datenschutzerklärung" — h2 §14 enthält den Text aber auch
+    await expect(page.getByRole("heading", { level: 1, name: /Datenschutzerklärung/i })).toBeVisible()
   })
 
   test("FAQ-Accordion lässt sich öffnen und schließen", async ({ page }) => {
