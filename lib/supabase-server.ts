@@ -1,4 +1,5 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
+import { createClient } from "@supabase/supabase-js"
 import { cookies, headers } from "next/headers"
 
 // Server-side Supabase-Client für API-Routes und Server-Components.
@@ -44,5 +45,28 @@ export function createServerSupabaseClient() {
       },
       ...globalOpts,
     },
+  )
+}
+
+// Service-Role-Client für RLS-bypassende Server-Operations.
+//
+// Verwendung: NUR in API-Routes, niemals in Client-Code (sonst lekt der
+// Key in den Browser). Sinnvoll bei Operations, die für andere User
+// gemacht werden müssen — z. B. wenn der Verwalter im Namen eines
+// Handwerkers ein synthetisches Angebot in der Auktion vorbelegt.
+//
+// Setzt SUPABASE_SERVICE_ROLE_KEY voraus. In .env.local oder in der
+// Netlify-Config setzen — NIEMALS als NEXT_PUBLIC_*.
+export function createServiceRoleClient() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!key) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY nicht gesetzt. Erforderlich für RLS-bypassende Operations.",
+    )
+  }
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    key,
+    { auth: { autoRefreshToken: false, persistSession: false } },
   )
 }

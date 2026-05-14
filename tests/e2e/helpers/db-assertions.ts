@@ -57,3 +57,57 @@ export async function findDiagnoseTicketByMieter(mieterId: string, titel: string
 export function expectClose(actual: number, expected: number, msg?: string): void {
   expect(Math.abs(actual - expected), msg ?? `expected ~${expected}, got ${actual}`).toBeLessThan(0.01)
 }
+
+// Legt direkt ein Projekt-Ticket im in_bearbeitung-Status an — für
+// Nachtrags-Tests die nicht den ganzen Diagnose→Annehmen-Flow brauchen.
+export async function legeProjektTicketDirekt(params: {
+  erstelltVon: string
+  zugewiesenerHw: string
+  titel: string
+  projektAngebot: number
+  kostenFinal: number
+  diagnoseTicketId?: string
+}): Promise<string> {
+  const admin = adminClient()
+  const { data: ticket, error: tErr } = await admin
+    .from("tickets")
+    .insert({
+      titel: params.titel,
+      beschreibung: "E2E-Test Projekt-Ticket",
+      gewerk: "sanitaer",
+      prioritaet: "normal",
+      vergabemodus: "auktion",
+      status: "in_bearbeitung",
+      erstellt_von: params.erstelltVon,
+      zugewiesener_hw: params.zugewiesenerHw,
+      einsatzort_adresse: "Teststraße 1, 10115 Berlin",
+      einsatzort_lat: 52.53,
+      einsatzort_lng: 13.4,
+      ticket_typ: "projekt",
+      diagnose_ticket_id: params.diagnoseTicketId,
+      projekt_angebot: params.projektAngebot,
+      kosten_final: params.kostenFinal,
+      diagnosegebuehr_angerechnet: !!params.diagnoseTicketId,
+      surge_faktor: 1.0,
+    })
+    .select("id")
+    .single<{ id: string }>()
+  if (tErr || !ticket) throw new Error(`Projekt-Ticket-Insert: ${tErr?.message}`)
+
+  // Provisions-Snapshot anlegen — der Nachtrag-Trigger erwartet eine
+  // existierende Zeile zum Aktualisieren (keine Auto-Insert-Logik).
+  const provBetrag = Math.round(params.kostenFinal * 0.05 * 100) / 100
+  const { error: pErr } = await admin.from("provisionen").insert({
+    ticket_id: ticket.id,
+    verwalter_id: params.erstelltVon,
+    handwerker_id: params.zugewiesenerHw,
+    auftragswert: params.kostenFinal,
+    provision_rate: 0.05,
+    provision_betrag: provBetrag,
+    gesamt: params.kostenFinal + provBetrag,
+    is_early_adopter: false,
+  })
+  if (pErr) throw new Error(`Provisions-Insert: ${pErr.message}`)
+
+  return ticket.id
+}

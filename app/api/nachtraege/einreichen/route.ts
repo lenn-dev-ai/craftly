@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 import { nachtragEingereichtEmail } from "@/lib/email/templates"
 
@@ -93,9 +93,14 @@ export async function POST(request: NextRequest) {
   // Bagatell → sofort genehmigen. DB-Trigger handle_nachtrag_genehmigt
   // synchronisiert tickets.kosten_final, provisionen-Snapshot und
   // profiles.angebotstreue automatisch.
+  //
+  // Status-Update muss als Service-Role laufen, weil die nachtraege_update-
+  // Policy nur Verwalter (Ticket-Ersteller) oder Admin erlaubt — der
+  // Handwerker selbst darf seinen Nachtrag nicht auf 'genehmigt' setzen.
   let autoGenehmigt = false
   if (inserted.stufe === "bagatell") {
-    await supabase
+    const admin = createServiceRoleClient()
+    const { error: updErr } = await admin
       .from("nachtraege")
       .update({
         status: "genehmigt",
@@ -103,6 +108,12 @@ export async function POST(request: NextRequest) {
         genehmigt_am: new Date().toISOString(),
       })
       .eq("id", inserted.id)
+    if (updErr) {
+      return NextResponse.json(
+        { error: "Bagatell-Auto-Genehmigung fehlgeschlagen: " + updErr.message },
+        { status: 500 },
+      )
+    }
     autoGenehmigt = true
   }
 

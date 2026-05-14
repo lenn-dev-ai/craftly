@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
 import { konfigFuer, berechneAuktionsEnde } from "@/lib/auction/auction-manager"
 import type { Dringlichkeit } from "@/lib/auction/smart-score"
 import { haversineKm } from "@/lib/distance"
@@ -135,8 +135,12 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // Synthetisches Angebot vom Diagnose-HW (preis = projekt_angebot)
-  await supabase.from("angebote").upsert(
+  // Synthetisches Angebot vom Diagnose-HW (preis = projekt_angebot).
+  // Muss als Service-Role laufen, weil die angebote_insert-RLS-Policy
+  // auth.uid() = handwerker_id verlangt — wir laufen aber als Verwalter
+  // und legen das Angebot im Namen des Diagnose-HW an.
+  const admin = createServiceRoleClient()
+  const { error: angebotErr } = await admin.from("angebote").upsert(
     {
       ticket_id: projektTicket.id,
       handwerker_id: ticket.zugewiesener_hw,
@@ -147,6 +151,12 @@ export async function POST(request: NextRequest) {
     },
     { onConflict: "ticket_id,handwerker_id" },
   )
+  if (angebotErr) {
+    return NextResponse.json(
+      { error: "Synthetisches Diagnose-Angebot anlegen fehlgeschlagen: " + angebotErr.message },
+      { status: 500 },
+    )
+  }
 
   // Diagnose-Ticket schließen
   await supabase

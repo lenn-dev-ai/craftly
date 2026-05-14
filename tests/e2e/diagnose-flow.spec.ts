@@ -228,4 +228,95 @@ test.describe.serial("Diagnose-Pipeline End-to-End", () => {
     const finalDiag = await getTicket(ticketId)
     expect(finalDiag.status).toBe("erledigt")
   })
+
+  // ============================================================
+  // Vorkaufsrecht-Pfad: Verwalter lehnt Festpreis ab → Auktion mit
+  // 24h Vorkaufsrecht für Diagnose-HW → Konkurrent unterbietet →
+  // Diagnose-HW gewinnt trotzdem (Override Smart-Score).
+  // ============================================================
+  test("Vorkaufsrecht: HW Befund → In Auktion → Konkurrent unterbietet → Diagnose-HW gewinnt", async ({ browser, request }) => {
+    const seed = await seedTestUsers()
+    const ticketId = await legeDiagnoseTicketAn({
+      erstelltVon: seed.verwalter.id,
+      titel: "E2E: Vorkaufsrecht-Pfad",
+      beschreibung: "Befund vor Ort, Verwalter will Auktion.",
+    })
+
+    // Befund + projekt_angebot direkt setzen (UI-Pfad in Test 1 bewiesen)
+    const admin = adminClient()
+    await admin.from("tickets").update({
+      zugewiesener_hw: seed.hwDiagnose.id,
+      befund_text: "Mischer komplett austauschen.",
+      befund_aufwand_stunden: 2.5,
+      projekt_angebot: 380,
+      leistungsumfang: ["Mischer austauschen", "Material inklusive"],
+      preiskorridor_min: 323,
+      preiskorridor_max: 437,
+    }).eq("id", ticketId)
+
+    // Verwalter klickt "In Auktion mit Vorkaufsrecht" via UI
+    const { page: verwalterPage } = await loggedInPage(
+      browser, TEST_USERS.verwalter.email, TEST_USERS.verwalter.password,
+    )
+    await verwalterPage.goto(`/dashboard-verwalter/ticket/${ticketId}`)
+    await verwalterPage.getByRole("button", { name: /In Auktion mit Vorkaufsrecht/i }).click()
+
+    const auktionResPromise = verwalterPage.waitForResponse(
+      r => r.url().includes("/api/diagnose/projekt-zur-auktion") && r.request().method() === "POST",
+      { timeout: 20_000 },
+    )
+    await verwalterPage.getByRole("button", { name: /Ja, in Auktion/i }).click()
+    const auktionRes = await auktionResPromise
+    if (auktionRes.status() !== 200) {
+      throw new Error(`Auktion-API failed (${auktionRes.status()}): ${await auktionRes.text()}`)
+    }
+
+    // Projekt-Ticket muss in_auktion sein mit Vorkaufsrecht
+    const projekt = await findProjektTicket(ticketId)
+    expect(projekt).not.toBeNull()
+    expect(projekt!.status).toBe("auktion")
+    expect(projekt!.vorkaufsrecht_bis).not.toBeNull()
+    expect(new Date(projekt!.vorkaufsrecht_bis!).getTime()).toBeGreaterThan(Date.now())
+
+    // HW2 (Konkurrent) bietet niedriger via API
+    const hw2Token = await userAccessToken(
+      TEST_USERS.hw_konkurrent.email, TEST_USERS.hw_konkurrent.password,
+    )
+    const bidRes = await request.post("/api/auction/bid", {
+      headers: { Authorization: `Bearer ${hw2Token}` },
+      data: {
+        ticket_id: projekt!.id,
+        preis: 320, // 60€ unter Diagnose-HW
+        fruehester_termin: new Date(Date.now() + 86400_000).toISOString().slice(0, 10),
+        geschaetzte_dauer: "3h",
+        nachricht: "Konkurrenz-Angebot",
+      },
+    })
+    if (!bidRes.ok()) {
+      throw new Error(`Bid-API failed (${bidRes.status()}): ${await bidRes.text()}`)
+    }
+
+    // Verwalter schließt Auktion (auto-pick) — Vorkaufsrecht muss greifen
+    const verwalterToken = await userAccessToken(
+      TEST_USERS.verwalter.email, TEST_USERS.verwalter.password,
+    )
+    const closeRes = await request.post("/api/auction/close", {
+      headers: { Authorization: `Bearer ${verwalterToken}` },
+      data: { ticket_id: projekt!.id }, // ohne angebot_id → Auto-Pick mit Vorkaufsrecht-Logik
+    })
+    if (!closeRes.ok()) {
+      throw new Error(`Close-API failed (${closeRes.status()}): ${await closeRes.text()}`)
+    }
+    const closeJson = await closeRes.json()
+
+    // Assertion: Diagnose-HW hat gewonnen trotz höherem Preis
+    expect(closeJson.handwerkerId).toBe(seed.hwDiagnose.id)
+    expect(closeJson.vorkaufsrechtAktiv).toBe(true)
+
+    // DB-Check: zugewiesener_hw + Diagnose-Anrechnung
+    const final = await getTicket(projekt!.id)
+    expect(final.zugewiesener_hw).toBe(seed.hwDiagnose.id)
+    expect(final.diagnosegebuehr_angerechnet).toBe(true)
+    expectClose(Number(final.kosten_final), 380 - 89, "kosten_final = Angebot - Diagnose-Preis")
+  })
 })
