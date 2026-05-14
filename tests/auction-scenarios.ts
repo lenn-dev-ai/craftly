@@ -197,6 +197,41 @@ console.log("\n=== Smart-Score: Sichtbarkeits-Bonus (Gold + 10 %, Silber + 5 %) 
     `bonus=${breakdown.sichtbarkeitsBonus}`)
 }
 
+console.log("\n=== Smart-Score: Angebotstreue-Multiplier ===")
+{
+  const baseline = berechneSmartScore({
+    angebotPreis: 100, durchschnittPreis: 100, entfernungKm: 5, maxRadius: 25,
+    bewertung: 4.0, istRoutenBonus: false, dringlichkeit: "planbar",
+    angebotstreue: 40, // Untergrenze → kein Bonus
+  })
+  const top = berechneSmartScore({
+    angebotPreis: 100, durchschnittPreis: 100, entfernungKm: 5, maxRadius: 25,
+    bewertung: 4.0, istRoutenBonus: false, dringlichkeit: "planbar",
+    angebotstreue: 100, // voller Bonus
+  })
+  check("Angebotstreue 100 ≈ +10 % über Treue 40",
+    nahe(top / baseline, 1.10, 0.01),
+    `verhältnis=${(top / baseline).toFixed(3)}`)
+
+  const mittel = berechneSmartScore({
+    angebotPreis: 100, durchschnittPreis: 100, entfernungKm: 5, maxRadius: 25,
+    bewertung: 4.0, istRoutenBonus: false, dringlichkeit: "planbar",
+    angebotstreue: 70, // mittel
+  })
+  check("Angebotstreue 70 liegt zwischen 40 und 100",
+    mittel > baseline && mittel < top,
+    `baseline=${baseline}, mittel=${mittel}, top=${top}`)
+
+  const breakdown = berechneSmartScoreBreakdown({
+    angebotPreis: 100, durchschnittPreis: 100, entfernungKm: 5, maxRadius: 25,
+    bewertung: 4.0, istRoutenBonus: false, dringlichkeit: "planbar",
+    angebotstreue: 100,
+  })
+  check("Breakdown enthält angebotstreueBonus > 0 bei Treue 100",
+    breakdown.angebotstreueBonus > 0,
+    `bonus=${breakdown.angebotstreueBonus}`)
+}
+
 console.log("\n=== Smart-Score: Cap bei 100 ===")
 {
   const max = berechneSmartScore({

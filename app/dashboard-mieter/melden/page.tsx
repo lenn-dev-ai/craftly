@@ -58,6 +58,9 @@ export default function MeldenPage() {
   const [kiConfidence, setKiConfidence] = useState<number | null>(null)
   const [kiSchadensart, setKiSchadensart] = useState<string | null>(null)
   const [kiHinweis, setKiHinweis] = useState<string | null>(null)
+  // Diagnose-Option
+  const [ticketTyp, setTicketTyp] = useState<"standard" | "diagnose">("standard")
+  const [diagnosePreis, setDiagnosePreis] = useState<number | null>(null)
 
   function fotoWaehlen(file: File | null) {
     setFotoFehler(null)
@@ -84,6 +87,19 @@ export default function MeldenPage() {
       if (fotoPreviewUrl) URL.revokeObjectURL(fotoPreviewUrl)
     }
   }, [fotoPreviewUrl])
+
+  // Diagnose-Preis on-demand laden, sobald gewerk feststeht (= details-Step)
+  useEffect(() => {
+    if (step !== "details" || !form.gewerk) return
+    let aktiv = true
+    void (async () => {
+      const supabase = createClient()
+      const { getDiagnosePreis } = await import("@/lib/diagnose/preise")
+      const p = await getDiagnosePreis(supabase, form.gewerk)
+      if (aktiv) setDiagnosePreis(p)
+    })()
+    return () => { aktiv = false }
+  }, [step, form.gewerk])
 
   // TODO: sobald Supabase Storage Bucket "ticket-fotos" konfiguriert ist,
   // hier den eigentlichen Upload einbauen und die URL ans Ticket schreiben.
@@ -194,6 +210,7 @@ export default function MeldenPage() {
       einsatzort_lat: form.einsatzort_lat,
       einsatzort_lng: form.einsatzort_lng,
       foto_url: fotoPfad,
+      ticket_typ: ticketTyp,
     }
     const mitKi = {
       ...basisPayload,
@@ -203,8 +220,15 @@ export default function MeldenPage() {
 
     let dbError = (await supabase.from("tickets").insert(mitKi)).error
     if (dbError && /ki_confidence|ki_schadensart/i.test(dbError.message)) {
-      // Spalten fehlen noch in der DB → ohne KI-Felder retry
+      // KI-Spalten fehlen → ohne sie retry
       dbError = (await supabase.from("tickets").insert(basisPayload)).error
+    }
+    if (dbError && /ticket_typ/i.test(dbError.message)) {
+      // ticket_typ fehlt (Diagnose-Migration noch nicht gerollt) → ohne ihn retry
+      // Standard-Ticket-Pfad bleibt funktional, Diagnose-Wahl wird ignoriert
+      const { ticket_typ: _ignored, ...ohneTicketTyp } = basisPayload
+      void _ignored
+      dbError = (await supabase.from("tickets").insert(ohneTicketTyp)).error
     }
     if (dbError) { setError("Fehler: " + dbError.message); setLoading(false); return }
     setStep("gesendet")
@@ -450,6 +474,57 @@ export default function MeldenPage() {
                     <div className="text-[10px] mt-0.5 opacity-70">{d.sub}</div>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Diagnose-Option — neue Stufe-1-Pipeline */}
+            <div className="bg-white border border-[#EDE8E1] rounded-2xl p-4 mb-4">
+              <div className="text-[10px] uppercase tracking-wider text-[#8C857B] font-bold mb-3">
+                Umfang klar?
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTicketTyp("standard")}
+                  aria-pressed={ticketTyp === "standard"}
+                  className={`text-left rounded-xl p-3 border transition-all ${
+                    ticketTyp === "standard"
+                      ? "border-[#3D8B7A] bg-[#3D8B7A]/5"
+                      : "border-[#EDE8E1] hover:border-[#3D8B7A]/30"
+                  }`}
+                >
+                  <div className="text-sm font-semibold text-[#2D2A26] mb-0.5">
+                    Direkte Reparatur
+                  </div>
+                  <div className="text-[11px] text-[#8C857B] leading-snug">
+                    Handwerker bieten direkt auf den Auftrag.
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTicketTyp("diagnose")}
+                  aria-pressed={ticketTyp === "diagnose"}
+                  className={`text-left rounded-xl p-3 border transition-all ${
+                    ticketTyp === "diagnose"
+                      ? "border-[#5B6ABF] bg-[#5B6ABF]/5"
+                      : "border-[#EDE8E1] hover:border-[#5B6ABF]/30"
+                  }`}
+                >
+                  <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                    <span className="text-sm font-semibold text-[#2D2A26]">
+                      Erst Diagnose
+                    </span>
+                    {diagnosePreis != null && (
+                      <span className="text-sm font-bold text-[#5B6ABF] tabular-nums">
+                        {diagnosePreis} €
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-[#8C857B] leading-snug">
+                    Handwerker kommt zur Begutachtung, fester Preis.
+                    Bei Folgeauftrag wird die Gebühr angerechnet.
+                  </div>
+                </button>
               </div>
             </div>
 

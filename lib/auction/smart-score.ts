@@ -25,6 +25,8 @@ export interface ScoreInput {
   erfahrung?: number
   /** Optional: Sichtbarkeits-Stufe aus Verfügbarkeits-Score. Default 'bronze' (× 1.00). */
   sichtbarkeitsStufe?: SichtbarkeitsStufe
+  /** Optional: Angebotstreue 0..100. Default 100 (= +10 % Multiplier wie Gold). */
+  angebotstreue?: number
 }
 
 export interface ScoreBreakdown {
@@ -33,6 +35,7 @@ export interface ScoreBreakdown {
   bewertungScore: number
   routenBonus: number
   sichtbarkeitsBonus: number
+  angebotstreueBonus: number
   total: number
 }
 
@@ -56,6 +59,22 @@ const SICHTBARKEITS_MULTIPLIER: Record<SichtbarkeitsStufe, number> = {
   gold: 1.10,
   silber: 1.05,
   bronze: 1.00,
+}
+
+/**
+ * Angebotstreue (0..100) → Multiplier 1.00..1.10. Linear:
+ *   100  → 1.10  (volle Treue, +10 % Bonus, analog Gold)
+ *   70   → 1.05
+ *   40   → 1.00
+ *   < 40 → 1.00 (kein Strafabzug — nur Belohnung)
+ * Belohnt Handwerker, die genau angeboten haben.
+ */
+function angebotstreueMultiplier(value: number | null | undefined): number {
+  if (value == null || !isFinite(value)) return 1.10 // Default Neueinsteiger
+  if (value <= 40) return 1.00
+  if (value >= 100) return 1.10
+  // linear zwischen 40 und 100
+  return 1.00 + ((value - 40) / 60) * 0.10
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -101,7 +120,10 @@ export function berechneSmartScoreBreakdown(input: ScoreInput): ScoreBreakdown {
 
   const stufe = input.sichtbarkeitsStufe ?? "bronze"
   const sichtbarkeitsMult = SICHTBARKEITS_MULTIPLIER[stufe]
-  const mitBonus = mitRoutenBonus * sichtbarkeitsMult
+  const mitSichtbarkeit = mitRoutenBonus * sichtbarkeitsMult
+
+  const angebotstreueMult = angebotstreueMultiplier(input.angebotstreue)
+  const mitBonus = mitSichtbarkeit * angebotstreueMult
 
   return {
     preisScore: Math.round(preisScore * 100) / 100,
@@ -111,7 +133,10 @@ export function berechneSmartScoreBreakdown(input: ScoreInput): ScoreBreakdown {
       ? Math.round((mitRoutenBonus - grundScore) * 100) / 100
       : 0,
     sichtbarkeitsBonus: sichtbarkeitsMult > 1.0
-      ? Math.round((mitBonus - mitRoutenBonus) * 100) / 100
+      ? Math.round((mitSichtbarkeit - mitRoutenBonus) * 100) / 100
+      : 0,
+    angebotstreueBonus: angebotstreueMult > 1.0
+      ? Math.round((mitBonus - mitSichtbarkeit) * 100) / 100
       : 0,
     total: Math.round(clamp(mitBonus, 0, 100) * 100) / 100,
   }

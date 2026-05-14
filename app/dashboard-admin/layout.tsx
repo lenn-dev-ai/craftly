@@ -5,12 +5,13 @@ import { useRouter, usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { ActiveRoleProvider } from "@/lib/context/ActiveRoleContext"
 import { RollenWechsel } from "@/components/RollenWechsel"
-import { LayoutDashboard, Users, Activity, Settings, LogOut } from "lucide-react"
+import { LayoutDashboard, Users, Activity, Settings, LogOut, Stethoscope } from "lucide-react"
 
 const NAV_ITEMS = [
   { label: "Übersicht", href: "/dashboard-admin", Icon: LayoutDashboard },
   { label: "Nutzer", href: "/dashboard-admin/nutzer", Icon: Users },
   { label: "Aktivität", href: "/dashboard-admin/aktivitaet", Icon: Activity },
+  { label: "Diagnose-Preise", href: "/dashboard-admin/diagnose-preise", Icon: Stethoscope },
   { label: "System", href: "/dashboard-admin/system", Icon: Settings },
 ]
 

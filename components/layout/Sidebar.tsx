@@ -10,7 +10,7 @@ import { RollenWechsel } from "@/components/RollenWechsel"
 import {
   LayoutDashboard, Ticket, Zap, Wrench, BarChart3,
   Euro, Calendar, Briefcase, MapPin, CalendarCheck, UserCircle,
-  Plus, FileText, ShieldCheck, LogOut, Map, CalendarRange,
+  Plus, FileText, ShieldCheck, LogOut, Map, CalendarRange, Stethoscope,
   type LucideProps,
 } from "lucide-react"
 
@@ -27,6 +27,7 @@ const menus: Record<Rolle, { href: string; label: string; Icon: LucideIcon }[]> 
   handwerker: [
     { href: "/dashboard-handwerker", label: "Dashboard", Icon: LayoutDashboard },
     { href: "/dashboard-handwerker/auftraege", label: "Aufträge", Icon: Briefcase },
+    { href: "/dashboard-handwerker/diagnosen", label: "Diagnosen", Icon: Stethoscope },
     { href: "/dashboard-handwerker/karte", label: "Karte", Icon: Map },
     { href: "/dashboard-handwerker/zeitplan", label: "Zeitplan", Icon: CalendarRange },
     { href: "/dashboard-handwerker/termine", label: "Termine & Route", Icon: MapPin },
