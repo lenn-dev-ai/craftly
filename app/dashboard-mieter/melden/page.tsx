@@ -204,7 +204,10 @@ export default function MeldenPage() {
       wohnung: form.wohnung,
       prioritaet: form.prioritaet,
       gewerk: form.gewerk,
-      status: "offen",
+      // Diagnose-Tickets müssen direkt im Handwerker-Pool sichtbar sein
+      // (Sektion "Verfügbare Diagnose-Termine" filtert auf status='auktion').
+      // Standard-Tickets bleiben 'offen' bis Verwalter die Auktion startet.
+      status: ticketTyp === "diagnose" ? "auktion" : "offen",
       erstellt_von: user.id,
       einsatzort_adresse: form.einsatzort_adresse || null,
       einsatzort_lat: form.einsatzort_lat,
