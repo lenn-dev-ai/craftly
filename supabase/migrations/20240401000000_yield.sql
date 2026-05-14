@@ -58,43 +58,53 @@ ALTER TABLE public.zeitslot_gebote ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.handwerker_stats ENABLE ROW LEVEL SECURITY;
 
 -- ZEITSLOTS: Handwerker verwalten eigene, alle sehen verfuegbare
+DROP POLICY IF EXISTS "zeitslots_select" ON public.zeitslots;
 CREATE POLICY "zeitslots_select" ON public.zeitslots FOR SELECT USING (
   handwerker_id = auth.uid()
   OR status = 'verfuegbar'
   OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.rolle = 'admin')
 );
+DROP POLICY IF EXISTS "zeitslots_insert" ON public.zeitslots;
 CREATE POLICY "zeitslots_insert" ON public.zeitslots FOR INSERT WITH CHECK (
   handwerker_id = auth.uid()
 );
+DROP POLICY IF EXISTS "zeitslots_update" ON public.zeitslots;
 CREATE POLICY "zeitslots_update" ON public.zeitslots FOR UPDATE USING (
   handwerker_id = auth.uid()
 );
+DROP POLICY IF EXISTS "zeitslots_delete" ON public.zeitslots;
 CREATE POLICY "zeitslots_delete" ON public.zeitslots FOR DELETE USING (
   handwerker_id = auth.uid()
 );
 
 -- ZEITSLOT_GEBOTE: Verwalter bieten, Handwerker sehen Gebote auf eigene Slots
+DROP POLICY IF EXISTS "gebote_select" ON public.zeitslot_gebote;
 CREATE POLICY "gebote_select" ON public.zeitslot_gebote FOR SELECT USING (
   verwalter_id = auth.uid()
   OR EXISTS (SELECT 1 FROM public.zeitslots z WHERE z.id = zeitslot_id AND z.handwerker_id = auth.uid())
   OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.rolle = 'admin')
 );
+DROP POLICY IF EXISTS "gebote_insert" ON public.zeitslot_gebote;
 CREATE POLICY "gebote_insert" ON public.zeitslot_gebote FOR INSERT WITH CHECK (
   verwalter_id = auth.uid()
 );
+DROP POLICY IF EXISTS "gebote_update" ON public.zeitslot_gebote;
 CREATE POLICY "gebote_update" ON public.zeitslot_gebote FOR UPDATE USING (
   verwalter_id = auth.uid()
   OR EXISTS (SELECT 1 FROM public.zeitslots z WHERE z.id = zeitslot_id AND z.handwerker_id = auth.uid())
 );
 
 -- HANDWERKER_STATS: Nur eigene Stats
+DROP POLICY IF EXISTS "stats_select" ON public.handwerker_stats;
 CREATE POLICY "stats_select" ON public.handwerker_stats FOR SELECT USING (
   handwerker_id = auth.uid()
   OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.rolle = 'admin')
 );
+DROP POLICY IF EXISTS "stats_upsert" ON public.handwerker_stats;
 CREATE POLICY "stats_upsert" ON public.handwerker_stats FOR INSERT WITH CHECK (
   handwerker_id = auth.uid()
 );
+DROP POLICY IF EXISTS "stats_update" ON public.handwerker_stats;
 CREATE POLICY "stats_update" ON public.handwerker_stats FOR UPDATE USING (
   handwerker_id = auth.uid()
 );

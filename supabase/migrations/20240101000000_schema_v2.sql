@@ -107,18 +107,25 @@ ALTER TABLE public.nachrichten ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bewertungen ENABLE ROW LEVEL SECURITY;
 
 -- PROFILES: Jeder sieht alle Profile (öffentliche Infos)
+DROP POLICY IF EXISTS "profiles_select" ON public.profiles;
 CREATE POLICY "profiles_select" ON public.profiles FOR SELECT USING (true);
+DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
 CREATE POLICY "profiles_update_own" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+DROP POLICY IF EXISTS "profiles_insert" ON public.profiles;
 CREATE POLICY "profiles_insert" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 -- OBJEKTE: Verwalter sehen + verwalten ihre eigenen Objekte
+DROP POLICY IF EXISTS "objekte_select" ON public.objekte;
 CREATE POLICY "objekte_select" ON public.objekte FOR SELECT USING (
   verwalter_id = auth.uid()
   OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.rolle = 'admin')
 );
+DROP POLICY IF EXISTS "objekte_insert" ON public.objekte;
 CREATE POLICY "objekte_insert" ON public.objekte FOR INSERT WITH CHECK (verwalter_id = auth.uid());
+DROP POLICY IF EXISTS "objekte_update" ON public.objekte;
 CREATE POLICY "objekte_update" ON public.objekte FOR UPDATE USING (verwalter_id = auth.uid());
 
 -- TICKETS: Ersteller, zugewiesene HW, eingeladene HW, und offene Auktionen
+DROP POLICY IF EXISTS "tickets_select" ON public.tickets;
 CREATE POLICY "tickets_select" ON public.tickets FOR SELECT USING (
   auth.uid() = erstellt_von
   OR auth.uid() = zugewiesener_hw
@@ -126,7 +133,9 @@ CREATE POLICY "tickets_select" ON public.tickets FOR SELECT USING (
   OR EXISTS (SELECT 1 FROM public.einladungen e WHERE e.ticket_id = id AND e.handwerker_id = auth.uid())
   OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.rolle = 'admin')
 );
+DROP POLICY IF EXISTS "tickets_insert" ON public.tickets;
 CREATE POLICY "tickets_insert" ON public.tickets FOR INSERT WITH CHECK (auth.uid() = erstellt_von);
+DROP POLICY IF EXISTS "tickets_update" ON public.tickets;
 CREATE POLICY "tickets_update" ON public.tickets FOR UPDATE USING (
   auth.uid() = erstellt_von
   OR auth.uid() = zugewiesener_hw
@@ -134,30 +143,37 @@ CREATE POLICY "tickets_update" ON public.tickets FOR UPDATE USING (
 );
 
 -- ANGEBOTE: Handwerker sehen eigene, Verwalter sehen Angebote zu eigenen Tickets
+DROP POLICY IF EXISTS "angebote_select" ON public.angebote;
 CREATE POLICY "angebote_select" ON public.angebote FOR SELECT USING (
   auth.uid() = handwerker_id
   OR EXISTS (SELECT 1 FROM public.tickets t WHERE t.id = ticket_id AND t.erstellt_von = auth.uid())
   OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.rolle = 'admin')
 );
+DROP POLICY IF EXISTS "angebote_insert" ON public.angebote;
 CREATE POLICY "angebote_insert" ON public.angebote FOR INSERT WITH CHECK (auth.uid() = handwerker_id);
+DROP POLICY IF EXISTS "angebote_update" ON public.angebote;
 CREATE POLICY "angebote_update" ON public.angebote FOR UPDATE USING (
   auth.uid() = handwerker_id
   OR EXISTS (SELECT 1 FROM public.tickets t WHERE t.id = ticket_id AND t.erstellt_von = auth.uid())
 );
 -- EINLADUNGEN
+DROP POLICY IF EXISTS "einladungen_select" ON public.einladungen;
 CREATE POLICY "einladungen_select" ON public.einladungen FOR SELECT USING (
   auth.uid() = handwerker_id
   OR EXISTS (SELECT 1 FROM public.tickets t WHERE t.id = ticket_id AND t.erstellt_von = auth.uid())
 );
+DROP POLICY IF EXISTS "einladungen_insert" ON public.einladungen;
 CREATE POLICY "einladungen_insert" ON public.einladungen FOR INSERT WITH CHECK (
   EXISTS (SELECT 1 FROM public.tickets t WHERE t.id = ticket_id AND t.erstellt_von = auth.uid())
 );
+DROP POLICY IF EXISTS "einladungen_update" ON public.einladungen;
 CREATE POLICY "einladungen_update" ON public.einladungen FOR UPDATE USING (
   auth.uid() = handwerker_id
   OR EXISTS (SELECT 1 FROM public.tickets t WHERE t.id = ticket_id AND t.erstellt_von = auth.uid())
 );
 
 -- NACHRICHTEN: Beteiligte eines Tickets
+DROP POLICY IF EXISTS "nachrichten_select" ON public.nachrichten;
 CREATE POLICY "nachrichten_select" ON public.nachrichten FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM public.tickets t WHERE t.id = ticket_id
@@ -165,10 +181,13 @@ CREATE POLICY "nachrichten_select" ON public.nachrichten FOR SELECT USING (
   )
   OR auth.uid() = absender_id
 );
+DROP POLICY IF EXISTS "nachrichten_insert" ON public.nachrichten;
 CREATE POLICY "nachrichten_insert" ON public.nachrichten FOR INSERT WITH CHECK (auth.uid() = absender_id);
 
 -- BEWERTUNGEN
+DROP POLICY IF EXISTS "bewertungen_select" ON public.bewertungen;
 CREATE POLICY "bewertungen_select" ON public.bewertungen FOR SELECT USING (true);
+DROP POLICY IF EXISTS "bewertungen_insert" ON public.bewertungen;
 CREATE POLICY "bewertungen_insert" ON public.bewertungen FOR INSERT WITH CHECK (auth.uid() = bewerter_id);
 
 -- ===============================================================

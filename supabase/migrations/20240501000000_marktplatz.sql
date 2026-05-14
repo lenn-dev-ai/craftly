@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS public.einladungen (
 ALTER TABLE public.einladungen ENABLE ROW LEVEL SECURITY;
 
 -- Handwerker sehen ihre eigenen Einladungen
+DROP POLICY IF EXISTS "einladungen_select_hw" ON public.einladungen;
 CREATE POLICY "einladungen_select_hw" ON public.einladungen
   FOR SELECT USING (
     auth.uid() = handwerker_id
@@ -31,12 +32,14 @@ CREATE POLICY "einladungen_select_hw" ON public.einladungen
   );
 
 -- Verwalter erstellen Einladungen (für ihre eigenen Tickets)
+DROP POLICY IF EXISTS "einladungen_insert" ON public.einladungen;
 CREATE POLICY "einladungen_insert" ON public.einladungen
   FOR INSERT WITH CHECK (
     EXISTS (SELECT 1 FROM public.tickets t WHERE t.id = ticket_id AND t.erstellt_von = auth.uid())
   );
 
 -- Verwalter + Handwerker können Einladungen updaten
+DROP POLICY IF EXISTS "einladungen_update" ON public.einladungen;
 CREATE POLICY "einladungen_update" ON public.einladungen
   FOR UPDATE USING (
     auth.uid() = handwerker_id
