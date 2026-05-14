@@ -1,21 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase-server"
-import { calculateCommission } from "@/lib/pricing/commission"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 import { nachtragEingereichtEmail } from "@/lib/email/templates"
-import { aktualisiereAngebotstreue } from "@/lib/diagnose/angebotstreue"
 
 // POST /api/nachtraege/einreichen
 // Body: { ticket_id, nachtrag_betrag, begruendung, fotos?: string[] }
 // Auth: Handwerker, muss zugewiesener_hw des Tickets sein, ticket muss
 // in_bearbeitung oder erledigt sein.
 //
-// Stufen-Logik (Stufe via DB-GENERATED-Column aus aufpreis_prozent):
-//   ≤ 10 % → bagatell    → auto-genehmigt, kosten_final/provisionen direkt
-//   ≤ 25 % → wesentlich  → status=offen, Verwalter-Approval nötig
-//   > 25 % → erheblich   → status=offen, Verwalter-Approval nötig
-//
-// Bei wesentlich/erheblich erhält der Verwalter sofort eine E-Mail.
+// Stufen-Logik (Stufe wird via DB-GENERATED-Column aus aufpreis_prozent
+// gesetzt):
+//   ≤ 10 % → bagatell    → status='genehmigt' direkt → DB-Trigger
+//                          aktualisiert kosten_final, provisionen und
+//                          angebotstreue automatisch
+//   ≤ 25 % → wesentlich  → status='offen', Verwalter-Mail
+//   > 25 % → erheblich   → status='offen', Verwalter-Mail
 export async function POST(request: NextRequest) {
   let body: {
     ticket_id?: string
@@ -43,7 +42,7 @@ export async function POST(request: NextRequest) {
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, titel, status, zugewiesener_hw, erstellt_von, kosten_final, projekt_angebot, surge_faktor, ticket_typ, diagnosegebuehr_angerechnet, gewerk")
+    .select("id, titel, status, zugewiesener_hw, erstellt_von, kosten_final, projekt_angebot")
     .eq("id", ticketId)
     .single<{
       id: string
@@ -53,10 +52,6 @@ export async function POST(request: NextRequest) {
       erstellt_von: string
       kosten_final: number | null
       projekt_angebot: number | null
-      surge_faktor: number | null
-      ticket_typ: string | null
-      diagnosegebuehr_angerechnet: boolean | null
-      gewerk: string | null
     }>()
   if (!ticket) return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 })
   if (ticket.zugewiesener_hw !== user.id) {
@@ -67,9 +62,9 @@ export async function POST(request: NextRequest) {
   }
 
   // Ursprungspreis = projekt_angebot (volles Angebot) falls vorhanden,
-  // sonst kosten_final. Wichtig: Bei Projekt aus Diagnose ist kosten_final
-  // = Restzahlung (nach Anrechnung), das volle Angebot steht in
-  // projekt_angebot. Wir nehmen den höheren Wert als Bezug.
+  // sonst kosten_final. Bei Diagnose-Projekt ist kosten_final die
+  // Restzahlung (nach Anrechnung) — das volle Angebot steht in
+  // projekt_angebot. Aufpreis-Prozent rechnet auf den ursprünglichen Wert.
   const ursprungspreis = ticket.projekt_angebot && ticket.projekt_angebot > 0
     ? ticket.projekt_angebot
     : ticket.kosten_final
@@ -77,7 +72,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Kein Ursprungspreis vorhanden" }, { status: 422 })
   }
 
-  // Insert — Stufe wird automatisch via DB-GENERATED gesetzt
+  // Insert mit status='offen' — stufe wird via DB-GENERATED gesetzt
   const { data: inserted, error: insErr } = await supabase
     .from("nachtraege")
     .insert({
@@ -95,7 +90,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Nachtrag-Insert fehlgeschlagen: " + (insErr?.message ?? "unknown") }, { status: 500 })
   }
 
-  // Bagatell → automatisch genehmigen
+  // Bagatell → sofort genehmigen. DB-Trigger handle_nachtrag_genehmigt
+  // synchronisiert tickets.kosten_final, provisionen-Snapshot und
+  // profiles.angebotstreue automatisch.
   let autoGenehmigt = false
   if (inserted.stufe === "bagatell") {
     await supabase
@@ -106,28 +103,10 @@ export async function POST(request: NextRequest) {
         genehmigt_am: new Date().toISOString(),
       })
       .eq("id", inserted.id)
-
-    // kosten_final hochsetzen (Restzahlung wenn Diagnose-Anrechnung,
-    // sonst volle Summe) — Nachtrag wird voll zusätzlich verrechnet
-    const neuKostenFinal = Math.round(((ticket.kosten_final ?? 0) + nachtrag_betrag) * 100) / 100
-    await supabase.from("tickets").update({ kosten_final: neuKostenFinal }).eq("id", ticketId)
-
-    // Provisions-Snapshot aktualisieren
-    await aktualisiereProvision(supabase, {
-      ticketId,
-      verwalterId: ticket.erstellt_von,
-      handwerkerId: user.id,
-      auftragswert: neuKostenFinal,
-      surge: ticket.surge_faktor ?? 1.0,
-    })
-
     autoGenehmigt = true
   }
 
-  // Score aktualisieren (Bagatell zählt nicht ab, aber re-eval ist harmlos)
-  await aktualisiereAngebotstreue(supabase, user.id)
-
-  // Verwalter-Mail bei wesentlich/erheblich
+  // Verwalter-Mail nur bei wesentlich/erheblich (Bagatell ist Routine)
   if (!autoGenehmigt) {
     void (async () => {
       const [{ data: verwalter }, { data: hw }] = await Promise.all([
@@ -158,40 +137,4 @@ export async function POST(request: NextRequest) {
     aufpreisProzent: inserted.aufpreis_prozent,
     autoGenehmigt,
   })
-}
-
-// Provisions-Snapshot neu berechnen (Helfer — gemeinsam mit /genehmigen)
-async function aktualisiereProvision(
-  supabase: ReturnType<typeof createServerSupabaseClient>,
-  params: {
-    ticketId: string
-    verwalterId: string
-    handwerkerId: string
-    auftragswert: number
-    surge: number
-  },
-): Promise<void> {
-  const { data: verwalterProfil } = await supabase
-    .from("profiles")
-    .select("early_adopter_bis")
-    .eq("id", params.verwalterId)
-    .single<{ early_adopter_bis: string | null }>()
-  const isEarlyAdopter = !!verwalterProfil?.early_adopter_bis &&
-    new Date(verwalterProfil.early_adopter_bis).getTime() > Date.now()
-  const basisRate = 0.05
-  const finalRate = isEarlyAdopter ? 0 : Math.round(basisRate * params.surge * 10000) / 10000
-  const calc = calculateCommission(params.auftragswert, finalRate)
-  await supabase.from("provisionen").upsert(
-    {
-      ticket_id: params.ticketId,
-      verwalter_id: params.verwalterId,
-      handwerker_id: params.handwerkerId,
-      auftragswert: params.auftragswert,
-      provision_rate: finalRate,
-      provision_betrag: calc.provisionBetrag,
-      gesamt: calc.gesamt,
-      is_early_adopter: isEarlyAdopter,
-    },
-    { onConflict: "ticket_id" },
-  )
 }

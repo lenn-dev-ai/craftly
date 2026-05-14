@@ -1,21 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase-server"
-import { calculateCommission } from "@/lib/pricing/commission"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 import { nachtragGenehmigtEmail, nachtragAbgelehntEmail } from "@/lib/email/templates"
-import { aktualisiereAngebotstreue } from "@/lib/diagnose/angebotstreue"
 
 // POST /api/nachtraege/genehmigen
 // Body: { nachtrag_id, entscheidung: 'genehmigt' | 'abgelehnt' }
 // Auth: Verwalter (Ticket-Ersteller) oder Admin.
 //
-// Bei genehmigt:
-//   - kosten_final += nachtrag_betrag
-//   - Provisions-Snapshot neu berechnen
-//   - Angebotstreue-Score aktualisieren
-//   - Handwerker-Mail
-// Bei abgelehnt:
-//   - Status setzen, Handwerker-Mail
+// Bei 'genehmigt' synchronisiert der DB-Trigger handle_nachtrag_genehmigt
+// automatisch: tickets.kosten_final, provisionen-Snapshot,
+// profiles.angebotstreue. Die API-Route setzt nur den Status und schickt
+// die Handwerker-Mail.
 export async function POST(request: NextRequest) {
   let body: { nachtrag_id?: string; entscheidung?: "genehmigt" | "abgelehnt" }
   try {
@@ -65,21 +60,15 @@ export async function POST(request: NextRequest) {
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, titel, erstellt_von, kosten_final, surge_faktor")
+    .select("id, titel, erstellt_von")
     .eq("id", nachtrag.ticket_id)
-    .single<{
-      id: string
-      titel: string
-      erstellt_von: string
-      kosten_final: number | null
-      surge_faktor: number | null
-    }>()
+    .single<{ id: string; titel: string; erstellt_von: string }>()
   if (!ticket) return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 })
   if (ticket.erstellt_von !== user.id && profile.rolle !== "admin") {
     return NextResponse.json({ error: "Nicht dein Ticket" }, { status: 403 })
   }
 
-  // Status updaten
+  // Status-Update → bei 'genehmigt' feuert der DB-Trigger
   await supabase
     .from("nachtraege")
     .update({
@@ -89,41 +78,15 @@ export async function POST(request: NextRequest) {
     })
     .eq("id", nachtragId)
 
-  let neuKostenFinal: number | null = null
+  // Neuen Auftragswert für die Mail nachladen (Trigger hat geschrieben)
+  let neuerAuftragswert: number | null = null
   if (entscheidung === "genehmigt") {
-    neuKostenFinal = Math.round(((ticket.kosten_final ?? 0) + nachtrag.nachtrag_betrag) * 100) / 100
-    await supabase
+    const { data: t } = await supabase
       .from("tickets")
-      .update({ kosten_final: neuKostenFinal })
+      .select("kosten_final")
       .eq("id", ticket.id)
-
-    // Provisions-Snapshot neu
-    const { data: verwalterProfil } = await supabase
-      .from("profiles")
-      .select("early_adopter_bis")
-      .eq("id", ticket.erstellt_von)
-      .single<{ early_adopter_bis: string | null }>()
-    const isEarlyAdopter = !!verwalterProfil?.early_adopter_bis &&
-      new Date(verwalterProfil.early_adopter_bis).getTime() > Date.now()
-    const surge = ticket.surge_faktor ?? 1.0
-    const finalRate = isEarlyAdopter ? 0 : Math.round(0.05 * surge * 10000) / 10000
-    const calc = calculateCommission(neuKostenFinal, finalRate)
-    await supabase.from("provisionen").upsert(
-      {
-        ticket_id: ticket.id,
-        verwalter_id: ticket.erstellt_von,
-        handwerker_id: nachtrag.handwerker_id,
-        auftragswert: neuKostenFinal,
-        provision_rate: finalRate,
-        provision_betrag: calc.provisionBetrag,
-        gesamt: calc.gesamt,
-        is_early_adopter: isEarlyAdopter,
-      },
-      { onConflict: "ticket_id" },
-    )
-
-    // Angebotstreue aktualisieren (nur genehmigte zählen ab Wesentlich)
-    await aktualisiereAngebotstreue(supabase, nachtrag.handwerker_id)
+      .single<{ kosten_final: number | null }>()
+    neuerAuftragswert = t?.kosten_final ?? null
   }
 
   // Handwerker-Mail (fire-and-forget)
@@ -140,7 +103,7 @@ export async function POST(request: NextRequest) {
         ticketTitel: ticket.titel,
         nachtragBetrag: nachtrag.nachtrag_betrag,
         stufe: nachtrag.stufe,
-        neuerAuftragswert: neuKostenFinal ?? 0,
+        neuerAuftragswert: neuerAuftragswert ?? 0,
         ticketId: ticket.id,
       })
       sendEmailFireAndForget({ to: hw.email, subject, html })
@@ -161,6 +124,6 @@ export async function POST(request: NextRequest) {
     ok: true,
     nachtragId,
     entscheidung,
-    neuerAuftragswert: neuKostenFinal,
+    neuerAuftragswert,
   })
 }
