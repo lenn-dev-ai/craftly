@@ -41,6 +41,7 @@ export default function VerwalterDashboard() {
     const { data } = await supabase
       .from("tickets")
       .select("*")
+      .eq("erstellt_von", user.id)
       .order("created_at", { ascending: false })
     setTickets(data || [])
     setLoading(false)

@@ -151,7 +151,9 @@ export default function AktivitaetPage() {
                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cfg.color }} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-[#2D2A26] truncate">{a.title}</div>
-                  <div className="text-[11px] text-gray-500">{cfg.label} - {a.detail}</div>
+                  <div className="text-[11px] text-gray-500">
+                    {cfg.label}{a.detail ? ` · ${a.detail}` : (a.type === "user" ? " · (keine Rolle)" : "")}
+                  </div>
                 </div>
                 <span className="text-[11px] text-gray-500 flex-shrink-0">{new Date(a.date).toLocaleDateString("de")}</span>
               </div>

@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase"
+import { GEWERK_LABELS } from "@/types"
 
 /* KI: System-Health Bewertung */
 function kiSystemHealth(data: any): { score: number; checks: { name: string; ok: boolean; text: string }[] } {
@@ -175,7 +176,7 @@ export default function SystemPage() {
             <div className="space-y-3">
               {Object.entries(data.gewerkCount).sort(([,a]: any, [,b]: any) => b - a).map(([gewerk, count]: [string, any]) => (
                 <div key={gewerk} className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0">
-                  <span className="text-sm text-gray-300 capitalize">{gewerk}</span>
+                  <span className="text-sm text-[#6B665E]">{GEWERK_LABELS[gewerk] ?? gewerk}</span>
                   <span className="text-sm font-semibold text-[#3D8B7A]">{count}</span>
                 </div>
               ))}

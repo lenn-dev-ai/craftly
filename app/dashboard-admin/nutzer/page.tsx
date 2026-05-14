@@ -1,5 +1,6 @@
 "use client"
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 
 /* KI: Aktivitaets-Score pro Nutzer */
@@ -34,12 +35,14 @@ function kiRisiko(users: any[]): string[] {
 }
 
 export default function NutzerPage() {
+  const searchParams = useSearchParams()
   const [users, setUsers] = useState<any[]>([])
   const [tickets, setTickets] = useState<any[]>([])
   const [angebote, setAngebote] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState("alle")
-  const [search, setSearch] = useState("")
+  // Such-Begriff aus ?q=... initialisieren (kommt aus Admin-Dashboard-Header)
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "")
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   async function load() {
@@ -194,18 +197,25 @@ export default function NutzerPage() {
                           {(u.name || u.email || "?").charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-[#2D2A26]">{u.name || "---"}</div>
-                          <div className="text-[11px] text-gray-500">{u.email}</div>
+                          <div className="text-sm font-medium text-[#2D2A26]">{u.name || u.email || "—"}</div>
+                          {u.name && <div className="text-[11px] text-gray-500">{u.email}</div>}
                         </div>
                       </div>
                     </td>
                     <td className="px-5 py-3.5">
-                      <span className={"text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider " + (
-                        u.rolle === "admin" ? "bg-purple-500/15 text-purple-400"
-                        : u.rolle === "verwalter" ? "bg-emerald-500/15 text-emerald-400"
-                        : u.rolle === "handwerker" ? "bg-blue-500/15 text-blue-400"
-                        : "bg-[#C4956A]/15 text-[#C4956A]"
-                      )}>{u.rolle}</span>
+                      {u.rolle ? (
+                        <span className={"text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider " + (
+                          u.rolle === "admin" ? "bg-[#7C6CAB]/15 text-[#7C6CAB]"
+                          : u.rolle === "verwalter" ? "bg-[#3D8B7A]/15 text-[#3D8B7A]"
+                          : u.rolle === "handwerker" ? "bg-[#C4956A]/15 text-[#C4956A]"
+                          : u.rolle === "mieter" ? "bg-[#5B6ABF]/15 text-[#5B6ABF]"
+                          : "bg-[#EDE8E1] text-[#6B665E]"
+                        )}>{u.rolle}</span>
+                      ) : (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-[#C4574B]/10 text-[#C4574B]">
+                          Keine Rolle
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2">

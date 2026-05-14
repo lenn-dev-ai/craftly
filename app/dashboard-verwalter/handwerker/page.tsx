@@ -44,11 +44,14 @@ export default function HandwerkerUebersicht() {
   useEffect(() => {
     async function load() {
       const supabase = createClient()
+      // SELECT * statt expliziter Spaltenliste — robust gegen noch-nicht-
+      // gerollte Migrationen (z.B. sichtbarkeit_stufe). Sonst würde der
+      // Query bei fehlender Spalte komplett 0 Treffer liefern.
       const { data } = await supabase
         .from("profiles")
-        .select("id, name, firma, email, telefon, gewerk, plz_bereich, bewertung_avg, auftraege_anzahl, basis_stundensatz, basis_preis, startort_lat, startort_lng, startort_adresse, lat, lng, radius_km, sichtbarkeit_stufe")
+        .select("*")
         .eq("rolle", "handwerker")
-        .order("bewertung_avg", { ascending: false, nullsFirst: false })
+        .order("bewertung_avg", { ascending: false })
         .returns<Handwerker[]>()
       setHandwerker(data ?? [])
       setLoading(false)
