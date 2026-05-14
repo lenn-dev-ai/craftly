@@ -2,13 +2,15 @@ import { test, expect } from "@playwright/test"
 
 test.describe("Auth-Routing & Validierung", () => {
   test("Geschützte Dashboard-Route leitet ohne Auth zum Login um", async ({ page }) => {
+    // Seit Middleware-Refactor (Commit e2db921) gated die Auth client-seitig
+    // via RoleGuard — Redirect passiert nach Mount, nicht beim Server-Response.
     await page.goto("/dashboard-verwalter")
-    await expect(page).toHaveURL(/\/login(\?|$)/)
+    await page.waitForURL(/\/login(\?|$)/, { timeout: 10_000 })
   })
 
   test("Geschützte Admin-Route leitet ohne Auth zum Login um", async ({ page }) => {
     await page.goto("/admin")
-    await expect(page).toHaveURL(/\/login(\?|$)/)
+    await page.waitForURL(/\/login(\?|$)/, { timeout: 10_000 })
   })
 
   test("Login-Form zeigt Validierungs-Fehler bei leerer Submission", async ({ page }) => {

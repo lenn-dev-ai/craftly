@@ -2,7 +2,18 @@ import { defineConfig, devices } from "@playwright/test"
 
 // Erste Browser müssen installiert werden:
 //   npx playwright install --with-deps chromium
-// (oder alle Browser: npx playwright install)
+//
+// Setup-Reihenfolge für E2E-Tests:
+//   1. `npm run db:start`    → lokales Supabase (Docker)
+//   2. `export E2E_SUPABASE_URL=http://127.0.0.1:54321`
+//      `export E2E_SUPABASE_ANON_KEY=<anon key>`
+//      `export E2E_SUPABASE_SERVICE_ROLE_KEY=<service_role key>`
+//   3. `npm run test:e2e`
+//
+// Playwright startet den Dev-Server automatisch mit den E2E_*-Vars
+// als Supabase-Config — der App-Server läuft dann gegen die LOKALE DB,
+// nicht gegen Prod. Wenn du den Server bereits selbst gestartet hast,
+// setze `PLAYWRIGHT_BASE_URL=http://localhost:<port>`.
 
 const PORT = process.env.PORT || 3000
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${PORT}`
@@ -22,10 +33,7 @@ export default defineConfig({
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    // Weitere Geräte aktivieren wenn nötig:
-    // { name: "mobile", use: { ...devices["iPhone 13"] } },
   ],
-  // Lokal gegen `npm run dev` testen — in CI wird der Build separat gestartet
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
     : {
@@ -33,5 +41,12 @@ export default defineConfig({
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
+        // Wichtig: leitet die E2E-Supabase-Vars in den Dev-Server-Prozess
+        // weiter. Ohne das würde der Auto-gestartete Server aus .env.local
+        // gegen die Prod-DB verbinden, nicht gegen die lokale Supabase.
+        env: {
+          NEXT_PUBLIC_SUPABASE_URL: process.env.E2E_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.E2E_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+        },
       },
 })
