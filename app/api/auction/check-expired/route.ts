@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
 import { reScoreTicket } from "@/lib/auction/scoring-pipeline"
 import { effektiveProvisionsRate } from "@/lib/auction/auction-manager"
 import { calculateCommission } from "@/lib/pricing/commission"
@@ -251,12 +251,61 @@ export async function POST(request: NextRequest) {
     })().catch(err => console.error("[Email] check-expired-Vergabe-Mails fehlgeschlagen:", err))
   }
 
+  // ============================================================
+  // Diagnose-Tickets ohne HW-Übernahme nach 14 Tagen → zurück auf 'offen'
+  // ============================================================
+  // Sub-Block für M-K2: Diagnose-Tickets nutzen kein auktion_ende, sondern
+  // diagnose_ablauf. Wenn die Frist erreicht ist und noch niemand
+  // übernommen hat, fällt das Ticket in den 'offen'-Status zurück und der
+  // Verwalter entscheidet manuell (z. B. neue Frist setzen oder
+  // Standard-Auktion starten).
+  const admin = createServiceRoleClient()
+  const { data: abgelaufeneDiagnosen } = await admin
+    .from("tickets")
+    .select("id, titel, erstellt_von")
+    .eq("ticket_typ", "diagnose")
+    .eq("status", "auktion")
+    .is("zugewiesener_hw", null)
+    .lt("diagnose_ablauf", jetzt)
+    .returns<Array<{ id: string; titel: string; erstellt_von: string }>>()
+
+  const diagnoseErgebnisse: Array<{ ticketId: string; titel: string }> = []
+  for (const t of abgelaufeneDiagnosen ?? []) {
+    await admin
+      .from("tickets")
+      .update({
+        status: "offen",
+        ticket_typ: "standard", // Mieter kann später neu wählen
+        diagnose_ablauf: null,
+      })
+      .eq("id", t.id)
+    diagnoseErgebnisse.push({ ticketId: t.id, titel: t.titel })
+
+    void (async () => {
+      const { data: erst } = await admin
+        .from("profiles")
+        .select("email, name")
+        .eq("id", t.erstellt_von)
+        .single<{ email: string | null; name: string | null }>()
+      if (!erst?.email) return
+      const { subject, html } = auktionAbgelaufenEmail({
+        verwalterName: erst.name || "Verwalter",
+        ticketTitel: `Diagnose-Termin verfallen: ${t.titel}`,
+        angebotAnzahl: 0,
+        ticketId: t.id,
+      })
+      sendEmailFireAndForget({ to: erst.email, subject, html })
+    })().catch(err => console.error("[Email] Diagnose-Ablauf-Mail fehlgeschlagen:", err))
+  }
+
   return NextResponse.json({
     ok: true,
     jetzt,
     anzahl: abgelaufen?.length ?? 0,
     vergeben: ergebnisse.filter(r => r.aktion === "vergeben").length,
     zurueck: ergebnisse.filter(r => r.aktion === "zurueck-auf-offen").length,
+    diagnosenAbgelaufen: diagnoseErgebnisse.length,
     ergebnisse,
+    diagnoseErgebnisse,
   })
 }

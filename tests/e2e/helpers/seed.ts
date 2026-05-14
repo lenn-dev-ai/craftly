@@ -73,8 +73,14 @@ async function createOrFindUser(spec: typeof TEST_USERS.mieter | typeof TEST_USE
   const admin = adminClient()
   // Idempotent: existing user behalten + Password setzen (statt delete+create,
   // was Race-Conditions im Auth-Service erzeugt).
-  const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 })
-  const existing = list?.users.find(u => u.email === spec.email)
+  // Pageweise iterieren bis User gefunden — bei vielen User (z. B. Seed-
+  // Simulation mit 300+) reicht eine 200er-Page nicht.
+  let existing: { id: string; email?: string } | undefined
+  for (let page = 1; page <= 10 && !existing; page++) {
+    const { data } = await admin.auth.admin.listUsers({ page, perPage: 200 })
+    if (!data?.users.length) break
+    existing = data.users.find(u => u.email === spec.email)
+  }
   if (existing) {
     const { error: updErr } = await admin.auth.admin.updateUserById(existing.id, {
       password: spec.password,

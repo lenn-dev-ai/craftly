@@ -6,7 +6,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase"
 import { Ticket } from "@/types"
 import { CardListSkeleton, KpiGridSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
-import { TrendingUp, TrendingDown, Minus, PiggyBank } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, PiggyBank, Stethoscope, FileEdit, Clock, ArrowRight } from "lucide-react"
 
 function kostenSchaetzung(t: Ticket): string {
   const titel = (t.titel || "").toLowerCase()
@@ -29,9 +29,20 @@ const PRIO_LABEL: Record<string, string> = {
   dringend: "Dringend", hoch: "Hoch", normal: "Normal", niedrig: "Niedrig",
 }
 
+// Aggregierte Items, die im Dashboard-Banner "Wartet auf deine Entscheidung"
+// erscheinen. Aus separaten Queries (Tickets + Nachträge) zusammengeführt.
+interface OffeneNachtragRef {
+  id: string
+  ticket_id: string
+  nachtrag_betrag: number
+  stufe: "bagatell" | "wesentlich" | "erheblich"
+  ticket_titel: string
+}
+
 export default function VerwalterDashboard() {
   const router = useRouter()
   const [tickets, setTickets] = useState<Ticket[]>([])
+  const [offeneNachtraege, setOffeneNachtraege] = useState<OffeneNachtragRef[]>([])
   const [loading, setLoading] = useState(true)
   const [neueLive, setNeueLive] = useState(0)
 
@@ -39,12 +50,33 @@ export default function VerwalterDashboard() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
-    const { data } = await supabase
-      .from("tickets")
-      .select("*, angebote(preis)")
-      .eq("erstellt_von", user.id)
-      .order("created_at", { ascending: false })
-    setTickets(data || [])
+    const [{ data: ts }, { data: ns }] = await Promise.all([
+      supabase
+        .from("tickets")
+        .select("*, angebote(preis)")
+        .eq("erstellt_von", user.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("nachtraege")
+        .select("id, ticket_id, nachtrag_betrag, stufe, tickets!inner(titel, erstellt_von)")
+        .eq("status", "offen")
+        .eq("tickets.erstellt_von", user.id)
+        .returns<Array<{
+          id: string
+          ticket_id: string
+          nachtrag_betrag: number
+          stufe: "bagatell" | "wesentlich" | "erheblich"
+          tickets: { titel: string; erstellt_von: string }
+        }>>(),
+    ])
+    setTickets(ts || [])
+    setOffeneNachtraege((ns || []).map(n => ({
+      id: n.id,
+      ticket_id: n.ticket_id,
+      nachtrag_betrag: n.nachtrag_betrag,
+      stufe: n.stufe,
+      ticket_titel: n.tickets.titel,
+    })))
     setLoading(false)
   }, [router])
 
@@ -96,7 +128,25 @@ export default function VerwalterDashboard() {
     .reduce((s, t) => s + (t.kosten_final || 0), 0)
 
   const dringendeOffene = offene.filter(t => t.prioritaet === "dringend").length
-  const hatAttention = offene.length > 0 || dringendeOffene > 0
+
+  // === Pipeline-Action-Items: Befunde / Nachträge / abgelaufene Auktionen ===
+  // (siehe SIMULATION-REPORT.md M-K1 — ohne diese Sektion bleibt die
+  // gesamte Diagnose-Pipeline für den Verwalter unsichtbar)
+  const befundeWartend = tickets.filter(
+    t => t.ticket_typ === "diagnose"
+      && t.befund_text
+      && t.status !== "erledigt",
+  )
+  const auktionenAbgelaufen = tickets.filter(
+    t => t.status === "auktion"
+      && t.ticket_typ === "standard"
+      && t.auktion_ende
+      && new Date(t.auktion_ende).getTime() < Date.now(),
+  )
+  const hatPipelineAction = befundeWartend.length > 0
+    || offeneNachtraege.length > 0
+    || auktionenAbgelaufen.length > 0
+  const hatAttention = offene.length > 0 || dringendeOffene > 0 || hatPipelineAction
 
   return (
     <div className="p-6 md:p-8 max-w-5xl mx-auto pt-16 md:pt-8">
@@ -154,6 +204,66 @@ export default function VerwalterDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Pipeline-Action: Befunde + Nachträge + abgelaufene Auktionen */}
+      {hatPipelineAction && (
+        <section className="mb-6 bg-white border border-[#7C6CAB]/20 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="w-2 h-2 rounded-full bg-[#7C6CAB] animate-pulse" />
+            <h2 className="text-sm font-semibold text-[#7C6CAB] uppercase tracking-wider">Wartet auf deine Entscheidung</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {befundeWartend.length > 0 && (
+              <button
+                onClick={() => router.push(`/dashboard-verwalter/ticket/${befundeWartend[0].id}`)}
+                className="text-left bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl p-4 hover:border-[#7C6CAB]/40 transition-colors"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Stethoscope size={16} className="text-[#7C6CAB]" />
+                  <span className="text-[10px] font-bold text-[#7C6CAB] uppercase tracking-wider">Diagnose-Befunde</span>
+                </div>
+                <div className="text-3xl font-bold text-[#2D2A26] tabular-nums">{befundeWartend.length}</div>
+                <div className="text-xs text-[#6B665E] mt-1 flex items-center gap-1">
+                  {befundeWartend.length === 1 ? "Befund mit Festpreis-Angebot" : "Befunde mit Festpreis-Angebot"}
+                  <ArrowRight size={11} className="ml-0.5" />
+                </div>
+              </button>
+            )}
+            {offeneNachtraege.length > 0 && (
+              <button
+                onClick={() => router.push(`/dashboard-verwalter/ticket/${offeneNachtraege[0].ticket_id}`)}
+                className="text-left bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl p-4 hover:border-[#C4956A]/40 transition-colors"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <FileEdit size={16} className="text-[#C4956A]" />
+                  <span className="text-[10px] font-bold text-[#C4956A] uppercase tracking-wider">Nachträge</span>
+                </div>
+                <div className="text-3xl font-bold text-[#2D2A26] tabular-nums">{offeneNachtraege.length}</div>
+                <div className="text-xs text-[#6B665E] mt-1 flex items-center gap-1">
+                  {offeneNachtraege.length === 1 ? "Nachtrag offen" : "Nachträge offen"}
+                  <ArrowRight size={11} className="ml-0.5" />
+                </div>
+              </button>
+            )}
+            {auktionenAbgelaufen.length > 0 && (
+              <button
+                onClick={() => router.push(`/dashboard-verwalter/ticket/${auktionenAbgelaufen[0].id}`)}
+                className="text-left bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl p-4 hover:border-[#C4574B]/40 transition-colors"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock size={16} className="text-[#C4574B]" />
+                  <span className="text-[10px] font-bold text-[#C4574B] uppercase tracking-wider">Auktion abgelaufen</span>
+                </div>
+                <div className="text-3xl font-bold text-[#2D2A26] tabular-nums">{auktionenAbgelaufen.length}</div>
+                <div className="text-xs text-[#6B665E] mt-1 flex items-center gap-1">
+                  ohne Vergabe
+                  <ArrowRight size={11} className="ml-0.5" />
+                </div>
+              </button>
+            )}
+          </div>
+        </section>
       )}
 
       {/* Auktions-Ersparnis-Widget */}

@@ -208,6 +208,11 @@ export default function MeldenPage() {
       // (Sektion "Verfügbare Diagnose-Termine" filtert auf status='auktion').
       // Standard-Tickets bleiben 'offen' bis Verwalter die Auktion startet.
       status: ticketTyp === "diagnose" ? "auktion" : "offen",
+      // 14-Tage-Frist bis Diagnose-Termin automatisch verfällt (M-K2).
+      // Standard-Tickets nutzen das Feld nicht.
+      diagnose_ablauf: ticketTyp === "diagnose"
+        ? new Date(Date.now() + 14 * 86400_000).toISOString()
+        : null,
       erstellt_von: user.id,
       einsatzort_adresse: form.einsatzort_adresse || null,
       einsatzort_lat: form.einsatzort_lat,
@@ -232,6 +237,12 @@ export default function MeldenPage() {
       const { ticket_typ: _ignored, ...ohneTicketTyp } = basisPayload
       void _ignored
       dbError = (await supabase.from("tickets").insert(ohneTicketTyp)).error
+    }
+    if (dbError && /diagnose_ablauf/i.test(dbError.message)) {
+      // diagnose_ablauf-Spalte fehlt (Ablauf-Migration noch nicht gerollt)
+      const { diagnose_ablauf: _ablauf, ...ohneAblauf } = basisPayload
+      void _ablauf
+      dbError = (await supabase.from("tickets").insert(ohneAblauf)).error
     }
     if (dbError) { setError("Fehler: " + dbError.message); setLoading(false); return }
     setStep("gesendet")
