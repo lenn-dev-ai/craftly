@@ -206,6 +206,57 @@ export default function VerwalterDashboard() {
         </div>
       )}
 
+      {/* Empty-State: Verwalter ohne Tickets → Onboarding-Hilfe (V2) */}
+      {tickets.length === 0 && (
+        <section className="mb-8 bg-white border border-[#EDE8E1] rounded-2xl p-8">
+          <div className="max-w-xl">
+            <div className="text-xs font-bold text-[#3D8B7A] uppercase tracking-wider mb-2">
+              Willkommen bei Reparo
+            </div>
+            <h2 className="text-2xl font-semibold text-[#2D2A26] mb-3">
+              Noch keine Tickets — los geht&apos;s
+            </h2>
+            <p className="text-sm text-[#6B665E] mb-6 leading-relaxed">
+              Tickets entstehen entweder durch Mieter-Meldungen (sobald du Objekte
+              und Mieter angelegt hast) oder direkt durch dich, wenn du
+              Handwerker beauftragst.
+            </p>
+            <div className="space-y-3">
+              <Link
+                href="/dashboard-verwalter/marktplatz"
+                className="flex items-center justify-between gap-3 bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl p-4 hover:border-[#3D8B7A]/40 transition-colors"
+              >
+                <div>
+                  <div className="text-sm font-semibold text-[#2D2A26]">Handwerker-Marktplatz</div>
+                  <div className="text-xs text-[#8C857B]">Stundenslots buchen, Auktionen starten</div>
+                </div>
+                <span className="text-[#3D8B7A] text-lg">→</span>
+              </Link>
+              <Link
+                href="/dashboard-verwalter/handwerker"
+                className="flex items-center justify-between gap-3 bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl p-4 hover:border-[#3D8B7A]/40 transition-colors"
+              >
+                <div>
+                  <div className="text-sm font-semibold text-[#2D2A26]">Handwerker-Pool</div>
+                  <div className="text-xs text-[#8C857B]">Stamm-Handwerker hinzufügen</div>
+                </div>
+                <span className="text-[#3D8B7A] text-lg">→</span>
+              </Link>
+              <Link
+                href="/dashboard-verwalter/reporting"
+                className="flex items-center justify-between gap-3 bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl p-4 hover:border-[#3D8B7A]/40 transition-colors"
+              >
+                <div>
+                  <div className="text-sm font-semibold text-[#2D2A26]">Reporting</div>
+                  <div className="text-xs text-[#8C857B]">Provisionen + Ausgaben überblicken</div>
+                </div>
+                <span className="text-[#3D8B7A] text-lg">→</span>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Pipeline-Action: Befunde + Nachträge + abgelaufene Auktionen */}
       {hatPipelineAction && (
         <section className="mb-6 bg-white border border-[#7C6CAB]/20 rounded-2xl p-5 shadow-sm">

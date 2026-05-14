@@ -13,8 +13,16 @@ interface PreisRow {
   updated_at: string | null
 }
 
+interface MarktStat {
+  gewerk: string
+  buchungen90d: number
+  avgAufwand: number | null
+  avgAngebot: number | null
+}
+
 export default function DiagnosePreisePage() {
   const [rows, setRows] = useState<PreisRow[]>([])
+  const [stats, setStats] = useState<Map<string, MarktStat>>(new Map())
   const [loading, setLoading] = useState(true)
   const [edits, setEdits] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState<string | null>(null)
@@ -25,12 +33,43 @@ export default function DiagnosePreisePage() {
   const load = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
-    const { data } = await supabase
-      .from("diagnose_preise")
-      .select("id, gewerk, preis, updated_at")
-      .order("gewerk")
-      .returns<PreisRow[]>()
-    setRows(data ?? [])
+    // Preise + Diagnose-Markt-Stats letzte 90 Tage parallel laden (V3)
+    const seit = new Date(Date.now() - 90 * 86400_000).toISOString()
+    const [{ data: preise }, { data: diagTickets }] = await Promise.all([
+      supabase
+        .from("diagnose_preise")
+        .select("id, gewerk, preis, updated_at")
+        .order("gewerk")
+        .returns<PreisRow[]>(),
+      supabase
+        .from("tickets")
+        .select("gewerk, befund_aufwand_stunden, projekt_angebot")
+        .eq("ticket_typ", "diagnose")
+        .gte("created_at", seit)
+        .returns<Array<{ gewerk: string | null; befund_aufwand_stunden: number | null; projekt_angebot: number | null }>>(),
+    ])
+    setRows(preise ?? [])
+
+    // Aggregat pro Gewerk berechnen
+    const statsByGewerk = new Map<string, MarktStat>()
+    for (const t of diagTickets ?? []) {
+      if (!t.gewerk) continue
+      const cur = statsByGewerk.get(t.gewerk) ?? {
+        gewerk: t.gewerk, buchungen90d: 0, avgAufwand: null, avgAngebot: null,
+      }
+      cur.buchungen90d++
+      // running avg
+      if (t.befund_aufwand_stunden != null) {
+        const n = (cur.avgAufwand != null ? 1 : 0) + 1
+        cur.avgAufwand = ((cur.avgAufwand ?? 0) * (n - 1) + Number(t.befund_aufwand_stunden)) / n
+      }
+      if (t.projekt_angebot != null) {
+        const n = (cur.avgAngebot != null ? 1 : 0) + 1
+        cur.avgAngebot = ((cur.avgAngebot ?? 0) * (n - 1) + Number(t.projekt_angebot)) / n
+      }
+      statsByGewerk.set(t.gewerk, cur)
+    }
+    setStats(statsByGewerk)
     setLoading(false)
   }, [])
 
@@ -138,6 +177,7 @@ export default function DiagnosePreisePage() {
             <tr className="border-b border-[#EDE8E1]">
               <th className="text-left text-[10px] font-semibold text-[#8C857B] uppercase tracking-wider px-4 py-2.5">Gewerk</th>
               <th className="text-left text-[10px] font-semibold text-[#8C857B] uppercase tracking-wider px-4 py-2.5">Preis</th>
+              <th className="text-left text-[10px] font-semibold text-[#8C857B] uppercase tracking-wider px-4 py-2.5" title="Diagnose-Buchungen und avg Befund-Aufwand letzte 90 Tage">Markt (90d)</th>
               <th className="text-left text-[10px] font-semibold text-[#8C857B] uppercase tracking-wider px-4 py-2.5">Aktualisiert</th>
               <th className="text-right text-[10px] font-semibold text-[#8C857B] uppercase tracking-wider px-4 py-2.5">Aktion</th>
             </tr>
@@ -145,13 +185,14 @@ export default function DiagnosePreisePage() {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-sm text-[#8C857B]">
+                <td colSpan={5} className="px-4 py-6 text-center text-sm text-[#8C857B]">
                   Noch keine Diagnose-Preise hinterlegt. Migration evtl. nicht gerollt.
                 </td>
               </tr>
             ) : rows.map(row => {
               const editVal = edits[row.id] ?? String(row.preis)
               const istGeaendert = parseFloat(editVal.replace(",", ".")) !== row.preis
+              const stat = stats.get(row.gewerk)
               return (
                 <tr key={row.id} className="border-b border-[#EDE8E1] last:border-0 hover:bg-[#FAF8F5]/50">
                   <td className="px-4 py-3">
@@ -171,6 +212,22 @@ export default function DiagnosePreisePage() {
                       />
                       <span className="text-sm text-[#8C857B]">€</span>
                     </div>
+                  </td>
+                  <td className="px-4 py-3 text-xs">
+                    {!stat ? (
+                      <span className="text-[#B5AEA4]">—</span>
+                    ) : (
+                      <div className="space-y-0.5">
+                        <div className="text-[#2D2A26] tabular-nums font-medium">
+                          {stat.buchungen90d} Buchung{stat.buchungen90d === 1 ? "" : "en"}
+                        </div>
+                        <div className="text-[10px] text-[#8C857B] tabular-nums">
+                          {stat.avgAufwand != null ? `ø ${stat.avgAufwand.toFixed(1)} h` : ""}
+                          {stat.avgAufwand != null && stat.avgAngebot != null ? " · " : ""}
+                          {stat.avgAngebot != null ? `Projekt ø ${stat.avgAngebot.toFixed(0)} €` : ""}
+                        </div>
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-xs text-[#8C857B] tabular-nums">
                     {row.updated_at ? new Date(row.updated_at).toLocaleDateString("de") : "—"}
