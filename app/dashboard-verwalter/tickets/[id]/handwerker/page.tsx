@@ -233,7 +233,7 @@ export default function HandwerkerAuswahlPage() {
     }).eq("id", ticketId)
 
     showToast(selected.length + " Einladung(en) gesendet!")
-    setTimeout(() => router.push("/ticket/" + ticketId), 1500)
+    setTimeout(() => router.push("/dashboard-verwalter/ticket/" + ticketId), 1500)
   }
 
   if (loading) return <LoadingSpinner />

@@ -51,7 +51,7 @@ export default function AuftraegePage() {
             <div
               key={t.id}
               className="bg-white rounded-xl border border-[#EDE8E1] p-4 cursor-pointer hover:border-[#3D8B7A]/30 hover:shadow-sm transition-all"
-              onClick={() => router.push(`/ticket/${t.id}`)}
+              onClick={() => router.push(`/dashboard-handwerker/ticket/${t.id}`)}
             >
               <div className="flex items-center gap-3">
                 <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${

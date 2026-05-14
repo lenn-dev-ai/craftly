@@ -126,7 +126,7 @@ export default function MieterDashboard() {
 
               return (
                 <Card key={t.id} className="hover:bg-[#F7F4F0] cursor-pointer transition-all"
-                  onClick={() => router.push("/ticket/" + t.id)}>
+                  onClick={() => router.push("/dashboard-mieter/ticket/" + t.id)}>
                   <div className="p-4">
                     <div className="flex items-center gap-3 mb-3">
                       <div
@@ -181,7 +181,7 @@ export default function MieterDashboard() {
           <div className="space-y-2">
             {erledigt.slice(0, 5).map(t => (
               <Card key={t.id} className="hover:bg-[#F7F4F0] cursor-pointer transition-all opacity-60"
-                onClick={() => router.push("/ticket/" + t.id)}>
+                onClick={() => router.push("/dashboard-mieter/ticket/" + t.id)}>
                 <div className="flex items-center gap-3 p-3">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3D8B7A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12" />

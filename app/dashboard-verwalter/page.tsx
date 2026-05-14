@@ -194,7 +194,7 @@ export default function VerwalterDashboard() {
                         </span>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => router.push(`/ticket/${t.id}`)}
+                            onClick={() => router.push(`/dashboard-verwalter/ticket/${t.id}`)}
                             className="text-xs text-[#6B665E] hover:text-[#2D2A26] px-3 py-1.5 transition-colors"
                           >
                             Details
@@ -226,7 +226,7 @@ export default function VerwalterDashboard() {
             {marktplatz.map(t => (
               <button
                 key={t.id}
-                onClick={() => router.push(`/ticket/${t.id}`)}
+                onClick={() => router.push(`/dashboard-verwalter/ticket/${t.id}`)}
                 className="text-left bg-white rounded-xl border border-[#EDE8E1] p-4 hover:border-[#3D8B7A]/30 hover:shadow-sm transition-all"
               >
                 <div className="flex items-center gap-3">
@@ -258,7 +258,7 @@ export default function VerwalterDashboard() {
             {inArbeit.map(t => (
               <button
                 key={t.id}
-                onClick={() => router.push(`/ticket/${t.id}`)}
+                onClick={() => router.push(`/dashboard-verwalter/ticket/${t.id}`)}
                 className="text-left bg-white rounded-xl border border-[#EDE8E1] p-4 hover:border-[#3D8B7A]/30 hover:shadow-sm transition-all"
               >
                 <div className="flex items-center gap-3">

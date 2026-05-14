@@ -412,7 +412,7 @@ export default function AdminDashboard() {
               {stats.recentTickets.map(t => (
                 <li key={t.id}>
                   <button
-                    onClick={() => router.push(`/ticket/${t.id}`)}
+                    onClick={() => router.push(`/dashboard-admin/ticket/${t.id}`)}
                     className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-[#FAF8F5] transition-colors text-left"
                   >
                     <StatusBadge status={t.status} />

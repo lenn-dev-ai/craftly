@@ -1,11 +1,12 @@
 import type { Metadata } from "next"
-import TicketShell from "@/components/layout/TicketShell"
 
 export const metadata: Metadata = {
   title: "Ticket",
   robots: { index: false, follow: false },
 }
 
-export default function TicketLayout({ children }: { children: React.ReactNode }) {
-  return <TicketShell>{children}</TicketShell>
+// Legacy-Route, leitet auf /dashboard-{rolle}/ticket/[id] um.
+// Kein eigenes Layout/Sidebar — die Redirect-Page rendert nur einen Spinner.
+export default function TicketLegacyLayout({ children }: { children: React.ReactNode }) {
+  return children
 }

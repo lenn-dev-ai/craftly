@@ -48,7 +48,7 @@ export default function MieterTicketsPage() {
         <div className="flex flex-col gap-2">
           {tickets.map(t => (
             <Card key={t.id} className="cursor-pointer hover:border-[#3D8B7A] transition-colors !p-3"
-              onClick={() => router.push(`/ticket/${t.id}`)}>
+              onClick={() => router.push(`/dashboard-mieter/ticket/${t.id}`)}>
               <div className="flex items-center gap-3">
                 <StatusDot status={t.status} />
                 <div className="flex-1 min-w-0">

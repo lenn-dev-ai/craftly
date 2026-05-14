@@ -466,7 +466,7 @@ export default function TerminePage() {
                 )}
                 {t.source === "auftrag" && t.ticket_id && (
                   <button
-                    onClick={() => router.push(`/ticket/${t.ticket_id}`)}
+                    onClick={() => router.push(`/dashboard-handwerker/ticket/${t.ticket_id}`)}
                     className="text-xs text-[#3D8B7A] hover:text-[#2D6B5A] font-medium flex-shrink-0"
                   >
                     Details →

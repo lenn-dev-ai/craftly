@@ -71,7 +71,7 @@ export default function TicketsPage() {
         <div className="flex flex-col gap-2">
           {shown.map(t => (
             <Card key={t.id} className="cursor-pointer hover:border-[#3D8B7A]/30 transition-colors !p-3"
-              onClick={() => router.push(`/ticket/${t.id}`)}>
+              onClick={() => router.push(`/dashboard-verwalter/ticket/${t.id}`)}>
               <div className="flex items-center gap-3">
                 <StatusDot status={t.status} />
                 <div className="flex-1 min-w-0">
