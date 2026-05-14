@@ -27,8 +27,8 @@ cat /tmp/health.json 2>/dev/null
 echo
 
 echo
-echo "=== 4) JWT-Secret aus supabase status (erste/letzte 20 Zeichen) ==="
-supabase status 2>/dev/null | grep -E "JWT secret" | sed 's/JWT secret:[[:space:]]*//' | awk '{print "First 20: " substr($0,1,20); print "Last 20:  " substr($0, length($0)-19, 20)}'
+echo "=== 4) JWT-Secret aus npx --yes supabase status (erste/letzte 20 Zeichen) ==="
+npx --yes supabase status 2>/dev/null | grep -E "JWT secret" | sed 's/JWT secret:[[:space:]]*//' | awk '{print "First 20: " substr($0,1,20); print "Last 20:  " substr($0, length($0)-19, 20)}'
 
 echo
 echo "=== 5) Direkter Admin-Call ==="
