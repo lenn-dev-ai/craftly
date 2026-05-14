@@ -44,25 +44,31 @@ npm run db:reset
 
 ### 4. Environment-Variablen exportieren
 
+**Empfohlen — Helper liest sie direkt aus `supabase status`:**
+
+```bash
+source tests/e2e/load-env.sh
+```
+
+Output:
+```
+✓ E2E-Env geladen aus 'supabase status':
+  URL:     http://127.0.0.1:54321
+  ANON:    eyJhbGciOiJIUzI1NiIsInR5cCI...
+  SERVICE: eyJhbGciOiJIUzI1NiIsInR5cCI...
+```
+
+Damit ist Copy-Paste-Verwechslung von anon-Key und service_role-Key
+ausgeschlossen. Auch nach `supabase stop` + `supabase start` ein
+einziger Befehl statt drei Manuelle-Exporte.
+
+**Manuell falls du es bewusst willst:**
+
 ```bash
 export E2E_SUPABASE_URL=http://127.0.0.1:54321
 export E2E_SUPABASE_ANON_KEY=<anon key>
 export E2E_SUPABASE_SERVICE_ROLE_KEY=<service_role key>
 ```
-
-> ⚠ **Service-Role-Key vs Anon-Key**
->
-> Beide sind JWTs. Sie sehen optisch fast gleich aus, sind aber
-> grundverschieden. Anon-Key → für Browser-Calls (RLS gilt).
-> Service-Role-Key → für Admin-Calls (umgeht RLS, kann User anlegen).
->
-> Wenn du den falschen kopierst, bricht der Seed mit
-> `requires a valid Bearer token` ab. Die Datei
-> `tests/e2e/helpers/supabase-admin.ts` validiert das jetzt vorab und
-> sagt dir explizit welcher Key falsch ist.
-
-Du kannst sie auch in `.env.test.local` (gitignored) speichern und mit
-`source .env.test.local` laden.
 
 ### 5. Tests starten
 
