@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket, TicketStatus } from "@/types"
-import { Badge, StatusDot, Button, Card, EmptyState } from "@/components/ui"
+import { Badge, StatusDot, Card, EmptyState } from "@/components/ui"
 import { CardListSkeleton } from "@/components/ui/Skeleton"
 
 const FILTER_OPTIONS: { label: string; value: TicketStatus | "alle" }[] = [
@@ -39,12 +39,21 @@ export default function TicketsPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
           <h1 className="text-xl font-semibold text-[#2D2A26]">Alle Tickets</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{tickets.length} Tickets insgesamt</p>
+          <p className="text-sm text-[#8C857B] mt-0.5">{tickets.length} Tickets insgesamt</p>
         </div>
-        <Button onClick={() => router.push("/dashboard-verwalter/neues-ticket")}>+ Neues Ticket</Button>
+        <div className="text-xs text-[#8C857B] max-w-xs text-right">
+          Tickets werden von Mietern gemeldet.
+          Für eigene Aufträge zum{" "}
+          <button
+            onClick={() => router.push("/dashboard-verwalter/marktplatz")}
+            className="text-[#3D8B7A] hover:underline font-medium"
+          >
+            Handwerker-Marktplatz
+          </button>.
+        </div>
       </div>
 
       <div className="flex gap-2 mb-4 flex-wrap">
