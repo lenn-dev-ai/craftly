@@ -11,6 +11,7 @@ import {
 } from "@/lib/pricing/commission"
 import PreisAufschluesselung from "@/components/pricing/PreisAufschluesselung"
 import DiagnosePipeline from "@/components/ticket/DiagnosePipeline"
+import NachtragsBox from "@/components/ticket/NachtragsBox"
 
 function berechneValueScore(angebot: Angebot, alleAngebote: Angebot[]): number {
   if (alleAngebote.length === 0) return 0
@@ -377,6 +378,12 @@ export default function TicketDetailView() {
         {/* Diagnose/Projekt-Pipeline */}
         {(ticket.ticket_typ === "diagnose" || ticket.ticket_typ === "projekt") && (
           <DiagnosePipeline ticket={ticket} currentUser={currentUser} onReload={load} />
+        )}
+
+        {/* Nachträge — sichtbar für Projekt-Tickets während/nach Bearbeitung */}
+        {ticket.ticket_typ === "projekt" &&
+          (ticket.status === "in_bearbeitung" || ticket.status === "erledigt") && (
+          <NachtragsBox ticket={ticket} currentUser={currentUser} onReload={load} />
         )}
 
         {/* Schadens-Foto (Signed URL, 30 Min gültig) */}

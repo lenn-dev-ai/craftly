@@ -92,6 +92,25 @@ export interface Bewertung {
   bewerter_id: string; sterne: number; kommentar?: string; created_at: string
 }
 
+export type NachtragStufe = "bagatell" | "wesentlich" | "erheblich"
+export type NachtragStatus = "offen" | "genehmigt" | "abgelehnt"
+
+export interface Nachtrag {
+  id: string
+  ticket_id: string
+  handwerker_id: string
+  ursprungspreis: number
+  nachtrag_betrag: number
+  aufpreis_prozent: number
+  stufe: NachtragStufe
+  begruendung: string
+  fotos: string[]
+  status: NachtragStatus
+  genehmigt_von?: string | null
+  genehmigt_am?: string | null
+  created_at: string
+}
+
 export const WOCHENTAGE = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"] as const
 
 export interface Verfuegbarkeit {

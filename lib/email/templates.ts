@@ -279,6 +279,132 @@ export function befundFertigEmail(params: {
 }
 
 // =====================================================================
+// 7. Nachtrag eingereicht — an Verwalter (wesentlich/erheblich)
+// =====================================================================
+function stufeBadge(stufe: "bagatell" | "wesentlich" | "erheblich"): string {
+  const map = {
+    bagatell: { label: "Bagatell ≤ 10 %", color: "#3D8B7A", bg: "#E8F2EF" },
+    wesentlich: { label: "Wesentlich ≤ 25 %", color: "#854F0B", bg: "#FAF1DE" },
+    erheblich: { label: "Erheblich > 25 %", color: "#ffffff", bg: COLORS.danger },
+  } as const
+  const c = map[stufe]
+  return `<span style="display:inline-block;padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600;color:${c.color};background:${c.bg};">${c.label}</span>`
+}
+
+export function nachtragEingereichtEmail(params: {
+  verwalterName: string
+  handwerkerName: string
+  handwerkerFirma: string
+  ticketTitel: string
+  ursprungspreis: number
+  nachtragBetrag: number
+  aufpreisProzent: number
+  stufe: "bagatell" | "wesentlich" | "erheblich"
+  begruendung: string
+  ticketId: string
+}): { subject: string; html: string } {
+  const ursprung = params.ursprungspreis.toLocaleString("de-DE", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+  const betrag = params.nachtragBetrag.toLocaleString("de-DE", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+  const prozent = params.aufpreisProzent.toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  const neuTotal = (params.ursprungspreis + params.nachtragBetrag).toLocaleString("de-DE", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+
+  const subject = `Nachtrag (${params.stufe}) für „${params.ticketTitel}“ — ${betrag} €`
+  const html = emailLayout("Nachtrag eingereicht", `
+    <p style="margin:0 0 16px;color:${COLORS.text};font-size:16px;line-height:1.6;">
+      Hallo ${escapeHtml(params.verwalterName)},<br><br>
+      <strong>${escapeHtml(params.handwerkerName)}${params.handwerkerFirma ? ` (${escapeHtml(params.handwerkerFirma)})` : ""}</strong>
+      hat während der Arbeit am Projekt <strong>${escapeHtml(params.ticketTitel)}</strong> einen Nachtrag eingereicht.
+    </p>
+    <div style="background:${COLORS.bg};border:1px solid ${COLORS.border};border-radius:12px;padding:20px;margin:0 0 16px;">
+      <div style="margin-bottom:12px;">${stufeBadge(params.stufe)}</div>
+      ${infoTabelle([
+        { label: "Ursprungspreis", value: `${ursprung} €` },
+        { label: "Nachtrag", value: `+${betrag} €` },
+        { label: "Aufpreis", value: `${prozent} %` },
+        { label: "Neuer Auftragswert", value: `${neuTotal} €` },
+      ])}
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid ${COLORS.border};">
+        <div style="font-size:12px;font-weight:600;color:${COLORS.textMuted};margin-bottom:6px;">BEGRÜNDUNG</div>
+        <p style="margin:0;color:${COLORS.text};font-size:14px;line-height:1.5;white-space:pre-wrap;">${escapeHtml(params.begruendung)}</p>
+      </div>
+    </div>
+    <p style="margin:0;color:${COLORS.text};font-size:15px;line-height:1.6;">
+      Bitte prüfen Sie den Nachtrag und genehmigen oder lehnen Sie ihn ab.
+    </p>
+    ${ctaButton("Nachtrag prüfen", `${SITE_URL}/dashboard-verwalter/ticket/${params.ticketId}`)}
+  `)
+  return { subject, html }
+}
+
+// =====================================================================
+// 8. Nachtrag genehmigt — an Handwerker
+// =====================================================================
+export function nachtragGenehmigtEmail(params: {
+  handwerkerName: string
+  ticketTitel: string
+  nachtragBetrag: number
+  stufe: "bagatell" | "wesentlich" | "erheblich"
+  neuerAuftragswert: number
+  ticketId: string
+}): { subject: string; html: string } {
+  const betrag = params.nachtragBetrag.toLocaleString("de-DE", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+  const total = params.neuerAuftragswert.toLocaleString("de-DE", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+
+  const subject = `Nachtrag genehmigt: „${params.ticketTitel}“ — +${betrag} €`
+  const html = emailLayout("Nachtrag genehmigt", `
+    <p style="margin:0 0 16px;color:${COLORS.text};font-size:16px;line-height:1.6;">
+      Hallo ${escapeHtml(params.handwerkerName)},<br><br>
+      Ihr Nachtrag für <strong>${escapeHtml(params.ticketTitel)}</strong> wurde genehmigt.
+    </p>
+    <div style="background:${COLORS.bg};border:2px solid ${COLORS.accent};border-radius:12px;padding:20px;margin:0 0 16px;">
+      <div style="margin-bottom:12px;">${stufeBadge(params.stufe)}</div>
+      ${infoTabelle([
+        { label: "Nachtragsbetrag", value: `+${betrag} €` },
+        { label: "Neuer Auftragswert", value: `${total} €` },
+      ])}
+    </div>
+    ${ctaButton("Auftrag ansehen", `${SITE_URL}/ticket/${params.ticketId}`)}
+  `)
+  return { subject, html }
+}
+
+// =====================================================================
+// 9. Nachtrag abgelehnt — an Handwerker
+// =====================================================================
+export function nachtragAbgelehntEmail(params: {
+  handwerkerName: string
+  ticketTitel: string
+  nachtragBetrag: number
+  stufe: "bagatell" | "wesentlich" | "erheblich"
+  begruendung: string
+  ticketId: string
+}): { subject: string; html: string } {
+  const betrag = params.nachtragBetrag.toLocaleString("de-DE", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+  const subject = `Nachtrag abgelehnt: „${params.ticketTitel}“`
+  const html = emailLayout("Nachtrag abgelehnt", `
+    <p style="margin:0 0 16px;color:${COLORS.text};font-size:16px;line-height:1.6;">
+      Hallo ${escapeHtml(params.handwerkerName)},<br><br>
+      Ihr Nachtrag für <strong>${escapeHtml(params.ticketTitel)}</strong> wurde leider nicht genehmigt.
+    </p>
+    <div style="background:${COLORS.bg};border:1px solid ${COLORS.border};border-radius:12px;padding:20px;margin:0 0 16px;">
+      <div style="margin-bottom:12px;">${stufeBadge(params.stufe)}</div>
+      ${infoTabelle([
+        { label: "Eingereichter Betrag", value: `+${betrag} €` },
+      ])}
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid ${COLORS.border};">
+        <div style="font-size:12px;font-weight:600;color:${COLORS.textMuted};margin-bottom:6px;">IHRE BEGRÜNDUNG</div>
+        <p style="margin:0;color:${COLORS.text};font-size:14px;line-height:1.5;white-space:pre-wrap;">${escapeHtml(params.begruendung)}</p>
+      </div>
+    </div>
+    <p style="margin:0;color:${COLORS.text};font-size:15px;line-height:1.6;">
+      Bitte besprechen Sie das weitere Vorgehen direkt mit dem Verwalter.
+    </p>
+    ${ctaButton("Auftrag ansehen", `${SITE_URL}/ticket/${params.ticketId}`)}
+  `)
+  return { subject, html }
+}
+
+// =====================================================================
 // 5. Absage-Mail an andere Bieter
 // =====================================================================
 export function absageEmail(params: {
