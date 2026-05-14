@@ -54,19 +54,19 @@ export default function VerwalterDashboard() {
       supabase
         .from("tickets")
         .select("*, angebote(preis)")
-        .eq("erstellt_von", user.id)
+        .eq("verwalter_id", user.id)
         .order("created_at", { ascending: false }),
       supabase
         .from("nachtraege")
-        .select("id, ticket_id, nachtrag_betrag, stufe, tickets!inner(titel, erstellt_von)")
+        .select("id, ticket_id, nachtrag_betrag, stufe, tickets!inner(titel, verwalter_id)")
         .eq("status", "offen")
-        .eq("tickets.erstellt_von", user.id)
+        .eq("tickets.verwalter_id", user.id)
         .returns<Array<{
           id: string
           ticket_id: string
           nachtrag_betrag: number
           stufe: "bagatell" | "wesentlich" | "erheblich"
-          tickets: { titel: string; erstellt_von: string }
+          tickets: { titel: string; verwalter_id: string }
         }>>(),
     ])
     setTickets(ts || [])

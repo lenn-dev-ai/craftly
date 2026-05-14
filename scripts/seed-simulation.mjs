@@ -156,11 +156,50 @@ function deutscherName() {
   return `${pick(VORNAMEN)} ${pick(NACHNAMEN)}`
 }
 
-// Batch-Insert mit Error-Bail
+// Idempotenter User-Create: existing user wird via updateUserById gepatcht
+// statt failing zu sein. Robuste gegen Re-Runs nach abgebrochenem Cleanup.
+let _userCache = null
+async function loadAllSeedUsers() {
+  if (_userCache) return _userCache
+  _userCache = new Map()
+  for (let page = 1; page <= 20; page++) {
+    const { data } = await sb.auth.admin.listUsers({ page, perPage: 200 })
+    if (!data?.users.length) break
+    for (const u of data.users) {
+      if (u.email?.endsWith("@reparo-test.local")) _userCache.set(u.email, u)
+    }
+  }
+  return _userCache
+}
+async function idempotentCreateUser({ email, name }) {
+  const all = await loadAllSeedUsers()
+  const existing = all.get(email)
+  if (existing) {
+    const { error } = await sb.auth.admin.updateUserById(existing.id, {
+      password: PASSWORD,
+      email_confirm: true,
+      user_metadata: { name },
+    })
+    if (error) throw new Error(`${email} update: ${error.message}`)
+    return { id: existing.id }
+  }
+  const { data, error } = await sb.auth.admin.createUser({
+    email, password: PASSWORD, email_confirm: true, user_metadata: { name },
+  })
+  if (error) throw new Error(`${email} create: ${error.message}`)
+  all.set(email, data.user)
+  return { id: data.user.id }
+}
+
+// Batch-Insert mit Error-Bail. Für profiles: upsert weil profile-id
+// = auth.user.id und User können idempotent existing sein.
 async function batchInsert(table, rows, size = 50) {
   for (let i = 0; i < rows.length; i += size) {
     const batch = rows.slice(i, i + size)
-    const { error } = await sb.from(table).insert(batch)
+    const q = table === "profiles"
+      ? sb.from(table).upsert(batch, { onConflict: "id" })
+      : sb.from(table).insert(batch)
+    const { error } = await q
     if (error) {
       console.error(`❌ ${table} batch ${i}-${i + batch.length}: ${error.message}`)
       console.error("Erste Row:", JSON.stringify(batch[0]).slice(0, 300))
@@ -174,10 +213,17 @@ async function batchInsert(table, rows, size = 50) {
 // ============================================================
 async function cleanup() {
   console.log("→ Cleanup alter Seed-Daten ...")
-  const { data: oldUsers } = await sb.auth.admin.listUsers({ page: 1, perPage: 1000 })
-  const seedUsers = (oldUsers?.users ?? []).filter(u =>
-    u.email?.startsWith("seed.") && u.email?.endsWith("@reparo-test.local"),
-  )
+  // Pageweise iterieren — listUsers hat per_page-Cap (200 in CLI/lokal)
+  const seedUsers = []
+  for (let page = 1; page <= 20; page++) {
+    const { data } = await sb.auth.admin.listUsers({ page, perPage: 200 })
+    if (!data?.users.length) break
+    for (const u of data.users) {
+      if (u.email?.startsWith("seed.") && u.email?.endsWith("@reparo-test.local")) {
+        seedUsers.push(u)
+      }
+    }
+  }
   if (seedUsers.length === 0) {
     console.log("  keine Seed-User vorhanden — skip")
     return
@@ -213,14 +259,9 @@ async function seedVerwalter() {
   for (let i = 1; i <= 100; i++) {
     const name = deutscherName()
     const firma = `${pick(VERWALTER_BEZEICHNUNGEN)} ${pick(NACHNAMEN)}`
-    const { data, error } = await sb.auth.admin.createUser({
-      email: `seed.verwalter.${i}@reparo-test.local`,
-      password: PASSWORD,
-      email_confirm: true,
-      user_metadata: { name },
-    })
-    if (error) { console.error(`Verwalter ${i}: ${error.message}`); process.exit(1) }
-    ids.push({ id: data.user.id, name, firma })
+    const email = `seed.verwalter.${i}@reparo-test.local`
+    const data = await idempotentCreateUser({ email, name })
+    ids.push({ id: data.id, name, firma })
   }
   // Profile in Batches
   const profileRows = ids.map(u => ({
@@ -245,14 +286,9 @@ async function seedHandwerker() {
     const name = deutscherName()
     const gewerkInfo = pick(HW_PRAEFIX)
     const firma = `${pick(gewerkInfo.prefixe)}${pick(HW_SUFFIX)} ${pick(NACHNAMEN)}`
-    const { data, error } = await sb.auth.admin.createUser({
-      email: `seed.handwerker.${i}@reparo-test.local`,
-      password: PASSWORD,
-      email_confirm: true,
-      user_metadata: { name },
-    })
-    if (error) { console.error(`Handwerker ${i}: ${error.message}`); process.exit(1) }
-    ids.push({ id: data.user.id, name, firma, gewerk: gewerkInfo.gewerk })
+    const email = `seed.handwerker.${i}@reparo-test.local`
+    const data = await idempotentCreateUser({ email, name })
+    ids.push({ id: data.id, name, firma, gewerk: gewerkInfo.gewerk })
   }
   const profileRows = ids.map((u, idx) => {
     const stadt = pick(STAEDTE)
@@ -294,14 +330,9 @@ async function seedMieter() {
   const ids = []
   for (let i = 1; i <= 100; i++) {
     const name = deutscherName()
-    const { data, error } = await sb.auth.admin.createUser({
-      email: `seed.mieter.${i}@reparo-test.local`,
-      password: PASSWORD,
-      email_confirm: true,
-      user_metadata: { name },
-    })
-    if (error) { console.error(`Mieter ${i}: ${error.message}`); process.exit(1) }
-    ids.push({ id: data.user.id, name })
+    const email = `seed.mieter.${i}@reparo-test.local`
+    const data = await idempotentCreateUser({ email, name })
+    ids.push({ id: data.id, name })
   }
   const profileRows = ids.map((u, idx) => ({
     id: u.id,
@@ -358,6 +389,8 @@ async function seedObjekte(verwalter) {
 // ============================================================
 async function seedVerfuegbarkeiten(handwerker) {
   console.log("→ Verfügbarkeiten ...")
+  // Erst löschen — verfuegbarkeiten hat unique(handwerker_id, wochentag)
+  await sb.from("verfuegbarkeiten").delete().in("handwerker_id", handwerker.map(h => h.id))
   const rows = []
   for (const hw of handwerker) {
     for (let wt = 1; wt <= 5; wt++) {

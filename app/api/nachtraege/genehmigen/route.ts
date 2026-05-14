@@ -60,11 +60,12 @@ export async function POST(request: NextRequest) {
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, titel, erstellt_von")
+    .select("id, titel, erstellt_von, verwalter_id")
     .eq("id", nachtrag.ticket_id)
-    .single<{ id: string; titel: string; erstellt_von: string }>()
+    .single<{ id: string; titel: string; erstellt_von: string; verwalter_id: string | null }>()
   if (!ticket) return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 })
-  if (ticket.erstellt_von !== user.id && profile.rolle !== "admin") {
+  // Auth via verwalter_id (M-K3)
+  if (ticket.verwalter_id !== user.id && profile.rolle !== "admin") {
     return NextResponse.json({ error: "Nicht dein Ticket" }, { status: 403 })
   }
 

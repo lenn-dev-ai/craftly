@@ -15,8 +15,9 @@ export interface ScoreInput {
   entfernungKm: number
   /** Maximaler Such-Radius in km (Skalierung der Nähe-Achse) */
   maxRadius: number
-  /** Bewertung des Handwerkers (1.0 .. 5.0) */
-  bewertung: number
+  /** Bewertung des Handwerkers (1.0 .. 5.0). null/0/undefined = noch
+   *  keine Bewertungen → Neuling-Fairness-Default 60 Punkte. */
+  bewertung: number | null | undefined
   /** Hat der Handwerker am selben Tag bereits einen Job in der Nähe? */
   istRoutenBonus: boolean
   /** Notfall (sofort), zeitnah (24-48h), planbar (3-7 Tage) */
@@ -96,7 +97,15 @@ function naeheScoreVon(entfernung: number, radius: number): number {
   return clamp((1 - entfernung / radius) * 100, 0, 100)
 }
 
-function bewertungScoreVon(bewertung: number): number {
+/**
+ * Bewertungs-Score 0..100 aus 1..5-Sterne-Skala.
+ * Sonderfall: bewertung null/0/undefined (= noch keine Bewertungen) ergibt
+ * 60 Punkte ("Neuling-Default"). Sonst würde ein neuer HW mit 0 Bewertungen
+ * konsequent unter HW mit echter 1-Stern-Bewertung gerankt — was ihm den
+ * Markteintritt unmöglich macht.
+ */
+function bewertungScoreVon(bewertung: number | null | undefined): number {
+  if (bewertung == null || !isFinite(bewertung) || bewertung <= 0) return 60
   return clamp((bewertung / 5) * 100, 0, 100)
 }
 

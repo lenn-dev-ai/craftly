@@ -34,7 +34,7 @@ export default function ReportingPage() {
       if (!user) { router.push("/login"); return }
       const [{ data: prof }, { data: ts }, { data: provs }] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).single(),
-        supabase.from("tickets").select("*, angebote(*)").eq("erstellt_von", user.id),
+        supabase.from("tickets").select("*, angebote(*)").eq("verwalter_id", user.id),
         supabase.from("provisionen").select("*").eq("verwalter_id", user.id),
       ])
       setProfile(prof)

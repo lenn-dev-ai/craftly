@@ -338,6 +338,35 @@ console.log("\n=== Routen-Bonus-Erkennung ===")
   check("Keine bestehenden Jobs → kein Bonus", !leer)
 }
 
+console.log("\n=== Bewertung null/0 → Neuling-Fairness ===")
+{
+  const neuling = berechneSmartScoreBreakdown({
+    angebotPreis: 100, durchschnittPreis: 100, entfernungKm: 5, maxRadius: 25,
+    bewertung: null, istRoutenBonus: false, dringlichkeit: "planbar",
+  })
+  check("bewertung=null → bewertungScore = 60 (Neuling-Default, nicht 0)",
+    neuling.bewertungScore === 60,
+    `score=${neuling.bewertungScore}`)
+
+  const null0 = berechneSmartScoreBreakdown({
+    angebotPreis: 100, durchschnittPreis: 100, entfernungKm: 5, maxRadius: 25,
+    bewertung: 0, istRoutenBonus: false, dringlichkeit: "planbar",
+  })
+  check("bewertung=0 → bewertungScore = 60 (genau wie null)",
+    null0.bewertungScore === 60)
+
+  const echter1 = berechneSmartScoreBreakdown({
+    angebotPreis: 100, durchschnittPreis: 100, entfernungKm: 5, maxRadius: 25,
+    bewertung: 1.0, istRoutenBonus: false, dringlichkeit: "planbar",
+  })
+  check("bewertung=1.0 (echte 1 Stern) → bewertungScore = 20",
+    echter1.bewertungScore === 20,
+    `score=${echter1.bewertungScore}`)
+
+  check("Neuling-Default (60) > echte 1-Stern (20)",
+    neuling.bewertungScore > echter1.bewertungScore)
+}
+
 console.log("\n=== Tie-Break-Setup (Smart-Score gleich) ===")
 {
   const a = berechneSmartScore({

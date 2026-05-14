@@ -24,6 +24,7 @@ interface AbgelaufenesTicket {
   id: string
   titel: string
   erstellt_von: string
+  verwalter_id: string | null
   surge_faktor: number | null
   auktion_ende: string | null
 }
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
   const jetzt = new Date().toISOString()
   const { data: abgelaufen } = await supabase
     .from("tickets")
-    .select("id, titel, beschreibung, einsatzort_adresse, erstellt_von, surge_faktor, auktion_ende")
+    .select("id, titel, beschreibung, einsatzort_adresse, erstellt_von, verwalter_id, surge_faktor, auktion_ende")
     .eq("status", "auktion")
     .lt("auktion_ende", jetzt)
     .returns<Array<AbgelaufenesTicket & {
@@ -99,11 +100,12 @@ export async function POST(request: NextRequest) {
         aktion: "zurueck-auf-offen",
       })
       // Fire-and-forget: Verwalter informieren
+      // (verwalter_id = zuständiger Auftraggeber, M-K3; Fallback erstellt_von)
       void (async () => {
         const { data: verwalter } = await supabase
           .from("profiles")
           .select("email, name")
-          .eq("id", ticket.erstellt_von)
+          .eq("id", ticket.verwalter_id ?? ticket.erstellt_von)
           .single<{ email: string | null; name: string | null }>()
         if (!verwalter?.email) return
         const { subject, html } = auktionAbgelaufenEmail({
@@ -162,7 +164,7 @@ export async function POST(request: NextRequest) {
     const { data: verwalter } = await supabase
       .from("profiles")
       .select("early_adopter_bis")
-      .eq("id", ticket.erstellt_von)
+      .eq("id", ticket.verwalter_id ?? ticket.erstellt_von)
       .single<{ early_adopter_bis: string | null }>()
     const isEarlyAdopter = !!verwalter?.early_adopter_bis &&
       new Date(verwalter.early_adopter_bis).getTime() > Date.now()
@@ -173,7 +175,7 @@ export async function POST(request: NextRequest) {
     await supabase.from("provisionen").upsert(
       {
         ticket_id: ticket.id,
-        verwalter_id: ticket.erstellt_von,
+        verwalter_id: ticket.verwalter_id ?? ticket.erstellt_von,
         handwerker_id: winner.handwerker_id,
         auftragswert: winner.preis,
         provision_rate: finalRate,

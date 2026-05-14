@@ -39,7 +39,7 @@ export default function TicketsPage() {
       if (!user) { router.push("/login"); return }
       const { data } = await supabase
         .from("tickets").select("*, angebote(*)")
-        .eq("erstellt_von", user.id).order("created_at", { ascending: false })
+        .eq("verwalter_id", user.id).order("created_at", { ascending: false })
       setTickets(data || [])
       setLoading(false)
     }

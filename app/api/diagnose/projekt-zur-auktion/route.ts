@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   const { data: ticket } = await supabase
     .from("tickets")
     .select(
-      "id, titel, beschreibung, gewerk, erstellt_von, einsatzort_adresse, einsatzort_lat, einsatzort_lng, ticket_typ, status, zugewiesener_hw, befund_text, befund_fotos, befund_aufwand_stunden, projekt_angebot, leistungsumfang, preiskorridor_min, preiskorridor_max",
+      "id, titel, beschreibung, gewerk, erstellt_von, verwalter_id, einsatzort_adresse, einsatzort_lat, einsatzort_lng, ticket_typ, status, zugewiesener_hw, befund_text, befund_fotos, befund_aufwand_stunden, projekt_angebot, leistungsumfang, preiskorridor_min, preiskorridor_max",
     )
     .eq("id", diagnoseTicketId)
     .single<{
@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
       beschreibung: string | null
       gewerk: string | null
       erstellt_von: string
+      verwalter_id: string | null
       einsatzort_adresse: string | null
       einsatzort_lat: number | null
       einsatzort_lng: number | null
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
       preiskorridor_max: number | null
     }>()
   if (!ticket) return NextResponse.json({ error: "Diagnose-Ticket nicht gefunden" }, { status: 404 })
-  if (ticket.erstellt_von !== user.id && profile.rolle !== "admin") {
+  if (ticket.verwalter_id !== user.id && profile.rolle !== "admin") {
     return NextResponse.json({ error: "Nicht dein Ticket" }, { status: 403 })
   }
   if (ticket.ticket_typ !== "diagnose") {
@@ -107,6 +108,7 @@ export async function POST(request: NextRequest) {
       beschreibung: projektBeschr,
       gewerk: ticket.gewerk,
       erstellt_von: ticket.erstellt_von,
+      verwalter_id: ticket.verwalter_id ?? user.id,
       einsatzort_adresse: ticket.einsatzort_adresse,
       einsatzort_lat: ticket.einsatzort_lat,
       einsatzort_lng: ticket.einsatzort_lng,

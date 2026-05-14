@@ -59,13 +59,14 @@ export async function POST(request: NextRequest) {
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, titel, beschreibung, erstellt_von, status, einsatzort_lat, einsatzort_lng, einsatzort_adresse, gewerk")
+    .select("id, titel, beschreibung, erstellt_von, verwalter_id, status, einsatzort_lat, einsatzort_lng, einsatzort_adresse, gewerk")
     .eq("id", ticketId)
     .single<{
       id: string
       titel: string
       beschreibung: string | null
       erstellt_von: string
+      verwalter_id: string | null
       status: string
       einsatzort_lat: number | null
       einsatzort_lng: number | null
@@ -73,7 +74,9 @@ export async function POST(request: NextRequest) {
       gewerk: string | null
     }>()
   if (!ticket) return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 })
-  if (ticket.erstellt_von !== user.id && profile.rolle !== "admin") {
+  // Auth via verwalter_id (M-K3): bei Mieter-erstellten Tickets entscheidet
+  // der zuständige Verwalter aus objekt.verwalter_id, nicht der Ersteller.
+  if (ticket.verwalter_id !== user.id && profile.rolle !== "admin") {
     return NextResponse.json({ error: "Nicht dein Ticket" }, { status: 403 })
   }
   if (ticket.einsatzort_lat == null || ticket.einsatzort_lng == null) {

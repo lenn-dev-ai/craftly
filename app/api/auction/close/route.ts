@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, titel, beschreibung, einsatzort_adresse, erstellt_von, status, surge_faktor, gewerk, ticket_typ, diagnose_ticket_id, vorkaufsrecht_bis")
+    .select("id, titel, beschreibung, einsatzort_adresse, erstellt_von, verwalter_id, status, surge_faktor, gewerk, ticket_typ, diagnose_ticket_id, vorkaufsrecht_bis")
     .eq("id", ticketId)
     .single<{
       id: string
@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
       beschreibung: string | null
       einsatzort_adresse: string | null
       erstellt_von: string
+      verwalter_id: string | null
       status: string
       surge_faktor: number | null
       gewerk: string | null
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
       vorkaufsrecht_bis: string | null
     }>()
   if (!ticket) return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 })
-  if (ticket.erstellt_von !== user.id && profile.rolle !== "admin") {
+  if (ticket.verwalter_id !== user.id && profile.rolle !== "admin") {
     return NextResponse.json({ error: "Nicht dein Ticket" }, { status: 403 })
   }
   if (ticket.status !== "auktion") {
@@ -197,7 +198,7 @@ export async function POST(request: NextRequest) {
   await supabase.from("provisionen").upsert(
     {
       ticket_id: ticketId,
-      verwalter_id: user.id,
+      verwalter_id: ticket.verwalter_id ?? user.id,
       handwerker_id: angebot.handwerker_id,
       auftragswert: kostenFinal,
       provision_rate: finalRate,
