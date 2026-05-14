@@ -47,6 +47,19 @@ export interface Ticket {
   objekt?: Objekt; objekte?: Objekt; ersteller?: UserProfile
   handwerker?: UserProfile; angebote?: Angebot[]
   einladungen?: Einladung[]; nachrichten?: Nachricht[]
+  // Diagnose → Projekt (Phase 1+2)
+  ticket_typ?: "standard" | "diagnose" | "projekt"
+  diagnose_ticket_id?: string | null
+  befund_text?: string | null
+  befund_fotos?: string[] | null
+  befund_aufwand_stunden?: number | null
+  projekt_angebot?: number | null
+  leistungsumfang?: string[] | null
+  vorkaufsrecht_bis?: string | null
+  preiskorridor_min?: number | null
+  preiskorridor_max?: number | null
+  diagnosegebuehr_angerechnet?: boolean | null
+  surge_faktor?: number | null
 }
 
 export interface Angebot {

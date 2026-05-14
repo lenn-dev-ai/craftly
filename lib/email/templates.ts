@@ -228,6 +228,57 @@ export function zuschlagEmail(params: {
 }
 
 // =====================================================================
+// 6. Befund-Fertig-Mail an Verwalter (nach Diagnose-Termin)
+// =====================================================================
+export function befundFertigEmail(params: {
+  verwalterName: string
+  handwerkerName: string
+  handwerkerFirma: string
+  ticketTitel: string
+  projektAngebot: number
+  korridorMin: number
+  korridorMax: number
+  korridorBasis: "historisch" | "fallback"
+  vergleichsanzahl: number
+  ticketId: string
+}): { subject: string; html: string } {
+  const angebot = params.projektAngebot.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const min = params.korridorMin.toLocaleString("de-DE", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+  const max = params.korridorMax.toLocaleString("de-DE", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+  const imKorridor = params.projektAngebot >= params.korridorMin && params.projektAngebot <= params.korridorMax
+  const basisText = params.korridorBasis === "historisch"
+    ? `Basis: Median aus ${params.vergleichsanzahl} vergleichbaren Aufträgen ± 15 %`
+    : "Basis: Diagnose-Handwerker-Angebot ± 15 % (noch zu wenige Vergleichswerte)"
+
+  const subject = imKorridor
+    ? `Befund da — Angebot im fairen Bereich: „${params.ticketTitel}“`
+    : `Befund da — Angebot außerhalb Korridor: „${params.ticketTitel}“`
+
+  const korridorBadge = imKorridor
+    ? `<div style="display:inline-block;padding:6px 14px;border-radius:12px;background:${COLORS.accent}/20;background:#E8F2EF;color:${COLORS.accent};font-size:13px;font-weight:600;">✓ Im fairen Preisbereich</div>`
+    : `<div style="display:inline-block;padding:6px 14px;border-radius:12px;background:#FAF1DE;color:#854F0B;font-size:13px;font-weight:600;">⚠ Außerhalb Korridor</div>`
+
+  const html = emailLayout("Befund + Projekt-Angebot eingegangen", `
+    <p style="margin:0 0 16px;color:${COLORS.text};font-size:16px;line-height:1.6;">
+      Hallo ${escapeHtml(params.verwalterName)},<br><br>
+      <strong>${escapeHtml(params.handwerkerName)}${params.handwerkerFirma ? ` (${escapeHtml(params.handwerkerFirma)})` : ""}</strong>
+      hat den Diagnose-Termin für <strong>${escapeHtml(params.ticketTitel)}</strong> abgeschlossen und ein Festpreis-Angebot abgegeben.
+    </p>
+    <div style="background:${COLORS.bg};border:1px solid ${COLORS.border};border-radius:12px;padding:20px;margin:0 0 16px;">
+      <div style="margin-bottom:12px;">${korridorBadge}</div>
+      <div style="font-size:32px;font-weight:700;color:${COLORS.accent};margin:8px 0;">${angebot} €</div>
+      <div style="color:${COLORS.textMuted};font-size:13px;margin-bottom:8px;">Fairer Bereich: ${min}–${max} €</div>
+      <div style="color:${COLORS.textMuted};font-size:11px;">${escapeHtml(basisText)}</div>
+    </div>
+    <p style="margin:0;color:${COLORS.text};font-size:15px;line-height:1.6;">
+      Sie können den Auftrag jetzt direkt an den Diagnose-Handwerker vergeben oder eine Auktion mit Vorkaufsrecht (24 h) starten.
+    </p>
+    ${ctaButton("Befund prüfen", `${SITE_URL}/dashboard-verwalter/ticket/${params.ticketId}`)}
+  `)
+  return { subject, html }
+}
+
+// =====================================================================
 // 5. Absage-Mail an andere Bieter
 // =====================================================================
 export function absageEmail(params: {

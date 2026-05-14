@@ -10,6 +10,7 @@ import {
   formatEUR,
 } from "@/lib/pricing/commission"
 import PreisAufschluesselung from "@/components/pricing/PreisAufschluesselung"
+import DiagnosePipeline from "@/components/ticket/DiagnosePipeline"
 
 function berechneValueScore(angebot: Angebot, alleAngebote: Angebot[]): number {
   if (alleAngebote.length === 0) return 0
@@ -372,6 +373,11 @@ export default function TicketDetailView() {
             {ticket.vergabemodus && <span>Modus: {ticket.vergabemodus === "auktion" ? "Smart-Auktion" : ticket.vergabemodus === "direkt" ? "Sofort-Vergabe" : "Planauftrag"}</span>}
           </div>
         </div>
+
+        {/* Diagnose/Projekt-Pipeline */}
+        {(ticket.ticket_typ === "diagnose" || ticket.ticket_typ === "projekt") && (
+          <DiagnosePipeline ticket={ticket} currentUser={currentUser} onReload={load} />
+        )}
 
         {/* Schadens-Foto (Signed URL, 30 Min gültig) */}
         {fotoUrl && (

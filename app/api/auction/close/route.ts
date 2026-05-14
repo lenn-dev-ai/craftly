@@ -8,11 +8,17 @@ import { calculateCommission } from "@/lib/pricing/commission"
 import { fuegeTicketZuTagesplan } from "@/lib/auction/routen-planung-sync"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 import { zuschlagEmail, absageEmail } from "@/lib/email/templates"
+import { getDiagnosePreis } from "@/lib/diagnose/preise"
 
 // POST /api/auction/close
 // Body: { ticket_id, angebot_id? }
 // - Wenn angebot_id gesetzt: Verwalter wählt manuell.
 // - Sonst: Auto-Pick = Bid mit höchstem Smart-Score (Tie-Break Erfahrung).
+//   Sonderfall: Wenn vorkaufsrecht_bis aktiv und Diagnose-HW dabei →
+//   der gewinnt unabhängig vom Score.
+// - Wenn Projekt-Ticket aus Diagnose und Diagnose-HW gewinnt:
+//   Diagnosegebühr wird vom Auftragswert abgezogen
+//   (kosten_final = preis − diagnose_preis), diagnosegebuehr_angerechnet=true.
 // Auth: Verwalter (oder Admin), erstellt_von des Tickets.
 export async function POST(request: NextRequest) {
   let body: { ticket_id?: string; angebot_id?: string }
@@ -42,7 +48,7 @@ export async function POST(request: NextRequest) {
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, titel, beschreibung, einsatzort_adresse, erstellt_von, status, surge_faktor")
+    .select("id, titel, beschreibung, einsatzort_adresse, erstellt_von, status, surge_faktor, gewerk, ticket_typ, diagnose_ticket_id, vorkaufsrecht_bis")
     .eq("id", ticketId)
     .single<{
       id: string
@@ -52,6 +58,10 @@ export async function POST(request: NextRequest) {
       erstellt_von: string
       status: string
       surge_faktor: number | null
+      gewerk: string | null
+      ticket_typ: string | null
+      diagnose_ticket_id: string | null
+      vorkaufsrecht_bis: string | null
     }>()
   if (!ticket) return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 })
   if (ticket.erstellt_von !== user.id && profile.rolle !== "admin") {
@@ -64,10 +74,24 @@ export async function POST(request: NextRequest) {
   // Stelle sicher dass Smart-Scores aktuell sind
   await reScoreTicket(supabase, ticketId)
 
+  // Diagnose-HW herausfinden (für Vorkaufsrecht + Anrechnung)
+  let diagnoseHwId: string | null = null
+  if (ticket.diagnose_ticket_id) {
+    const { data: diag } = await supabase
+      .from("tickets")
+      .select("zugewiesener_hw")
+      .eq("id", ticket.diagnose_ticket_id)
+      .single<{ zugewiesener_hw: string | null }>()
+    diagnoseHwId = diag?.zugewiesener_hw ?? null
+  }
+
+  const vorkaufsrechtAktiv = !!ticket.vorkaufsrecht_bis &&
+    new Date(ticket.vorkaufsrecht_bis).getTime() > Date.now()
+
   let pickedAngebotId = body.angebot_id
 
   if (!pickedAngebotId) {
-    // Auto-Pick: höchster Smart-Score, Tie-Break über profiles.auftraege_anzahl
+    // Auto-Pick
     const { data: bids } = await supabase
       .from("angebote")
       .select("id, handwerker_id, preis, smart_score, handwerker:profiles(auftraege_anzahl)")
@@ -88,13 +112,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const sortiert = [...bids].sort((a, b) => {
-      const sa = a.smart_score ?? 0
-      const sb = b.smart_score ?? 0
-      if (sb !== sa) return sb - sa
-      return (b.handwerker?.auftraege_anzahl ?? 0) - (a.handwerker?.auftraege_anzahl ?? 0)
-    })
-    pickedAngebotId = sortiert[0].id
+    // Vorkaufsrecht: Wenn aktiv und Diagnose-HW dabei → er gewinnt
+    let vorkaufsrechtTriggered = false
+    if (vorkaufsrechtAktiv && diagnoseHwId) {
+      const diagBid = bids.find(b => b.handwerker_id === diagnoseHwId)
+      if (diagBid) {
+        pickedAngebotId = diagBid.id
+        vorkaufsrechtTriggered = true
+      }
+    }
+
+    if (!vorkaufsrechtTriggered) {
+      const sortiert = [...bids].sort((a, b) => {
+        const sa = a.smart_score ?? 0
+        const sb = b.smart_score ?? 0
+        if (sb !== sa) return sb - sa
+        return (b.handwerker?.auftraege_anzahl ?? 0) - (a.handwerker?.auftraege_anzahl ?? 0)
+      })
+      pickedAngebotId = sortiert[0].id
+    }
   }
 
   const { data: angebot } = await supabase
@@ -113,13 +149,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Angebot nicht gefunden" }, { status: 404 })
   }
 
+  // Diagnosegebühr-Anrechnung wenn Projekt-Ticket aus Diagnose UND
+  // der Gewinner === Diagnose-HW.
+  let kostenFinal = angebot.preis
+  let diagnoseGebuehrAngerechnet = false
+  let diagnosePreis = 0
+  if (
+    ticket.ticket_typ === "projekt" &&
+    ticket.diagnose_ticket_id &&
+    diagnoseHwId &&
+    angebot.handwerker_id === diagnoseHwId
+  ) {
+    diagnosePreis = await getDiagnosePreis(supabase, ticket.gewerk)
+    kostenFinal = Math.max(0, Math.round((angebot.preis - diagnosePreis) * 100) / 100)
+    diagnoseGebuehrAngerechnet = true
+  }
+
   // Vergabe-Mutationen
   await supabase
     .from("tickets")
     .update({
       status: "in_bearbeitung",
       zugewiesener_hw: angebot.handwerker_id,
-      kosten_final: angebot.preis,
+      kosten_final: kostenFinal,
+      diagnosegebuehr_angerechnet: diagnoseGebuehrAngerechnet || undefined,
     })
     .eq("id", ticketId)
 
@@ -134,19 +187,19 @@ export async function POST(request: NextRequest) {
     .eq("ticket_id", ticketId)
     .neq("id", angebot.id)
 
-  // Provisions-Snapshot mit Surge
+  // Provisions-Snapshot — auf kostenFinal (= Restzahlung wenn Diagnose-Anrechnung)
   const surge = ticket.surge_faktor ?? 1.0
   const isEarlyAdopter = !!profile.early_adopter_bis &&
     new Date(profile.early_adopter_bis).getTime() > Date.now()
   const { finalRate } = effektiveProvisionsRate(0.05, surge, isEarlyAdopter)
-  const calc = calculateCommission(angebot.preis, finalRate)
+  const calc = calculateCommission(kostenFinal, finalRate)
 
   await supabase.from("provisionen").upsert(
     {
       ticket_id: ticketId,
       verwalter_id: user.id,
       handwerker_id: angebot.handwerker_id,
-      auftragswert: angebot.preis,
+      auftragswert: kostenFinal,
       provision_rate: finalRate,
       provision_betrag: calc.provisionBetrag,
       gesamt: calc.gesamt,
@@ -214,11 +267,15 @@ export async function POST(request: NextRequest) {
     angebotId: angebot.id,
     handwerkerId: angebot.handwerker_id,
     auftragswert: angebot.preis,
+    kostenFinal,
+    diagnoseGebuehrAngerechnet,
+    diagnosePreisAngerechnet: diagnoseGebuehrAngerechnet ? diagnosePreis : 0,
     provisionRate: finalRate,
     provisionBetrag: calc.provisionBetrag,
     gesamt: calc.gesamt,
     surgeFaktor: surge,
     isEarlyAdopter,
     plannerStatus,
+    vorkaufsrechtAktiv,
   })
 }

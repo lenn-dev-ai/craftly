@@ -289,19 +289,21 @@ function BefundForm({ ticket, onClose, onGespeichert }: {
       if ("pfad" in r) fotoPfade.push(r.pfad)
     }
 
-    const { error: updErr } = await supabase
-      .from("tickets")
-      .update({
+    const res = await fetch("/api/diagnose/befund-abgeben", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ticket_id: ticket.id,
         befund_text: befundText.trim(),
         befund_fotos: fotoPfade,
         befund_aufwand_stunden: aufwandNum,
         projekt_angebot: angebotNum,
         leistungsumfang: leistungen,
-      })
-      .eq("id", ticket.id)
-
-    if (updErr) {
-      setError("Speichern fehlgeschlagen: " + updErr.message)
+      }),
+    })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      setError("Speichern fehlgeschlagen: " + (json.error ?? res.statusText))
       setSaving(false)
       return
     }
