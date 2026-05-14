@@ -71,12 +71,20 @@ interface SeedResult {
 
 async function createOrFindUser(spec: typeof TEST_USERS.mieter | typeof TEST_USERS.hw_diagnose | typeof TEST_USERS.verwalter): Promise<string> {
   const admin = adminClient()
-  // Existiert User bereits? Wenn ja: löschen, neu erstellen (sauberer State).
-  // listUsers liefert paginiert — für Tests reicht erste Page.
+  // Idempotent: existing user behalten + Password setzen (statt delete+create,
+  // was Race-Conditions im Auth-Service erzeugt).
   const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 })
   const existing = list?.users.find(u => u.email === spec.email)
   if (existing) {
-    await admin.auth.admin.deleteUser(existing.id)
+    const { error: updErr } = await admin.auth.admin.updateUserById(existing.id, {
+      password: spec.password,
+      email_confirm: true,
+      user_metadata: { name: spec.name },
+    })
+    if (updErr) {
+      throw new Error(`User-Update fehlgeschlagen für ${spec.email}: ${updErr.message}`)
+    }
+    return existing.id
   }
 
   const { data: created, error: createErr } = await admin.auth.admin.createUser({
@@ -157,8 +165,6 @@ export async function seedTestUsers(): Promise<SeedResult> {
     rolle: "handwerker",
     email: TEST_USERS.hw_diagnose.email,
     gewerk: TEST_USERS.hw_diagnose.gewerk,
-    lat: TEST_USERS.hw_diagnose.lat,
-    lng: TEST_USERS.hw_diagnose.lng,
     startort_lat: TEST_USERS.hw_diagnose.lat,
     startort_lng: TEST_USERS.hw_diagnose.lng,
     radius_km: TEST_USERS.hw_diagnose.radius_km,
@@ -172,8 +178,6 @@ export async function seedTestUsers(): Promise<SeedResult> {
     rolle: "handwerker",
     email: TEST_USERS.hw_konkurrent.email,
     gewerk: TEST_USERS.hw_konkurrent.gewerk,
-    lat: TEST_USERS.hw_konkurrent.lat,
-    lng: TEST_USERS.hw_konkurrent.lng,
     startort_lat: TEST_USERS.hw_konkurrent.lat,
     startort_lng: TEST_USERS.hw_konkurrent.lng,
     radius_km: TEST_USERS.hw_konkurrent.radius_km,
@@ -192,10 +196,8 @@ export async function seedTestUsers(): Promise<SeedResult> {
     .from("objekte")
     .insert({
       verwalter_id: verwalterId,
-      bezeichnung: TEST_OBJEKT.bezeichnung,
+      name: TEST_OBJEKT.bezeichnung,
       adresse: TEST_OBJEKT.adresse,
-      lat: TEST_OBJEKT.lat,
-      lng: TEST_OBJEKT.lng,
     })
     .select("id")
     .single<{ id: string }>()

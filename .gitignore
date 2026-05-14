@@ -2,7 +2,15 @@ node_modules/
 .next/
 .env.local
 .env
+.env.test.local
+.env.*.local
 *.log
+# Supabase CLI local state
+supabase/.branches/
+supabase/.temp/
+# Stray files (avoid committing accidental redirects)
+/playwright
+/reparo@0.1.0
 .DS_Store
 tsconfig.tsbuildinfo
 craftly-backup-*/

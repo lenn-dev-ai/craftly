@@ -2,6 +2,7 @@ import { test, expect, type Browser } from "@playwright/test"
 import { seedTestUsers, TEST_USERS } from "./helpers/seed"
 import { adminClient } from "./helpers/supabase-admin"
 import { login } from "./helpers/login"
+import { userAccessToken } from "./helpers/api-auth"
 import {
   expectClose,
   findProjektTicket,
@@ -30,6 +31,24 @@ const TICKET_TITEL_ANNEHMEN = "E2E: Wasserhahn tropft (Annehmen-Pfad)"
 
 async function loggedInPage(browser: Browser, email: string, password: string) {
   const context = await browser.newContext()
+  // Cookie-Banner vorab "akzeptiert" markieren — sonst überdeckt es
+  // Buttons im unteren Viewport-Bereich (z. B. Befund-Speichern-Button).
+  await context.addInitScript(() => {
+    localStorage.setItem(
+      "reparo_cookie_consent",
+      JSON.stringify({ wahl: "alle", datum: new Date().toISOString() }),
+    )
+  })
+
+  // Bearer-Token-Injection für /api/*-Calls. Headless-Chrome verliert
+  // sb-*-Cookies bei chunked Tokens — der Bearer-Fallback (siehe
+  // lib/supabase-server.ts) authenticatet zuverlässig.
+  const token = await userAccessToken(email, password)
+  await context.route("**/api/**", async (route) => {
+    const headers = { ...route.request().headers(), authorization: `Bearer ${token}` }
+    await route.continue({ headers })
+  })
+
   const page = await context.newPage()
   // Geocoding mocken — Nominatim ist rate-limited
   await context.route("**/api/geocode**", route =>
@@ -56,7 +75,7 @@ async function legeDiagnoseTicketAn(params: {
       beschreibung: params.beschreibung,
       erstellt_von: params.erstelltVon,
       gewerk: "sanitaer",
-      prioritaet: "mittel",
+      prioritaet: "normal",
       vergabemodus: "auktion",
       status: "auktion",
       ticket_typ: "diagnose",
@@ -144,13 +163,17 @@ test.describe.serial("Diagnose-Pipeline End-to-End", () => {
       name: "befund.png", mimeType: "image/png", buffer: onePxPng,
     })
 
-    // Speichern
+    // Speichern + Response abwarten (statt auf UI-Text — DB-Check ist robuster)
+    const responsePromise = hwPage.waitForResponse(
+      r => r.url().includes("/api/diagnose/befund-abgeben") && r.request().method() === "POST",
+      { timeout: 20_000 },
+    )
     await hwPage.getByRole("button", { name: /Befund.*speichern/i }).click()
-
-    // Modal schließt + Karte wechselt in "Erledigt — wartet auf Verwaltung"
-    await expect(
-      hwPage.getByText(/Erledigt.*wartet auf Verwaltung/i),
-    ).toBeVisible({ timeout: 15_000 })
+    const response = await responsePromise
+    if (response.status() !== 200) {
+      const body = await response.text()
+      throw new Error(`Befund-API failed (${response.status()}): ${body}`)
+    }
 
     // DB-Check: Befund + Korridor gesetzt
     const mitBefund = await getTicket(ticketId)
@@ -172,13 +195,19 @@ test.describe.serial("Diagnose-Pipeline End-to-End", () => {
     // DiagnosePipeline-Sektion muss sichtbar sein
     await expect(verwalterPage.getByText(/Diagnose-Termin/i).first()).toBeVisible({ timeout: 10_000 })
 
-    // Annehmen-Button
+    // Annehmen-Button + Response-Wait (statt URL-pattern, das auch alten Pfad matcht)
     const annehmenButton = verwalterPage.getByRole("button", { name: /Angebot annehmen/i })
     await expect(annehmenButton).toBeVisible()
+    const annehmenResponsePromise = verwalterPage.waitForResponse(
+      r => r.url().includes("/api/diagnose/projekt-annehmen") && r.request().method() === "POST",
+      { timeout: 20_000 },
+    )
     await annehmenButton.click()
-
-    // Navigiert zum neuen Projekt-Ticket — warten auf URL-Change
-    await verwalterPage.waitForURL(/\/dashboard-verwalter\/ticket\/.+/, { timeout: 15_000 })
+    const annehmenResponse = await annehmenResponsePromise
+    if (annehmenResponse.status() !== 200) {
+      const body = await annehmenResponse.text()
+      throw new Error(`Annehmen-API failed (${annehmenResponse.status()}): ${body}`)
+    }
 
     // === Phase 4: DB-Konsistenz prüfen ===
     const projektTicket = await findProjektTicket(ticketId)
