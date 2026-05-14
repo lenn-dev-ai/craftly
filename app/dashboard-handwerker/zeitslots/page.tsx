@@ -118,6 +118,9 @@ export default function ZeitslotsPage() {
 
     const preisInfo = berechneDynamischenPreis(basisPreis, form.datum, form.von, 0, slots.filter((s) => s.status === "verfuegbar").length, false)
 
+    // stunden NICHT übergeben — die Spalte ist GENERATED ALWAYS AS
+    // ((bis - von) in h) STORED in der DB. Postgres lehnt sonst mit
+    // "cannot insert a non-DEFAULT value into column 'stunden'" ab.
     const { error } = await supabase.from("zeitslots").insert({
       handwerker_id: profile.id,
       titel: form.titel || `${GEWERK_LABELS[form.gewerk || profile.gewerk || "allgemein"]} Slot`,
@@ -125,7 +128,6 @@ export default function ZeitslotsPage() {
       datum: form.datum,
       von: form.von,
       bis: form.bis,
-      stunden,
       basis_preis_stunde: basisPreis,
       dynamischer_preis: preisInfo.dynamischerPreis,
       preisfaktor: preisInfo.gesamtFaktor,
@@ -157,6 +159,7 @@ export default function ZeitslotsPage() {
 
     const preisInfo = berechneDynamischenPreis(basisPreis, luecke.datum, luecke.von, 0, slots.filter((s) => s.status === "verfuegbar").length, true)
 
+    // stunden ist DB-generiert (siehe Hinweis im Standard-Insert oben)
     const { error } = await supabase.from("zeitslots").insert({
       handwerker_id: profile.id,
       titel: `Lücken-Slot (${luecke.vorher} → ${luecke.nachher})`,
@@ -164,7 +167,6 @@ export default function ZeitslotsPage() {
       datum: luecke.datum,
       von: luecke.von,
       bis: luecke.bis,
-      stunden: luecke.stunden,
       basis_preis_stunde: basisPreis,
       dynamischer_preis: preisInfo.dynamischerPreis,
       preisfaktor: preisInfo.gesamtFaktor,

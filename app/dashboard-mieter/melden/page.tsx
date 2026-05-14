@@ -178,7 +178,11 @@ export default function MeldenPage() {
       }
     }
 
-    const { error: dbError } = await supabase.from("tickets").insert({
+    // Basis-Payload ohne die KI-Felder. Die werden separat angehängt
+    // damit ein Retry ohne sie möglich ist, falls die Migration
+    // supabase-migration-ki-analyse.sql noch nicht in Live-DB ist
+    // (PostgREST liefert dann "Could not find the 'ki_confidence' column").
+    const basisPayload: Record<string, unknown> = {
       titel: form.titel,
       beschreibung: form.beschreibung,
       wohnung: form.wohnung,
@@ -189,10 +193,19 @@ export default function MeldenPage() {
       einsatzort_adresse: form.einsatzort_adresse || null,
       einsatzort_lat: form.einsatzort_lat,
       einsatzort_lng: form.einsatzort_lng,
+      foto_url: fotoPfad,
+    }
+    const mitKi = {
+      ...basisPayload,
       ki_confidence: kiConfidence,
       ki_schadensart: kiSchadensart,
-      foto_url: fotoPfad,
-    })
+    }
+
+    let dbError = (await supabase.from("tickets").insert(mitKi)).error
+    if (dbError && /ki_confidence|ki_schadensart/i.test(dbError.message)) {
+      // Spalten fehlen noch in der DB → ohne KI-Felder retry
+      dbError = (await supabase.from("tickets").insert(basisPayload)).error
+    }
     if (dbError) { setError("Fehler: " + dbError.message); setLoading(false); return }
     setStep("gesendet")
     setLoading(false)
