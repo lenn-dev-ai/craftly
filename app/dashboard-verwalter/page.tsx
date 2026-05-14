@@ -1,11 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase"
 import { Ticket } from "@/types"
 import { CardListSkeleton, KpiGridSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
+import { TrendingUp, TrendingDown, Minus, PiggyBank } from "lucide-react"
 
 function kostenSchaetzung(t: Ticket): string {
   const titel = (t.titel || "").toLowerCase()
@@ -40,7 +41,7 @@ export default function VerwalterDashboard() {
     if (!user) { router.push("/login"); return }
     const { data } = await supabase
       .from("tickets")
-      .select("*")
+      .select("*, angebote(preis)")
       .eq("erstellt_von", user.id)
       .order("created_at", { ascending: false })
     setTickets(data || [])
@@ -64,6 +65,17 @@ export default function VerwalterDashboard() {
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [load])
+
+  // Auktions-Ersparnis: pro erledigtem Ticket mit mind. 2 Angeboten ist
+  // Baseline = höchstes abgegebenes Gebot (was ohne Wettbewerb gezahlt
+  // worden wäre). Ersparnis = max(angebote.preis) - kosten_final.
+  // Tickets mit nur einem Angebot oder ohne kosten_final liefern keine
+  // sinnvolle Vergleichszahl und werden ignoriert.
+  // Hook muss VOR dem early-return-loading stehen (Rules of Hooks).
+  const ersparnis = useMemo(
+    () => ersparnisAggregat(tickets.filter(t => t.status === "erledigt") as TicketMitGeboten[]),
+    [tickets],
+  )
 
   if (loading) return (
     <div className="p-6 md:p-8 max-w-5xl mx-auto pt-16 md:pt-8">
@@ -142,6 +154,11 @@ export default function VerwalterDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Auktions-Ersparnis-Widget */}
+      {ersparnis.eligibleCount > 0 && (
+        <ErsparnisWidget data={ersparnis} />
       )}
 
       {/* KPI Grid */}
@@ -310,6 +327,186 @@ export default function VerwalterDashboard() {
         </div>
       )}
     </div>
+  )
+}
+
+// ============================================================
+// Auktions-Ersparnis: Berechnung + Widget
+// ============================================================
+
+type TicketMitGeboten = Ticket & { angebote?: Array<{ preis: number | null }> | null }
+
+interface EinzelErsparnis {
+  ticket: TicketMitGeboten
+  baseline: number
+  bezahlt: number
+  absolut: number
+  prozent: number
+}
+
+interface ErsparnisAggregat {
+  eligibleCount: number
+  gesamtAbsolut: number
+  monatAbsolut: number
+  durchschnittProzent: number
+  letzte5: EinzelErsparnis[]
+  trend: { delta: number | null; richtung: "up" | "down" | "flat" | "none" }
+}
+
+function einzelErsparnis(t: TicketMitGeboten): EinzelErsparnis | null {
+  const preise = (t.angebote ?? []).map(a => a.preis ?? 0).filter(p => p > 0)
+  if (preise.length < 2) return null // kein Wettbewerb
+  const bezahlt = t.kosten_final ?? 0
+  if (bezahlt <= 0) return null
+  const baseline = Math.max(...preise)
+  if (baseline <= bezahlt) return null
+  const absolut = baseline - bezahlt
+  const prozent = (absolut / baseline) * 100
+  return { ticket: t, baseline, bezahlt, absolut, prozent }
+}
+
+function ersparnisAggregat(erledigt: TicketMitGeboten[]): ErsparnisAggregat {
+  const einzel = erledigt
+    .map(einzelErsparnis)
+    .filter((e): e is EinzelErsparnis => e !== null)
+
+  const heute = new Date()
+  const dieserMonat = heute.getMonth()
+  const dieserYear = heute.getFullYear()
+  const vorMonatDate = new Date(dieserYear, dieserMonat - 1, 1)
+  const vorMonat = vorMonatDate.getMonth()
+  const vorYear = vorMonatDate.getFullYear()
+
+  const ausDiesemMonat = einzel.filter(e => {
+    const d = new Date(e.ticket.created_at)
+    return d.getMonth() === dieserMonat && d.getFullYear() === dieserYear
+  })
+  const ausVorMonat = einzel.filter(e => {
+    const d = new Date(e.ticket.created_at)
+    return d.getMonth() === vorMonat && d.getFullYear() === vorYear
+  })
+
+  const summe = (arr: EinzelErsparnis[]) => arr.reduce((s, e) => s + e.absolut, 0)
+  const gesamtAbsolut = summe(einzel)
+  const monatAbsolut = summe(ausDiesemMonat)
+  const vorMonatAbsolut = summe(ausVorMonat)
+
+  const durchschnittProzent = einzel.length > 0
+    ? einzel.reduce((s, e) => s + e.prozent, 0) / einzel.length
+    : 0
+
+  let trendDelta: number | null = null
+  let trendRichtung: "up" | "down" | "flat" | "none" = "none"
+  if (vorMonatAbsolut === 0 && monatAbsolut === 0) {
+    trendRichtung = "none"
+  } else if (vorMonatAbsolut === 0) {
+    trendDelta = 100
+    trendRichtung = "up"
+  } else {
+    trendDelta = Math.round(((monatAbsolut - vorMonatAbsolut) / vorMonatAbsolut) * 100)
+    trendRichtung = trendDelta > 0 ? "up" : trendDelta < 0 ? "down" : "flat"
+  }
+
+  // Letzte 5 sortiert nach created_at desc
+  const letzte5 = [...einzel]
+    .sort((a, b) => new Date(b.ticket.created_at).getTime() - new Date(a.ticket.created_at).getTime())
+    .slice(0, 5)
+
+  return {
+    eligibleCount: einzel.length,
+    gesamtAbsolut: Math.round(gesamtAbsolut * 100) / 100,
+    monatAbsolut: Math.round(monatAbsolut * 100) / 100,
+    durchschnittProzent: Math.round(durchschnittProzent * 10) / 10,
+    letzte5,
+    trend: { delta: trendDelta, richtung: trendRichtung },
+  }
+}
+
+function ErsparnisWidget({ data }: { data: ErsparnisAggregat }) {
+  const TrendIcon = data.trend.richtung === "up" ? TrendingUp
+                  : data.trend.richtung === "down" ? TrendingDown
+                  : Minus
+  return (
+    <section className="mb-8 rounded-2xl border border-[#3D8B7A]/25 bg-gradient-to-br from-[#3D8B7A]/[0.06] to-[#3D8B7A]/[0.02] p-6 shadow-sm">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#3D8B7A]/15 flex items-center justify-center">
+            <PiggyBank size={20} className="text-[#3D8B7A]" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[#3D8B7A]">
+              Auktions-Ersparnis
+            </div>
+            <div className="text-xs text-[#6B665E] mt-0.5">
+              Versus höchstes abgegebenes Gebot · {data.eligibleCount} Ticket{data.eligibleCount === 1 ? "" : "s"}
+            </div>
+          </div>
+        </div>
+        {data.trend.delta !== null && (
+          <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full ${
+            data.trend.richtung === "up" ? "bg-[#3D8B7A]/15 text-[#3D8B7A]"
+            : data.trend.richtung === "down" ? "bg-[#C4574B]/10 text-[#C4574B]"
+            : "bg-[#EDE8E1] text-[#6B665E]"
+          }`}>
+            <TrendIcon size={12} /> {Math.abs(data.trend.delta)} % vs. Vormonat
+          </span>
+        )}
+      </div>
+
+      {/* Drei-Spalten KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-[#8C857B] font-medium mb-1">
+            Gesamt
+          </div>
+          <div className="text-3xl font-bold tabular-nums text-[#3D8B7A]">
+            {data.gesamtAbsolut.toLocaleString("de", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €
+          </div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-[#8C857B] font-medium mb-1">
+            Diesen Monat
+          </div>
+          <div className="text-2xl font-semibold tabular-nums text-[#2D2A26]">
+            {data.monatAbsolut.toLocaleString("de", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €
+          </div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-[#8C857B] font-medium mb-1">
+            Ø pro Auftrag
+          </div>
+          <div className="text-2xl font-semibold tabular-nums text-[#2D2A26]">
+            {data.durchschnittProzent.toFixed(1)} %
+          </div>
+        </div>
+      </div>
+
+      {/* Letzte 5 Liste */}
+      {data.letzte5.length > 0 && (
+        <div className="pt-4 border-t border-[#3D8B7A]/15">
+          <div className="text-[10px] uppercase tracking-wider text-[#8C857B] font-medium mb-2">
+            Letzte abgeschlossene Aufträge
+          </div>
+          <ul className="space-y-1">
+            {data.letzte5.map(e => (
+              <li key={e.ticket.id} className="flex items-center gap-3 text-sm py-1">
+                <span className="flex-1 min-w-0 truncate text-[#2D2A26]">{e.ticket.titel}</span>
+                <span className="text-xs text-[#8C857B] tabular-nums hidden sm:inline">
+                  {e.bezahlt.toLocaleString("de")} € statt {e.baseline.toLocaleString("de")} €
+                </span>
+                <span className="font-semibold tabular-nums text-[#3D8B7A] flex-shrink-0">
+                  − {e.absolut.toLocaleString("de", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €
+                </span>
+                <span className="text-[10px] font-bold text-[#3D8B7A] bg-[#3D8B7A]/10 px-1.5 py-0.5 rounded-full tabular-nums flex-shrink-0">
+                  −{Math.round(e.prozent)} %
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
   )
 }
 
