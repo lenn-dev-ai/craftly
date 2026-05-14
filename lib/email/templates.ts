@@ -405,6 +405,72 @@ export function nachtragAbgelehntEmail(params: {
 }
 
 // =====================================================================
+// 10. Bewertungs-Reminder an Mieter (M-W2)
+// =====================================================================
+export function bewertungReminderEmail(params: {
+  mieterName: string
+  handwerkerName: string
+  ticketTitel: string
+  ticketId: string
+}): { subject: string; html: string } {
+  const subject = `1 Bewertung offen: „${params.ticketTitel}“`
+  const html = emailLayout("Wie war dein Termin?", `
+    <p style="margin:0 0 16px;color:${COLORS.text};font-size:16px;line-height:1.6;">
+      Hallo ${escapeHtml(params.mieterName)},<br><br>
+      vor ein paar Tagen wurde der Auftrag <strong>${escapeHtml(params.ticketTitel)}</strong>
+      von ${escapeHtml(params.handwerkerName)} abgeschlossen.
+    </p>
+    <p style="margin:0 0 16px;color:${COLORS.text};font-size:15px;line-height:1.6;">
+      Deine Bewertung hilft anderen Mietern und stärkt gute Handwerker.
+      Es dauert nur 30 Sekunden.
+    </p>
+    ${ctaButton("Jetzt bewerten", `${SITE_URL}/dashboard-mieter/ticket/${params.ticketId}`)}
+    <p style="margin:0;color:${COLORS.textMuted};font-size:13px;line-height:1.6;">
+      Diese Erinnerung kommt nur einmal — wir wollen nicht stören.
+    </p>
+  `)
+  return { subject, html }
+}
+
+// =====================================================================
+// 11. Stille-HW-Reaktivierungs-Mail (M-W4)
+// =====================================================================
+export function stilleHwReaktivierungEmail(params: {
+  handwerkerName: string
+  auftraege: Array<{ id: string; titel: string; gewerk: string; einsatzort: string; entfernungKm: number }>
+}): { subject: string; html: string } {
+  const top = params.auftraege.slice(0, 3)
+  const subject = top.length === 1
+    ? `1 passender Auftrag in deiner Nähe: „${top[0].titel}“`
+    : `${top.length} passende Aufträge in deiner Nähe`
+  const liste = top.map(a => `
+    <div style="background:${COLORS.bg};border:1px solid ${COLORS.border};border-radius:12px;padding:16px;margin:0 0 8px;">
+      <div style="font-weight:600;color:${COLORS.text};font-size:15px;margin-bottom:4px;">${escapeHtml(a.titel)}</div>
+      <div style="font-size:13px;color:${COLORS.textMuted};margin-bottom:8px;">
+        ${escapeHtml(a.gewerk)} · ${escapeHtml(a.einsatzort || "Adresse auf Anfrage")} · ${a.entfernungKm.toFixed(1)} km
+      </div>
+      <a href="${SITE_URL}/dashboard-handwerker/angebot/${a.id}" style="display:inline-block;padding:8px 16px;background:${COLORS.accent};color:#ffffff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">
+        Angebot abgeben →
+      </a>
+    </div>
+  `).join("")
+  const html = emailLayout("Aufträge in deiner Nähe", `
+    <p style="margin:0 0 16px;color:${COLORS.text};font-size:16px;line-height:1.6;">
+      Hallo ${escapeHtml(params.handwerkerName)},<br><br>
+      du hast schon eine Weile kein Angebot mehr abgegeben. Diese Aufträge
+      passen zu deinem Gewerk und Radius:
+    </p>
+    ${liste}
+    ${ctaButton("Alle verfügbaren Aufträge", `${SITE_URL}/dashboard-handwerker`)}
+    <p style="margin:16px 0 0;color:${COLORS.textMuted};font-size:13px;line-height:1.6;">
+      Diese Mail kommt höchstens alle 14 Tage. Wenn du keine mehr willst,
+      melde dich bei uns.
+    </p>
+  `)
+  return { subject, html }
+}
+
+// =====================================================================
 // 5. Absage-Mail an andere Bieter
 // =====================================================================
 export function absageEmail(params: {
