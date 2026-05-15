@@ -46,6 +46,7 @@ export interface Ticket {
   vergabemodus: "direkt" | "auktion"; gewerk?: string
   objekt_id?: string; wohnung?: string; raum?: string
   erstellt_von: string; zugewiesener_hw?: string
+  verwalter_id?: string | null
   auktion_ende?: string; kosten_final?: number; created_at: string
   einsatzort_adresse?: string; einsatzort_lat?: number; einsatzort_lng?: number
   objekt?: Objekt; objekte?: Objekt; ersteller?: UserProfile

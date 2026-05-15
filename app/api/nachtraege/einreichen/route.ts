@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, titel, status, zugewiesener_hw, erstellt_von, kosten_final, projekt_angebot")
+    .select("id, titel, status, zugewiesener_hw, erstellt_von, verwalter_id, kosten_final, projekt_angebot")
     .eq("id", ticketId)
     .single<{
       id: string
@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
       status: string
       zugewiesener_hw: string | null
       erstellt_von: string
+      verwalter_id: string | null
       kosten_final: number | null
       projekt_angebot: number | null
     }>()
@@ -121,7 +122,9 @@ export async function POST(request: NextRequest) {
   if (!autoGenehmigt) {
     void (async () => {
       const [{ data: verwalter }, { data: hw }] = await Promise.all([
-        supabase.from("profiles").select("email, name").eq("id", ticket.erstellt_von).single<{ email: string | null; name: string | null }>(),
+        // FIX-6: Verwalter (verwalter_id) bekommt die Nachtrags-Mail,
+        // nicht der Mieter (= erstellt_von bei Mieter-Tickets).
+        supabase.from("profiles").select("email, name").eq("id", ticket.verwalter_id ?? ticket.erstellt_von).single<{ email: string | null; name: string | null }>(),
         supabase.from("profiles").select("name, firma").eq("id", user.id).single<{ name: string | null; firma: string | null }>(),
       ])
       if (!verwalter?.email) return

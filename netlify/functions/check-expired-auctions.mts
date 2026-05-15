@@ -9,8 +9,10 @@ export default async () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // Admin-Auth: Supabase Service Role Key für Server-zu-Server Calls
-        "x-cron-secret": process.env.CRON_SECRET || "netlify-scheduled",
+        // CRON_SECRET muss in Netlify gesetzt sein. Kein Fallback —
+        // sonst würde der Cron den Auth-Check via beliebigem String
+        // bypassen können.
+        "x-cron-secret": process.env.CRON_SECRET || "",
       },
     });
 

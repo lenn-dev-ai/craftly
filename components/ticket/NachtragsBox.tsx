@@ -63,7 +63,9 @@ export default function NachtragsBox({ ticket, currentUser, onReload }: Props) {
   const isVerwalter = currentUser?.rolle === "verwalter" || currentUser?.rolle === "admin"
   const isHandwerker = currentUser?.rolle === "handwerker"
   const istZugewiesenerHw = isHandwerker && currentUser?.id === ticket.zugewiesener_hw
-  const istErsteller = currentUser?.id === ticket.erstellt_von
+  // FIX-4: bei Mieter-Tickets ist erstellt_von der Mieter — der zuständige
+  // Verwalter muss aber Nachträge genehmigen können. Beide IDs zulassen.
+  const istErsteller = currentUser?.id === ticket.erstellt_von || currentUser?.id === ticket.verwalter_id
   const offen = nachtraege.filter(n => n.status === "offen")
 
   const ursprungspreis = ticket.projekt_angebot && ticket.projekt_angebot > 0

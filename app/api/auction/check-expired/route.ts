@@ -42,7 +42,13 @@ export async function POST(request: NextRequest) {
   const authViaSecret =
     !!cronSecret && request.headers.get("x-cron-secret") === cronSecret
 
-  const supabase = createServerSupabaseClient()
+  // FIX-1: Im Cron-Pfad (Secret-Auth) Service-Role nutzen — sonst greift
+  // RLS und die tickets-Query unten findet 0 Rows (kein User-Kontext) →
+  // Auktionen werden nie automatisch geschlossen.
+  // Im Admin-Pfad bleibt der User-Client (RLS+Admin-Policy fängt das auf).
+  const supabase = authViaSecret
+    ? createServiceRoleClient()
+    : createServerSupabaseClient()
   if (!authViaSecret) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

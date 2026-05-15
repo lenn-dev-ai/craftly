@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, titel, status, auktion_ende, erstellt_von")
+    .select("id, titel, status, auktion_ende, erstellt_von, verwalter_id")
     .eq("id", ticketId)
     .single<{
       id: string
@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       status: string
       auktion_ende: string | null
       erstellt_von: string
+      verwalter_id: string | null
     }>()
   if (!ticket) return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 })
   if (ticket.status !== "auktion") {
@@ -95,7 +96,10 @@ export async function POST(request: NextRequest) {
       supabase
         .from("profiles")
         .select("email, name")
-        .eq("id", ticket.erstellt_von)
+        // FIX-3: Bei Mieter-Tickets ist erstellt_von der Mieter — der
+        // muss aber nicht die Bid-Mail bekommen. Der zuständige Verwalter
+        // entscheidet, also verwalter_id bevorzugen.
+        .eq("id", ticket.verwalter_id ?? ticket.erstellt_von)
         .single<{ email: string | null; name: string | null }>(),
       supabase
         .from("profiles")

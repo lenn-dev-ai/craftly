@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase"
 import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
 import { Stethoscope, MapPin, Clock, AlertCircle, X } from "lucide-react"
 import { GEWERK_LABELS } from "@/types"
+import { useToast } from "@/components/Toast"
 
 // ============================================================
 // Typen
@@ -151,14 +152,7 @@ export default function DiagnosenPage() {
               <TicketCard
                 key={t.id}
                 ticket={t}
-                action={
-                  <button
-                    onClick={() => router.push(`/dashboard-handwerker/ticket/${t.id}`)}
-                    className="text-xs font-medium border border-[#3D8B7A] text-accent px-3 py-1.5 rounded-lg hover:bg-accent/5 transition-colors w-full"
-                  >
-                    Termin annehmen →
-                  </button>
-                }
+                action={<TerminAnnehmenButton ticketId={t.id} onSuccess={load} />}
               />
             ))}
           </div>
@@ -190,6 +184,51 @@ export default function DiagnosenPage() {
 // ============================================================
 // Sub-Components
 // ============================================================
+
+// FIX-5: Race-sicherer "Termin annehmen"-Button via API.
+// Vorher nur router.push() — kein Claim, zwei HW konnten parallel klicken.
+function TerminAnnehmenButton({ ticketId, onSuccess }: {
+  ticketId: string
+  onSuccess: () => void
+}) {
+  const router = useRouter()
+  const { show } = useToast()
+  const [busy, setBusy] = useState(false)
+
+  async function annehmen() {
+    setBusy(true)
+    try {
+      const res = await fetch("/api/diagnose/termin-annehmen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticket_id: ticketId }),
+      })
+      if (res.status === 409) {
+        show("Termin wurde gerade von einem anderen Handwerker übernommen.", "error")
+        await onSuccess()  // Liste neu laden
+        return
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        show(data?.error || "Übernahme fehlgeschlagen", "error")
+        return
+      }
+      router.push(`/dashboard-handwerker/ticket/${ticketId}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={annehmen}
+      disabled={busy}
+      className="text-xs font-medium border border-accent text-accent px-3 py-1.5 rounded-lg hover:bg-accent/5 transition-colors w-full disabled:opacity-50"
+    >
+      {busy ? "Übernehme…" : "Termin annehmen →"}
+    </button>
+  )
+}
 
 function TicketCard({ ticket, badge, action, preisHinweis }: {
   ticket: DiagnoseTicket

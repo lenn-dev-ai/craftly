@@ -111,24 +111,22 @@ test.describe.serial("Diagnose-Pipeline End-to-End", () => {
     // Ticket-Karte muss sichtbar sein
     await expect(hwPage.getByText(TICKET_TITEL_ANNEHMEN)).toBeVisible({ timeout: 15_000 })
 
-    // "Termin annehmen" Button → setzt zugewiesener_hw
-    // (geht via /dashboard-handwerker/ticket/[id] Route)
+    // FIX-5: "Termin annehmen" → echte API /api/diagnose/termin-annehmen
+    // (atomares Claim, race-sicher). Vorher hat der Test admin-client
+    // genutzt um den HW manuell zu setzen — kaschierte den Bug, dass
+    // der Button gar keine API gerufen hat.
     const annehmenBtn = hwPage
       .locator("article")
       .filter({ hasText: TICKET_TITEL_ANNEHMEN })
       .getByRole("button", { name: /Termin annehmen/i })
+    const annehmenResPromise = hwPage.waitForResponse(
+      r => r.url().includes("/api/diagnose/termin-annehmen") && r.request().method() === "POST",
+      { timeout: 15_000 },
+    )
     await annehmenBtn.click()
-
-    // Wir landen auf Ticket-Detail — manuell zugewiesener_hw setzen
-    // weil die "Termin annehmen"-UI-Logik (in TicketDetailView)
-    // möglicherweise nicht direkt verdrahtet ist. Defensive Annahme:
-    // Setze zugewiesener_hw direkt, dann lade Diagnosen-Seite neu.
-    {
-      const admin = adminClient()
-      await admin
-        .from("tickets")
-        .update({ zugewiesener_hw: seed.hwDiagnose.id })
-        .eq("id", ticketId)
+    const annehmenRes = await annehmenResPromise
+    if (annehmenRes.status() !== 200) {
+      throw new Error(`termin-annehmen failed (${annehmenRes.status()}): ${await annehmenRes.text()}`)
     }
 
     // === Phase 2: HW füllt Befund ===

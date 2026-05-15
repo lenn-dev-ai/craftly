@@ -66,7 +66,10 @@ export default function DiagnosePipeline({ ticket, currentUser, onReload }: Prop
   const [confirmAuktion, setConfirmAuktion] = useState(false)
 
   const isVerwalter = currentUser?.rolle === "verwalter" || currentUser?.rolle === "admin"
-  const isErsteller = currentUser?.id === ticket.erstellt_von
+  // FIX-4: bei Mieter-Tickets ist erstellt_von der Mieter — der zuständige
+  // Verwalter (verwalter_id) muss die Aktions-Buttons (Annehmen, In
+  // Auktion) sehen. Sonst werden APIs nie aus dem UI heraus aufgerufen.
+  const isErsteller = currentUser?.id === ticket.erstellt_von || currentUser?.id === ticket.verwalter_id
   const typ = ticket.ticket_typ ?? "standard"
 
   if (typ === "standard") return null
