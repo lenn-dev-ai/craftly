@@ -1,20 +1,58 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { type NextRequest, NextResponse } from "next/server"
 
-// Passive Token-Refresh-Middleware.
+// Auth-Middleware für geschützte App-Routen.
 //
-// Die Auth-Gates für Dashboard-Routes laufen client-side in den
-// Layouts (siehe components/layout/RoleGuard.tsx + dashboard-admin/layout.tsx).
-// Diese Middleware redirected NICHT — sie versucht nur, sb-*-auth-Cookies
-// zu erneuern, damit Server-Components und API-Routes den User finden.
-//
-// Hintergrund: Auf Netlify Edge konnte supabase.auth.getUser() in der
-// Middleware keinen User auflösen (Network/Cookie-Quirk), wodurch ein
-// Redirect-Loop entstand (Middleware → /login → Client erkennt Session
-// → Dashboard → Middleware → …). Lösung: kein Middleware-Redirect mehr,
-// nur Best-Effort-Refresh. Schlägt der Refresh fehl, ist es ein No-op.
+// Wichtig: Client-side Guards in Layouts sind weiterhin sinnvoll für UX
+// und Rollenwechsel, dürfen aber nicht der erste Schutzwall sein. Ohne
+// serverseitige Prüfung würden geschützte Seiten ihr initiales HTML schon
+// an nicht angemeldete Besucher ausliefern und erst danach redirecten.
 
 interface CookieToSet { name: string; value: string; options?: CookieOptions }
+
+const roleDashboard: Record<string, string> = {
+  admin: "/dashboard-admin",
+  verwalter: "/dashboard-verwalter",
+  handwerker: "/dashboard-handwerker",
+  mieter: "/dashboard-mieter",
+}
+
+const routeRoles = [
+  { prefix: "/admin", role: "admin" },
+  { prefix: "/dashboard-admin", role: "admin" },
+  { prefix: "/dashboard-verwalter", role: "verwalter" },
+  { prefix: "/dashboard-handwerker", role: "handwerker" },
+  { prefix: "/dashboard-mieter", role: "mieter" },
+] as const
+
+function loginRedirect(request: NextRequest) {
+  const url = request.nextUrl.clone()
+  const redirectTo = `${request.nextUrl.pathname}${request.nextUrl.search}`
+  url.pathname = "/login"
+  url.search = ""
+  url.searchParams.set("redirectTo", redirectTo)
+  return NextResponse.redirect(url)
+}
+
+function dashboardForRole(role: string | null | undefined) {
+  return role ? roleDashboard[role] : undefined
+}
+
+function isProtectedAppPath(pathname: string) {
+  return (
+    pathname === "/ticket" ||
+    pathname.startsWith("/ticket/") ||
+    routeRoles.some(({ prefix }) =>
+      pathname === prefix || pathname.startsWith(`${prefix}/`),
+    )
+  )
+}
+
+function requiredRoleForPath(pathname: string) {
+  return routeRoles.find(({ prefix }) =>
+    pathname === prefix || pathname.startsWith(`${prefix}/`),
+  )?.role
+}
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request })
@@ -41,11 +79,45 @@ export async function middleware(request: NextRequest) {
       },
     )
 
-    // Best-Effort Refresh. Failure ist OK — der Client refresht ohnehin
-    // selbst über supabase-js, und client-side Guards greifen sowieso.
-    await supabase.auth.getUser()
+    const pathname = request.nextUrl.pathname
+    const protectedAppPath = isProtectedAppPath(pathname)
+
+    const { data: { user }, error } = await supabase.auth.getUser()
+
+    // API-Routes nutzen die Middleware nur zum Cookie-Refresh. Sie sollen
+    // JSON-Statuscodes selbst entscheiden statt HTML-Redirects zu bekommen.
+    if (!protectedAppPath) return response
+
+    if (error || !user) return loginRedirect(request)
+
+    const requiredRole = requiredRoleForPath(pathname)
+    if (!requiredRole) return response
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("rolle")
+      .eq("id", user.id)
+      .single()
+
+    if (profileError || !profile?.rolle) return loginRedirect(request)
+
+    if (profile.rolle === "admin" || profile.rolle === requiredRole) {
+      return response
+    }
+
+    const fallback = dashboardForRole(profile.rolle)
+    if (fallback) {
+      const url = request.nextUrl.clone()
+      url.pathname = fallback
+      url.search = ""
+      return NextResponse.redirect(url)
+    }
+
+    return loginRedirect(request)
   } catch {
-    // Edge-Runtime-Quirk auf Netlify: ignorieren, response passthrough
+    if (isProtectedAppPath(request.nextUrl.pathname)) {
+      return loginRedirect(request)
+    }
   }
 
   return response
@@ -53,6 +125,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/admin",
     "/dashboard-:path*",
     "/admin/:path*",
     "/ticket/:path*",
