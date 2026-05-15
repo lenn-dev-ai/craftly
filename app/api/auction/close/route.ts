@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
 import { reScoreTicket } from "@/lib/auction/scoring-pipeline"
 import {
   effektiveProvisionsRate,
@@ -72,8 +72,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Auktion nicht aktiv" }, { status: 422 })
   }
 
+  const admin = createServiceRoleClient()
+
   // Stelle sicher dass Smart-Scores aktuell sind
-  await reScoreTicket(supabase, ticketId)
+  await reScoreTicket(admin, ticketId)
 
   // Diagnose-HW herausfinden (für Vorkaufsrecht + Anrechnung)
   let diagnoseHwId: string | null = null
@@ -167,7 +169,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Vergabe-Mutationen
-  await supabase
+  const { error: ticketUpdateErr } = await admin
     .from("tickets")
     .update({
       status: "in_bearbeitung",
@@ -176,17 +178,26 @@ export async function POST(request: NextRequest) {
       diagnosegebuehr_angerechnet: diagnoseGebuehrAngerechnet || undefined,
     })
     .eq("id", ticketId)
+  if (ticketUpdateErr) {
+    return NextResponse.json({ error: "Ticket-Vergabe fehlgeschlagen: " + ticketUpdateErr.message }, { status: 500 })
+  }
 
-  await supabase
+  const { error: angebotAnnehmenErr } = await admin
     .from("angebote")
     .update({ status: "angenommen" })
     .eq("id", angebot.id)
+  if (angebotAnnehmenErr) {
+    return NextResponse.json({ error: "Angebot-Annahme fehlgeschlagen: " + angebotAnnehmenErr.message }, { status: 500 })
+  }
 
-  await supabase
+  const { error: angeboteAblehnenErr } = await admin
     .from("angebote")
     .update({ status: "abgelehnt" })
     .eq("ticket_id", ticketId)
     .neq("id", angebot.id)
+  if (angeboteAblehnenErr) {
+    return NextResponse.json({ error: "Andere Angebote konnten nicht abgelehnt werden: " + angeboteAblehnenErr.message }, { status: 500 })
+  }
 
   // Provisions-Snapshot — auf kostenFinal (= Restzahlung wenn Diagnose-Anrechnung)
   const surge = ticket.surge_faktor ?? 1.0
@@ -195,7 +206,7 @@ export async function POST(request: NextRequest) {
   const { finalRate } = effektiveProvisionsRate(0.05, surge, isEarlyAdopter)
   const calc = calculateCommission(kostenFinal, finalRate)
 
-  await supabase.from("provisionen").upsert(
+  const { error: provisionErr } = await admin.from("provisionen").upsert(
     {
       ticket_id: ticketId,
       verwalter_id: ticket.verwalter_id ?? user.id,
@@ -208,12 +219,15 @@ export async function POST(request: NextRequest) {
     },
     { onConflict: "ticket_id" },
   )
+  if (provisionErr) {
+    return NextResponse.json({ error: "Provisions-Snapshot fehlgeschlagen: " + provisionErr.message }, { status: 500 })
+  }
 
   // Tagesplan aktualisieren — best-effort, blockiert die Vergabe nicht
   let plannerStatus: string | undefined
   if (angebot.fruehester_termin) {
     const result = await fuegeTicketZuTagesplan(
-      supabase,
+      admin,
       angebot.handwerker_id,
       ticketId,
       angebot.fruehester_termin,

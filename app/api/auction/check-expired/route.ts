@@ -270,12 +270,12 @@ export async function POST(request: NextRequest) {
   const admin = createServiceRoleClient()
   const { data: abgelaufeneDiagnosen } = await admin
     .from("tickets")
-    .select("id, titel, erstellt_von")
+    .select("id, titel, erstellt_von, verwalter_id")
     .eq("ticket_typ", "diagnose")
     .eq("status", "auktion")
     .is("zugewiesener_hw", null)
     .lt("diagnose_ablauf", jetzt)
-    .returns<Array<{ id: string; titel: string; erstellt_von: string }>>()
+    .returns<Array<{ id: string; titel: string; erstellt_von: string; verwalter_id: string | null }>>()
 
   const diagnoseErgebnisse: Array<{ ticketId: string; titel: string }> = []
   for (const t of abgelaufeneDiagnosen ?? []) {
@@ -293,7 +293,7 @@ export async function POST(request: NextRequest) {
       const { data: erst } = await admin
         .from("profiles")
         .select("email, name")
-        .eq("id", t.erstellt_von)
+        .eq("id", t.verwalter_id ?? t.erstellt_von)
         .single<{ email: string | null; name: string | null }>()
       if (!erst?.email) return
       const { subject, html } = auktionAbgelaufenEmail({

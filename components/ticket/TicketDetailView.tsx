@@ -4,11 +4,6 @@ import { useRouter, useParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket, Angebot, Nachricht, UserProfile, Einladung, Bewertung, formatGewerk } from "@/types"
 import { Badge, PrioBadge, TypBadge, Avatar, Button, Card, Input, LoadingSpinner } from "@/components/ui"
-import {
-  calculateCommission,
-  getEffectiveRate,
-  formatEUR,
-} from "@/lib/pricing/commission"
 import PreisAufschluesselung from "@/components/pricing/PreisAufschluesselung"
 import DiagnosePipeline from "@/components/ticket/DiagnosePipeline"
 import NachtragsBox from "@/components/ticket/NachtragsBox"
@@ -236,104 +231,19 @@ export default function TicketDetailView() {
     setSubmittingBid(false)
   }
 
-  async function vergeben(angebotId: string, handwerkerId: string) {
-    const supabase = createClient()
-    const angebot = (ticket?.angebote || []).find(a => a.id === angebotId)
-    if (!angebot || !currentUser) return
+  async function vergeben(angebotId: string) {
+    if (!currentUser) return
 
-    // FIX-2 (Audit P1): jeder Write wird auf error geprüft.
-    // Bei Teilfehler (z.B. RLS-Block, Race) bricht die Vergabe ab und
-    // der User sieht eine konkrete Meldung statt stillem inkonsistenten
-    // DB-State. Ideal wäre eine atomare Server-Transaktion (TODO),
-    // diese Defensive-Checks sind die Zwischenlösung.
-
-    // 1) Ticket aktualisieren
-    {
-      const { error } = await supabase.from("tickets").update({
-        status: "in_bearbeitung",
-        zugewiesener_hw: handwerkerId,
-        kosten_final: angebot.preis,
-      }).eq("id", id)
-      if (error) {
-        show("Vergabe fehlgeschlagen: " + error.message, "error")
-        return
-      }
-    }
-
-    // 2) Angebote: dieses akzeptiert, Rest abgelehnt
-    {
-      const { error } = await supabase.from("angebote").update({ status: "angenommen" }).eq("id", angebotId)
-      if (error) {
-        show("Angebot-Update fehlgeschlagen: " + error.message, "error")
-        return
-      }
-    }
-    {
-      const { error } = await supabase.from("angebote").update({ status: "abgelehnt" }).eq("ticket_id", id).neq("id", angebotId)
-      if (error) {
-        show("Andere Angebote ablehnen fehlgeschlagen: " + error.message, "error")
-        return
-      }
-    }
-
-    // 3) Provisions-Snapshot mit Surge-Faktor (aus Auktions-Konfig)
-    const { rate: basisRate, isEarlyAdopter } = await getEffectiveRate(supabase, currentUser)
-    const surge = (ticket as { surge_faktor?: number } | null)?.surge_faktor ?? 1.0
-    const finalRate = basisRate === 0 ? 0 : Math.round(basisRate * surge * 10000) / 10000
-    const { provisionBetrag, gesamt } = calculateCommission(angebot.preis, finalRate)
-    {
-      const { error } = await supabase.from("provisionen").upsert(
-        {
-          ticket_id: id,
-          verwalter_id: currentUser.id,
-          handwerker_id: handwerkerId,
-          auftragswert: angebot.preis,
-          provision_rate: finalRate,
-          provision_betrag: provisionBetrag,
-          gesamt,
-          is_early_adopter: isEarlyAdopter,
-        },
-        { onConflict: "ticket_id" },
-      )
-      if (error) {
-        show("Provisions-Snapshot fehlgeschlagen: " + error.message, "error")
-        return
-      }
-    }
-
-    // 4) Termin im Handwerker-Kalender + Tagesplan-Sync
-    // Best-effort: Termin-Insert nicht abbruchkritisch (Auftrag steht
-    // bereits, HW kann den Termin separat anlegen wenn nötig).
-    if (angebot.fruehester_termin) {
-      const { error: terminErr } = await supabase.from("termine").insert({
-        handwerker_id: handwerkerId,
-        ticket_id: id,
-        titel: ticket?.titel || "Auftrag",
-        datum: angebot.fruehester_termin,
-        von: "09:00",
-        bis: "12:00",
-        einsatzort_adresse: ticket?.einsatzort_adresse || null,
-        einsatzort_lat: ticket?.einsatzort_lat ?? null,
-        einsatzort_lng: ticket?.einsatzort_lng ?? null,
-      })
-      if (terminErr) {
-        show("Hinweis: Termin im HW-Kalender konnte nicht angelegt werden", "info")
-      }
-      const { fuegeTicketZuTagesplan } = await import("@/lib/auction/routen-planung-sync")
-      await fuegeTicketZuTagesplan(supabase, handwerkerId, id, angebot.fruehester_termin)
-    }
-
-    // 5) System-Nachricht im Ticket-Chat (best-effort)
-    const hw = angebot.handwerker as { firma?: string; name?: string } | undefined
-    const hwName = hw?.firma || hw?.name || "Handwerker"
-    const datumStr = angebot.fruehester_termin
-      ? new Date(angebot.fruehester_termin).toLocaleDateString("de", { day: "2-digit", month: "long", year: "numeric" })
-      : "demnächst"
-    await supabase.from("nachrichten").insert({
-      ticket_id: id,
-      absender_id: currentUser.id,
-      text: `✓ Auftrag vergeben: ${hwName} kommt am ${datumStr}. Preis: ${formatEUR(angebot.preis)}.`,
+    const res = await fetch("/api/auction/close", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ticket_id: id, angebot_id: angebotId }),
     })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      show(data?.error || "Vergabe fehlgeschlagen", "error")
+      return
+    }
 
     show("Auftrag vergeben.", "success")
     setVergebenConfirm(null)
@@ -713,7 +623,7 @@ export default function TicketDetailView() {
                           {vergebenConfirm === a.id ? (
                             <>
                               <span className="text-xs text-ink-muted">Wirklich an {hw?.name} vergeben?</span>
-                              <Button size="sm" onClick={() => vergeben(a.id, a.handwerker_id)}>Ja, vergeben</Button>
+                              <Button size="sm" onClick={() => vergeben(a.id)}>Ja, vergeben</Button>
                               <button onClick={() => setVergebenConfirm(null)} className="text-xs text-ink-muted hover:text-ink-secondary">Abbrechen</button>
                             </>
                           ) : (
