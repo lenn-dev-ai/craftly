@@ -145,7 +145,7 @@ export default function DiagnosePreisePage() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-3xl mx-auto">
+      <div className="p-6 max-w-3xl mx-auto pt-16 md:pt-8">
         <PageHeaderSkeleton />
         <CardListSkeleton count={5} rows={1} />
       </div>
@@ -153,7 +153,7 @@ export default function DiagnosePreisePage() {
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-6">
+    <div className="p-6 max-w-3xl mx-auto space-y-6 pt-16 md:pt-8">
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-[#2D2A26] flex items-center gap-2">

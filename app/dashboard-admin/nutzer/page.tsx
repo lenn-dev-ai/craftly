@@ -132,7 +132,7 @@ export default function NutzerPage() {
   const risiken = kiRisiko(users)
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-8 max-w-6xl mx-auto pt-16 md:pt-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-extrabold text-[#2D2A26] tracking-tight">Nutzer-Verwaltung</h1>

@@ -97,15 +97,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex min-h-screen bg-[#FAF8F5]">
         {/* Mobile Hamburger — z-[60], damit der ✕-Button über der
             offenen Sidebar (z-50) klickbar bleibt. Sonst überdeckt die
-            Sidebar (später im DOM, gleicher z-index) den Toggle. */}
+            Sidebar (später im DOM, gleicher z-index) den Toggle.
+            Offener Zustand: anderer Hintergrund, sonst weiß-auf-weiß. */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden fixed top-4 left-4 z-[60] w-10 h-10 bg-white border border-[#EDE8E1] rounded-xl flex items-center justify-center text-[#2D2A26] hover:bg-[#F5F0EB] transition-all shadow-sm"
+          className={`md:hidden fixed top-4 left-4 z-[60] w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm ${
+            mobileOpen
+              ? "bg-[#F5F0EB] border border-[#D5CFC7] text-[#2D2A26]"
+              : "bg-white border border-[#EDE8E1] text-[#2D2A26] hover:bg-[#F5F0EB]"
+          }`}
           aria-label={mobileOpen ? "Admin-Menü schließen" : "Admin-Menü öffnen"}
           aria-expanded={mobileOpen}
         >
           {mobileOpen ? (
-            <span className="text-lg">✕</span>
+            <span className="text-xl font-bold">✕</span>
           ) : (
             <div className="flex flex-col gap-1">
               <div className="w-4 h-0.5 bg-[#2D2A26] rounded-full" />

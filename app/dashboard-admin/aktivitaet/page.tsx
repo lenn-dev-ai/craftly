@@ -71,7 +71,7 @@ export default function AktivitaetPage() {
   // Empty-State: frische Plattform ohne jegliche Aktivität (F-2)
   if (data.totalT === 0 && data.totalU === 0 && data.totalA === 0) {
     return (
-      <div className="p-8 max-w-6xl mx-auto">
+      <div className="p-8 max-w-6xl mx-auto pt-16 md:pt-8">
         <h1 className="text-2xl font-extrabold text-[#2D2A26] tracking-tight mb-1">Aktivität</h1>
         <p className="text-sm text-gray-500 mb-8">Plattform-Aktivität der letzten 7 Tage</p>
         <div className="bg-white border border-[#EDE8E1] rounded-2xl p-10 text-center">
@@ -97,7 +97,7 @@ export default function AktivitaetPage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-8 max-w-6xl mx-auto pt-16 md:pt-8">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-extrabold text-[#2D2A26] tracking-tight">Aktivität</h1>

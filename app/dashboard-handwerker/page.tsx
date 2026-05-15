@@ -129,11 +129,18 @@ export default function HandwerkerDashboard() {
         </h1>
         <p className="text-sm text-[#8C857B] mt-1.5">
           {profile?.gewerk && <span>{profile.gewerk}</span>}
-          {profile?.gewerk && profile?.bewertung_avg && " · "}
-          {profile?.bewertung_avg ? (
-            <span className="text-[#C4956A] font-medium">★ {profile.bewertung_avg}</span>
+          {/* React rendert die Number 0 als Text — daher explizit > 0
+              prüfen, sonst sieht der HW "Heizung0Noch keine Bewertungen". */}
+          {profile?.bewertung_avg != null && Number(profile.bewertung_avg) > 0 ? (
+            <>
+              {profile?.gewerk ? " · " : null}
+              <span className="text-[#C4956A] font-medium">★ {profile.bewertung_avg}</span>
+            </>
           ) : (
-            <span>Noch keine Bewertungen</span>
+            <>
+              {profile?.gewerk ? " · " : null}
+              <span>Noch keine Bewertungen</span>
+            </>
           )}
           {standortGesetzt && profile?.radius_km && (
             <>

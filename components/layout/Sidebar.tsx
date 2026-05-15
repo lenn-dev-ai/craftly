@@ -175,15 +175,21 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
   return (
     <>
       {/* Mobile Hamburger Button — z-[60] über die Sidebar (z-50),
-          sonst überdeckt die geöffnete Sidebar den ✕-Button. */}
+          sonst überdeckt die geöffnete Sidebar den ✕-Button.
+          Im offenen Zustand: anderer Hintergrund + Border, sonst weiß-
+          auf-weiß auf der ebenfalls weißen Sidebar = unsichtbar. */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="md:hidden fixed top-4 left-4 z-[60] w-10 h-10 bg-white border border-[#EDE8E1] rounded-xl flex items-center justify-center text-[#2D2A26] hover:bg-[#F5F0EB] transition-all shadow-sm"
+        className={`md:hidden fixed top-4 left-4 z-[60] w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm ${
+          mobileOpen
+            ? "bg-[#F5F0EB] border border-[#D5CFC7] text-[#2D2A26]"
+            : "bg-white border border-[#EDE8E1] text-[#2D2A26] hover:bg-[#F5F0EB]"
+        }`}
         aria-label={mobileOpen ? "Menü schließen" : "Menü öffnen"}
         aria-expanded={mobileOpen}
       >
         {mobileOpen ? (
-          <span className="text-lg">✕</span>
+          <span className="text-xl font-bold">✕</span>
         ) : (
           <div className="flex flex-col gap-1">
             <div className="w-4 h-0.5 bg-[#2D2A26] rounded-full" />
