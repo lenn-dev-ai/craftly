@@ -107,7 +107,7 @@ export default function HandwerkerDashboard() {
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto pt-16 md:pt-8">
       {/* Hero Greeting */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-[#2D2A26]">
           Hallo, {profile?.firma || profile?.name || "Handwerker"}
         </h1>
@@ -127,6 +127,10 @@ export default function HandwerkerDashboard() {
           )}
         </p>
       </div>
+
+      {/* Sichtbarkeits-Stufe — Gamification sichtbar (B2-W3) */}
+      <SichtbarkeitsBadge profile={profile} />
+
 
       {/* Standort-Setup-Banner wenn nicht konfiguriert */}
       {!standortGesetzt && (
@@ -364,5 +368,58 @@ function QuickAction({ href, label, icon }: { href: string; label: string; icon:
       <div className="text-base mb-1 text-[#3D8B7A]">{icon}</div>
       <div className="text-xs font-medium text-[#6B665E] group-hover:text-[#3D8B7A] transition-colors">{label}</div>
     </Link>
+  )
+}
+
+// Sichtbarkeits-Stufe + 3-Komponenten-Score (B2-W3).
+// Macht die V1-Recompute-Logik für den HW selbst nachvollziehbar:
+// er sieht warum er gold/silber/bronze ist und was er verbessern kann.
+function SichtbarkeitsBadge({ profile }: { profile: UserProfile | null }) {
+  if (!profile) return null
+  const stufe = (profile.sichtbarkeit_stufe as "gold" | "silber" | "bronze" | null) ?? "bronze"
+  const score = profile.verfuegbarkeit_score ?? 0
+  const treue = profile.angebotstreue ?? 100
+
+  const stufeConfig = {
+    gold:   { bg: "bg-[#C4956A]/15", text: "text-[#854F0B]", border: "border-[#C4956A]/30", emoji: "🥇" },
+    silber: { bg: "bg-[#8C857B]/15", text: "text-[#6B665E]", border: "border-[#8C857B]/30", emoji: "🥈" },
+    bronze: { bg: "bg-[#A37749]/15", text: "text-[#854F0B]", border: "border-[#A37749]/30", emoji: "🥉" },
+  }[stufe]
+
+  const naechsteStufe = stufe === "bronze" ? { name: "Silber", schwelle: 50 }
+                       : stufe === "silber" ? { name: "Gold", schwelle: 75 }
+                       : null
+  const fehlend = naechsteStufe ? Math.max(0, naechsteStufe.schwelle - Number(score)) : 0
+
+  return (
+    <div className={`mb-6 rounded-2xl border ${stufeConfig.border} ${stufeConfig.bg} p-4`}>
+      <div className="flex items-center gap-3 mb-3">
+        <div className="text-3xl">{stufeConfig.emoji}</div>
+        <div className="flex-1">
+          <div className={`text-xs font-bold uppercase tracking-wider ${stufeConfig.text}`}>
+            Sichtbarkeits-Stufe
+          </div>
+          <div className={`text-xl font-bold ${stufeConfig.text} capitalize`}>{stufe}</div>
+        </div>
+        <div className="text-right">
+          <div className={`text-2xl font-bold tabular-nums ${stufeConfig.text}`}>{Number(score).toFixed(0)}</div>
+          <div className="text-[10px] text-[#6B665E]">/ 100</div>
+        </div>
+      </div>
+      <div className="text-xs text-[#6B665E] space-y-1 mb-2">
+        <div>💡 <span className="font-medium">Angebotstreue: {Number(treue).toFixed(0)} %</span> · höher = besserer Bonus bei jedem Bid</div>
+        <div>⚡ Stufe wirkt als Multiplier (×1.05 Silber, ×1.10 Gold) auf jeden Smart-Score</div>
+      </div>
+      {naechsteStufe && fehlend > 0 && (
+        <div className="text-xs text-[#3D8B7A] font-medium">
+          Noch {fehlend} Punkte zur {naechsteStufe.name}-Stufe — mehr Zeitslots oder Bewertungen sammeln
+        </div>
+      )}
+      {!naechsteStufe && (
+        <div className="text-xs text-[#3D8B7A] font-medium">
+          Höchste Stufe erreicht — weiter aktiv bleiben um sie zu halten
+        </div>
+      )}
+    </div>
   )
 }

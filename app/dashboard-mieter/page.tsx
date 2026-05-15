@@ -32,6 +32,15 @@ function getEstimate(ticket: Ticket): string {
   return ""
 }
 
+// Diagnose-Substatus für Mieter-Sicht (B2-W2 — symmetrisch zur Verwalter-Pipeline)
+function diagnoseSubStatus(t: Ticket): { label: string; color: string } | null {
+  if (t.ticket_typ !== "diagnose") return null
+  if (t.status === "erledigt") return null
+  if (!t.zugewiesener_hw) return { label: "Wartet auf Handwerker", color: "text-[#C4956A]" }
+  if (!t.befund_text) return { label: "Termin läuft", color: "text-[#5B6ABF]" }
+  return { label: `Befund + Festpreis (${t.projekt_angebot ?? "—"} €) — Verwalter entscheidet`, color: "text-[#3D8B7A]" }
+}
+
 export default function MieterDashboard() {
   const router = useRouter()
   const [tickets, setTickets] = useState<Ticket[]>([])
@@ -124,11 +133,12 @@ export default function MieterDashboard() {
               const stepIdx = getStepIndex(t.status)
               const estimate = getEstimate(t)
 
+              const diag = diagnoseSubStatus(t)
               return (
                 <Card key={t.id} className="hover:bg-[#F7F4F0] cursor-pointer transition-all"
                   onClick={() => router.push("/dashboard-mieter/ticket/" + t.id)}>
                   <div className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-3 mb-2">
                       <div
                         className="w-2 h-2 rounded-full flex-shrink-0"
                         style={{ backgroundColor: t.prioritaet === "dringend" ? "#C4574B" : "#3D8B7A" }}
@@ -136,8 +146,20 @@ export default function MieterDashboard() {
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-[#2D2A26] font-medium truncate">{t.titel}</div>
                       </div>
+                      {t.ticket_typ === "diagnose" && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#7C6CAB] bg-[#7C6CAB]/10 border border-[#7C6CAB]/20 px-2 py-0.5 rounded">
+                          Diagnose
+                        </span>
+                      )}
                       <Badge status={t.status} />
                     </div>
+
+                    {/* Diagnose-Substatus für die Mieter-Pipeline-Sicht */}
+                    {diag && (
+                      <div className={`text-xs font-medium mb-2 ${diag.color}`}>
+                        {diag.label}
+                      </div>
+                    )}
 
                     {/* Mini Pipeline */}
                     <div className="flex items-center gap-1 mb-3">

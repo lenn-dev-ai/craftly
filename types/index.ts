@@ -26,6 +26,10 @@ export interface UserProfile {
   startort_adresse?: string; startort_lat?: number; startort_lng?: number
   // Provisions-Modell
   early_adopter_bis?: string | null
+  // Sichtbarkeit + Gamification (V1-Cron)
+  sichtbarkeit_stufe?: "gold" | "silber" | "bronze" | null
+  verfuegbarkeit_score?: number | null
+  angebotstreue?: number | null
   created_at: string
 }
 
