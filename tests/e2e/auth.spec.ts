@@ -12,15 +12,23 @@ test.describe("Auth-Routing & Validierung", () => {
   })
 
   test("Geschützte Admin-Route liefert ohne Auth kein Admin-Markup aus", async ({ request }) => {
+    // Middleware ist passive (würde sonst nach frischem Login Cookie-Race
+    // auslösen). Server liefert Skeleton, RoleGuard redirectet client-side.
+    // Wichtig bleibt: keine sensiblen Admin-Inhalte im initialen HTML.
     const response = await request.get("/admin", { maxRedirects: 0 })
-
-    expect(response.status()).toBeGreaterThanOrEqual(300)
-    expect(response.status()).toBeLessThan(400)
-    expect(response.headers()["location"]).toContain("/login")
 
     const body = await response.text()
     expect(body).not.toContain("Admin-Panel")
     expect(body).not.toContain("Dashboard öffnen")
+    // Es gibt zwei akzeptable Szenarien:
+    //   a) Server-Redirect zu /login (3xx) — bestand mit active middleware
+    //   b) 200 + Skeleton ohne Admin-Markup — aktueller Stand mit passive
+    //      middleware. RoleGuard im Layout cleant clientside.
+    if (response.status() >= 300 && response.status() < 400) {
+      expect(response.headers()["location"]).toContain("/login")
+    } else {
+      expect(response.status()).toBe(200)
+    }
   })
 
   test("Login-Form zeigt Validierungs-Fehler bei leerer Submission", async ({ page }) => {

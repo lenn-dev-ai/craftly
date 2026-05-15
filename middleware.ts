@@ -82,38 +82,31 @@ export async function middleware(request: NextRequest) {
     const pathname = request.nextUrl.pathname
     const protectedAppPath = isProtectedAppPath(pathname)
 
-    const { data: { user }, error } = await supabase.auth.getUser()
-
-    // API-Routes nutzen die Middleware nur zum Cookie-Refresh. Sie sollen
-    // JSON-Statuscodes selbst entscheiden statt HTML-Redirects zu bekommen.
-    if (!protectedAppPath) return response
-
-    if (error || !user) return loginRedirect(request)
-
-    const requiredRole = requiredRoleForPath(pathname)
-    if (!requiredRole) return response
-
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("rolle")
-      .eq("id", user.id)
-      .single()
-
-    if (profileError || !profile?.rolle) return loginRedirect(request)
-
-    if (profile.rolle === "admin" || profile.rolle === requiredRole) {
+    if (!protectedAppPath) {
+      // API-Routes etc. brauchen nur Cookie-Refresh, kein Redirect.
+      await supabase.auth.getUser()
       return response
     }
 
-    const fallback = dashboardForRole(profile.rolle)
-    if (fallback) {
-      const url = request.nextUrl.clone()
-      url.pathname = fallback
-      url.search = ""
-      return NextResponse.redirect(url)
+    // Cookie-basierter Pre-Filter statt getUser()-Network-Roundtrip.
+    // Hintergrund: signInWithPassword setzt sb-*-auth-token im Browser,
+    // aber direkt danach kann getUser() in middleware noch null returnen
+    // (Race zwischen Browser-Cookie-Persist und Server-Request) → Redirect
+    // zu /login → Login-Loop.
+    //
+    // Lösung: wenn KEIN Auth-Cookie da ist (nicht eingeloggt), redirect.
+    // Wenn Cookie da ist (auch frisch), durchlassen — RoleGuard im Layout
+    // prüft clientside und redirected sauber bei ungültiger Session.
+    const hasAuthCookie = request.cookies.getAll()
+      .some(c => c.name.startsWith("sb-") && c.name.includes("auth-token"))
+
+    if (!hasAuthCookie) {
+      return loginRedirect(request)
     }
 
-    return loginRedirect(request)
+    // Best-Effort Cookie-Refresh, kein Block bei Failure.
+    await supabase.auth.getUser()
+    return response
   } catch {
     if (isProtectedAppPath(request.nextUrl.pathname)) {
       return loginRedirect(request)

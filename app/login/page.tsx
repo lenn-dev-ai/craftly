@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -26,6 +27,7 @@ function zielFuerRolle(rolle: string, redirectTo: string | null): string {
 }
 
 export default function LoginPage() {
+  const router = useRouter()
   const [serverError, setServerError] = useState("")
   const [checking, setChecking] = useState(true)
 
@@ -78,11 +80,43 @@ export default function LoginPage() {
           .single()
         const rolle = profile?.rolle || "mieter"
         const redirectTo = new URLSearchParams(window.location.search).get("redirectTo")
-        window.location.href = zielFuerRolle(rolle, redirectTo)
+        const ziel = zielFuerRolle(rolle, redirectTo)
+
+        // Cookie-Race-Mitigation: window.location.href triggert eine Hard-
+        // Navigation, bei der die Middleware den frischen sb-*-auth-Cookie
+        // unter Umständen noch nicht sieht (Browser hat ihn lokal gesetzt,
+        // aber nicht alle chunked-cookie-Teile sind im Request-Header) →
+        // Login-Loop. router.refresh() invalidiert serverseitig die Caches,
+        // dann router.push() bleibt in SPA-Mode und nutzt die ohnehin
+        // vorhandene client-Session. Erst danach reload für saubere Server-
+        // Components mit den jetzt sichtbaren Cookies.
+        await waitForSession(supabase, 2000)
+        router.refresh()
+        router.push(ziel)
       }
     } catch {
       setServerError("Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.")
     }
+  }
+
+  // Polled-Wait bis supabase-js die Auth-Cookies persistent hat.
+  // Returnt true wenn user da, false bei Timeout. Maximale Verzögerung
+  // wird auch durch 1 frame ergänzt (microtask flush für Cookie-Persist).
+  async function waitForSession(
+    supabase: ReturnType<typeof createClient>,
+    maxMs: number,
+  ): Promise<boolean> {
+    const start = Date.now()
+    while (Date.now() - start < maxMs) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        // Extra microtask-frame, damit document.cookie writes komplett sind
+        await new Promise(r => setTimeout(r, 100))
+        return true
+      }
+      await new Promise(r => setTimeout(r, 50))
+    }
+    return false
   }
 
   if (checking) {
