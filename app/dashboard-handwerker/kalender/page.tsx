@@ -248,10 +248,10 @@ export default function KalenderPage() {
           </div>
         </div>
 
-        {/* Calendar Grid */}
-        <div className="bg-white border border-[#EDE8E1] rounded-xl overflow-hidden mb-8">
+        {/* Desktop-Grid (≥sm) — Wochenübersicht in Matrixform */}
+        <div className="hidden sm:block bg-white border border-[#EDE8E1] rounded-xl overflow-hidden mb-8">
           {/* Header Row */}
-          <div className="grid grid-cols-4 sm:grid-cols-8 border-b border-[#EDE8E1]">
+          <div className="grid grid-cols-8 border-b border-[#EDE8E1]">
             <div className="p-3" />
             {TAGE.map(tag => (
               <div key={tag.key} className="p-3 text-center">
@@ -262,7 +262,7 @@ export default function KalenderPage() {
 
           {/* Slot Rows */}
           {SLOTS.map(slot => (
-            <div key={slot.von} className="grid grid-cols-4 sm:grid-cols-8 border-b border-[#EDE8E1] last:border-0">
+            <div key={slot.von} className="grid grid-cols-8 border-b border-[#EDE8E1] last:border-0">
               <div className="p-3 flex flex-col justify-center">
                 <div className="text-xs font-medium text-[#2D2A26]/50">{slot.label}</div>
                 <div className="text-[10px] text-[#2D2A26]/25">{slot.sub}</div>
@@ -297,6 +297,55 @@ export default function KalenderPage() {
               })}
             </div>
           ))}
+        </div>
+
+        {/* Mobile-Layout (<sm) — Tagesliste statt Matrix.
+            Vorher: grid-cols-4 mit 8 Items → 2 Reihen, zweite Reihe ohne
+            Label-Spalte = visuell kaputt. Jetzt: ein Block pro Tag mit
+            3 großzügigen Slot-Buttons. */}
+        <div className="sm:hidden space-y-3 mb-8">
+          {TAGE.map(tag => {
+            const isWeekend = tag.key === 0 || tag.key === 6
+            const fullName = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"][tag.key]
+            const aktivTag = SLOTS.filter(s => slots[slotKey(tag.key, s.von)]).length
+            return (
+              <div key={tag.key} className="bg-white border border-[#EDE8E1] rounded-xl p-4">
+                <div className="flex items-baseline justify-between mb-3">
+                  <div className="text-sm font-semibold text-[#2D2A26]">{fullName}</div>
+                  <div className="text-[11px] text-[#8C857B]">
+                    {aktivTag === 0 ? "Frei" : `${aktivTag}/3 aktiv`}
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {SLOTS.map(slot => {
+                    const key = slotKey(tag.key, slot.von)
+                    const active = !!slots[key]
+                    const slotEarnings = isWeekend
+                      ? Math.round(1.5 * 350 * 0.8)
+                      : Math.round(1.5 * 350)
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => toggle(tag.key, slot.von)}
+                        className={`px-2 py-3 rounded-lg border-2 transition-all flex flex-col items-center justify-center gap-0.5 min-h-[64px] ${
+                          active
+                            ? "bg-[#3D8B7A]/15 border-[#3D8B7A]/40 text-[#3D8B7A]"
+                            : "bg-white border-[#EDE8E1] text-[#2D2A26]/60 hover:border-[#3D8B7A]/30"
+                        }`}
+                      >
+                        <span className="text-xs font-bold leading-tight">
+                          {active && "✓ "}{slot.label}
+                        </span>
+                        <span className={`text-[10px] leading-tight ${active ? "text-[#3D8B7A]/70" : "text-[#2D2A26]/40"}`}>
+                          {active ? `~${slotEarnings} €/Mo` : slot.sub}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
         </div>
 
         {/* Legend */}

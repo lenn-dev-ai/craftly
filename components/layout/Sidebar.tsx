@@ -212,9 +212,10 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
         {sidebarContent}
       </aside>
 
-      {/* Mobile Sidebar (slide-in) */}
+      {/* Mobile Sidebar (slide-in) — Audit: max 82-85vw, sonst auf
+          390px-Screens kein Platz für Backdrop-Klick rechts. */}
       <aside
-        className={`md:hidden fixed left-0 top-0 h-full w-64 bg-white border-r border-[#EDE8E1] flex flex-col z-50 transform transition-transform duration-300 shadow-xl ${
+        className={`md:hidden fixed left-0 top-0 h-full w-[min(20rem,85vw)] bg-white border-r border-[#EDE8E1] flex flex-col z-50 transform transition-transform duration-300 shadow-xl ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >

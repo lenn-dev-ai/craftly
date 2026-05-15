@@ -172,9 +172,11 @@ export default function DiagnosePreisePage() {
         )}
       </header>
 
-      {/* Liste */}
+      {/* Liste — overflow-x-auto fängt die 5-Spalten-Tabelle auf <sm ab,
+          sonst sprengt sie den Viewport */}
       <div className="bg-white border border-[#EDE8E1] rounded-2xl shadow-sm overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px]">
           <thead>
             <tr className="border-b border-[#EDE8E1]">
               <th className="text-left text-[10px] font-semibold text-[#8C857B] uppercase tracking-wider px-4 py-2.5">Gewerk</th>
@@ -260,6 +262,7 @@ export default function DiagnosePreisePage() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Neuer Eintrag */}

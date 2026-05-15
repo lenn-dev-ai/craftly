@@ -789,29 +789,32 @@ export default function TicketDetailView() {
           </Card>
         )}
 
-        {/* === CHAT === */}
+        {/* === CHAT ===
+            Audit-Befund: Overflow + zu wenig Kontrast (text-[#EDE8E1] und
+            bg-[#FAF8F5] auf demselben Hintergrund waren visuell unsichtbar).
+            Plus: lange Wörter brachen aus den Bubbles aus (kein break-words). */}
         <Card className="bg-white border border-[#EDE8E1]">
           <h2 className="text-sm font-semibold text-[#2D2A26] mb-3">Nachrichten</h2>
-          <div ref={chatRef} className="bg-[#FAF8F5] rounded-xl p-4 h-64 overflow-y-auto mb-3 flex flex-col gap-3">
+          <div ref={chatRef} className="bg-[#FAF8F5] rounded-xl p-3 sm:p-4 h-72 sm:h-80 overflow-y-auto overflow-x-hidden mb-3 flex flex-col gap-3">
             {nachrichten.length === 0 ? (
-              <div className="text-xs text-[#B5AEA4] text-center py-8">Noch keine Nachrichten</div>
+              <div className="text-xs text-[#8C857B] text-center py-8">Noch keine Nachrichten</div>
             ) : nachrichten.map(m => {
               const isMe = m.absender_id === currentUser?.id
               const zeit = new Date(m.created_at).toLocaleTimeString("de", { hour: "2-digit", minute: "2-digit" })
               const datum = new Date(m.created_at).toLocaleDateString("de", { day: "2-digit", month: "2-digit" })
-              const rolle = (m.absender as any)?.rolle
+              const rolle = (m.absender as { rolle?: string } | undefined)?.rolle
               return (
                 <div key={m.id} className={"flex " + (isMe ? "justify-end" : "justify-start")}>
-                  <div className={"max-w-xs " + (isMe ? "" : "flex gap-2 items-end")}>
-                    {!isMe && <Avatar name={m.absender?.name || "?"} size="sm" />}
-                    <div>
-                      <div className={"text-[10px] mb-0.5 flex items-center gap-1.5 " + (isMe ? "justify-end" : "")}>
-                        <span className="font-medium text-[#8C857B]">{isMe ? "Du" : (m.absender?.name || "Unbekannt")}</span>
-                        {rolle && <span className="text-[9px] text-[#EDE8E1] bg-[#FAF8F5] px-1.5 py-0.5 rounded">{rolle}</span>}
-                        <span className="text-[#EDE8E1]">{datum} {zeit}</span>
+                  <div className={"max-w-[85%] sm:max-w-xs min-w-0 " + (isMe ? "" : "flex gap-2 items-end")}>
+                    {!isMe && <div className="flex-shrink-0"><Avatar name={m.absender?.name || "?"} size="sm" /></div>}
+                    <div className="min-w-0 flex-1">
+                      <div className={"text-[10px] mb-0.5 flex items-center gap-1.5 flex-wrap " + (isMe ? "justify-end" : "")}>
+                        <span className="font-medium text-[#6B665E] truncate max-w-[120px]">{isMe ? "Du" : (m.absender?.name || "Unbekannt")}</span>
+                        {rolle && <span className="text-[9px] text-[#6B665E] bg-white border border-[#EDE8E1] px-1.5 py-0.5 rounded">{rolle}</span>}
+                        <span className="text-[#8C857B]">{datum} {zeit}</span>
                       </div>
-                      <div className={"text-sm px-3 py-2 rounded-xl leading-relaxed " + (
-                        isMe ? "bg-[#3D8B7A] text-white" : "bg-[#FAF8F5] text-[#2D2A26]"
+                      <div className={"text-sm px-3 py-2 rounded-xl leading-relaxed break-words whitespace-pre-wrap " + (
+                        isMe ? "bg-[#3D8B7A] text-white" : "bg-white border border-[#EDE8E1] text-[#2D2A26]"
                       )}>
                         {m.text}
                       </div>
