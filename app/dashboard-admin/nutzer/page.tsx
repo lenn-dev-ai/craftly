@@ -188,6 +188,15 @@ export default function NutzerPage() {
               </tr>
             </thead>
             <tbody>
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-5 py-12 text-center">
+                    <div className="text-3xl mb-2" aria-hidden="true">🔍</div>
+                    <div className="text-sm font-medium text-[#2D2A26]">Keine Nutzer für diesen Filter</div>
+                    <div className="text-xs text-[#8C857B] mt-1">Filter oder Suchbegriff anpassen.</div>
+                  </td>
+                </tr>
+              )}
               {filtered.map(u => {
                 const score = kiAktivitaetsScore(u, tickets, angebote)
                 return (

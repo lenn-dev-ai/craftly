@@ -68,6 +68,24 @@ export default function AktivitaetPage() {
   )
   if (!data) return null
 
+  // Empty-State: frische Plattform ohne jegliche Aktivität (F-2)
+  if (data.totalT === 0 && data.totalU === 0 && data.totalA === 0) {
+    return (
+      <div className="p-8 max-w-6xl mx-auto">
+        <h1 className="text-2xl font-extrabold text-[#2D2A26] tracking-tight mb-1">Aktivität</h1>
+        <p className="text-sm text-gray-500 mb-8">Plattform-Aktivität der letzten 7 Tage</p>
+        <div className="bg-white border border-[#EDE8E1] rounded-2xl p-10 text-center">
+          <div className="text-5xl mb-4" aria-hidden="true">📈</div>
+          <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Noch keine Aktivität</h2>
+          <p className="text-sm text-[#736B62] max-w-sm mx-auto">
+            Sobald Nutzer Tickets erstellen, sich registrieren oder Angebote abgeben,
+            erscheinen Trends + Peak-Tage hier.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   const maxVal = Math.max(...data.timeline.map((d: any) => d.tickets + d.users + d.angebote), 1)
   const trend = kiTrend(data.timeline)
   const peak = kiPeakTag(data.timeline)

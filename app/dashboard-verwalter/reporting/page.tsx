@@ -72,6 +72,32 @@ export default function ReportingPage() {
     ? Math.max(0, Math.ceil((new Date(profile.early_adopter_bis).getTime() - Date.now()) / 86_400_000))
     : 0
 
+  // Empty-State: ohne Tickets keine sinnvolle Auswertung (F-2)
+  if (tickets.length === 0) {
+    return (
+      <div className="p-6 md:p-8 max-w-4xl mx-auto pt-16 md:pt-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-[#2D2A26]">Reporting</h1>
+          <p className="text-sm text-[#8C857B] mt-1">Kosten- und Provisions-Übersicht</p>
+        </div>
+        <div className="bg-white border border-[#EDE8E1] rounded-2xl p-10 text-center">
+          <div className="text-5xl mb-4" aria-hidden="true">📊</div>
+          <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Noch keine Auswertung möglich</h2>
+          <p className="text-sm text-[#736B62] max-w-sm mx-auto mb-5">
+            Sobald die ersten Aufträge erledigt sind, siehst du hier Kosten pro
+            Gewerk, Provisions-Aufschlüsselung und Trends.
+          </p>
+          <a
+            href="/dashboard-verwalter/marktplatz"
+            className="inline-block text-sm font-semibold bg-[#3D8B7A] text-white px-4 py-2 rounded-xl hover:bg-[#2D6B5A] transition-colors"
+          >
+            Zum Handwerker-Marktplatz →
+          </a>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto pt-16 md:pt-8">
       <div className="mb-6">
