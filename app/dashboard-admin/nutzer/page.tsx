@@ -42,7 +42,12 @@ export default function NutzerPage() {
   const [tickets, setTickets] = useState<any[]>([])
   const [angebote, setAngebote] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState("alle")
+  // Filter aus ?rolle=... initialisieren (kommt aus den klickbaren KPI-
+  // Cards auf /dashboard-admin). Erlaubte Werte sync mit den Filter-Tabs.
+  const [filter, setFilter] = useState(() => {
+    const rolle = searchParams.get("rolle")
+    return rolle && ["verwalter", "handwerker", "mieter", "admin"].includes(rolle) ? rolle : "alle"
+  })
   // Such-Begriff aus ?q=... initialisieren (kommt aus Admin-Dashboard-Header)
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "")
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)

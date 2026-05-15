@@ -41,18 +41,43 @@ interface TicketRow {
   angebote?: Array<{ id: string }> | null
 }
 
+// Health-Score 0-100, ehrlich: leere Plattform = niedrig.
+// Drei Säulen, jede max 30-40 Punkte:
+//   Setup    (max 30) — sind alle Rollen besetzt?
+//   Aktivität (max 40) — wird die Plattform genutzt?
+//   Health   (max 30) — funktioniert der Workflow?
+//
+// Frische Plattform ohne Daten = 0. Ein Verwalter angelegt = ~10.
+// Volle Setup ohne Aktivität = 30. Aktive Plattform mit guter
+// Erledigung = 90+.
 function kiHealthScore(s: Stats | null): number {
   if (!s) return 0
-  let score = 50
-  if (s.totalUsers > 0) score += 10
-  if (s.totalUsers > 5) score += 5
-  if (s.totalTickets > 0) score += Math.round((s.erledigteTickets / s.totalTickets) * 20)
-  if (s.totalTickets > 0 && s.totalAngebote > 0) {
-    const ratio = s.totalAngebote / s.totalTickets
-    if (ratio >= 2) score += 10
-    else if (ratio >= 1) score += 5
+  let score = 0
+
+  // Setup-Vollständigkeit (max 30)
+  if (s.verwalter > 0)   score += 10
+  if (s.handwerker >= 3) score += 10
+  else if (s.handwerker > 0) score += 5
+  if (s.mieter > 0)      score += 10
+
+  // Aktivität (max 40)
+  if (s.totalTickets > 0)  score += 5
+  if (s.totalTickets >= 5) score += 5
+  if (s.totalAngebote > 0) score += 5
+  if (s.totalAngebote >= 10) score += 5
+  if (s.totalTickets > 0) {
+    const angeboteProTicket = s.totalAngebote / s.totalTickets
+    if (angeboteProTicket >= 2)      score += 20
+    else if (angeboteProTicket >= 1) score += 12
+    else if (angeboteProTicket >= 0.5) score += 6
   }
-  if (s.verwalter > 0 && s.handwerker > 0) score += 5
+
+  // Workflow-Health (max 30) — Erledigungsrate ist der Killer-Indikator
+  if (s.totalTickets > 0) {
+    const erlRate = s.erledigteTickets / s.totalTickets
+    score += Math.round(erlRate * 30)
+  }
+
   return Math.min(score, 100)
 }
 
@@ -259,15 +284,19 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* KPI-Reihe 1: Nutzer */}
+      {/* KPI-Reihe 1: Nutzer (klickbar → Nutzer-Liste, gefiltert) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="Nutzer gesamt" value={stats.totalUsers} farbe="#7C6CAB" />
-        <KpiCard label="Verwalter" value={stats.verwalter} farbe="#3D8B7A" />
-        <KpiCard label="Handwerker" value={stats.handwerker} farbe="#C4956A" />
-        <KpiCard label="Mieter" value={stats.mieter} farbe="#5B6ABF" />
+        <KpiCard label="Nutzer gesamt" value={stats.totalUsers} farbe="#7C6CAB"
+          onClick={() => router.push("/dashboard-admin/nutzer")} />
+        <KpiCard label="Verwalter" value={stats.verwalter} farbe="#3D8B7A"
+          onClick={() => router.push("/dashboard-admin/nutzer?rolle=verwalter")} />
+        <KpiCard label="Handwerker" value={stats.handwerker} farbe="#C4956A"
+          onClick={() => router.push("/dashboard-admin/nutzer?rolle=handwerker")} />
+        <KpiCard label="Mieter" value={stats.mieter} farbe="#5B6ABF"
+          onClick={() => router.push("/dashboard-admin/nutzer?rolle=mieter")} />
       </div>
 
-      {/* KPI-Reihe 2: Tickets + Health */}
+      {/* KPI-Reihe 2: Tickets + Health (Tickets-Cards → Verwalter-Tickets-Liste) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard
           label="Tickets gesamt"
@@ -275,9 +304,12 @@ export default function AdminDashboard() {
           farbe="#7C6CAB"
           trend={trendErstellt}
           sparkline={wochen.map(w => w.erstellt)}
+          onClick={() => router.push("/dashboard-verwalter/tickets")}
         />
-        <KpiCard label="Offen" value={stats.offeneTickets} farbe="#C4574B" />
-        <KpiCard label="Erledigt" value={stats.erledigteTickets} farbe="#3D8B7A" />
+        <KpiCard label="Offen" value={stats.offeneTickets} farbe="#C4574B"
+          onClick={() => router.push("/dashboard-verwalter/tickets?status=offen")} />
+        <KpiCard label="Erledigt" value={stats.erledigteTickets} farbe="#3D8B7A"
+          onClick={() => router.push("/dashboard-verwalter/tickets?status=erledigt")} />
         <KpiCard
           label="Gesamtkosten"
           value={`${stats.totalKosten.toLocaleString("de")} €`}
@@ -441,16 +473,24 @@ export default function AdminDashboard() {
 // ============================================================
 
 function KpiCard({
-  label, value, farbe, trend, sparkline,
+  label, value, farbe, trend, sparkline, onClick,
 }: {
   label: string
   value: number | string
   farbe: string
   trend?: { delta: number | null; richtung: "up" | "down" | "flat" | "none" }
   sparkline?: number[]
+  onClick?: () => void
 }) {
+  const Wrapper = onClick ? "button" : "div"
   return (
-    <div className="bg-white border border-[#EDE8E1] rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
+    <Wrapper
+      onClick={onClick}
+      className={`bg-white border border-[#EDE8E1] rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow text-left w-full ${
+        onClick ? "cursor-pointer hover:border-[#7C6CAB]/30 focus:outline-none focus:ring-2 focus:ring-[#7C6CAB]/30" : ""
+      }`}
+      {...(onClick && { type: "button" as const })}
+    >
       <div className="flex items-center justify-between mb-3">
         <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: farbe + "15" }}>
           <div className="w-2.5 h-2.5 rounded-full" style={{ background: farbe }} />
@@ -476,7 +516,7 @@ function KpiCard({
           })()}
         </div>
       )}
-    </div>
+    </Wrapper>
   )
 }
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket, TicketStatus } from "@/types"
 import { Badge, StatusDot, Card, EmptyState } from "@/components/ui"
@@ -25,10 +25,18 @@ const TYP_FILTER: { label: string; value: TypFilter; farbe: string }[] = [
   { label: "Projekt", value: "projekt", farbe: "border-[#3D8B7A]/40" },
 ]
 
+const ALLOWED_STATUS: StatusFilter[] = ["alle", "offen", "auktion", "in_bearbeitung", "erledigt"]
+
 export default function TicketsPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [tickets, setTickets] = useState<Ticket[]>([])
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("alle")
+  // Status-Filter aus ?status=... initialisieren (Drill-Down von den
+  // klickbaren KPI-Cards auf /dashboard-admin).
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+    const s = searchParams.get("status") as StatusFilter | null
+    return s && ALLOWED_STATUS.includes(s) ? s : "alle"
+  })
   const [typFilter, setTypFilter] = useState<TypFilter>("alle")
   const [loading, setLoading] = useState(true)
 
