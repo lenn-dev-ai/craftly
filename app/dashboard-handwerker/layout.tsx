@@ -1,4 +1,5 @@
 import Sidebar from "@/components/layout/Sidebar"
+import BottomNav from "@/components/layout/BottomNav"
 import RoleGuard from "@/components/layout/RoleGuard"
 
 export const metadata = {
@@ -10,7 +11,8 @@ export default function HandwerkerLayout({ children }: { children: React.ReactNo
     <RoleGuard allowed="handwerker">
       <div className="flex min-h-screen bg-surface">
         <Sidebar rolle="handwerker" />
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto pb-16 md:pb-0">{children}</main>
+        <BottomNav rolle="handwerker" />
       </div>
     </RoleGuard>
   )

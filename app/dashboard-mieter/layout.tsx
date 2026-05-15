@@ -1,4 +1,5 @@
 import Sidebar from "@/components/layout/Sidebar"
+import BottomNav from "@/components/layout/BottomNav"
 import RoleGuard from "@/components/layout/RoleGuard"
 
 export const metadata = {
@@ -10,7 +11,9 @@ export default function MieterLayout({ children }: { children: React.ReactNode }
     <RoleGuard allowed="mieter">
       <div className="flex min-h-screen bg-surface">
         <Sidebar rolle="mieter" />
-        <main className="flex-1 overflow-auto">{children}</main>
+        {/* pb-16 md:pb-0: Platz für die mobile BottomNav (h~56px) */}
+        <main className="flex-1 overflow-auto pb-16 md:pb-0">{children}</main>
+        <BottomNav rolle="mieter" />
       </div>
     </RoleGuard>
   )

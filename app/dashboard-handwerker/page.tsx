@@ -266,12 +266,15 @@ export default function HandwerkerDashboard() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {auktionenSortiert.map(t => {
+            {auktionenSortiert.map((t, i) => {
               const angeboteCount = (t.angebote as { id: string }[] | undefined)?.length || 0
               return (
                 <div
                   key={t.id}
-                  className="bg-white rounded-2xl border border-line p-5 cursor-pointer hover:border-accent/40 hover:shadow-sm transition-all group"
+                  // animate-fade-in mit minimal staggered delay (max 5 sichtbar)
+                  // — fühlt sich smooth an, lenkt nicht ab
+                  style={i < 5 ? { animationDelay: `${i * 40}ms` } : undefined}
+                  className="bg-white rounded-2xl border border-line p-5 cursor-pointer hover:border-accent/40 hover:shadow-sm transition-all group animate-fade-in"
                   onClick={() => router.push(`/dashboard-handwerker/angebot/${t.id}`)}
                 >
                   <div className="flex items-start gap-4">

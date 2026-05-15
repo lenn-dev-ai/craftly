@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { ActiveRoleProvider } from "@/lib/context/ActiveRoleContext"
 import { RollenWechsel } from "@/components/RollenWechsel"
+import BottomNav from "@/components/layout/BottomNav"
 import { LayoutDashboard, Users, Activity, Settings, LogOut, Stethoscope } from "lucide-react"
 
 const NAV_ITEMS = [
@@ -143,7 +144,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {sidebarContent}
         </aside>
 
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto pb-16 md:pb-0">{children}</main>
+        <BottomNav rolle="admin" />
       </div>
     </ActiveRoleProvider>
   )

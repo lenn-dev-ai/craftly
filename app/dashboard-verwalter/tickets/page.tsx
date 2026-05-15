@@ -135,10 +135,11 @@ export default function TicketsPage() {
         <EmptyState icon="T" title="Keine Tickets" desc="Für diese Filter-Kombination gibt es keine Tickets." />
       ) : (
         <div className="flex flex-col gap-2">
-          {shown.map(t => {
+          {shown.map((t, i) => {
             const typ = (t.ticket_typ ?? "standard") as "standard" | "diagnose" | "projekt"
             return (
-              <Card key={t.id} className="cursor-pointer hover:border-accent/30 transition-colors !p-3"
+              <Card key={t.id}
+                className="cursor-pointer hover:border-accent/30 transition-colors !p-3 animate-fade-in"
                 onClick={() => router.push(`/dashboard-verwalter/ticket/${t.id}`)}>
                 <div className="flex items-center gap-3">
                   <StatusDot status={t.status} />
