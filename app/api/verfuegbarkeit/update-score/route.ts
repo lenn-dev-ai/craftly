@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
 import { berechneVerfuegbarkeitScore } from "@/lib/scoring/verfuegbarkeit"
 
 // POST /api/verfuegbarkeit/update-score
@@ -12,6 +12,7 @@ export async function POST(_request: NextRequest) {
   const supabase = createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const admin = createServiceRoleClient()
 
   const { data: profil } = await supabase
     .from("profiles")
@@ -34,25 +35,40 @@ export async function POST(_request: NextRequest) {
     ? (profil.kalender_streak ?? 0) + 1
     : 1
 
-  // Letzte Pflege auf jetzt setzen, BEVOR der Score gelesen wird (damit der
-  // Score mit dem frischen pflegeRate = 1.0 berechnet wird).
-  await supabase
+  const jetzt = new Date().toISOString()
+
+  // Systemfelder auf profiles sind durch protect_profile_fields vor
+  // Self-Service-Updates geschützt. Daher schreibt dieser API-Pfad nach
+  // erfolgreicher Auth- und Rollenprüfung bewusst mit Service-Role.
+  const { error: pflegeErr } = await admin
     .from("profiles")
     .update({
-      letzte_kalender_pflege: new Date().toISOString(),
+      letzte_kalender_pflege: jetzt,
       kalender_streak: neuerStreak,
     })
     .eq("id", user.id)
+  if (pflegeErr) {
+    return NextResponse.json(
+      { error: "Kalenderpflege konnte nicht gespeichert werden: " + pflegeErr.message },
+      { status: 500 },
+    )
+  }
 
-  const result = await berechneVerfuegbarkeitScore(supabase, user.id)
+  const result = await berechneVerfuegbarkeitScore(admin, user.id)
 
-  await supabase
+  const { error: scoreErr } = await admin
     .from("profiles")
     .update({
       verfuegbarkeit_score: result.score,
       sichtbarkeit_stufe: result.stufe,
     })
     .eq("id", user.id)
+  if (scoreErr) {
+    return NextResponse.json(
+      { error: "Verfügbarkeits-Score konnte nicht gespeichert werden: " + scoreErr.message },
+      { status: 500 },
+    )
+  }
 
   return NextResponse.json({
     ok: true,
