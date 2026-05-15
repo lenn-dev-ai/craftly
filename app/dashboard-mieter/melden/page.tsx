@@ -8,17 +8,46 @@ import { uploadSchadensFoto } from "@/lib/storage/schadens-foto"
 import { formatGewerk } from "@/types"
 
 const MAX_FOTO_BYTES = 5 * 1024 * 1024 // 5 MB
+const MAX_FOTOS = 5
 const ERLAUBTE_FOTO_TYPEN = ["image/jpeg", "image/png", "image/webp", "image/heic"]
+
+// UX-3: Dringlichkeit-Labels einheitlich auf Audit-Empfehlung
+// (planbar/zeitnah/notfall). Die DB-Spalte `prioritaet` hat einen
+// CHECK-Constraint auf normal/hoch/dringend — Werte bleiben intern, nur
+// Labels werden umbenannt. Map nach außen.
+const PRIO_LABELS: Record<string, string> = {
+  normal: "Planbar",
+  hoch: "Zeitnah",
+  dringend: "Notfall",
+}
+const PRIO_SUB: Record<string, string> = {
+  normal: "Kann warten",
+  hoch: "Bald bitte",
+  dringend: "Sofort",
+}
+// KI-API gibt manchmal die NEUE Convention (planbar/zeitnah/notfall) zurück.
+// Auf interne Werte mappen, sonst kracht der DB-Insert am CHECK-Constraint.
+const KI_PRIO_MAP: Record<string, string> = {
+  notfall: "dringend",
+  zeitnah: "hoch",
+  planbar: "normal",
+  // Falls die KI schon das interne Format liefert: identity
+  dringend: "dringend",
+  hoch: "hoch",
+  normal: "normal",
+}
 
 type Step = "foto" | "analyse" | "details" | "ort" | "dringlichkeit" | "zusammenfassung" | "gesendet"
 
-const KI_ANALYSEN: Record<string, { titel: string; gewerk: string; dringlichkeit: string; tipp: string; zeit: string }> = {
-  heizung: { titel: "Heizung / Warmwasser ausgefallen", gewerk: "heizung_sanitaer", dringlichkeit: "hoch", tipp: "Prüfen Sie ob der Thermostat auf mind. Stufe 3 steht und ob andere Heizkörper betroffen sind.", zeit: "~24h" },
-  wasser: { titel: "Wasserschaden / Feuchtigkeit", gewerk: "heizung_sanitaer", dringlichkeit: "dringend", tipp: "Hauptwasserhahn zudrehen falls möglich! Handtücher unterlegen um Ausbreitung zu verhindern.", zeit: "~4h" },
-  elektro: { titel: "Elektroproblem", gewerk: "elektro", dringlichkeit: "hoch", tipp: "Berühren Sie keine freiliegenden Kabel. Schalten Sie die betroffene Sicherung aus.", zeit: "~12h" },
-  tuer: { titel: "Tür / Fenster defekt", gewerk: "schreiner", dringlichkeit: "normal", tipp: "Sichern Sie die Stelle provisorisch ab, besonders bei Zugluft oder Einbruchgefahr.", zeit: "~3 Tage" },
-  schimmel: { titel: "Schimmel entdeckt", gewerk: "maler", dringlichkeit: "hoch", tipp: "Gut lüften! Nicht selbst mit Bleiche behandeln - das verschlimmert es oft.", zeit: "~5 Tage" },
-  sonstiges: { titel: "Sonstiger Schaden", gewerk: "allgemein", dringlichkeit: "normal", tipp: "Je genauer die Beschreibung, desto schneller die Lösung.", zeit: "~3-5 Tage" },
+// KI-1+2: Zeit als Spanne statt Punktschätzung. "sonstiges" hat keine
+// Schätzung — wird im UI nicht angezeigt.
+const KI_ANALYSEN: Record<string, { titel: string; gewerk: string; dringlichkeit: string; tipp: string; zeit: string | null }> = {
+  heizung:   { titel: "Heizung / Warmwasser ausgefallen", gewerk: "heizung_sanitaer", dringlichkeit: "hoch",     tipp: "Prüfen Sie ob der Thermostat auf mind. Stufe 3 steht und ob andere Heizkörper betroffen sind.", zeit: "ca. 12-48 Stunden" },
+  wasser:    { titel: "Wasserschaden / Feuchtigkeit",     gewerk: "heizung_sanitaer", dringlichkeit: "dringend", tipp: "Hauptwasserhahn zudrehen falls möglich! Handtücher unterlegen um Ausbreitung zu verhindern.",  zeit: "ca. 2-8 Stunden" },
+  elektro:   { titel: "Elektroproblem",                   gewerk: "elektro",          dringlichkeit: "hoch",     tipp: "Berühren Sie keine freiliegenden Kabel. Schalten Sie die betroffene Sicherung aus.",            zeit: "ca. 6-24 Stunden" },
+  tuer:      { titel: "Tür / Fenster defekt",             gewerk: "schreiner",        dringlichkeit: "normal",   tipp: "Sichern Sie die Stelle provisorisch ab, besonders bei Zugluft oder Einbruchgefahr.",            zeit: "ca. 1-5 Tage" },
+  schimmel:  { titel: "Schimmel entdeckt",                gewerk: "maler",            dringlichkeit: "hoch",     tipp: "Gut lüften! Nicht selbst mit Bleiche behandeln - das verschlimmert es oft.",                    zeit: "ca. 3-7 Tage" },
+  sonstiges: { titel: "Sonstiger Schaden",                gewerk: "allgemein",        dringlichkeit: "normal",   tipp: "Je genauer die Beschreibung, desto schneller die Lösung.",                                      zeit: null },
 }
 
 function analyseText(text: string): string {
@@ -50,64 +79,71 @@ export default function MeldenPage() {
   const [loading, setLoading] = useState(false)
   const [analyseProgress, setAnalyseProgress] = useState(0)
   const [error, setError] = useState("")
-  // Foto-Upload State
+  // Foto-Upload State — UX-1: bis zu 5 Fotos
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [fotoFile, setFotoFile] = useState<File | null>(null)
-  const [fotoPreviewUrl, setFotoPreviewUrl] = useState<string | null>(null)
+  const [fotoFiles, setFotoFiles] = useState<File[]>([])
+  const [fotoPreviewUrls, setFotoPreviewUrls] = useState<string[]>([])
   const [fotoFehler, setFotoFehler] = useState<string | null>(null)
   // KI-Vision-State
   const [kiConfidence, setKiConfidence] = useState<number | null>(null)
   const [kiSchadensart, setKiSchadensart] = useState<string | null>(null)
   const [kiHinweis, setKiHinweis] = useState<string | null>(null)
-  // Diagnose-Option
-  const [ticketTyp, setTicketTyp] = useState<"standard" | "diagnose">("standard")
-  const [diagnosePreis, setDiagnosePreis] = useState<number | null>(null)
+  // UX-2: ticketTyp/diagnosePreis raus aus Mieter-Flow.
+  // Mieter entscheidet nicht ob Diagnose oder Direkt-Reparatur — das
+  // ist eine Fachentscheidung des Verwalters nach Sichtung.
 
-  function fotoWaehlen(file: File | null) {
+  function fotosHinzufuegen(neueFiles: FileList | File[] | null) {
     setFotoFehler(null)
-    if (!file) {
-      setFotoFile(null)
-      setFotoPreviewUrl(null)
+    if (!neueFiles || neueFiles.length === 0) return
+    const arr = Array.from(neueFiles)
+    const platzFrei = MAX_FOTOS - fotoFiles.length
+    if (platzFrei <= 0) {
+      setFotoFehler(`Maximal ${MAX_FOTOS} Fotos pro Meldung.`)
       return
     }
-    if (!ERLAUBTE_FOTO_TYPEN.includes(file.type)) {
-      setFotoFehler("Bitte ein JPG, PNG, WebP oder HEIC auswählen.")
-      return
+    const nehmen = arr.slice(0, platzFrei)
+    const akzeptiert: File[] = []
+    for (const file of nehmen) {
+      if (!ERLAUBTE_FOTO_TYPEN.includes(file.type)) {
+        setFotoFehler(`"${file.name}" — nur JPG, PNG, WebP, HEIC erlaubt.`)
+        continue
+      }
+      if (file.size > MAX_FOTO_BYTES) {
+        setFotoFehler(`"${file.name}" zu groß (max. ${MAX_FOTO_BYTES / 1024 / 1024} MB).`)
+        continue
+      }
+      akzeptiert.push(file)
     }
-    if (file.size > MAX_FOTO_BYTES) {
-      setFotoFehler(`Datei zu groß (max. ${MAX_FOTO_BYTES / 1024 / 1024} MB).`)
-      return
-    }
-    setFotoFile(file)
-    setFotoPreviewUrl(URL.createObjectURL(file))
+    if (akzeptiert.length === 0) return
+    setFotoFiles(prev => [...prev, ...akzeptiert])
+    setFotoPreviewUrls(prev => [...prev, ...akzeptiert.map(f => URL.createObjectURL(f))])
   }
 
-  // Cleanup ObjectURL um Memory-Leak zu vermeiden
+  function fotoEntfernen(idx: number) {
+    setFotoFiles(prev => prev.filter((_, i) => i !== idx))
+    setFotoPreviewUrls(prev => {
+      const next = prev.filter((_, i) => i !== idx)
+      const remove = prev[idx]
+      if (remove) URL.revokeObjectURL(remove)
+      return next
+    })
+  }
+
+  // Cleanup aller ObjectURLs beim Unmount
   useEffect(() => {
     return () => {
-      if (fotoPreviewUrl) URL.revokeObjectURL(fotoPreviewUrl)
+      fotoPreviewUrls.forEach(u => URL.revokeObjectURL(u))
     }
-  }, [fotoPreviewUrl])
-
-  // Diagnose-Preis on-demand laden, sobald gewerk feststeht (= details-Step)
-  useEffect(() => {
-    if (step !== "details" || !form.gewerk) return
-    let aktiv = true
-    void (async () => {
-      const supabase = createClient()
-      const { getDiagnosePreis } = await import("@/lib/diagnose/preise")
-      const p = await getDiagnosePreis(supabase, form.gewerk)
-      if (aktiv) setDiagnosePreis(p)
-    })()
-    return () => { aktiv = false }
-  }, [step, form.gewerk])
+    // Nur bei Unmount — fotoEntfernen kümmert sich sonst.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // TODO: sobald Supabase Storage Bucket "ticket-fotos" konfiguriert ist,
   // hier den eigentlichen Upload einbauen und die URL ans Ticket schreiben.
   // Beispiel: supabase.storage.from('ticket-fotos').upload(`${user.id}/${Date.now()}_${fotoFile.name}`, fotoFile)
 
   function startAnalyse() {
-    if (!beschreibung.trim() && !fotoFile) return
+    if (!beschreibung.trim() && fotoFiles.length === 0) return
     setStep("analyse")
     setAnalyseProgress(0)
     setKiConfidence(null)
@@ -122,11 +158,14 @@ export default function MeldenPage() {
     }, 200)
 
     void (async () => {
-      // KI-Vision-Pfad wenn Foto vorhanden
-      if (fotoFile) {
+      // KI-Vision-Pfad wenn mindestens ein Foto vorhanden ist
+      // (das erste Foto liefert die Klassifikation; weitere sind nur
+      // zusätzliche Beleg-Bilder fürs Ticket).
+      const ersteFoto = fotoFiles[0]
+      if (ersteFoto) {
         try {
           const fd = new FormData()
-          fd.append("foto", fotoFile)
+          fd.append("foto", ersteFoto)
           const res = await fetch("/api/ki/schadenserkennung", { method: "POST", body: fd })
           if (res.ok) {
             const data = await res.json() as {
@@ -148,7 +187,9 @@ export default function MeldenPage() {
               ...f,
               titel: data.titel_vorschlag,
               beschreibung: data.beschreibung_vorschlag || beschreibung,
-              prioritaet: data.dringlichkeit,
+              // KI-API liefert manchmal notfall/zeitnah/planbar — auf den
+              // DB-CHECK-konformen Wert mappen.
+              prioritaet: KI_PRIO_MAP[data.dringlichkeit] ?? "normal",
               gewerk: data.gewerk,
             }))
             setTimeout(() => setStep("details"), 500)
@@ -183,43 +224,36 @@ export default function MeldenPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
 
-    // Foto hochladen (best-effort — wenn der Upload fehlschlägt, geht das
-    // Ticket trotzdem rein, der User hat dann nur kein Bild dran).
-    let fotoPfad: string | null = null
-    if (fotoFile) {
-      const result = await uploadSchadensFoto(supabase, user.id, fotoFile)
+    // UX-1: Alle Fotos hochladen (best-effort). foto_url = erstes Foto
+    // (Backwards-Compat für Cards/OG); foto_urls = alle Pfade inkl. erstes.
+    const pfade: string[] = []
+    for (const file of fotoFiles) {
+      const result = await uploadSchadensFoto(supabase, user.id, file)
       if ("pfad" in result) {
-        fotoPfad = result.pfad
+        pfade.push(result.pfad)
       } else {
         console.warn("[Foto-Upload]", result.fehler)
       }
     }
+    const fotoPfad: string | null = pfade[0] ?? null
 
-    // Basis-Payload ohne die KI-Felder. Die werden separat angehängt
-    // damit ein Retry ohne sie möglich ist, falls die Migration
-    // supabase-migration-ki-analyse.sql noch nicht in Live-DB ist
-    // (PostgREST liefert dann "Could not find the 'ki_confidence' column").
+    // UX-2: Diagnose-Wahl raus aus Mieter-Flow. Status immer 'offen' —
+    // Verwalter entscheidet später ob ticket_typ='diagnose' oder direkter
+    // Auktions-Start.
     const basisPayload: Record<string, unknown> = {
       titel: form.titel,
       beschreibung: form.beschreibung,
       wohnung: form.wohnung,
       prioritaet: form.prioritaet,
       gewerk: form.gewerk,
-      // Diagnose-Tickets müssen direkt im Handwerker-Pool sichtbar sein
-      // (Sektion "Verfügbare Diagnose-Termine" filtert auf status='auktion').
-      // Standard-Tickets bleiben 'offen' bis Verwalter die Auktion startet.
-      status: ticketTyp === "diagnose" ? "auktion" : "offen",
-      // 14-Tage-Frist bis Diagnose-Termin automatisch verfällt (M-K2).
-      // Standard-Tickets nutzen das Feld nicht.
-      diagnose_ablauf: ticketTyp === "diagnose"
-        ? new Date(Date.now() + 14 * 86400_000).toISOString()
-        : null,
+      status: "offen",
       erstellt_von: user.id,
       einsatzort_adresse: form.einsatzort_adresse || null,
       einsatzort_lat: form.einsatzort_lat,
       einsatzort_lng: form.einsatzort_lng,
       foto_url: fotoPfad,
-      ticket_typ: ticketTyp,
+      foto_urls: pfade,
+      ticket_typ: "standard",
     }
     const mitKi = {
       ...basisPayload,
@@ -232,25 +266,36 @@ export default function MeldenPage() {
       // KI-Spalten fehlen → ohne sie retry
       dbError = (await supabase.from("tickets").insert(basisPayload)).error
     }
+    if (dbError && /foto_urls/i.test(dbError.message)) {
+      // foto_urls-Migration noch nicht in Live-DB → ohne sie retry
+      const { foto_urls: _ignored, ...ohneFotos } = basisPayload
+      void _ignored
+      dbError = (await supabase.from("tickets").insert(ohneFotos)).error
+    }
     if (dbError && /ticket_typ/i.test(dbError.message)) {
-      // ticket_typ fehlt (Diagnose-Migration noch nicht gerollt) → ohne ihn retry
-      // Standard-Ticket-Pfad bleibt funktional, Diagnose-Wahl wird ignoriert
       const { ticket_typ: _ignored, ...ohneTicketTyp } = basisPayload
       void _ignored
       dbError = (await supabase.from("tickets").insert(ohneTicketTyp)).error
-    }
-    if (dbError && /diagnose_ablauf/i.test(dbError.message)) {
-      // diagnose_ablauf-Spalte fehlt (Ablauf-Migration noch nicht gerollt)
-      const { diagnose_ablauf: _ablauf, ...ohneAblauf } = basisPayload
-      void _ablauf
-      dbError = (await supabase.from("tickets").insert(ohneAblauf)).error
     }
     if (dbError) { setError("Fehler: " + dbError.message); setLoading(false); return }
     setStep("gesendet")
     setLoading(false)
   }
 
-  const analyse = kiResult ? KI_ANALYSEN[kiResult] : null
+  // BUG-2: Wenn der User nachträglich Gewerk/Schadensart ändert, soll die
+  // angezeigte Zeit/Tipp passen. Versuche reverse-mapping vom Gewerk auf
+  // den Schadensart-Key in KI_ANALYSEN — sonst Fallback auf den initialen
+  // KI-Treffer aus dem Foto-Upload.
+  const reverseGewerkKey = (() => {
+    const g = form.gewerk?.toLowerCase()
+    if (!g) return null
+    for (const [key, v] of Object.entries(KI_ANALYSEN)) {
+      if (v.gewerk === g) return key
+    }
+    return null
+  })()
+  const analyse = (reverseGewerkKey && KI_ANALYSEN[reverseGewerkKey])
+    || (kiResult ? KI_ANALYSEN[kiResult] : null)
   const stepIndex = ["foto", "analyse", "details", "ort", "dringlichkeit", "zusammenfassung", "gesendet"].indexOf(step)
 
   return (
@@ -282,45 +327,54 @@ export default function MeldenPage() {
               <p className="text-sm text-ink-muted">Beschreibe den Schaden -- unsere KI erkennt automatisch Kategorie, Gewerk und Dringlichkeit.</p>
             </div>
 
-            {/* Foto Upload Area */}
+            {/* Foto Upload Area — UX-1: bis zu 5 Fotos als Grid */}
             <input
               ref={fileInputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp,image/heic"
               capture="environment"
-              onChange={e => fotoWaehlen(e.target.files?.[0] || null)}
+              multiple
+              onChange={e => { fotosHinzufuegen(e.target.files); if (fileInputRef.current) fileInputRef.current.value = "" }}
               className="hidden"
-              aria-label="Foto auswählen"
+              aria-label="Fotos auswählen"
             />
 
-            {fotoPreviewUrl ? (
+            {fotoPreviewUrls.length > 0 ? (
               <div className="mb-6">
-                <div className="relative rounded-2xl overflow-hidden border border-line bg-surface">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={fotoPreviewUrl}
-                    alt="Foto vom Schaden, Vorschau"
-                    className="w-full max-h-64 object-contain"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fotoWaehlen(null)}
-                    aria-label="Foto entfernen"
-                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-[#2D2A26]/80 text-white flex items-center justify-center hover:bg-[#2D2A26] transition-colors"
-                  >
-                    ×
-                  </button>
+                <div className="grid grid-cols-3 gap-2">
+                  {fotoPreviewUrls.map((url, i) => (
+                    <div key={url} className="relative aspect-square rounded-xl overflow-hidden border border-line bg-surface">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => fotoEntfernen(i)}
+                        aria-label={`Foto ${i + 1} entfernen`}
+                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-[#2D2A26]/80 text-white flex items-center justify-center text-xs hover:bg-[#2D2A26] transition-colors"
+                      >
+                        ×
+                      </button>
+                      {i === 0 && (
+                        <span className="absolute bottom-1 left-1 text-[9px] font-bold uppercase tracking-wider bg-accent text-white px-1.5 py-0.5 rounded">
+                          Haupt
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {fotoFiles.length < MAX_FOTOS && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="aspect-square rounded-xl border-2 border-dashed border-line hover:border-accent/40 hover:bg-surface transition-colors flex flex-col items-center justify-center gap-1 text-ink-muted hover:text-accent"
+                    >
+                      <span className="text-2xl leading-none">+</span>
+                      <span className="text-[10px]">Foto</span>
+                    </button>
+                  )}
                 </div>
-                <div className="flex items-center justify-between mt-2 text-xs text-ink-muted">
-                  <span className="truncate">{fotoFile?.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-accent hover:text-[#2D6B5A] font-medium flex-shrink-0 ml-2"
-                  >
-                    Anderes Foto
-                  </button>
-                </div>
+                <p className="text-[11px] text-ink-muted mt-2">
+                  {fotoFiles.length} von {MAX_FOTOS} Fotos · erstes Foto wird KI-analysiert
+                </p>
               </div>
             ) : (
               <button
@@ -332,8 +386,8 @@ export default function MeldenPage() {
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                   <circle cx="12" cy="13" r="4" />
                 </svg>
-                <p className="text-sm text-ink font-medium">Foto aufnehmen oder hochladen</p>
-                <p className="text-xs text-ink-muted mt-1">JPG, PNG, WebP — max. 5 MB · optional</p>
+                <p className="text-sm text-ink font-medium">Fotos aufnehmen oder hochladen</p>
+                <p className="text-xs text-ink-muted mt-1">JPG, PNG, WebP — max. 5 MB pro Foto, bis zu {MAX_FOTOS} Fotos · optional</p>
               </button>
             )}
 
@@ -440,7 +494,9 @@ export default function MeldenPage() {
                 </div>
                 <div>
                   <div className="text-[10px] text-ink-muted uppercase tracking-wider mb-1">Geschätzte Zeit</div>
-                  <div className="text-sm font-semibold text-ink">{analyse.zeit}</div>
+                  <div className="text-sm font-semibold text-ink">
+                    {analyse.zeit ?? "Nach Besichtigung"}
+                  </div>
                 </div>
                 <div>
                   <div className="text-[10px] text-ink-muted uppercase tracking-wider mb-1">Fachgebiet</div>
@@ -448,6 +504,12 @@ export default function MeldenPage() {
                 </div>
               </div>
             </Card>
+
+            {/* KI-1: Disclaimer dass die Schätzung unverbindlich ist */}
+            <p className="text-[11px] text-ink-faint mb-4 leading-relaxed">
+              Unverbindliche Ersteinschätzung — der finale Preis und die genaue
+              Bearbeitungszeit werden vom Handwerker nach Sichtung bestimmt.
+            </p>
 
             {/* KI Tipp */}
             <div className="bg-[#FFF3E8] border border-warm/15 rounded-xl px-4 py-3 mb-6">
@@ -471,77 +533,32 @@ export default function MeldenPage() {
               />
             </div>
 
-            {/* Dringlichkeit Override */}
+            {/* UX-3: Labels jetzt Planbar / Zeitnah / Notfall (Default Planbar
+                = "normal" intern). Audit-Empfehlung: User soll bewusst
+                hochstufen statt aktiv "normal" wählen müssen. */}
             <div className="mb-6">
-              <label className="block text-xs font-medium text-ink-muted mb-2">Dringlichkeit anpassen</label>
+              <label className="block text-xs font-medium text-ink-muted mb-2">Dringlichkeit</label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { val: "normal", label: "Normal", sub: "Kein Eile", color: "border-accent/30 bg-accent/5 text-accent" },
-                  { val: "hoch", label: "Hoch", sub: "Bitte bald", color: "border-warm/30 bg-[#FFF3E8] text-[#B07A3B]" },
-                  { val: "dringend", label: "Notfall", sub: "Sofort", color: "border-danger/30 bg-danger-light text-danger" },
+                  { val: "normal", color: "border-accent/30 bg-accent/5 text-accent" },
+                  { val: "hoch", color: "border-warm/30 bg-[#FFF3E8] text-[#B07A3B]" },
+                  { val: "dringend", color: "border-danger/30 bg-danger-light text-danger" },
                 ].map(d => (
                   <button
                     key={d.val}
                     onClick={() => setForm(f => ({ ...f, prioritaet: d.val }))}
                     className={"rounded-xl p-3 border text-center transition-all " + (form.prioritaet === d.val ? d.color : "border-line bg-surface-muted text-ink-muted")}
                   >
-                    <div className="text-sm font-medium">{d.label}</div>
-                    <div className="text-[10px] mt-0.5 opacity-70">{d.sub}</div>
+                    <div className="text-sm font-medium">{PRIO_LABELS[d.val]}</div>
+                    <div className="text-[10px] mt-0.5 opacity-70">{PRIO_SUB[d.val]}</div>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Diagnose-Option — neue Stufe-1-Pipeline */}
-            <div className="bg-white border border-line rounded-2xl p-4 mb-4">
-              <div className="text-[10px] uppercase tracking-wider text-ink-muted font-bold mb-3">
-                Umfang klar?
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setTicketTyp("standard")}
-                  aria-pressed={ticketTyp === "standard"}
-                  className={`text-left rounded-xl p-3 border transition-all ${
-                    ticketTyp === "standard"
-                      ? "border-[#3D8B7A] bg-accent/5"
-                      : "border-line hover:border-accent/30"
-                  }`}
-                >
-                  <div className="text-sm font-semibold text-ink mb-0.5">
-                    Direkte Reparatur
-                  </div>
-                  <div className="text-[11px] text-ink-muted leading-snug">
-                    Handwerker bieten direkt auf den Auftrag.
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTicketTyp("diagnose")}
-                  aria-pressed={ticketTyp === "diagnose"}
-                  className={`text-left rounded-xl p-3 border transition-all ${
-                    ticketTyp === "diagnose"
-                      ? "border-[#5B6ABF] bg-rolle-mieter/5"
-                      : "border-line hover:border-[#5B6ABF]/30"
-                  }`}
-                >
-                  <div className="flex items-baseline justify-between gap-2 mb-0.5">
-                    <span className="text-sm font-semibold text-ink">
-                      Erst Diagnose
-                    </span>
-                    {diagnosePreis != null && (
-                      <span className="text-sm font-bold text-rolle-mieter tabular-nums">
-                        {diagnosePreis} €
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-ink-muted leading-snug">
-                    Handwerker kommt zur Begutachtung, fester Preis.
-                    Bei Folgeauftrag wird die Gebühr angerechnet.
-                  </div>
-                </button>
-              </div>
-            </div>
+            {/* UX-2: Diagnose-vs-Direkt-Wahl entfernt — gehört in den
+                Verwalter-Flow (Fachentscheidung nach Sichtung), nicht
+                ins Mieter-UI. */}
 
             <Button onClick={() => setStep("ort")} className="w-full justify-center">
               Weiter -- Ort angeben
@@ -573,7 +590,7 @@ export default function MeldenPage() {
 
             <div className="mb-4">
               <label className="text-xs text-ink-muted mb-1.5 block font-medium">
-                Wohnung / Raum
+                Wohnung / Raum <span className="text-ink-faint font-normal">(optional)</span>
               </label>
               <input
                 value={form.wohnung}
@@ -584,23 +601,47 @@ export default function MeldenPage() {
             </div>
 
             <div className="mb-6">
-              <p className="text-xs text-ink-muted mb-2">Schnellauswahl Raum:</p>
+              <p className="text-xs text-ink-muted mb-2">Schnellauswahl Raum (optional):</p>
               <div className="flex flex-wrap gap-2">
-                {["Küche", "Bad", "Wohnzimmer", "Schlafzimmer", "Flur", "Keller", "Balkon"].map(r => (
-                  <button
-                    key={r}
-                    onClick={() => setForm(f => ({ ...f, wohnung: f.wohnung ? f.wohnung + ", " + r : r }))}
-                    className="text-xs bg-surface-muted hover:bg-accent/10 border border-line hover:border-accent/30 rounded-full px-3 py-1.5 transition-all text-ink-muted hover:text-accent"
-                  >
-                    {r}
-                  </button>
-                ))}
+                {["Küche", "Bad", "Wohnzimmer", "Schlafzimmer", "Flur", "Keller", "Balkon"].map(r => {
+                  // BUG-1: Active-State pro Chip — vorher war jedes selektierte
+                  // Chip visuell identisch mit den nicht-selektierten ("Bad" sah
+                  // genauso aus wie Küche), Toggle-Verhalten fehlte ganz.
+                  // Jetzt: Wort als ", "-getrennter Token im Wohnung-Feld;
+                  // Klick toggled add/remove und Chip bekommt active-Style.
+                  const tokens = form.wohnung.split(",").map(t => t.trim()).filter(Boolean)
+                  const isActive = tokens.includes(r)
+                  function toggle() {
+                    if (isActive) {
+                      const next = tokens.filter(t => t !== r).join(", ")
+                      setForm(f => ({ ...f, wohnung: next }))
+                    } else {
+                      const next = form.wohnung.trim() ? form.wohnung.trim().replace(/,\s*$/, "") + ", " + r : r
+                      setForm(f => ({ ...f, wohnung: next }))
+                    }
+                  }
+                  return (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={toggle}
+                      aria-pressed={isActive}
+                      className={`text-xs rounded-full px-3 py-1.5 transition-all border ${
+                        isActive
+                          ? "bg-accent text-white border-accent shadow-sm"
+                          : "bg-surface-muted text-ink-muted border-line hover:bg-accent/10 hover:border-accent/30 hover:text-accent"
+                      }`}
+                    >
+                      {r}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
             <Button
               onClick={() => setStep("zusammenfassung")}
-              disabled={!form.wohnung.trim()}
+              disabled={!form.einsatzort_adresse.trim()}
               className="w-full justify-center"
             >
               Weiter — Zusammenfassung
@@ -636,13 +677,13 @@ export default function MeldenPage() {
                 <div className="flex justify-between">
                   <span className="text-xs text-ink-muted">Dringlichkeit</span>
                   <span className={"text-sm font-medium " + (form.prioritaet === "dringend" ? "text-danger" : form.prioritaet === "hoch" ? "text-[#B07A3B]" : "text-accent")}>
-                    {form.prioritaet === "dringend" ? "Notfall" : form.prioritaet === "hoch" ? "Hoch" : "Normal"}
+                    {PRIO_LABELS[form.prioritaet] ?? form.prioritaet}
                   </span>
                 </div>
                 <div className="border-t border-line" />
                 <div className="flex justify-between">
                   <span className="text-xs text-ink-muted">Geschätzte Bearbeitung</span>
-                  <span className="text-sm text-ink">{analyse.zeit}</span>
+                  <span className="text-sm text-ink">{analyse.zeit ?? "Nach Besichtigung"}</span>
                 </div>
               </div>
             </Card>
@@ -681,30 +722,30 @@ export default function MeldenPage() {
           </div>
         )}
 
-        {/* STEP 6: Gesendet - Erfolg */}
+        {/* STEP 6: Gesendet — UX-5: kürzer, kein 5-Step-Pipeline mehr.
+            Die gehört in die Ticket-Detail-Ansicht, nicht aufs Confirm. */}
         {step === "gesendet" && (
           <div className="animate-fade-in text-center py-12">
             <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-6">
-              <span className="text-3xl text-accent">OK</span>
+              <span className="text-3xl text-accent">✓</span>
             </div>
-            <h2 className="text-xl font-semibold mb-2">Meldung erfolgreich gesendet</h2>
-            <p className="text-sm text-ink-muted mb-8">Deine Hausverwaltung wurde benachrichtigt. Du erhaeltst Updates zu jedem Schritt.</p>
+            <h2 className="text-xl font-semibold mb-2">Schaden erfolgreich gemeldet</h2>
+            <p className="text-sm text-ink-muted mb-8 max-w-sm mx-auto">
+              Deine Hausverwaltung prüft die Meldung und meldet sich bei dir.
+              Status-Updates findest du in &bdquo;Meine Meldungen&ldquo;.
+            </p>
 
-            {/* Mini Pipeline */}
-            <div className="flex items-center justify-center gap-2 mb-10">
-              {["Gemeldet", "Prüfung", "Marktplatz", "Reparatur", "Fertig"].map((s, i) => (
-                <div key={s} className="flex items-center gap-2">
-                  <div className={"w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium " + (i === 0 ? "bg-accent text-white" : "bg-surface-muted text-ink-faint")}>
-                    {i + 1}
-                  </div>
-                  {i < 4 && <div className={"w-6 h-0.5 " + (i === 0 ? "bg-accent/30" : "bg-surface-muted")} />}
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-3 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button onClick={() => router.push("/dashboard-mieter")}>Meine Meldungen</Button>
-              <Button variant="ghost" onClick={() => { setStep("foto"); setBeschreibung(""); setKiResult(null); setForm({ titel: "", beschreibung: "", wohnung: "", prioritaet: "normal", gewerk: "allgemein", einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null }) }}>
+              <Button variant="ghost" onClick={() => {
+                setStep("foto")
+                setBeschreibung("")
+                setKiResult(null)
+                setFotoFiles([])
+                fotoPreviewUrls.forEach(u => URL.revokeObjectURL(u))
+                setFotoPreviewUrls([])
+                setForm({ titel: "", beschreibung: "", wohnung: "", prioritaet: "normal", gewerk: "allgemein", einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null })
+              }}>
                 Weiteren Schaden melden
               </Button>
             </div>

@@ -233,6 +233,21 @@ export async function POST(request: NextRequest) {
       angebot.fruehester_termin,
     )
     if (!result.ok) plannerStatus = result.skipped
+
+    // KAL-2: Automatischer Termin im HW-Kalender. Default-Block 4h ab 09:00.
+    // Service-Role weil das im Namen des HW geschieht.
+    void admin.from("termine").insert({
+      handwerker_id: angebot.handwerker_id,
+      ticket_id: ticketId,
+      titel: `Auftrag: ${ticket.titel}`,
+      datum: angebot.fruehester_termin,
+      von: "09:00",
+      bis: "13:00",
+      einsatzort_adresse: ticket.einsatzort_adresse ?? null,
+      notizen: "Auto-erstellt bei Auftragsvergabe",
+    }).then(({ error }) => {
+      if (error) console.warn("[close] Auto-Termin fail:", error.message)
+    })
   } else {
     plannerStatus = "kein-termin"
   }

@@ -11,6 +11,7 @@ import {
   LayoutDashboard, Ticket, Zap, Wrench, BarChart3,
   Euro, Calendar, Briefcase, MapPin, CalendarCheck, UserCircle,
   Plus, FileText, ShieldCheck, LogOut, Map, CalendarRange, Stethoscope,
+  Calculator,
   type LucideProps,
 } from "lucide-react"
 
@@ -33,6 +34,7 @@ const menus: Record<Rolle, { href: string; label: string; Icon: LucideIcon }[]> 
     { href: "/dashboard-handwerker/termine", label: "Termine & Route", Icon: MapPin },
     { href: "/dashboard-handwerker/zeitslots", label: "Zeitslots", Icon: Calendar },
     { href: "/dashboard-handwerker/einnahmen", label: "Einnahmen", Icon: Euro },
+    { href: "/dashboard-handwerker/verdienst", label: "Verdienst-Rechner", Icon: Calculator },
     { href: "/dashboard-handwerker/kalender", label: "Verfügbarkeit", Icon: CalendarCheck },
     { href: "/dashboard-handwerker/profil", label: "Mein Profil", Icon: UserCircle },
   ],

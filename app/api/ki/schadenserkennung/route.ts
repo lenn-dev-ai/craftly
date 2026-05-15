@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
+import { createHash } from "crypto"
 import Anthropic from "@anthropic-ai/sdk"
-import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
 
 // POST /api/ki/schadenserkennung
 // Body: multipart/form-data mit 'foto' (Bild)
@@ -94,6 +95,28 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  // Foto einmal als Buffer einlesen — wird sowohl für Hash als auch für
+  // den Anthropic-Call gebraucht.
+  const bytes = await file.arrayBuffer()
+  const buffer = Buffer.from(bytes)
+  const fotoHash = createHash("sha256").update(buffer).digest("hex")
+
+  // KI-3 Sprint 3: Hash-Cache. Wenn der gleiche User dasselbe Foto
+  // schon in den letzten 24h hochgeladen hat, gecachtes Ergebnis
+  // zurückgeben — kein erneuter Anthropic-Call, kein Quota-Verbrauch.
+  const admin = createServiceRoleClient()
+  const cacheSeit = new Date(Date.now() - 86400_000).toISOString()
+  const { data: cached } = await admin
+    .from("ki_analysen_cache")
+    .select("ergebnis")
+    .eq("user_id", user.id)
+    .eq("foto_hash", fotoHash)
+    .gte("created_at", cacheSeit)
+    .maybeSingle<{ ergebnis: KiAntwort }>()
+  if (cached?.ergebnis) {
+    return NextResponse.json({ ...cached.ergebnis, cached: true })
+  }
+
   // Rate-Limit: max 10 KI-Calls/Tag/User. Atomic check+increment in
   // Postgres (siehe supabase/migrations/20260520100000_*).
   // Schutz vor Anthropic-Kostenexplosion durch kompromittierte Accounts
@@ -117,8 +140,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const bytes = await file.arrayBuffer()
-  const base64 = Buffer.from(bytes).toString("base64")
+  const base64 = buffer.toString("base64")
 
   const anthropic = new Anthropic({ apiKey })
 
@@ -159,6 +181,16 @@ export async function POST(request: NextRequest) {
       { status: 502 },
     )
   }
+
+  // KI-3 Sprint 3: Antwort cachen, damit identische Folge-Uploads kein
+  // neues Quota verbrauchen. Best-effort: bei Konflikt (z.B. parallele
+  // Calls) onConflict-Update.
+  void admin.from("ki_analysen_cache").upsert(
+    { user_id: user.id, foto_hash: fotoHash, ergebnis: kiAntwort },
+    { onConflict: "user_id,foto_hash" },
+  ).then(({ error }) => {
+    if (error) console.warn("[ki-cache] Upsert fail:", error.message)
+  })
 
   // Sanity-Checks der Modell-Antwort
   if (!ALLOWED_SCHADENSARTEN.has(kiAntwort.schadensart)) kiAntwort.schadensart = "sonstiges"
