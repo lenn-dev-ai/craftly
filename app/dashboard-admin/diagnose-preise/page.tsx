@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase"
 import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
 import { Stethoscope, Plus, Trash2, Check } from "lucide-react"
 import { GEWERK_LABELS } from "@/types"
+import { useToast } from "@/components/Toast"
 
 interface PreisRow {
   id: string
@@ -21,6 +22,7 @@ interface MarktStat {
 }
 
 export default function DiagnosePreisePage() {
+  const { confirm } = useToast()
   const [rows, setRows] = useState<PreisRow[]>([])
   const [stats, setStats] = useState<Map<string, MarktStat>>(new Map())
   const [loading, setLoading] = useState(true)
@@ -111,7 +113,7 @@ export default function DiagnosePreisePage() {
   }
 
   async function loesche(row: PreisRow) {
-    if (!window.confirm(`Diagnose-Preis für ${GEWERK_LABELS[row.gewerk] ?? row.gewerk} löschen?`)) return
+    if (!await confirm(`Diagnose-Preis für ${GEWERK_LABELS[row.gewerk] ?? row.gewerk} löschen?`)) return
     const supabase = createClient()
     const { error } = await supabase.from("diagnose_preise").delete().eq("id", row.id)
     if (error) {

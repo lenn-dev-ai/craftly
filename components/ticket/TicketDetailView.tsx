@@ -12,6 +12,7 @@ import {
 import PreisAufschluesselung from "@/components/pricing/PreisAufschluesselung"
 import DiagnosePipeline from "@/components/ticket/DiagnosePipeline"
 import NachtragsBox from "@/components/ticket/NachtragsBox"
+import { useToast } from "@/components/Toast"
 
 function berechneValueScore(angebot: Angebot, alleAngebote: Angebot[]): number {
   if (alleAngebote.length === 0) return 0
@@ -133,6 +134,7 @@ function AuktionCountdown({ end }: { end: string }) {
 
 export default function TicketDetailView() {
   const router = useRouter()
+  const { show } = useToast()
   const params = useParams()
   const id = params.id as string
   const [ticket, setTicket] = useState<Ticket | null>(null)
@@ -209,7 +211,7 @@ export default function TicketDetailView() {
     })
     if (!res.ok) {
       const { error } = await res.json().catch(() => ({ error: "Unbekannter Fehler" }))
-      alert("Angebot konnte nicht eingereicht werden: " + error)
+      show("Angebot konnte nicht eingereicht werden: " + error, "error")
       setSubmittingBid(false)
       return
     }
@@ -318,7 +320,7 @@ export default function TicketDetailView() {
       kommentar: kommentar || null,
     })
     if (insertErr) {
-      alert("Bewertung konnte nicht gespeichert werden: " + insertErr.message)
+      show("Bewertung konnte nicht gespeichert werden: " + insertErr.message, "error")
       return
     }
     await load()

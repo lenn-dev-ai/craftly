@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase"
 import { UserProfile } from "@/types"
 import AddressAutocomplete from "@/components/AddressAutocomplete"
 import { haversineKm, schaetzeFahrzeitMin, formatiereFahrzeit, formatiereDistanz } from "@/lib/distance"
+import { useToast } from "@/components/Toast"
 
 type Termin = {
   id: string
@@ -54,6 +55,7 @@ interface OptimierteRoute {
 }
 
 export default function TerminePage() {
+  const { confirm } = useToast()
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [datum, setDatum] = useState(isoHeute())
@@ -214,7 +216,7 @@ export default function TerminePage() {
   }
 
   async function privatLoeschen(id: string) {
-    if (!confirm("Privattermin löschen?")) return
+    if (!await confirm("Privattermin löschen?")) return
     // Optimistic delete
     const vorher = termine
     setTermine(prev => prev.filter(t => t.id !== id))

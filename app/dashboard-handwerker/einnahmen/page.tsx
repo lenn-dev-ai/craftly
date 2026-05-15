@@ -7,9 +7,11 @@ import { createClient } from "@/lib/supabase"
 import { UserProfile, Zeitslot, ZeitslotGebot } from "@/types"
 import { berechneEinnahmenPrognose, GEWERK_BASIS_PREISE } from "@/lib/yield-management"
 import { formatZeit } from "@/lib/format"
+import { useToast } from "@/components/Toast"
 
 export default function EinnahmenDashboard() {
   const router = useRouter()
+  const { confirm } = useToast()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [slots, setSlots] = useState<Zeitslot[]>([])
   const [gebote, setGebote] = useState<ZeitslotGebot[]>([])
@@ -18,7 +20,7 @@ export default function EinnahmenDashboard() {
 
   async function handleGebot(gebotId: string, action: "angenommen" | "abgelehnt") {
     const label = action === "angenommen" ? "annehmen" : "ablehnen"
-    if (!window.confirm(`Anfrage wirklich ${label}?`)) return
+    if (!await confirm(`Anfrage wirklich ${label}?`)) return
     const supabase = createClient()
     const { error } = await supabase.from("zeitslot_gebote").update({ status: action }).eq("id", gebotId)
     if (error) {
