@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
+import { TrustBadge } from "@/components/ui"
 import { Search, Star, MapPin, Phone, Mail, Briefcase } from "lucide-react"
 import { GEWERK_LABELS } from "@/types"
 
@@ -258,6 +259,13 @@ function HandwerkerCard({ h, onContact, onAuftragNeu }: {
             <div className="text-xs text-ink-muted truncate">{h.name}</div>
           )}
         </div>
+      </div>
+
+      {/* Trust-Badges — objektiv aus Plattform-Daten (Audit Punkt 10) */}
+      <div className="flex items-center gap-1.5 flex-wrap mb-3">
+        {h.auftraege_anzahl != null && h.auftraege_anzahl >= 10 && <TrustBadge kind="erfahren" />}
+        {h.bewertung_avg != null && h.bewertung_avg >= 4.7 && (h.auftraege_anzahl ?? 0) >= 3 && <TrustBadge kind="top-bewertet" />}
+        {(h.auftraege_anzahl ?? 0) === 0 && <TrustBadge kind="neu" />}
       </div>
 
       {/* Bewertung + Aufträge */}

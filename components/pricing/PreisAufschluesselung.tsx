@@ -103,6 +103,12 @@ export default function PreisAufschluesselung({
         </div>
       </div>
 
+      {/* Steuer-Hinweis — Audit Punkt 8 */}
+      <div className="mt-3 text-[11px] text-ink-muted">
+        Alle Beträge netto, zzgl. ges. MwSt. Die Rechnungslegung erfolgt direkt
+        zwischen Handwerker und Auftraggeber.
+      </div>
+
       {/* Early-Adopter-Hinweis */}
       {istEarlyAdopter && earlyAdopterBis && (
         <div className="mt-4 p-3 rounded-xl bg-warm-light border border-warm/30 text-xs text-warm-dark">

@@ -202,9 +202,12 @@ export default function AngebotAbgeben() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Price */}
           <div className="bg-white border border-line rounded-2xl p-5">
-            <label className="block text-sm font-medium text-ink mb-3">
-              Dein Preis <span className="text-accent">*</span>
+            <label className="block text-sm font-medium text-ink mb-1">
+              Dein Festpreis-Angebot <span className="text-accent">*</span>
             </label>
+            <p className="text-[11px] text-ink-muted mb-3">
+              Festpreis (netto) für den gesamten Auftrag inkl. Anfahrt &amp; Material — kein Stundensatz.
+            </p>
             <div className="relative">
               <input
                 type="number"
@@ -214,11 +217,13 @@ export default function AngebotAbgeben() {
                 value={preis}
                 onChange={(e) => setPreis(e.target.value)}
                 placeholder="z.B. 350"
-                className="w-full bg-surface border border-line rounded-xl px-4 py-3 pr-12 text-ink text-lg font-semibold placeholder:text-gray-600 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-[#00D4AA]/30 transition-all"
+                className="w-full bg-surface border border-line rounded-xl px-4 py-3 pr-12 text-ink text-lg font-semibold placeholder:text-ink-muted focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/30 transition-all"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">€</span>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-muted font-medium">€</span>
             </div>
-            <p className="text-[11px] text-gray-500 mt-2">Netto-Preis inkl. Anfahrt & Material</p>
+            <p className="text-[11px] text-ink-muted mt-2">
+              Reparo zieht 5 % Plattformgebühr ab. Du bekommst den Rest 1:1 ausgezahlt.
+            </p>
           </div>
 
           {/* Date */}

@@ -98,6 +98,28 @@ export function StatusDot({ status }: { status: TicketStatus }) {
 }
 
 // ============================================================
+// TrustBadge — Vertrauens-Indikatoren basierend auf realen Daten
+// (Erfahrung, Bewertung, Aktivität). Keine Selbst-Auskunft, sondern
+// objektive Plattform-Metriken — Audit Punkt 10 (Trust & Polish).
+// ============================================================
+export function TrustBadge({ kind }: {
+  kind: "erfahren" | "top-bewertet" | "neu" | "aktiv"
+}) {
+  const map = {
+    erfahren:       { label: "10+ Aufträge",   icon: "✓", cls: "bg-success-light text-success border-success/20" },
+    "top-bewertet": { label: "Top-Bewertet",   icon: "★", cls: "bg-warm-light text-warm-dark border-warm/30" },
+    neu:            { label: "Neu auf Reparo", icon: "✦", cls: "bg-info-light text-info border-info/20" },
+    aktiv:          { label: "Aktiv",          icon: "●", cls: "bg-accent-light text-accent border-accent/20" },
+  } as const
+  const { label, icon, cls } = map[kind]
+  return (
+    <span className={`${cls} border text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full inline-flex items-center gap-1`}>
+      <span aria-hidden="true">{icon}</span> {label}
+    </span>
+  )
+}
+
+// ============================================================
 // Avatar — Initialen-Bubble mit Rolle-Akzent (optional)
 // ============================================================
 export function Avatar({ name, size = "md", rolle }: {
