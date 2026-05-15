@@ -10,7 +10,9 @@ export default async () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-cron-secret": process.env.CRON_SECRET || "netlify-scheduled",
+        // CRON_SECRET muss in Netlify gesetzt sein. Kein Fallback-Secret:
+        // fehlt es, lehnt die API-Route den Cron mit 401 ab.
+        "x-cron-secret": process.env.CRON_SECRET || "",
       },
     })
     const data = await response.json()
