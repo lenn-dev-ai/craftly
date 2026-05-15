@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
 import { Stethoscope, MapPin, Clock, AlertCircle, X } from "lucide-react"
-import { GEWERK_LABELS } from "@/types"
+import { formatGewerk } from "@/types"
 import { useToast } from "@/components/Toast"
 
 // ============================================================
@@ -253,7 +253,7 @@ function TicketCard({ ticket, badge, action, preisHinweis }: {
       )}
       <div className="space-y-1 text-xs text-ink-secondary mb-3">
         {ticket.gewerk && (
-          <div>Gewerk: <span className="text-ink">{GEWERK_LABELS[ticket.gewerk] ?? ticket.gewerk}</span></div>
+          <div>Gewerk: <span className="text-ink">{formatGewerk(ticket.gewerk)}</span></div>
         )}
         {ticket.einsatzort_adresse && (
           <div className="flex items-start gap-1">

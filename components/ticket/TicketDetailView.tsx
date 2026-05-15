@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState, useRef } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
-import { Ticket, Angebot, Nachricht, UserProfile, Einladung, Bewertung } from "@/types"
+import { Ticket, Angebot, Nachricht, UserProfile, Einladung, Bewertung, formatGewerk } from "@/types"
 import { Badge, PrioBadge, TypBadge, Avatar, Button, Card, Input, LoadingSpinner } from "@/components/ui"
 import {
   calculateCommission,
@@ -430,7 +430,7 @@ export default function TicketDetailView() {
           {/* Ticket meta */}
           <div className="flex items-center gap-4 mt-4 pt-4 border-t border-line text-xs text-ink-faint">
             <span>Erstellt: {new Date(ticket.created_at).toLocaleDateString("de", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
-            {ticket.gewerk && <span>Gewerk: {ticket.gewerk}</span>}
+            {ticket.gewerk && <span>Gewerk: {formatGewerk(ticket.gewerk)}</span>}
             {ticket.vergabemodus && <span>Modus: {ticket.vergabemodus === "auktion" ? "Smart-Auktion" : ticket.vergabemodus === "direkt" ? "Sofort-Vergabe" : "Planauftrag"}</span>}
           </div>
         </div>

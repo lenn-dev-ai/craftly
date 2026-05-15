@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { useToast } from "@/components/Toast"
+import { formatGewerk } from "@/types"
 
 /* KI: Aktivitaets-Score pro Nutzer.
    FIX-10: Spalten heißen `erstellt_von` (für sowohl Verwalter- als auch
@@ -249,7 +250,7 @@ export default function NutzerPage() {
                     <td className="px-5 py-3.5 text-sm text-gray-400">{new Date(u.created_at).toLocaleDateString("de")}</td>
                     <td className="px-5 py-3.5 text-sm text-gray-500">
                       {u.firma && <span className="text-gray-400">{u.firma}</span>}
-                      {u.gewerk && <span className="ml-2 text-[11px] bg-surface px-2 py-0.5 rounded">{u.gewerk}</span>}
+                      {u.gewerk && <span className="ml-2 text-[11px] bg-surface px-2 py-0.5 rounded">{formatGewerk(u.gewerk)}</span>}
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="inline-flex items-center gap-2 justify-end">

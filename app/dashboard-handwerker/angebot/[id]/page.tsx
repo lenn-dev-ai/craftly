@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase"
-import type { Ticket, Angebot } from "@/types"
+import { formatGewerk, type Ticket, type Angebot } from "@/types"
 
 const PRIO_COLORS: Record<string, string> = {
   normal: "bg-green-500/20 text-green-400",
@@ -169,7 +169,7 @@ export default function AngebotAbgeben() {
           )}
           <div className="flex flex-wrap gap-2 text-[11px]">
             {ticket.gewerk && (
-              <span className="bg-surface text-gray-300 px-2 py-0.5 rounded-full">{ticket.gewerk}</span>
+              <span className="bg-surface text-gray-300 px-2 py-0.5 rounded-full">{formatGewerk(ticket.gewerk)}</span>
             )}
             {ticket.objekte && (
               <span className="bg-surface text-gray-300 px-2 py-0.5 rounded-full">{(ticket.objekte as any).name}</span>

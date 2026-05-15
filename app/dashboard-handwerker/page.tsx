@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase"
-import { Ticket, UserProfile } from "@/types"
+import { Ticket, UserProfile, formatGewerk } from "@/types"
 import DistanceBadge from "@/components/DistanceBadge"
 import { Timer } from "@/components/ui/Timer"
 import { haversineKm } from "@/lib/distance"
@@ -128,7 +128,7 @@ export default function HandwerkerDashboard() {
           Hallo, {profile?.firma || profile?.name || "Handwerker"}
         </h1>
         <p className="text-sm text-ink-muted mt-1.5">
-          {profile?.gewerk && <span>{profile.gewerk}</span>}
+          {profile?.gewerk && <span>{formatGewerk(profile.gewerk)}</span>}
           {/* React rendert die Number 0 als Text — daher explizit > 0
               prüfen, sonst sieht der HW "Heizung0Noch keine Bewertungen". */}
           {profile?.bewertung_avg != null && Number(profile.bewertung_avg) > 0 ? (
@@ -257,7 +257,7 @@ export default function HandwerkerDashboard() {
             {ausgeblendetWegenGewerk > 0 && (
               <div className="text-xs text-ink-muted mt-4">
                 {ausgeblendetWegenGewerk} weitere Auktion(en) passen nicht zu deinem Gewerk
-                {profile?.gewerk && <> ({profile.gewerk})</>}.
+                {profile?.gewerk && <> ({formatGewerk(profile.gewerk)})</>}.
                 <Link href="/dashboard-handwerker/profil" className="ml-1 text-accent hover:underline">
                   Gewerk ändern
                 </Link>

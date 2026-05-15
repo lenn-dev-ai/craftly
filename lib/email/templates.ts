@@ -2,6 +2,8 @@
 // Alle Templates exportieren { subject, html } — html mit inline-styles
 // für maximale E-Mail-Client-Kompatibilität (Gmail, Outlook, Apple Mail).
 
+import { formatGewerk } from "@/types"
+
 const COLORS = {
   bg: "#FAF8F5",
   accent: "#3D8B7A",
@@ -114,7 +116,7 @@ export function einladungEmail(params: {
       <h3 style="margin:0 0 8px;color:${COLORS.text};font-size:17px;">${escapeHtml(params.ticketTitel)}</h3>
       ${beschreibung ? `<p style="margin:0 0 12px;color:${COLORS.textMuted};font-size:14px;line-height:1.5;">${escapeHtml(beschreibung)}</p>` : ""}
       ${infoTabelle([
-        { label: "Gewerk", value: params.gewerk },
+        { label: "Gewerk", value: formatGewerk(params.gewerk) },
         { label: "Einsatzort", value: params.einsatzort || "—" },
         { label: "Entfernung", value: `${params.distanzKm.toFixed(1)} km` },
         { label: "Auktion endet", value: params.auktionEnde },
@@ -447,7 +449,7 @@ export function stilleHwReaktivierungEmail(params: {
     <div style="background:${COLORS.bg};border:1px solid ${COLORS.border};border-radius:12px;padding:16px;margin:0 0 8px;">
       <div style="font-weight:600;color:${COLORS.text};font-size:15px;margin-bottom:4px;">${escapeHtml(a.titel)}</div>
       <div style="font-size:13px;color:${COLORS.textMuted};margin-bottom:8px;">
-        ${escapeHtml(a.gewerk)} · ${escapeHtml(a.einsatzort || "Adresse auf Anfrage")} · ${a.entfernungKm.toFixed(1)} km
+        ${escapeHtml(formatGewerk(a.gewerk))} · ${escapeHtml(a.einsatzort || "Adresse auf Anfrage")} · ${a.entfernungKm.toFixed(1)} km
       </div>
       <a href="${SITE_URL}/dashboard-handwerker/angebot/${a.id}" style="display:inline-block;padding:8px 16px;background:${COLORS.accent};color:#ffffff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">
         Angebot abgeben →

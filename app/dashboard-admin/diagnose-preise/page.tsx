@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase"
 import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
 import { Stethoscope, Plus, Trash2, Check } from "lucide-react"
-import { GEWERK_LABELS } from "@/types"
+import { formatGewerk } from "@/types"
 import { useToast } from "@/components/Toast"
 
 interface PreisRow {
@@ -105,7 +105,7 @@ export default function DiagnosePreisePage() {
       zeigeToast("Speichern fehlgeschlagen: " + error.message)
       return
     }
-    zeigeToast(`${GEWERK_LABELS[row.gewerk] ?? row.gewerk} aktualisiert`)
+    zeigeToast(`${formatGewerk(row.gewerk)} aktualisiert`)
     const copy = { ...edits }
     delete copy[row.id]
     setEdits(copy)
@@ -113,7 +113,7 @@ export default function DiagnosePreisePage() {
   }
 
   async function loesche(row: PreisRow) {
-    if (!await confirm(`Diagnose-Preis für ${GEWERK_LABELS[row.gewerk] ?? row.gewerk} löschen?`)) return
+    if (!await confirm(`Diagnose-Preis für ${formatGewerk(row.gewerk)} löschen?`)) return
     const supabase = createClient()
     const { error } = await supabase.from("diagnose_preise").delete().eq("id", row.id)
     if (error) {
@@ -201,7 +201,7 @@ export default function DiagnosePreisePage() {
                 <tr key={row.id} className="border-b border-line last:border-0 hover:bg-surface/50">
                   <td className="px-4 py-3">
                     <div className="text-sm font-medium text-ink">
-                      {GEWERK_LABELS[row.gewerk] ?? row.gewerk}
+                      {formatGewerk(row.gewerk)}
                     </div>
                     <div className="text-[10px] text-ink-muted font-mono">{row.gewerk}</div>
                   </td>

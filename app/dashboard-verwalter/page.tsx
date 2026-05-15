@@ -325,7 +325,7 @@ export default function VerwalterDashboard() {
       {/* KPI Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
         <Kpi label="Eingegangen" value={offene.length} accent={offene.length > 0 ? "warn" : "muted"} sub={offene.length === 0 ? "alles bearbeitet" : "warten auf dich"} />
-        <Kpi label="Auf Marktplatz" value={marktplatz.length} accent="primary" sub="warten auf Angebot" />
+        <Kpi label="Laufende Auktionen" value={marktplatz.length} accent="primary" sub="warten auf Angebote" />
         <Kpi label="In Arbeit" value={inArbeit.length} accent="info" sub="bei Handwerker" />
         <Kpi label="Kosten Monat" value={`${monatsKosten.toLocaleString("de")} €`} accent="muted" sub="diesen Monat" />
       </div>
@@ -395,11 +395,11 @@ export default function VerwalterDashboard() {
         </section>
       )}
 
-      {/* Auf Marktplatz */}
+      {/* Laufende Auktionen */}
       {marktplatz.length > 0 && (
         <section className="mb-10">
           <h2 className="text-sm font-semibold text-ink uppercase tracking-wide mb-4">
-            Auf dem Marktplatz <span className="text-ink-muted font-normal">({marktplatz.length})</span>
+            Laufende Auktionen <span className="text-ink-muted font-normal">({marktplatz.length})</span>
           </h2>
           <div className="flex flex-col gap-2">
             {marktplatz.map(t => (
@@ -418,7 +418,7 @@ export default function VerwalterDashboard() {
                     </div>
                   </div>
                   <span className="text-xs text-accent font-medium flex-shrink-0">
-                    Wartet auf Angebot
+                    Wartet auf Angebote
                   </span>
                 </div>
               </button>

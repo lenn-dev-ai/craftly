@@ -8,6 +8,7 @@ import "leaflet/dist/leaflet.css"
 import { createClient } from "@/lib/supabase"
 import { optimiereRoute } from "@/lib/auction/route-bundling"
 import { Map as MapIcon, AlertCircle } from "lucide-react"
+import { formatGewerk } from "@/types"
 
 // ============================================================
 // Daten-Typen
@@ -357,7 +358,7 @@ export default function KarteView() {
                     <div className="text-xs space-y-1 min-w-[180px]">
                       <div className="font-semibold text-ink text-sm">{s.titel}</div>
                       <div style={{ color: FARBE[s.dringlichkeit] }} className="font-medium">{LABEL[s.dringlichkeit]}</div>
-                      {s.gewerk && <div className="text-ink-secondary">Gewerk: {s.gewerk}</div>}
+                      {s.gewerk && <div className="text-ink-secondary">Gewerk: {formatGewerk(s.gewerk)}</div>}
                       {s.adresse && <div className="text-ink-secondary">📍 {s.adresse}</div>}
                       {s.von && s.bis && (
                         <div className="text-ink-secondary">⏰ {s.von}–{s.bis} {s.datum && `· ${s.datum}`}</div>

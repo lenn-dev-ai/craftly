@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase"
 import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
 import { TrustBadge } from "@/components/ui"
 import { Search, Star, MapPin, Phone, Mail, Briefcase } from "lucide-react"
-import { GEWERK_LABELS } from "@/types"
+import { formatGewerk } from "@/types"
 
 interface Handwerker {
   id: string
@@ -155,7 +155,7 @@ export default function HandwerkerUebersicht() {
                 aktiv={gewerkFilter === g}
                 onClick={() => setGewerkFilter(g)}
               >
-                {GEWERK_LABELS[g] ?? g}
+                {formatGewerk(g)}
               </FilterPill>
             ))}
           </div>
@@ -236,7 +236,7 @@ function HandwerkerCard({ h, onContact, onAuftragNeu }: {
 }) {
   const stundensatz = h.basis_stundensatz ?? h.basis_preis
   const ort = h.startort_adresse || h.plz_bereich
-  const gewerkLabel = h.gewerk ? (GEWERK_LABELS[h.gewerk] ?? h.gewerk) : null
+  const gewerkLabel = h.gewerk ? formatGewerk(h.gewerk) : null
   const stufe = h.sichtbarkeit_stufe ? STUFEN_BADGE[h.sichtbarkeit_stufe] : null
 
   return (

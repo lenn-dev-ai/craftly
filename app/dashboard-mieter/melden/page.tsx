@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase"
 import { Button, Card } from "@/components/ui"
 import AddressAutocomplete from "@/components/AddressAutocomplete"
 import { uploadSchadensFoto } from "@/lib/storage/schadens-foto"
+import { formatGewerk } from "@/types"
 
 const MAX_FOTO_BYTES = 5 * 1024 * 1024 // 5 MB
 const ERLAUBTE_FOTO_TYPEN = ["image/jpeg", "image/png", "image/webp", "image/heic"]
@@ -443,7 +444,7 @@ export default function MeldenPage() {
                 </div>
                 <div>
                   <div className="text-[10px] text-ink-muted uppercase tracking-wider mb-1">Fachgebiet</div>
-                  <div className="text-sm font-semibold text-ink">{form.gewerk === "heizung_sanitaer" ? "Sanitär" : form.gewerk === "elektro" ? "Elektro" : form.gewerk === "schreiner" ? "Schreiner" : form.gewerk === "maler" ? "Maler" : "Allgemein"}</div>
+                  <div className="text-sm font-semibold text-ink">{formatGewerk(form.gewerk)}</div>
                 </div>
               </div>
             </Card>

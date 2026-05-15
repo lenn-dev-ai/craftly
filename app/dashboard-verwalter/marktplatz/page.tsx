@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
-import { UserProfile, Zeitslot, GEWERK_LABELS } from "@/types"
+import { UserProfile, Zeitslot, formatGewerk } from "@/types"
 import { GEWERK_BASIS_PREISE } from "@/lib/yield-management"
 import { formatZeit } from "@/lib/format"
 import { useToast } from "@/components/Toast"
@@ -158,7 +158,7 @@ export default function MarktplatzPage() {
                     : "text-ink-muted border border-line hover:text-ink-secondary hover:border-accent/20"
                 }`}
               >
-                {GEWERK_LABELS[g] || g} ({count})
+                {formatGewerk(g)} ({count})
               </button>
             )
           })}
@@ -171,7 +171,7 @@ export default function MarktplatzPage() {
             <div className="text-lg font-semibold mb-1">Keine Slots gefunden</div>
             <div className="text-sm text-ink-muted">
               {filter !== "alle"
-                ? `Keine verfügbaren Slots für ${GEWERK_LABELS[filter]}. Probiere einen anderen Filter.`
+                ? `Keine verfügbaren Slots für ${formatGewerk(filter)}. Probiere einen anderen Filter.`
                 : "Aktuell sind keine Handwerker-Slots verfügbar. Schau später nochmal vorbei!"
               }
             </div>
@@ -214,7 +214,7 @@ export default function MarktplatzPage() {
                             )}
                           </div>
                           <div className="text-xs text-ink-muted mt-0.5">
-                            {GEWERK_LABELS[s.gewerk || "allgemein"]}
+                            {formatGewerk(s.gewerk)}
                             {hw?.plz_bereich && ` · PLZ ${hw.plz_bereich}`}
                           </div>
                           <div className="text-xs text-ink/50 mt-1">

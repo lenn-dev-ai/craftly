@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
-import { UserProfile, Zeitslot, Gewerk, GEWERK_LABELS } from "@/types"
+import { UserProfile, Zeitslot, Gewerk, GEWERK_LABELS, formatGewerk } from "@/types"
 import {
   berechneDynamischenPreis,
   GEWERK_BASIS_PREISE,
@@ -125,7 +125,7 @@ export default function ZeitslotsPage() {
     // "cannot insert a non-DEFAULT value into column 'stunden'" ab.
     const { error } = await supabase.from("zeitslots").insert({
       handwerker_id: profile.id,
-      titel: form.titel || `${GEWERK_LABELS[form.gewerk || profile.gewerk || "allgemein"]} Slot`,
+      titel: form.titel || `${formatGewerk(form.gewerk || profile.gewerk)} Slot`,
       gewerk: form.gewerk || profile.gewerk || "allgemein",
       datum: form.datum,
       von: form.von,
@@ -331,7 +331,7 @@ export default function ZeitslotsPage() {
                 onChange={(e) => setForm({ ...form, gewerk: e.target.value })}
                 className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm text-ink focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20 transition-colors"
               >
-                <option value="">Standard ({GEWERK_LABELS[profile?.gewerk || "allgemein"]})</option>
+                <option value="">Standard ({formatGewerk(profile?.gewerk)})</option>
                 {Object.entries(GEWERK_LABELS).map(([k, v]) => (
                   <option key={k} value={k}>{v}</option>
                 ))}
@@ -492,7 +492,7 @@ export default function ZeitslotsPage() {
                               )}
                             </div>
                             <div className="text-xs text-ink-muted">
-                              {formatZeit(s.von)} – {formatZeit(s.bis)} ({s.stunden}h) · {GEWERK_LABELS[s.gewerk || "allgemein"]}
+                              {formatZeit(s.von)} – {formatZeit(s.bis)} ({s.stunden}h) · {formatGewerk(s.gewerk)}
                             </div>
                           </div>
                         </div>

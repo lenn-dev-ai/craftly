@@ -11,9 +11,31 @@ export type Gewerk =
   | "schreiner" | "dachdecker" | "schlosser" | "allgemein"
 
 export const GEWERK_LABELS: Record<string, string> = {
-  sanitaer: "SanitÃ¤r", elektro: "Elektro", heizung: "Heizung",
-  maler: "Maler", schreiner: "Schreiner", dachdecker: "Dachdecker",
-  schlosser: "Schlosser", allgemein: "Allgemein",
+  sanitaer: "Sanitär",
+  sanitaer_heizung: "Sanitär & Heizung",
+  heizung_sanitaer: "Sanitär & Heizung",
+  elektro: "Elektro",
+  elektrik: "Elektro",
+  heizung: "Heizung",
+  maler: "Maler",
+  schreiner: "Schreiner",
+  tischler: "Schreiner",
+  dachdecker: "Dachdecker",
+  schlosser: "Schlosser",
+  klempner: "Klempner",
+  bodenleger: "Bodenleger",
+  schimmel_sanierer: "Schimmel-Sanierer",
+  allgemein: "Allgemein",
+}
+
+export function formatGewerk(gewerk: string | null | undefined): string {
+  if (!gewerk) return "Allgemein"
+  const key = gewerk
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/-/g, "_")
+  return GEWERK_LABELS[key] ?? gewerk
 }
 
 export interface UserProfile {

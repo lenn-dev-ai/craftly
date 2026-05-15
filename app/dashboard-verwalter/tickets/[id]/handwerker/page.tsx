@@ -2,7 +2,7 @@
 import { useEffect, useState, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
-import { UserProfile, Ticket, GEWERK_LABELS } from "@/types"
+import { UserProfile, Ticket, formatGewerk } from "@/types"
 import { LoadingSpinner, Toast } from "@/components/ui"
 import { berechnePreisfaktor, berechneRichtpreis } from "@/lib/preisfaktor"
 import { haversineKm, schaetzeFahrzeitMin, formatiereDistanz, formatiereFahrzeit } from "@/lib/distance"
@@ -262,7 +262,7 @@ export default function HandwerkerAuswahlPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-ink">Handwerker auswählen</h1>
         <p className="text-sm text-ink-muted mt-1">
-          {ticket.titel} — {GEWERK_LABELS[ticket.gewerk || "allgemein"] || ticket.gewerk}
+          {ticket.titel} — {formatGewerk(ticket.gewerk)}
         </p>
         {ticket.einsatzort_adresse && (
           <p className="text-xs text-ink-muted mt-1.5 flex items-center gap-1">
@@ -361,7 +361,7 @@ export default function HandwerkerAuswahlPage() {
           </div>
           <div className="text-sm font-medium text-ink mb-1">Keine Handwerker gefunden</div>
           <div className="text-xs text-ink-muted">
-            Für „{GEWERK_LABELS[ticket.gewerk || "allgemein"] || ticket.gewerk}“ sind aktuell keine Handwerker registriert.
+            Für „{formatGewerk(ticket.gewerk)}“ sind aktuell keine Handwerker registriert.
           </div>
         </div>
       ) : (
@@ -397,7 +397,7 @@ export default function HandwerkerAuswahlPage() {
                         <div className="text-xs text-ink-muted mt-0.5">
                           {hw.bewertung_avg ? <span className="text-warm">★ {hw.bewertung_avg}</span> : "Neu"}
                           {" · "}{hw.auftraege_anzahl || 0} Aufträge
-                          {hw.gewerk && (" · " + (GEWERK_LABELS[hw.gewerk] || hw.gewerk))}
+                          {hw.gewerk && (" · " + formatGewerk(hw.gewerk))}
                         </div>
                       </div>
                       {label && farben && (
