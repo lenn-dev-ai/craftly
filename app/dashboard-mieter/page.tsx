@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket } from "@/types"
@@ -46,21 +46,37 @@ export default function MieterDashboard() {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
   const [username, setUsername] = useState("")
+  const [userId, setUserId] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function load() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push("/login"); return }
-      const { data: profile } = await supabase.from("profiles").select("name").eq("id", user.id).single()
-      if (profile) setUsername(profile.name?.split(" ")[0] || "")
-      const { data } = await supabase.from("tickets").select("*")
-        .eq("erstellt_von", user.id).order("created_at", { ascending: false })
-      setTickets(data || [])
-      setLoading(false)
-    }
-    load()
+  const load = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push("/login"); return }
+    setUserId(user.id)
+    const { data: profile } = await supabase.from("profiles").select("name").eq("id", user.id).single()
+    if (profile) setUsername(profile.name?.split(" ")[0] || "")
+    const { data } = await supabase.from("tickets").select("*")
+      .eq("erstellt_von", user.id).order("created_at", { ascending: false })
+    setTickets(data || [])
+    setLoading(false)
   }, [router])
+
+  useEffect(() => { void load() }, [load])
+
+  // Realtime: Status-Wechsel der eigenen Tickets sofort sehen (F-3)
+  useEffect(() => {
+    if (!userId) return
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`mieter-tickets-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tickets", filter: `erstellt_von=eq.${userId}` },
+        () => { void load() },
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [userId, load])
 
   if (loading) {
     return (

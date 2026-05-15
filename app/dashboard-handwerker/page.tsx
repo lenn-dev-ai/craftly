@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase"
@@ -24,26 +24,42 @@ export default function HandwerkerDashboard() {
   const [zeigeAusserhalb, setZeigeAusserhalb] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    async function load() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push("/login"); return }
+  const load = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push("/login"); return }
 
-      const [{ data: prof }, { data: offene }, { data: meine }] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", user.id).single(),
-        supabase.from("tickets").select("*, angebote(*)").eq("status", "auktion")
-          .gt("auktion_ende", new Date().toISOString()).order("auktion_ende"),
-        supabase.from("tickets").select("*").eq("zugewiesener_hw", user.id)
-          .order("created_at", { ascending: false }),
-      ])
-      setProfile(prof)
-      setAuktionen(offene || [])
-      setMeineAuftraege(meine || [])
-      setLoading(false)
-    }
-    load()
+    const [{ data: prof }, { data: offene }, { data: meine }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", user.id).single(),
+      supabase.from("tickets").select("*, angebote(*)").eq("status", "auktion")
+        .gt("auktion_ende", new Date().toISOString()).order("auktion_ende"),
+      supabase.from("tickets").select("*").eq("zugewiesener_hw", user.id)
+        .order("created_at", { ascending: false }),
+    ])
+    setProfile(prof)
+    setAuktionen(offene || [])
+    setMeineAuftraege(meine || [])
+    setLoading(false)
   }, [router])
+
+  useEffect(() => { void load() }, [load])
+
+  // Realtime: neue Auktionen + Statusänderungen sofort sehen (F-3).
+  // Wir lauschen unfiltered auf tickets — client-seitig filtern wir
+  // schon nach Gewerk/Radius/zugewiesener_hw. Volumen ist OK weil
+  // tickets-Tabelle keine hunderte Inserts/Sek hat.
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel("handwerker-tickets-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tickets" },
+        () => { void load() },
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [load])
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
