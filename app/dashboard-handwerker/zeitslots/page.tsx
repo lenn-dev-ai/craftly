@@ -11,6 +11,7 @@ import {
   Luecke,
 } from "@/lib/yield-management"
 import { formatZeit } from "@/lib/format"
+import { useToast } from "@/components/Toast"
 
 type Tab = "aktiv" | "vergangen" | "erstellen"
 
@@ -38,6 +39,7 @@ async function triggerSichtbarkeitsUpdate(): Promise<SichtbarkeitsInfo | null> {
 }
 
 export default function ZeitslotsPage() {
+  const { confirm } = useToast()
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [slots, setSlots] = useState<Zeitslot[]>([])
@@ -188,7 +190,7 @@ export default function ZeitslotsPage() {
   }
 
   async function deleteSlot(id: string) {
-    if (!window.confirm("Zeitslot wirklich löschen?")) return
+    if (!await confirm("Zeitslot wirklich löschen?")) return
     const supabase = createClient()
     await supabase.from("zeitslots").delete().eq("id", id)
     setToast("Slot gelöscht")

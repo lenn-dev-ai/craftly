@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
+import { useToast } from "@/components/Toast"
 
 /* KI: Aktivitaets-Score pro Nutzer */
 function kiAktivitaetsScore(user: any, tickets: any[], angebote: any[]): number {
@@ -35,6 +36,7 @@ function kiRisiko(users: any[]): string[] {
 }
 
 export default function NutzerPage() {
+  const { confirm, show } = useToast()
   const searchParams = useSearchParams()
   const [users, setUsers] = useState<any[]>([])
   const [tickets, setTickets] = useState<any[]>([])
@@ -83,7 +85,7 @@ export default function NutzerPage() {
     const istSelfDemote = istSelf && currentRolle === "admin" && newRolle !== "admin"
 
     if (istSelfDemote) {
-      const ok = window.confirm(
+      const ok = await confirm(
         `Du entziehst dir selbst die Admin-Rolle und wirst zu '${newRolle}'.\n\n` +
         `Wichtig: Danach kannst du dieses Admin-Panel nicht mehr betreten und ` +
         `dich nicht selbst zurück zum Admin machen. Ein anderer Admin (oder direkter ` +
@@ -94,7 +96,7 @@ export default function NutzerPage() {
     } else if (istSelf && newRolle === currentRolle) {
       return
     } else if (istSelf) {
-      const ok = window.confirm(
+      const ok = await confirm(
         `Du änderst deine eigene Rolle von '${currentRolle}' auf '${newRolle}'. Fortfahren?`
       )
       if (!ok) return
@@ -103,7 +105,7 @@ export default function NutzerPage() {
     const supabase = createClient()
     const { error } = await supabase.from("profiles").update({ rolle: newRolle }).eq("id", userId)
     if (error) {
-      alert("Rolle konnte nicht geändert werden: " + error.message)
+      show("Rolle konnte nicht geändert werden: " + error.message, "error")
       return
     }
 

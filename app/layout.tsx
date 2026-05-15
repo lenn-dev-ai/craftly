@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import CookieBanner from '@/components/CookieBanner'
+import { ToastProvider } from '@/components/Toast'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -216,7 +217,9 @@ export default function RootLayout({
         )}
       </head>
       <body className={`${inter.className} antialiased bg-[#FAF8F5] text-[#2D2A26]`}>
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
         <CookieBanner />
         {/* Service-Worker-Killswitch: lädt /sw.js (jetzt Self-Destruct) bei
             bestehenden Registrierungen einmal nach, damit der alte Cache-

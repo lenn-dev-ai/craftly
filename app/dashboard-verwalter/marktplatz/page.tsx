@@ -6,11 +6,13 @@ import { createClient } from "@/lib/supabase"
 import { UserProfile, Zeitslot, GEWERK_LABELS } from "@/types"
 import { GEWERK_BASIS_PREISE } from "@/lib/yield-management"
 import { formatZeit } from "@/lib/format"
+import { useToast } from "@/components/Toast"
 
 type Filter = "alle" | "sanitaer" | "elektro" | "heizung" | "maler" | "schreiner" | "dachdecker" | "schlosser"
 
 export default function MarktplatzPage() {
   const router = useRouter()
+  const { confirm } = useToast()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [slots, setSlots] = useState<Zeitslot[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,7 +50,7 @@ export default function MarktplatzPage() {
     const slot = slots.find(s => s.id === slotId)
     if (!slot) return
     const preis = gebotPreise[slotId] || slot.dynamischer_preis || slot.basis_preis_stunde
-    if (!window.confirm(`Gebot über ${preis} €/h für "${slot.titel}" wirklich absenden?`)) return
+    if (!await confirm(`Gebot über ${preis} €/h für „${slot.titel}" wirklich absenden?`)) return
     setSending(slotId)
 
     const nachricht = gebotNachrichten[slotId] || ""
