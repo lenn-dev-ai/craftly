@@ -79,7 +79,7 @@ export default function DiagnosenPage() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-5xl mx-auto">
+      <div className="p-6 max-w-5xl mx-auto pt-16 md:pt-6">
         <PageHeaderSkeleton />
         <CardListSkeleton count={4} rows={2} />
       </div>
@@ -87,7 +87,7 @@ export default function DiagnosenPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-6 max-w-5xl mx-auto space-y-6 pt-16 md:pt-6">
       <header>
         <h1 className="text-2xl font-bold text-[#2D2A26]">Diagnose-Aufträge</h1>
         <p className="text-sm text-[#8C857B] mt-1">

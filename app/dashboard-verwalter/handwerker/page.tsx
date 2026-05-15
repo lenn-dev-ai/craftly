@@ -101,7 +101,7 @@ export default function HandwerkerUebersicht() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-5xl mx-auto">
+      <div className="p-6 max-w-5xl mx-auto pt-16 md:pt-6">
         <PageHeaderSkeleton />
         <CardListSkeleton count={6} rows={2} />
       </div>
@@ -109,7 +109,7 @@ export default function HandwerkerUebersicht() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-6 max-w-5xl mx-auto space-y-6 pt-16 md:pt-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-[#2D2A26]">Handwerker-Verzeichnis</h1>

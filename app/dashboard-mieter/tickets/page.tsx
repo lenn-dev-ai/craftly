@@ -25,14 +25,14 @@ export default function MieterTicketsPage() {
   }, [router])
 
   if (loading) return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="p-6 max-w-3xl mx-auto pt-16 md:pt-6">
       <PageHeaderSkeleton />
       <CardListSkeleton count={4} rows={2} />
     </div>
   )
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="p-6 max-w-3xl mx-auto pt-16 md:pt-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-medium">Meine Tickets</h1>

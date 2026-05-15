@@ -80,7 +80,7 @@ export default function MieterDashboard() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-4xl mx-auto">
+      <div className="p-6 max-w-4xl mx-auto pt-16 md:pt-6">
         <PageHeaderSkeleton />
         <CardListSkeleton count={3} rows={3} />
       </div>
@@ -91,7 +91,7 @@ export default function MieterDashboard() {
   const erledigt = tickets.filter(t => t.status === "erledigt")
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto pt-16 md:pt-6">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-[#2D2A26]">

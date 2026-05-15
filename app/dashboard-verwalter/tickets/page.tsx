@@ -54,7 +54,7 @@ export default function TicketsPage() {
     val === "alle" ? tickets.length : tickets.filter(t => (t.ticket_typ ?? "standard") === val).length
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto pt-16 md:pt-6">
       <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
           <h1 className="text-xl font-semibold text-[#2D2A26]">Alle Tickets</h1>

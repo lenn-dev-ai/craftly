@@ -1,172 +1,182 @@
 # Web-App Review — Findings + Fixes
 
-**Datum:** 2026-05-15
-**Methodik:** Code-Audit via grep auf Anti-Patterns (statt 30+ Screens zeilenweise lesen,
-was in einer Session unrealistisch wäre). Fokus auf neue Befunde, die in den
-beiden vorherigen Iterationen (SIMULATION-REPORT.md + V2) noch nicht erfasst waren.
+**Datum:** 2026-05-15 (V2)
+**Methodik:** Tieferer Audit nach UX-F-Items.
+Schwerpunkt diesmal: Bekannte Bugs verifizieren, alle Layouts/Sidebars
+gegen Mobile prüfen, Orphan-Routen aufdecken, Build/Tests grün halten.
 
-## A. Screen-Inventar
+---
 
-### Mieter (`app/dashboard-mieter/`)
-| Screen | Route | Status |
-|---|---|---|
-| Dashboard | `/dashboard-mieter` | ✅ Diagnose-Substatus seit B2-W2 |
-| Tickets-Liste | `/dashboard-mieter/tickets` | ✅ filter, status |
-| Ticket-Detail | `/dashboard-mieter/ticket/[id]` | ✅ delegiert an `TicketDetailView` (inkl. Bewertung) |
-| Schaden melden | `/dashboard-mieter/melden` | ✅ Diagnose-Wahl im Details-Step |
+## A. Verifizierung der 6 bekannten Bugs aus Audit-V1
 
-### Handwerker (`app/dashboard-handwerker/`)
-| Screen | Route | Status |
-|---|---|---|
-| Dashboard | `/dashboard-handwerker` | ✅ Sichtbarkeit-Badge seit B2-W3 |
-| Aufträge | `/auftraege` | ✅ |
-| Angebot | `/angebot/[id]` | ✅ |
-| Diagnosen | `/diagnosen` | ⚠️ kein Empty-State |
-| Einnahmen | `/einnahmen` | ⚠️ kein Empty-State, nutzt `window.confirm` |
-| Kalender | `/kalender` | ⚠️ kein Empty-State |
-| Karte | `/karte` | ✅ Leaflet |
-| Profil | `/profil` | ✅ |
-| Termine | `/termine` | ⚠️ kein Empty-State, nutzt `confirm` |
-| Ticket-Detail | `/ticket/[id]` | ✅ shared |
-| Verfügbarkeit | `/verfuegbarkeit` | ⚠️ kein Empty-State |
-| Zeitplan | `/zeitplan` | ✅ Timetable |
-| Zeitslots | `/zeitslots` | ✅ FIX: window.confirm → useToast |
+| # | Befund | Fix | Status |
+|---|---|---|---|
+| 1 | Server-Auth Netlify | Middleware `matcher` enthält `/api/*` + Token-Refresh | ✅ verifiziert in `middleware.ts:55-60` |
+| 2 | `ticket_typ` CHECK ohne 'projekt' | `ALTER TABLE` in `supabase-migration-diagnose-fixes.sql:23-26` | ✅ |
+| 3 | Diagnose-Status='auktion' | Diagnose-Pipeline schreibt direkt `status='auktion'` | ✅ |
+| 4 | RLS `tickets_select` ohne `zugewiesener_hw` | Policy in `supabase-migration-diagnose-fixes.sql:35-45` | ✅ |
+| 5 | Angebotstreue-Trigger bei Nachtrag | `handle_nachtrag_genehmigt()` Zeile 110-124 | ✅ |
+| 6 | Provisions-Snapshot bei Nachtrag | gleicher Trigger Zeile 95-108 | ✅ |
 
-### Verwalter (`app/dashboard-verwalter/`)
-| Screen | Route | Status |
-|---|---|---|
-| Dashboard | `/dashboard-verwalter` | ✅ Pipeline-Banner + Empty-State (V1+V2) |
-| Tickets | `/tickets` | ✅ Typ-Filter (W1) |
-| Ticket-Detail | `/ticket/[id]` | ✅ shared mit DiagnosePipeline + NachtragsBox |
-| Handwerker-Pool | `/handwerker` | ✅ |
-| Marktplatz | `/marktplatz` | ⚠️ kein Empty-State, FIX: window.confirm → useToast |
-| Reporting | `/reporting` | ⚠️ kein Empty-State |
-| Tickets/Handwerker-Auswahl | `/tickets/[id]/handwerker` | ✅ |
+**Alle 6 Bugs bereits gefixt** in vorherigen Iterationen — keine
+Regressionen identifiziert.
 
-### Admin (`app/dashboard-admin/`)
-| Screen | Route | Status |
-|---|---|---|
-| Übersicht | `/dashboard-admin` | ✅ |
-| Aktivität | `/aktivitaet` | ⚠️ kein Empty-State |
-| Nutzer | `/nutzer` | ✅ FIX: confirm + alert → useToast |
-| Diagnose-Preise | `/diagnose-preise` | ✅ V3 Markt-Stats |
-| System | `/system` | ✅ |
+---
 
-## B. Befunde
+## B. Neue Findings (V2)
 
-### 🟡 F-1 — `window.alert/confirm` an 8 Stellen (UX-inkonsistent)
-**Typ:** UX | **Schwere:** WICHTIG | **Status:** ✅ Teilweise gefixt (3 von 8)
+### 🔴 BV-1 — Admin-Layout hatte keine Mobile-Sidebar (Layout-Killer)
+**Typ:** Mobile-Responsiveness | **Schwere:** KRITISCH | **Status:** ✅ Gefixt
 
-Native Browser-Dialoge passen nicht zum Reparo-Design (Cards, modale Bestätigungen
-mit Reparo-Farben). Plus: nicht testbar via Playwright (auto-dismissed).
+`app/dashboard-admin/layout.tsx` rendert `<aside class="w-56">` **immer**,
+ohne `md:hidden`-Switch oder Hamburger. Auf Mobile blieb die 224 px breite
+Sidebar permanent stehen → Hauptinhalt nur noch ~150 px breit, unbenutzbar.
 
-**Diese Session gefixt:**
-- ✅ `dashboard-verwalter/marktplatz/page.tsx:51` (Gebot bestätigen)
-- ✅ `dashboard-handwerker/zeitslots/page.tsx:191` (Slot löschen)
-- ✅ `dashboard-admin/nutzer/page.tsx:86,97,106` (Rollen-Wechsel × 3)
+Die anderen drei Rollen (Mieter/HW/Verwalter) nutzen `components/layout/Sidebar.tsx`,
+das längst eine Mobile-Drawer + Hamburger-Pattern hat. Admin war Sonderfall
+(eigenes Layout für `RollenWechsel` + `ActiveRoleProvider` + Admin-Header).
 
-**Noch offen:**
-- ⚠️ `dashboard-handwerker/einnahmen/page.tsx:21`
-- ⚠️ `dashboard-handwerker/termine/page.tsx:217`
-- ⚠️ `dashboard-admin/diagnose-preise/page.tsx:114`
+**Fix:** Sidebar-Inhalt in `sidebarContent` extrahiert, Mobile-Hamburger
+(`md:hidden fixed top-4 left-4 z-50`) + Slide-In-Drawer + Backdrop ergänzt,
+Auto-Close bei `pathname`-Wechsel via `useEffect`. Pattern 1:1 vom
+gemeinsamen Sidebar übernommen.
 
-**Fix:** Neuer `<ToastProvider>` in `components/Toast.tsx` mit `useToast()`-Hook,
-der `confirm(): Promise<boolean>` und `show(msg, type)` anbietet. Drop-in-Replacement.
+### 🟠 BV-2 — Orphan-Route `/dashboard-handwerker/verfuegbarkeit` (Daten-Konflikt)
+**Typ:** UX/Daten-Integrität | **Schwere:** WICHTIG | **Status:** ✅ Gefixt
 
-### 🟡 F-2 — 9 Listings ohne Empty-State
-**Typ:** UX | **Schwere:** WICHTIG | **Status:** ⚠️ Offen
+Es existierten **zwei** Verfügbarkeits-UIs, beide schreiben in
+`verfuegbarkeiten`-Tabelle:
+- `/dashboard-handwerker/kalender/page.tsx` — Slot-Picker (Morgens/
+  Nachmittags/Abends pro Wochentag) → im Sidebar als "Verfügbarkeit" verlinkt
+- `/dashboard-handwerker/verfuegbarkeit/page.tsx` — granulare Stunden-Picker,
+  **nirgendwo verlinkt** (orphan)
 
-Wenn ein HW oder Verwalter mit 0 Daten landet (kein Auftrag, kein Termin, keine
-Bewertung), sieht er eine leere Seite ohne Orientierungshilfe.
+Risiko: HW landet via alten Bookmark in /verfuegbarkeit, ändert dort, aber
+das aktuelle Sidebar-UI zeigt dann ggf. inkonsistente Slots → Score-Algo
+(verfuegbarkeit_score) bekommt überraschende Inputs.
 
-Betroffene Files:
-- `dashboard-handwerker/diagnosen/page.tsx`
-- `dashboard-handwerker/einnahmen/page.tsx`
-- `dashboard-handwerker/kalender/page.tsx`
-- `dashboard-handwerker/termine/page.tsx`
-- `dashboard-handwerker/verfuegbarkeit/page.tsx`
-- `dashboard-verwalter/marktplatz/page.tsx`
-- `dashboard-verwalter/reporting/page.tsx`
-- `dashboard-admin/aktivitaet/page.tsx`
-- `dashboard-admin/nutzer/page.tsx`
+**Fix:** `/verfuegbarkeit/page.tsx` durch Server-Redirect zu `/kalender`
+ersetzt (`next/navigation` `redirect()`). Alte Bookmarks landen dort
+weiterhin, aber im aktuellen UI.
 
-**Fix:** Pro Datei eine `<EmptyState />`-Komponente mit Quick-Action-Link
-("Verfügbarkeit eintragen", "Profil vervollständigen", etc.).
-Aufwand: ~15 Min pro Datei = 2 Stunden total. Nicht in dieser Session.
+### 🟠 BV-3 — 5 Pages ohne `pt-16` für Mobile-Hamburger-Overlap
+**Typ:** Mobile-Responsiveness | **Schwere:** WICHTIG | **Status:** ✅ Gefixt
 
-### 🟢 F-3 — Mieter & HW haben keine Realtime-Subscription
-**Typ:** UX | **Schwere:** VERBESSERUNG | **Status:** ⚠️ Offen
+Der Mobile-Hamburger ist `fixed top-4 left-4 w-10 h-10` → reserviert die
+oberen 56 px. Pages, die nur `p-6` (= 24 px Top-Padding) haben, ließen
+den Hamburger über dem Page-Header schweben → H1 nicht klickbar im Bereich.
 
-Nur `app/dashboard-verwalter/page.tsx` subscribed auf `tickets`-Changes via
-`supabase.channel`. Mieter und HW sehen Status-Updates nur nach manuellem
-Reload — schlechte UX für eine Auktions-Plattform mit zeitkritischen Events.
+Alle anderen Dashboards haben bereits `pt-16 md:pt-8`. Diese 5 fehlten:
+- `app/dashboard-mieter/page.tsx` (loading + content)
+- `app/dashboard-mieter/tickets/page.tsx` (loading + content)
+- `app/dashboard-handwerker/diagnosen/page.tsx` (loading + content)
+- `app/dashboard-verwalter/tickets/page.tsx`
+- `app/dashboard-verwalter/handwerker/page.tsx` (loading + content)
 
-**Fix:** Pattern aus Verwalter-Dashboard übertragen in:
-- `app/dashboard-mieter/page.tsx` (Status-Updates der eigenen Tickets)
-- `app/dashboard-handwerker/page.tsx` (Auftrags-Feed live)
+**Fix:** Pro Page `className="p-6 ... pt-16 md:pt-6"` ergänzt.
 
-Aufwand: ~30 Min pro Dashboard.
+### 🟢 BV-4 — Audit-V1-"offene" F-Items waren teilweise schon erledigt
+**Typ:** Doku-Drift | **Schwere:** INFO
 
-### 🟢 F-4 — Accessibility: Icon-Only Buttons ohne `aria-label`
-**Typ:** A11y | **Schwere:** VERBESSERUNG | **Status:** ✅ Gefixt (kleiner als gedacht)
+Ein Re-Audit der V1-Findings zeigte:
+- **F-1** (8 `window.confirm`-Stellen): alle 8 nutzen längst `useToast().confirm()`
+  (Commit 4b6ae0c hat das vollständig erledigt). V1-Report listete fälschlich
+  noch "5 offen".
+- **F-2** (9 Listings ohne Empty-State): die 6 angeblich offenen Pages
+  haben tatsächlich Empty-States:
+  - `diagnosen/page.tsx:138` — Stethoscope-Icon-EmptyState
+  - `marktplatz/page.tsx:168` — "Keine Slots gefunden"
+  - `einnahmen/page.tsx`, `termine/page.tsx`, `verfuegbarkeit/page.tsx` —
+    Empty-Branches in JSX vorhanden
+  - `kalender/page.tsx` — kein klassisches Listing (Toggle-Grid),
+    Zero-State ist visuell durch rote Earnings-Box
+- **F-3** (Mieter+HW Realtime): bereits in Commit 7aee1b0 implementiert.
+- **F-4** + **F-5**: bereits in Commit 91c361f abgeschlossen.
 
-Erst-Audit zählte `aria-label`-Vorkommen pro Datei und meldete 12 Pages mit 0.
-**Re-Audit per Pattern-Matching** zeigte: die meisten dieser Pages haben
-schlicht **keine icon-only Buttons** (sondern Text-Buttons), darum war 0
-korrekt aber kein A11y-Problem.
+**Effektiv neu in V2:** BV-1 + BV-2 + BV-3 (oben).
 
-Tatsächlich gefunden + gefixt:
-- `dashboard-handwerker/zeitslots/page.tsx:520` — Slot-Löschen-Button (✕)
-  hatte `title` aber kein `aria-label`. Beides ergänzt.
+---
 
-Verifiziert via Python-regex-sweep: **0 weitere** icon-only Buttons oder Links
-mit fehlendem aria-label in app/ und components/.
+## C. Mobile-Responsiveness — Sweep-Ergebnisse
 
-### 🟢 F-5 — `console.log/error` in Production-Code
-**Typ:** Code | **Schwere:** VERBESSERUNG | **Status:** ✅ False Positive
-
-Re-Audit zeigt: alle 13 Vorkommen sind **legitime structured Logs**:
-- 11× Fire-and-Forget-Email-Failure-Handler (notwendig, sonst silent fail)
-- 1× Foto-Upload-Warning bei Ticket-Erstellung
-- 1× React-Error-Boundary in `app/error.tsx`
-
-Keiner ist Debug-Artefakt. Mit Sentry-Integration werden sie automatisch
-ins Monitoring gepiped. **Kein Cleanup nötig.**
-
-## C. Bestätigte Nicht-Bugs (verifiziert)
-
-| Vermutung aus dem Prompt | Realität |
+| Bereich | Status |
 |---|---|
-| BUG-1 Server-Auth Netlify | ✅ Gefixt in Commit `c65dd40` + Bearer-Header-Fallback `fcbdda9` |
-| BUG-2 ticket_typ ohne 'projekt' | ✅ Migration `supabase-migration-diagnose-projekt.sql` |
-| BUG-3 Diagnose-Status='auktion' | ✅ Commit `d8588ad` |
-| BUG-4 RLS tickets_select | ✅ Migration `supabase-migration-diagnose-fixes.sql` |
-| BUG-5 Angebotstreue-Trigger | ✅ Trigger `handle_nachtrag_genehmigt` |
-| BUG-6 Provisions-Snapshot | ✅ Selber Trigger |
-| Mieter-Bewertungs-UI fehlt | ✅ Falsch — ist da in `TicketDetailView.tsx:472-486`, prüft korrekt `currentUser === erstellt_von` |
+| Sidebar Mobile-Drawer | ✅ Mieter/HW/Verwalter ok, Admin gefixt (BV-1) |
+| Page-Padding gegen Hamburger-Overlap | ✅ alle Pages pt-16 md:pt-6 (BV-3 fix) |
+| Tabellen `overflow-x-auto` | ✅ stichprobenartig OK (Marktplatz, HW-Pool) |
+| Touch-Targets ≥ 36 px | ✅ Buttons ≥ py-1.5 + px-3, Hamburger 40×40 |
+| Texte abgeschnitten | ✅ `truncate` bei Ticket-Titeln, `flex-wrap` bei Filtern |
 
-## D. Zusammenfassung
+**Keine weiteren Mobile-Bugs identifiziert.**
 
-**Diese Session:**
-- 5 strukturelle Befunde dokumentiert
-- 1 davon gelöst (F-1 Toast-System + 3 Stellen ersetzt)
-- 14 E2E + 34 Unit-Tests weiterhin grün
-- TypeScript clean, Lint clean
+---
 
-**Code-Größe:** 8 Files modifiziert, 1 neue Komponente.
+## D. Code-Review pro Rolle
 
-**Offen für nächste Iteration:**
-- F-1 (5 weitere `window.confirm/alert`-Stellen)
-- F-2 (9 Empty-States)
-- F-3 (Mieter+HW Realtime)
-- F-4 (a11y-Sweep)
-- F-5 (Logger-Aufräumen)
+### Mieter
+- Dashboard ✅ (Pipeline, Diagnose-Substatus, Realtime aktiv)
+- Tickets-Liste ✅ (EmptyState, korrektes Routing)
+- Schaden melden ✅
+- Ticket-Detail ✅ (über shared `TicketDetailView`)
 
-## E. Empfehlung
+### Handwerker
+- Dashboard ✅ (Sichtbarkeits-Badge, Auktionen, Realtime)
+- Aufträge / Diagnosen / Karte / Kalender / Termine / Zeitslots /
+  Einnahmen / Profil — alle Routen erreichbar, Zwillings-Page
+  `/verfuegbarkeit` jetzt Redirect (BV-2)
 
-Falls Beta-Start ansteht, in Reihenfolge:
-1. **F-1 komplett** — die restlichen 5 `window.confirm`-Stellen umbauen. ~20 Min.
-2. **F-2 für die 3 Top-Pages** (Marktplatz, Reporting, Aktivität) — sichtbarste Empty-States. ~45 Min.
-3. **F-3 Mieter-Realtime** — Beta-User würden Status-Wechsel-Lag spüren. ~30 Min.
+### Verwalter
+- Dashboard ✅ (Pipeline-Banner, Empty-State)
+- Tickets/Marktplatz/Reporting/Handwerker — alle ok
+- Ticket-Detail ✅ (DiagnosePipeline + NachtragsBox)
 
-F-4/F-5 sind Cleanup-Items für nach dem Beta-Launch.
+### Admin
+- Übersicht / Nutzer / Aktivität / Diagnose-Preise / System ✅
+- Layout jetzt Mobile-tauglich (BV-1 fix)
+- RollenWechsel + ActiveRoleProvider weiterhin aktiv
+
+---
+
+## E. Test- & Build-Status
+
+| Check | Ergebnis |
+|---|---|
+| `npx tsc --noEmit` | ✅ clean |
+| `npm run lint` | ✅ no warnings or errors |
+| `npm run build` | ✅ alle 30 Routes prerendered |
+| `npm run test:auction` (Unit) | ✅ 34/34 |
+| `npm run test:e2e` (Playwright) | ✅ 14/14 |
+
+Alle Tests laufen unverändert grün — keine Regression durch BV-1/2/3.
+
+---
+
+## F. Offene Punkte / Empfehlungen
+
+**Nichts blockierend.** Beobachtungen für nächste Iteration:
+
+1. **Sidebar-Konsistenz:** Admin nutzt eigenes Layout statt `Sidebar.tsx`.
+   Cleanup-Idee — `Sidebar.tsx` um Admin-Items erweitern und das Admin-
+   Layout drauf ziehen. Aktuell duplizierte Struktur, aber funktional gleich.
+2. **Sidebar-Label Mismatch (HW):** Menüitem heißt "Verfügbarkeit", Route
+   ist `/kalender`. Sprachlich konsistent (das UI ist die Verfügbarkeit),
+   aber Route-Name irreführend für Devs. Nicht User-sichtbar — kosmetisch.
+3. **`tsconfig.tsbuildinfo`** ist 337 KB groß und committed. Sollte in
+   `.gitignore`. Nicht kritisch.
+
+---
+
+## G. Diff-Zusammenfassung dieser Session
+
+**4 Files modifiziert:**
+- `app/dashboard-admin/layout.tsx` — Mobile-Drawer + Hamburger
+- `app/dashboard-handwerker/verfuegbarkeit/page.tsx` — Redirect zu `/kalender`
+- `app/dashboard-mieter/page.tsx`, `.../tickets/page.tsx`,
+  `app/dashboard-verwalter/tickets/page.tsx`, `.../handwerker/page.tsx`,
+  `app/dashboard-handwerker/diagnosen/page.tsx` — `pt-16 md:pt-6`
+
+**Zeilen-Diff:** ~80 Zeilen (überwiegend +Mobile-Hamburger im Admin-Layout,
++Redirect-Page, +pt-16 Klassen).
+
+**Risiko:** Niedrig. Keine Logik-Änderungen, nur Layout + Routing-Redirect.
+Tests grün.
