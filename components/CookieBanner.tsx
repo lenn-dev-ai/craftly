@@ -20,9 +20,9 @@ export default function CookieBanner() {
   if (!sichtbar) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 sm:p-6 pointer-events-none">
-      <div className="max-w-3xl mx-auto bg-white border border-line rounded-2xl shadow-lg p-5 sm:p-6 pointer-events-auto">
-        <div className="flex flex-col gap-4">
+    <div className="fixed bottom-3 left-3 right-3 z-50 sm:left-auto sm:right-5 sm:bottom-5 sm:max-w-md pointer-events-none">
+      <div className="bg-white border border-line rounded-2xl shadow-lg p-4 sm:p-5 pointer-events-auto">
+        <div className="flex flex-col gap-3">
           <div>
             <h2 className="text-base font-medium text-ink mb-1">Cookies & Datenschutz</h2>
             <p className="text-sm text-ink-secondary">

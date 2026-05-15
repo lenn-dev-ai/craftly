@@ -173,6 +173,12 @@ export default function AdminDashboard() {
   const [me, setMe] = useState<{ name: string | null; rolle: string | null } | null>(null)
   const [suche, setSuche] = useState("")
   const [loading, setLoading] = useState(true)
+  const [chartsReady, setChartsReady] = useState(false)
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setChartsReady(true))
+    return () => cancelAnimationFrame(frame)
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -323,25 +329,27 @@ export default function AdminDashboard() {
           <h2 className="text-sm font-semibold text-ink">Tickets pro Woche · letzte {ANZAHL_WOCHEN} Wochen</h2>
           <div className="text-[11px] text-ink-muted">Erstellt vs. Erledigt</div>
         </div>
-        <div className="h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={wochen} margin={{ top: 8, right: 12, left: -16, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#EDE8E1" />
-              <XAxis dataKey="label" stroke="#8C857B" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-              <YAxis stroke="#8C857B" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{ background: "#ffffff", border: "1px solid #EDE8E1", borderRadius: 12, fontSize: 12 }}
-                labelStyle={{ color: "#2D2A26", fontWeight: 600 }}
-              />
-              <Legend
-                wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-                iconType="circle"
-                iconSize={8}
-              />
-              <Line type="monotone" dataKey="erstellt" stroke="#5B6ABF" strokeWidth={2} dot={{ r: 3 }} name="Erstellt" />
-              <Line type="monotone" dataKey="erledigt" stroke="#3D8B7A" strokeWidth={2} dot={{ r: 3 }} name="Erledigt" />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="h-56 min-h-56 min-w-0">
+          {chartsReady ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={wochen} margin={{ top: 8, right: 12, left: -16, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#EDE8E1" />
+                <XAxis dataKey="label" stroke="#8C857B" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis stroke="#8C857B" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{ background: "#ffffff", border: "1px solid #EDE8E1", borderRadius: 12, fontSize: 12 }}
+                  labelStyle={{ color: "#2D2A26", fontWeight: 600 }}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                  iconType="circle"
+                  iconSize={8}
+                />
+                <Line type="monotone" dataKey="erstellt" stroke="#5B6ABF" strokeWidth={2} dot={{ r: 3 }} name="Erstellt" />
+                <Line type="monotone" dataKey="erledigt" stroke="#3D8B7A" strokeWidth={2} dot={{ r: 3 }} name="Erledigt" />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : null}
         </div>
       </div>
 
