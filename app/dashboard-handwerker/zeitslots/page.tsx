@@ -516,6 +516,7 @@ export default function ZeitslotsPage() {
                               onClick={() => deleteSlot(s.id)}
                               className="text-xs text-[#8C857B] hover:text-[#C4574B] transition-colors ml-1"
                               title="Slot löschen"
+                              aria-label="Slot löschen"
                             >
                               ✕
                             </button>

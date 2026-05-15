@@ -107,29 +107,31 @@ Reload — schlechte UX für eine Auktions-Plattform mit zeitkritischen Events.
 
 Aufwand: ~30 Min pro Dashboard.
 
-### 🟢 F-4 — Accessibility: viele Icon-Only Buttons ohne `aria-label`
-**Typ:** A11y | **Schwere:** VERBESSERUNG | **Status:** ⚠️ Offen
+### 🟢 F-4 — Accessibility: Icon-Only Buttons ohne `aria-label`
+**Typ:** A11y | **Schwere:** VERBESSERUNG | **Status:** ✅ Gefixt (kleiner als gedacht)
 
-Audit zeigt 12 von 23 Pages mit 0 `aria-label`-Vorkommen. Icon-only Buttons
-(Trash, Edit, Close, etc.) sind für Screenreader unzugänglich.
+Erst-Audit zählte `aria-label`-Vorkommen pro Datei und meldete 12 Pages mit 0.
+**Re-Audit per Pattern-Matching** zeigte: die meisten dieser Pages haben
+schlicht **keine icon-only Buttons** (sondern Text-Buttons), darum war 0
+korrekt aber kein A11y-Problem.
 
-Beispiele:
-- `dashboard-handwerker/auftraege/page.tsx`
-- `dashboard-handwerker/karte/page.tsx`
-- `dashboard-verwalter/tickets/page.tsx`
-- `dashboard-verwalter/reporting/page.tsx`
+Tatsächlich gefunden + gefixt:
+- `dashboard-handwerker/zeitslots/page.tsx:520` — Slot-Löschen-Button (✕)
+  hatte `title` aber kein `aria-label`. Beides ergänzt.
 
-**Fix:** Sweep alle icon-only `<button>` und `<Link>` durch und `aria-label`
-ergänzen. Aufwand: 1-2 Stunden.
+Verifiziert via Python-regex-sweep: **0 weitere** icon-only Buttons oder Links
+mit fehlendem aria-label in app/ und components/.
 
-### 🟢 F-5 — 13× `console.log/error` in Production-Code
-**Typ:** Code | **Schwere:** VERBESSERUNG | **Status:** ⚠️ Offen
+### 🟢 F-5 — `console.log/error` in Production-Code
+**Typ:** Code | **Schwere:** VERBESSERUNG | **Status:** ✅ False Positive
 
-Seit Sentry-Integration landen diese ohnehin in Sentry. Manche sind echte
-Logs (sinnvoll), manche Debug-Artefakte (Noise).
+Re-Audit zeigt: alle 13 Vorkommen sind **legitime structured Logs**:
+- 11× Fire-and-Forget-Email-Failure-Handler (notwendig, sonst silent fail)
+- 1× Foto-Upload-Warning bei Ticket-Erstellung
+- 1× React-Error-Boundary in `app/error.tsx`
 
-**Fix:** Quick-Sweep, was Debug ist entfernen, Rest auf strukturierten Logger
-umstellen. Niedrige Prio.
+Keiner ist Debug-Artefakt. Mit Sentry-Integration werden sie automatisch
+ins Monitoring gepiped. **Kein Cleanup nötig.**
 
 ## C. Bestätigte Nicht-Bugs (verifiziert)
 
