@@ -103,9 +103,13 @@ export function StatusDot({ status }: { status: TicketStatus }) {
 // objektive Plattform-Metriken — Audit Punkt 10 (Trust & Polish).
 // ============================================================
 export function TrustBadge({ kind }: {
-  kind: "erfahren" | "top-bewertet" | "neu" | "aktiv"
+  kind: "verifiziert" | "erfahren" | "top-bewertet" | "neu" | "aktiv"
 }) {
   const map = {
+    // "verifiziert" ist der stärkste Trust-Indikator — manuell vom Admin
+    // gesetzt nach Prüfung von Gewerbeschein/Versicherung. Steht visuell
+    // über den abgeleiteten Badges (gefüllter Background).
+    verifiziert:    { label: "Verifiziert",    icon: "✓", cls: "bg-success text-white border-success" },
     erfahren:       { label: "10+ Aufträge",   icon: "✓", cls: "bg-success-light text-success border-success/20" },
     "top-bewertet": { label: "Top-Bewertet",   icon: "★", cls: "bg-warm-light text-warm-dark border-warm/30" },
     neu:            { label: "Neu auf Reparo", icon: "✦", cls: "bg-info-light text-info border-info/20" },

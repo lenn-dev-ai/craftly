@@ -129,6 +129,26 @@ export default function NutzerPage() {
     await load()
   }
 
+  // Verifizierung toggeln (nur HW). Schreibt verifiziert + verifiziert_am
+  // + verifiziert_von gleichzeitig — der protect_profile_fields-Trigger
+  // prüft Admin-Status, sonst Block.
+  async function toggleVerifiziert(userId: string, current: boolean) {
+    if (!currentUserId) return
+    const next = !current
+    const supabase = createClient()
+    const { error } = await supabase.from("profiles").update({
+      verifiziert: next,
+      verifiziert_am: next ? new Date().toISOString() : null,
+      verifiziert_von: next ? currentUserId : null,
+    }).eq("id", userId)
+    if (error) {
+      show("Verifizierung konnte nicht geändert werden: " + error.message, "error")
+      return
+    }
+    show(next ? "Handwerker verifiziert ✓" : "Verifizierung entfernt", next ? "success" : "info")
+    await load()
+  }
+
   if (loading) return (
     <div className="min-h-screen bg-surface flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-[#8B5CF6]/20 border-t-[#8B5CF6] rounded-full animate-spin" />
@@ -251,6 +271,11 @@ export default function NutzerPage() {
                     <td className="px-5 py-3.5 text-sm text-gray-500">
                       {u.firma && <span className="text-gray-400">{u.firma}</span>}
                       {u.gewerk && <span className="ml-2 text-[11px] bg-surface px-2 py-0.5 rounded">{formatGewerk(u.gewerk)}</span>}
+                      {u.rolle === "handwerker" && u.verifiziert && (
+                        <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold text-success bg-success-light border border-success/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                          ✓ Verifiziert
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="inline-flex items-center gap-2 justify-end">
@@ -258,6 +283,19 @@ export default function NutzerPage() {
                           <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-rolle-admin/15 text-rolle-admin">
                             Du
                           </span>
+                        )}
+                        {u.rolle === "handwerker" && (
+                          <button
+                            onClick={() => toggleVerifiziert(u.id, !!u.verifiziert)}
+                            className={`text-xs px-2.5 py-1 rounded-lg transition-colors font-medium ${
+                              u.verifiziert
+                                ? "bg-success-light text-success border border-success/30 hover:bg-success/10"
+                                : "bg-surface border border-line text-ink-secondary hover:border-success/30 hover:text-success"
+                            }`}
+                            title={u.verifiziert ? "Verifizierung entfernen" : "Als verifiziert markieren"}
+                          >
+                            {u.verifiziert ? "✓ Verifiziert" : "Verifizieren"}
+                          </button>
                         )}
                         <select
                           value={u.rolle}

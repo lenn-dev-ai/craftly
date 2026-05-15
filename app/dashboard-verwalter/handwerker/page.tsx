@@ -27,6 +27,7 @@ interface Handwerker {
   lng: number | null
   radius_km: number | null
   sichtbarkeit_stufe: "gold" | "silber" | "bronze" | null
+  verifiziert: boolean | null
 }
 
 const STUFEN_BADGE: Record<string, { label: string; cls: string }> = {
@@ -261,8 +262,11 @@ function HandwerkerCard({ h, onContact, onAuftragNeu }: {
         </div>
       </div>
 
-      {/* Trust-Badges — objektiv aus Plattform-Daten (Audit Punkt 10) */}
+      {/* Trust-Badges — objektiv aus Plattform-Daten (Audit Punkt 10).
+          "verifiziert" steht zuerst, weil es der stärkste Indikator ist
+          (Admin-geprüft). Die anderen werden aus Aktivität abgeleitet. */}
       <div className="flex items-center gap-1.5 flex-wrap mb-3">
+        {h.verifiziert && <TrustBadge kind="verifiziert" />}
         {h.auftraege_anzahl != null && h.auftraege_anzahl >= 10 && <TrustBadge kind="erfahren" />}
         {h.bewertung_avg != null && h.bewertung_avg >= 4.7 && (h.auftraege_anzahl ?? 0) >= 3 && <TrustBadge kind="top-bewertet" />}
         {(h.auftraege_anzahl ?? 0) === 0 && <TrustBadge kind="neu" />}
