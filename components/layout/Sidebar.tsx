@@ -47,12 +47,13 @@ const menus: Record<Rolle, { href: string; label: string; Icon: LucideIcon }[]> 
   ],
 }
 
-// Akzent-Farbe pro Rolle für aktiven Sidebar-Eintrag
-const aktivAkzent: Record<Rolle, string> = {
-  verwalter: "#3D8B7A",
-  handwerker: "#C4956A",
-  mieter: "#5B6ABF",
-  admin: "#7C6CAB",
+// Tailwind-Klasse pro Rolle für aktiven Sidebar-Eintrag.
+// Achtung: muss als statische Strings stehen, sonst purgt Tailwind sie.
+const aktivBg: Record<Rolle, string> = {
+  verwalter:  "bg-rolle-verwalter",
+  handwerker: "bg-rolle-handwerker",
+  mieter:     "bg-rolle-mieter",
+  admin:      "bg-rolle-admin",
 }
 
 const rolleLabels: Record<Rolle, string> = {
@@ -89,10 +90,10 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
         onClick={() => setMobileOpen(false)}
       >
         <div className="text-2xl font-bold tracking-tight">
-          <span className="text-[#2D2A26]">Re</span>
-          <span className="text-[#3D8B7A]">paro</span>
+          <span className="text-ink">Re</span>
+          <span className="text-accent">paro</span>
         </div>
-        <div className="text-[11px] text-[#8C857B] mt-1 font-medium uppercase tracking-widest">
+        <div className="text-[11px] text-ink-muted mt-1 font-medium uppercase tracking-widest">
           {rolleLabels[rolle]}
         </div>
       </Link>
@@ -105,7 +106,7 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
       )}
 
       <div className="px-3 mb-2">
-        <div className="h-px bg-[#EDE8E1]" />
+        <div className="h-px bg-line" />
       </div>
 
       <nav className="flex-1 px-2 py-1">
@@ -113,20 +114,18 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
           const active =
             pathname === item.href ||
             (item.href !== "/dashboard-" + rolle && pathname.startsWith(item.href))
-          const akzent = aktivAkzent[rolle]
           return (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
-              style={active ? { backgroundColor: akzent, color: "#ffffff" } : undefined}
               className={`flex items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium rounded-xl mb-0.5 transition-all ${
                 active
-                  ? "shadow-sm"
-                  : "text-[#6B665E] hover:text-[#2D2A26] hover:bg-[#F5F0EB]"
+                  ? `${aktivBg[rolle]} text-white shadow-sm`
+                  : "text-ink-secondary hover:text-ink hover:bg-surface-muted"
               }`}
             >
-              <item.Icon size={16} className={active ? "text-white" : "text-[#8C857B]"} />
+              <item.Icon size={16} className={active ? "text-white" : "text-ink-muted"} />
               <span>{item.label}</span>
             </Link>
           )
@@ -134,36 +133,36 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
       </nav>
 
       <div className="px-3 mb-2">
-        <div className="h-px bg-[#EDE8E1]" />
+        <div className="h-px bg-line" />
       </div>
 
       <div className="p-4">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 text-xs text-[#8C857B] hover:text-[#C4574B] py-2 px-3 rounded-lg hover:bg-[#C4574B]/5 transition-all font-medium"
+          className="w-full flex items-center gap-3 text-xs text-ink-muted hover:text-danger py-2 px-3 rounded-lg hover:bg-danger/5 transition-all font-medium"
         >
           <LogOut size={14} />
           <span>Abmelden</span>
         </button>
-        <div className="mt-3 flex gap-3 px-3 text-[11px] text-[#A8A29A]">
+        <div className="mt-3 flex gap-3 px-3 text-[11px] text-ink-faint">
           <Link
             href="/impressum"
             onClick={() => setMobileOpen(false)}
-            className="hover:text-[#2D2A26] transition-colors"
+            className="hover:text-ink transition-colors"
           >
             Impressum
           </Link>
           <Link
             href="/agb"
             onClick={() => setMobileOpen(false)}
-            className="hover:text-[#2D2A26] transition-colors"
+            className="hover:text-ink transition-colors"
           >
             AGB
           </Link>
           <Link
             href="/datenschutz"
             onClick={() => setMobileOpen(false)}
-            className="hover:text-[#2D2A26] transition-colors"
+            className="hover:text-ink transition-colors"
           >
             Datenschutz
           </Link>
@@ -174,16 +173,13 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
 
   return (
     <>
-      {/* Mobile Hamburger Button — z-[60] über die Sidebar (z-50),
-          sonst überdeckt die geöffnete Sidebar den ✕-Button.
-          Im offenen Zustand: anderer Hintergrund + Border, sonst weiß-
-          auf-weiß auf der ebenfalls weißen Sidebar = unsichtbar. */}
+      {/* Mobile Hamburger Button — z-[60] über die Sidebar (z-50). */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
         className={`md:hidden fixed top-4 left-4 z-[60] w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm ${
           mobileOpen
-            ? "bg-[#F5F0EB] border border-[#D5CFC7] text-[#2D2A26]"
-            : "bg-white border border-[#EDE8E1] text-[#2D2A26] hover:bg-[#F5F0EB]"
+            ? "bg-surface-muted border border-line-strong text-ink"
+            : "bg-surface-card border border-line text-ink hover:bg-surface-muted"
         }`}
         aria-label={mobileOpen ? "Menü schließen" : "Menü öffnen"}
         aria-expanded={mobileOpen}
@@ -192,9 +188,9 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
           <span className="text-xl font-bold">✕</span>
         ) : (
           <div className="flex flex-col gap-1">
-            <div className="w-4 h-0.5 bg-[#2D2A26] rounded-full" />
-            <div className="w-3 h-0.5 bg-[#8C857B] rounded-full" />
-            <div className="w-4 h-0.5 bg-[#2D2A26] rounded-full" />
+            <div className="w-4 h-0.5 bg-ink rounded-full" />
+            <div className="w-3 h-0.5 bg-ink-muted rounded-full" />
+            <div className="w-4 h-0.5 bg-ink rounded-full" />
           </div>
         )}
       </button>
@@ -202,20 +198,19 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
       {/* Mobile Overlay */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-[#2D2A26]/30 z-40 backdrop-blur-sm"
+          className="md:hidden fixed inset-0 bg-ink/30 z-40 backdrop-blur-sm"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-56 flex-shrink-0 bg-white border-r border-[#EDE8E1] flex-col min-h-screen">
+      <aside className="hidden md:flex w-56 flex-shrink-0 bg-surface-card border-r border-line flex-col min-h-screen">
         {sidebarContent}
       </aside>
 
-      {/* Mobile Sidebar (slide-in) — Audit: max 82-85vw, sonst auf
-          390px-Screens kein Platz für Backdrop-Klick rechts. */}
+      {/* Mobile Sidebar (slide-in) — max 85vw */}
       <aside
-        className={`md:hidden fixed left-0 top-0 h-full w-[min(20rem,85vw)] bg-white border-r border-[#EDE8E1] flex flex-col z-50 transform transition-transform duration-300 shadow-xl ${
+        className={`md:hidden fixed left-0 top-0 h-full w-[min(20rem,85vw)] bg-surface-card border-r border-line flex flex-col z-50 transform transition-transform duration-300 shadow-xl ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
