@@ -59,7 +59,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           return (
             <button
               key={item.href}
-              onClick={() => router.push(item.href)}
+              onClick={() => {
+                // Sidebar sofort schließen — wenn man bereits auf der Route
+                // ist, feuert der pathname-useEffect sonst nicht.
+                setMobileOpen(false)
+                router.push(item.href)
+              }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 aktiv
                   ? "bg-[#7C6CAB] text-white shadow-sm"
@@ -90,11 +95,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <ActiveRoleProvider istAdmin={true} defaultRolle="admin">
       <div className="flex min-h-screen bg-[#FAF8F5]">
-        {/* Mobile Hamburger */}
+        {/* Mobile Hamburger — z-[60], damit der ✕-Button über der
+            offenen Sidebar (z-50) klickbar bleibt. Sonst überdeckt die
+            Sidebar (später im DOM, gleicher z-index) den Toggle. */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden fixed top-4 left-4 z-50 w-10 h-10 bg-white border border-[#EDE8E1] rounded-xl flex items-center justify-center text-[#2D2A26] hover:bg-[#F5F0EB] transition-all shadow-sm"
-          aria-label="Admin-Menü"
+          className="md:hidden fixed top-4 left-4 z-[60] w-10 h-10 bg-white border border-[#EDE8E1] rounded-xl flex items-center justify-center text-[#2D2A26] hover:bg-[#F5F0EB] transition-all shadow-sm"
+          aria-label={mobileOpen ? "Admin-Menü schließen" : "Admin-Menü öffnen"}
+          aria-expanded={mobileOpen}
         >
           {mobileOpen ? (
             <span className="text-lg">✕</span>
