@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState, useRef } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket, Angebot, Nachricht, UserProfile, Einladung, Bewertung } from "@/types"
-import { Badge, PrioBadge, Avatar, Button, Card, Input, LoadingSpinner } from "@/components/ui"
+import { Badge, PrioBadge, TypBadge, Avatar, Button, Card, Input, LoadingSpinner } from "@/components/ui"
 import {
   calculateCommission,
   getEffectiveRate,
@@ -37,9 +37,9 @@ function StarRating({ rating }: { rating: number }) {
   return (
     <span className="text-xs tracking-wide">
       {Array.from({ length: 5 }, (_, i) => (
-        <span key={i} className={i < full ? "text-[#C4956A]" : (i === full && half) ? "text-[#C4956A]/50" : "text-[#EDE8E1]"}>★</span>
+        <span key={i} className={i < full ? "text-warm" : (i === full && half) ? "text-warm/50" : "text-line"}>★</span>
       ))}
-      <span className="ml-1 text-[#8C857B]">{(rating || 0).toFixed(1)}</span>
+      <span className="ml-1 text-ink-muted">{(rating || 0).toFixed(1)}</span>
     </span>
   )
 }
@@ -62,10 +62,10 @@ function ValueScoreRing({ score }: { score: number }) {
 }
 
 function RankBadge({ rank }: { rank: number }) {
-  if (rank === 1) return <span className="text-xs font-bold bg-[#C4956A]/20 text-[#C4956A] px-2 py-0.5 rounded-full border border-[#C4956A]/30">🥇 #1 Empfohlen</span>
-  if (rank === 2) return <span className="text-xs font-bold bg-[#FAF8F5] text-[#6B665E] px-2 py-0.5 rounded-full border border-[#EDE8E1]">🥈 #2</span>
-  if (rank === 3) return <span className="text-xs font-bold bg-[#854F0B]/20 text-[#854F0B]/80 px-2 py-0.5 rounded-full border border-[#C4956A]/20">🥉 #3</span>
-  return <span className="text-xs text-[#B5AEA4] px-2 py-0.5">#{rank}</span>
+  if (rank === 1) return <span className="text-xs font-bold bg-warm/20 text-warm px-2 py-0.5 rounded-full border border-warm/30">🥇 #1 Empfohlen</span>
+  if (rank === 2) return <span className="text-xs font-bold bg-surface text-ink-secondary px-2 py-0.5 rounded-full border border-line">🥈 #2</span>
+  if (rank === 3) return <span className="text-xs font-bold bg-[#854F0B]/20 text-warm-dark/80 px-2 py-0.5 rounded-full border border-warm/20">🥉 #3</span>
+  return <span className="text-xs text-ink-faint px-2 py-0.5">#{rank}</span>
 }
 
 function kiPreisempfehlung(titel: string): string {
@@ -92,39 +92,39 @@ function AuktionCountdown({ end }: { end: string }) {
   const progress = Math.min(100, Math.max(0, ((totalDuration - secs) / totalDuration) * 100))
   const expired = secs === 0
   return (
-    <div className={`relative overflow-hidden rounded-2xl p-6 border ${expired ? "bg-[#C4574B]/5 border-[#C4574B]/20" : "bg-gradient-to-r from-[#3D8B7A]/5 via-[#5B6ABF]/5 to-[#3D8B7A]/5 border-[#3D8B7A]/20"}`}>
+    <div className={`relative overflow-hidden rounded-2xl p-6 border ${expired ? "bg-danger/5 border-danger/20" : "bg-gradient-to-r from-[#3D8B7A]/5 via-[#5B6ABF]/5 to-[#3D8B7A]/5 border-accent/20"}`}>
       <div className="flex items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-[#3D8B7A]/15 flex items-center justify-center">
-            <span className="text-lg font-bold text-[#3D8B7A]">AI</span>
+          <div className="w-12 h-12 rounded-xl bg-accent/15 flex items-center justify-center">
+            <span className="text-lg font-bold text-accent">AI</span>
           </div>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-semibold text-[#3D8B7A]">KI-Optimierte Smart-Auktion</span>
-              {!expired && <span className="w-2 h-2 rounded-full bg-[#3D8B7A] animate-pulse" />}
+              <span className="text-sm font-semibold text-accent">KI-Optimierte Smart-Auktion</span>
+              {!expired && <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />}
             </div>
-            <div className="text-xs text-[#8C857B]">Handwerker bieten in Echtzeit — bestes Preis-Leistungs-Verhältnis gewinnt</div>
+            <div className="text-xs text-ink-muted">Handwerker bieten in Echtzeit — bestes Preis-Leistungs-Verhältnis gewinnt</div>
           </div>
         </div>
         <div className="text-right flex-shrink-0">
           {expired ? (
-            <div className="text-lg font-bold text-[#C4574B]">Abgelaufen</div>
+            <div className="text-lg font-bold text-danger">Abgelaufen</div>
           ) : (
             <>
               <div className="font-mono text-3xl font-bold tracking-wider">
-                <span className="text-[#3D8B7A]">{fmt(h)}</span>
-                <span className="text-[#EDE8E1] mx-0.5">:</span>
-                <span className="text-[#5B6ABF]">{fmt(m)}</span>
-                <span className="text-[#EDE8E1] mx-0.5">:</span>
-                <span className="text-[#6B665E]">{fmt(s)}</span>
+                <span className="text-accent">{fmt(h)}</span>
+                <span className="text-line mx-0.5">:</span>
+                <span className="text-rolle-mieter">{fmt(m)}</span>
+                <span className="text-line mx-0.5">:</span>
+                <span className="text-ink-secondary">{fmt(s)}</span>
               </div>
-              <div className="text-[10px] text-[#B5AEA4] mt-1">verbleibend</div>
+              <div className="text-[10px] text-ink-faint mt-1">verbleibend</div>
             </>
           )}
         </div>
       </div>
       {!expired && (
-        <div className="mt-4 h-1.5 bg-[#FAF8F5] rounded-full overflow-hidden">
+        <div className="mt-4 h-1.5 bg-surface rounded-full overflow-hidden">
           <div className="h-full bg-gradient-to-r from-[#3D8B7A] to-[#5B6ABF] rounded-full transition-all duration-1000" style={{ width: `${100 - progress}%` }} />
         </div>
       )}
@@ -343,34 +343,36 @@ export default function TicketDetailView() {
   const savings = maxPreis > 0 ? Math.round(((maxPreis - minPreis) / maxPreis) * 100) : 0
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-[#2D2A26] pb-12">
+    <div className="min-h-screen bg-surface text-ink pb-12">
       <div className="max-w-4xl mx-auto p-4 sm:p-6">
         {/* Navigation */}
-        <button onClick={() => router.back()} className="text-sm text-[#8C857B] hover:text-[#6B665E] mb-6 flex items-center gap-2 transition-colors">
+        <button onClick={() => router.back()} className="text-sm text-ink-muted hover:text-ink-secondary mb-6 flex items-center gap-2 transition-colors">
           ← Zurück
         </button>
 
         {/* Ticket Header */}
-        <div className="bg-white border border-[#EDE8E1] rounded-2xl p-6 mb-6">
+        <div className="bg-white border border-line rounded-2xl p-6 mb-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
-              <h1 className="text-xl font-semibold text-[#2D2A26] mb-2">{ticket.titel}</h1>
+              <h1 className="text-xl font-semibold text-ink mb-2">{ticket.titel}</h1>
               <div className="flex items-center gap-2 flex-wrap mb-3">
+                {/* Reihenfolge: Status (primär gefüllt) → Prio (nur wenn !=normal) →
+                    Typ (subtil) → Meta. Audit Punkt 4: nur EIN gefüllter Chip. */}
                 <Badge status={ticket.status} />
                 <PrioBadge prio={ticket.prioritaet} />
-                {ticket.wohnung && <span className="text-xs text-[#B5AEA4] bg-[#FAF8F5] px-2 py-1 rounded-lg">{ticket.wohnung}</span>}
-                {ticket.vergabemodus === "auktion" && (
-                  <span className="text-xs text-[#5B6ABF] bg-[#5B6ABF]/10 px-2 py-1 rounded-lg border border-[#5B6ABF]/20">Smart-Auktion</span>
+                {ticket.ticket_typ && ticket.ticket_typ !== "standard" && (
+                  <TypBadge typ={ticket.ticket_typ as "diagnose" | "projekt"} />
                 )}
+                {ticket.wohnung && <span className="text-xs text-ink-faint bg-surface px-2 py-1 rounded-lg">{ticket.wohnung}</span>}
               </div>
-              {ticket.beschreibung && <p className="text-sm text-[#6B665E] leading-relaxed">{ticket.beschreibung}</p>}
+              {ticket.beschreibung && <p className="text-sm text-ink-secondary leading-relaxed">{ticket.beschreibung}</p>}
             </div>
             {isVerwalter && ticket.status === "in_bearbeitung" && !showKosten && (
               <Button size="sm" onClick={() => setShowKosten(true)}>Abschließen</Button>
             )}
           </div>
           {/* Ticket meta */}
-          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-[#EDE8E1] text-xs text-[#B5AEA4]">
+          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-line text-xs text-ink-faint">
             <span>Erstellt: {new Date(ticket.created_at).toLocaleDateString("de", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
             {ticket.gewerk && <span>Gewerk: {ticket.gewerk}</span>}
             {ticket.vergabemodus && <span>Modus: {ticket.vergabemodus === "auktion" ? "Smart-Auktion" : ticket.vergabemodus === "direkt" ? "Sofort-Vergabe" : "Planauftrag"}</span>}
@@ -391,12 +393,12 @@ export default function TicketDetailView() {
         {/* Schadens-Foto (Signed URL, 30 Min gültig) */}
         {fotoUrl && (
           <div className="mb-6">
-            <div className="rounded-2xl overflow-hidden border border-[#EDE8E1] bg-white">
+            <div className="rounded-2xl overflow-hidden border border-line bg-white">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={fotoUrl}
                 alt={`Foto vom Schaden: ${ticket.titel}`}
-                className="w-full max-h-96 object-contain bg-[#FAF8F5]"
+                className="w-full max-h-96 object-contain bg-surface"
               />
             </div>
           </div>
@@ -408,19 +410,19 @@ export default function TicketDetailView() {
             <AuktionCountdown end={ticket.auktion_ende} />
             {/* Auction Stats */}
             <div className="grid grid-cols-3 gap-3 mt-3">
-              <div className="bg-white border border-[#EDE8E1] rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-[#3D8B7A]">{sortiertAngebote.length}</div>
-                <div className="text-[10px] text-[#8C857B] mt-1">Angebote</div>
+              <div className="bg-white border border-line rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-accent">{sortiertAngebote.length}</div>
+                <div className="text-[10px] text-ink-muted mt-1">Angebote</div>
               </div>
-              <div className="bg-white border border-[#EDE8E1] rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-[#5B6ABF]">
+              <div className="bg-white border border-line rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-rolle-mieter">
                   {minPreis > 0 ? `${minPreis}–${maxPreis}` : "—"}
                 </div>
-                <div className="text-[10px] text-[#8C857B] mt-1">Preisspanne EUR</div>
+                <div className="text-[10px] text-ink-muted mt-1">Preisspanne EUR</div>
               </div>
-              <div className="bg-white border border-[#EDE8E1] rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-[#C4956A]">{savings > 0 ? `${savings}%` : "—"}</div>
-                <div className="text-[10px] text-[#8C857B] mt-1">Potenzielle Ersparnis</div>
+              <div className="bg-white border border-line rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-warm">{savings > 0 ? `${savings}%` : "—"}</div>
+                <div className="text-[10px] text-ink-muted mt-1">Potenzielle Ersparnis</div>
               </div>
             </div>
           </div>
@@ -428,25 +430,25 @@ export default function TicketDetailView() {
 
         {/* Kosten-Eingabe beim Abschließen */}
         {showKosten && (
-          <Card className="mb-6 border-[#3D8B7A]/30 bg-white">
-            <h2 className="text-sm font-semibold text-[#2D2A26] mb-2">Ticket abschließen</h2>
-            <p className="text-xs text-[#8C857B] mb-3">Trage die tatsächlichen Kosten ein, bevor du das Ticket abschließt.</p>
+          <Card className="mb-6 border-accent/30 bg-white">
+            <h2 className="text-sm font-semibold text-ink mb-2">Ticket abschließen</h2>
+            <p className="text-xs text-ink-muted mb-3">Trage die tatsächlichen Kosten ein, bevor du das Ticket abschließt.</p>
             <Input label="Endkosten in EUR" type="number" placeholder="z.B. 450" value={kostenFinal} onChange={e => setKostenFinal(e.target.value)} />
             <div className="flex gap-2 mt-3">
               <Button onClick={abschliessen}>Abschließen</Button>
-              <button onClick={() => setShowKosten(false)} className="text-sm text-[#8C857B] hover:text-[#6B665E] px-3">Abbrechen</button>
+              <button onClick={() => setShowKosten(false)} className="text-sm text-ink-muted hover:text-ink-secondary px-3">Abbrechen</button>
             </div>
           </Card>
         )}
 
         {/* Erledigte Ticket Info */}
         {ticket.status === "erledigt" && (
-          <div className="bg-[#3D8B7A]/5 border border-[#3D8B7A]/20 rounded-2xl p-6 mb-6">
+          <div className="bg-accent/5 border border-accent/20 rounded-2xl p-6 mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center text-[#3D8B7A] font-bold">✓</div>
+              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold">✓</div>
               <div>
-                <div className="text-sm font-semibold text-[#3D8B7A]">Auftrag abgeschlossen</div>
-                {ticket.kosten_final && <div className="text-xs text-[#8C857B] mt-0.5">Endkosten: {ticket.kosten_final.toLocaleString("de")} EUR</div>}
+                <div className="text-sm font-semibold text-accent">Auftrag abgeschlossen</div>
+                {ticket.kosten_final && <div className="text-xs text-ink-muted mt-0.5">Endkosten: {ticket.kosten_final.toLocaleString("de")} EUR</div>}
               </div>
             </div>
           </div>
@@ -484,14 +486,14 @@ export default function TicketDetailView() {
         {ticket.status === "erledigt"
           && currentUser?.id === ticket.erstellt_von
           && bewertungen.some(b => b.bewerter_id === currentUser.id) && (
-          <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5 mb-6">
-            <div className="text-sm font-semibold text-[#2D2A26] mb-1">Danke für deine Bewertung</div>
+          <div className="bg-white border border-line rounded-2xl p-5 mb-6">
+            <div className="text-sm font-semibold text-ink mb-1">Danke für deine Bewertung</div>
             {(() => {
               const meine = bewertungen.find(b => b.bewerter_id === currentUser?.id)
               if (!meine) return null
               return (
-                <div className="text-xs text-[#8C857B]">
-                  <span className="text-[#C4956A]">{"★".repeat(meine.sterne)}{"☆".repeat(5 - meine.sterne)}</span>
+                <div className="text-xs text-ink-muted">
+                  <span className="text-warm">{"★".repeat(meine.sterne)}{"☆".repeat(5 - meine.sterne)}</span>
                   {meine.kommentar && <p className="mt-2 italic">„{meine.kommentar}“</p>}
                 </div>
               )
@@ -501,8 +503,8 @@ export default function TicketDetailView() {
 
         {/* Zugewiesener Handwerker Info */}
         {ticket.status === "in_bearbeitung" && ticket.zugewiesener_hw && (
-          <div className="bg-[#5B6ABF]/5 border border-[#5B6ABF]/20 rounded-2xl p-5 mb-6">
-            <div className="text-xs text-[#8C857B] mb-3 font-medium">BEAUFTRAGTER HANDWERKER</div>
+          <div className="bg-rolle-mieter/5 border border-[#5B6ABF]/20 rounded-2xl p-5 mb-6">
+            <div className="text-xs text-ink-muted mb-3 font-medium">BEAUFTRAGTER HANDWERKER</div>
             {(() => {
               const hw = alleAngebote.find(a => a.handwerker_id === ticket.zugewiesener_hw)
               if (!hw) return null
@@ -510,12 +512,12 @@ export default function TicketDetailView() {
                 <div className="flex items-center gap-3">
                   <Avatar name={(hw.handwerker as any)?.name || "?"} size="md" />
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-[#2D2A26]">{(hw.handwerker as any)?.name}</div>
-                    <div className="text-xs text-[#8C857B]">{(hw.handwerker as any)?.firma}</div>
+                    <div className="text-sm font-medium text-ink">{(hw.handwerker as any)?.name}</div>
+                    <div className="text-xs text-ink-muted">{(hw.handwerker as any)?.firma}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-bold text-[#3D8B7A]">{hw.preis} EUR</div>
-                    <div className="text-[10px] text-[#B5AEA4]">Angenommener Preis</div>
+                    <div className="text-sm font-bold text-accent">{hw.preis} EUR</div>
+                    <div className="text-[10px] text-ink-faint">Angenommener Preis</div>
                   </div>
                 </div>
               )
@@ -525,26 +527,26 @@ export default function TicketDetailView() {
 
         {/* Handwerker einladen (Verwalter, offen) */}
         {isVerwalter && ticket.status === "offen" && (
-          <Card className="mb-6 bg-white border border-[#EDE8E1]">
+          <Card className="mb-6 bg-white border border-line">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-medium text-[#2D2A26]">Handwerker einladen</h3>
+              <h3 className="font-medium text-ink">Handwerker einladen</h3>
               <Button size="sm" onClick={() => router.push("/dashboard-verwalter/tickets/" + id + "/handwerker")}>Handwerker auswählen</Button>
             </div>
             {einladungen.length > 0 ? (
               <div className="space-y-2">
                 {einladungen.map(e => (
-                  <div key={e.id} className="flex items-center justify-between py-2 border-b border-[#EDE8E1] last:border-0">
+                  <div key={e.id} className="flex items-center justify-between py-2 border-b border-line last:border-0">
                     <div className="flex items-center gap-2">
                       <Avatar name={e.handwerker?.name || "?"} size="sm" />
                       <div>
-                        <div className="text-sm font-medium text-[#2D2A26]">{e.handwerker?.name}</div>
-                        <div className="text-xs text-[#8C857B]">{e.handwerker?.firma}</div>
+                        <div className="text-sm font-medium text-ink">{e.handwerker?.name}</div>
+                        <div className="text-xs text-ink-muted">{e.handwerker?.firma}</div>
                       </div>
                     </div>
                     <span className={"text-xs px-2 py-0.5 rounded-full " + (
-                      e.status === "angebot" ? "bg-[#3D8B7A]/10 text-[#3D8B7A]" :
-                      e.status === "abgelehnt" ? "bg-[#C4574B]/10 text-[#C4574B]" :
-                      "bg-[#C4956A]/10 text-[#C4956A]"
+                      e.status === "angebot" ? "bg-accent/10 text-accent" :
+                      e.status === "abgelehnt" ? "bg-danger/10 text-danger" :
+                      "bg-warm/10 text-warm"
                     )}>
                       {e.status === "angebot" ? "Angebot erhalten" : e.status === "abgelehnt" ? "Abgelehnt" : "Eingeladen"}
                     </span>
@@ -552,7 +554,7 @@ export default function TicketDetailView() {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-[#8C857B]">Noch keine Handwerker eingeladen.</p>
+              <p className="text-xs text-ink-muted">Noch keine Handwerker eingeladen.</p>
             )}
           </Card>
         )}
@@ -561,12 +563,12 @@ export default function TicketDetailView() {
         {isVerwalter && sortiertAngebote.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-[#2D2A26]">
+              <h2 className="text-lg font-semibold text-ink">
                 Eingegangene Angebote
-                <span className="ml-2 text-sm font-normal text-[#8C857B]">({sortiertAngebote.length})</span>
+                <span className="ml-2 text-sm font-normal text-ink-muted">({sortiertAngebote.length})</span>
               </h2>
               {avgPreis > 0 && (
-                <span className="text-xs text-[#B5AEA4] bg-[#FAF8F5] px-3 py-1 rounded-lg">
+                <span className="text-xs text-ink-faint bg-surface px-3 py-1 rounded-lg">
                   Ø {avgPreis.toLocaleString("de")} EUR
                 </span>
               )}
@@ -581,10 +583,10 @@ export default function TicketDetailView() {
                 const isAbgelehnt = a.status === "abgelehnt"
                 return (
                   <div key={a.id} className={`rounded-2xl border transition-all ${
-                    isAngenommen ? "bg-[#3D8B7A]/5 border-[#3D8B7A]/30" :
-                    isAbgelehnt ? "bg-[#FAF8F5] border-[#EDE8E1] opacity-50" :
-                    isTop ? "bg-gradient-to-r from-[#3D8B7A]/5 to-[#5B6ABF]/5 border-[#3D8B7A]/25 shadow-lg shadow-[#3D8B7A]/5" :
-                    "bg-white border-[#EDE8E1] hover:border-[#EDE8E1]"
+                    isAngenommen ? "bg-accent/5 border-accent/30" :
+                    isAbgelehnt ? "bg-surface border-line opacity-50" :
+                    isTop ? "bg-gradient-to-r from-[#3D8B7A]/5 to-[#5B6ABF]/5 border-accent/25 shadow-lg shadow-[#3D8B7A]/5" :
+                    "bg-white border-line hover:border-line"
                   }`}>
                     <div className="p-5">
                       {/* Top row: rank + HW info + score */}
@@ -593,15 +595,15 @@ export default function TicketDetailView() {
                           <Avatar name={hw?.name || "?"} size="md" />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap mb-1">
-                              <span className="text-sm font-semibold text-[#2D2A26]">{hw?.name || "Handwerker"}</span>
+                              <span className="text-sm font-semibold text-ink">{hw?.name || "Handwerker"}</span>
                               <RankBadge rank={rank} />
-                              {isAngenommen && <span className="text-xs bg-[#3D8B7A]/15 text-[#3D8B7A] px-2 py-0.5 rounded-full font-medium">✓ Beauftragt</span>}
+                              {isAngenommen && <span className="text-xs bg-accent/15 text-accent px-2 py-0.5 rounded-full font-medium">✓ Beauftragt</span>}
                             </div>
-                            <div className="text-xs text-[#8C857B]">{hw?.firma || "Firma"}</div>
+                            <div className="text-xs text-ink-muted">{hw?.firma || "Firma"}</div>
                             <div className="flex items-center gap-3 mt-1">
                               <StarRating rating={hw?.bewertung_avg || 0} />
                               {hw?.auftraege_anzahl > 0 && (
-                                <span className="text-[10px] text-[#B5AEA4]">{hw.auftraege_anzahl} Aufträge</span>
+                                <span className="text-[10px] text-ink-faint">{hw.auftraege_anzahl} Aufträge</span>
                               )}
                             </div>
                           </div>
@@ -611,31 +613,31 @@ export default function TicketDetailView() {
 
                       {/* Price + Details row */}
                       <div className="grid grid-cols-3 gap-3 mb-4">
-                        <div className="bg-[#FAF8F5] rounded-xl p-3">
-                          <div className="text-[10px] text-[#B5AEA4] mb-1">Preis</div>
-                          <div className="text-lg font-bold text-[#3D8B7A]">{a.preis.toLocaleString("de")} EUR</div>
+                        <div className="bg-surface rounded-xl p-3">
+                          <div className="text-[10px] text-ink-faint mb-1">Preis</div>
+                          <div className="text-lg font-bold text-accent">{a.preis.toLocaleString("de")} EUR</div>
                         </div>
-                        <div className="bg-[#FAF8F5] rounded-xl p-3">
-                          <div className="text-[10px] text-[#B5AEA4] mb-1">Frühester Termin</div>
-                          <div className="text-sm font-medium text-[#2D2A26]">
+                        <div className="bg-surface rounded-xl p-3">
+                          <div className="text-[10px] text-ink-faint mb-1">Frühester Termin</div>
+                          <div className="text-sm font-medium text-ink">
                             {a.fruehester_termin ? new Date(a.fruehester_termin).toLocaleDateString("de", { day: "2-digit", month: "2-digit" }) : "Flexibel"}
                           </div>
                         </div>
-                        <div className="bg-[#FAF8F5] rounded-xl p-3">
-                          <div className="text-[10px] text-[#B5AEA4] mb-1">Geschätzte Dauer</div>
-                          <div className="text-sm font-medium text-[#2D2A26]">{(a as any).geschaetzte_dauer ? (a as any).geschaetzte_dauer + " Tage" : "—"}</div>
+                        <div className="bg-surface rounded-xl p-3">
+                          <div className="text-[10px] text-ink-faint mb-1">Geschätzte Dauer</div>
+                          <div className="text-sm font-medium text-ink">{(a as any).geschaetzte_dauer ? (a as any).geschaetzte_dauer + " Tage" : "—"}</div>
                         </div>
                       </div>
 
                       {/* Message */}
                       {a.nachricht && (
-                        <div className="bg-[#FAF8F5] rounded-lg p-3 mb-4 border-l-2 border-[#5B6ABF]/30">
-                          <div className="text-xs text-[#6B665E] italic">„{a.nachricht}“</div>
+                        <div className="bg-surface rounded-lg p-3 mb-4 border-l-2 border-[#5B6ABF]/30">
+                          <div className="text-xs text-ink-secondary italic">„{a.nachricht}“</div>
                         </div>
                       )}
 
                       {/* Compact Preis-Aufschlüsselung — was Verwalter wirklich zahlt */}
-                      <div className="bg-[#FAF8F5] rounded-xl p-3 mb-4 border border-[#EDE8E1]">
+                      <div className="bg-surface rounded-xl p-3 mb-4 border border-line">
                         <PreisAufschluesselung
                           auftragswert={a.preis}
                           provisionRate={
@@ -654,9 +656,9 @@ export default function TicketDetailView() {
                         <div className="flex items-center gap-3">
                           {vergebenConfirm === a.id ? (
                             <>
-                              <span className="text-xs text-[#8C857B]">Wirklich an {hw?.name} vergeben?</span>
+                              <span className="text-xs text-ink-muted">Wirklich an {hw?.name} vergeben?</span>
                               <Button size="sm" onClick={() => vergeben(a.id, a.handwerker_id)}>Ja, vergeben</Button>
-                              <button onClick={() => setVergebenConfirm(null)} className="text-xs text-[#8C857B] hover:text-[#6B665E]">Abbrechen</button>
+                              <button onClick={() => setVergebenConfirm(null)} className="text-xs text-ink-muted hover:text-ink-secondary">Abbrechen</button>
                             </>
                           ) : (
                             <Button size="sm" onClick={() => setVergebenConfirm(a.id)}>
@@ -675,13 +677,13 @@ export default function TicketDetailView() {
 
         {/* Empty angebote state for Verwalter */}
         {isVerwalter && sortiertAngebote.length === 0 && ticket.status === "auktion" && (
-          <Card className="mb-6 bg-white border border-[#EDE8E1]">
+          <Card className="mb-6 bg-white border border-line">
             <div className="text-center py-8">
-              <div className="w-16 h-16 rounded-2xl bg-[#5B6ABF]/10 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl text-[#5B6ABF]">[~]</span>
+              <div className="w-16 h-16 rounded-2xl bg-rolle-mieter/10 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl text-rolle-mieter">[~]</span>
               </div>
-              <div className="text-sm text-[#6B665E] font-medium mb-1">Warten auf Angebote</div>
-              <div className="text-xs text-[#B5AEA4]">Handwerker können jetzt bieten — Angebote erscheinen hier automatisch.</div>
+              <div className="text-sm text-ink-secondary font-medium mb-1">Warten auf Angebote</div>
+              <div className="text-xs text-ink-faint">Handwerker können jetzt bieten — Angebote erscheinen hier automatisch.</div>
             </div>
           </Card>
         )}
@@ -689,27 +691,27 @@ export default function TicketDetailView() {
         {/* === HANDWERKER BID FORM === */}
         {isHandwerker && !hatBereitsAngebot && ticket.status === "auktion" && (
           <div className="mb-6">
-            <div className="bg-gradient-to-r from-[#3D8B7A]/8 to-[#5B6ABF]/8 border border-[#3D8B7A]/20 rounded-2xl p-6">
+            <div className="bg-gradient-to-r from-[#3D8B7A]/8 to-[#5B6ABF]/8 border border-accent/20 rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-[#3D8B7A]/15 flex items-center justify-center">
-                  <span className="text-sm font-bold text-[#3D8B7A]">#</span>
+                <div className="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center">
+                  <span className="text-sm font-bold text-accent">#</span>
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-[#2D2A26]">Dein Angebot abgeben</h2>
-                  <div className="text-xs text-[#8C857B]">
+                  <h2 className="text-base font-semibold text-ink">Dein Angebot abgeben</h2>
+                  <div className="text-xs text-ink-muted">
                     {alleAngebote.length} andere{alleAngebote.length === 1 ? "s Angebot" : " Angebote"} bereits eingegangen
                   </div>
                 </div>
               </div>
 
               {/* KI Preisempfehlung */}
-              <div className="bg-[#5B6ABF]/10 border border-[#5B6ABF]/20 rounded-xl p-4 mb-5">
+              <div className="bg-rolle-mieter/10 border border-[#5B6ABF]/20 rounded-xl p-4 mb-5">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold text-[#5B6ABF] bg-[#5B6ABF]/20 px-2 py-0.5 rounded">AI</span>
-                  <span className="text-xs font-medium text-[#5B6ABF]">KI-Preisempfehlung</span>
+                  <span className="text-xs font-bold text-rolle-mieter bg-rolle-mieter/20 px-2 py-0.5 rounded">AI</span>
+                  <span className="text-xs font-medium text-rolle-mieter">KI-Preisempfehlung</span>
                 </div>
-                <div className="text-lg font-bold text-[#2D2A26]">EUR {kiPreisempfehlung(ticket.titel)}</div>
-                <div className="text-[10px] text-[#B5AEA4] mt-1">Basierend auf vergleichbaren Aufträgen in deiner Region</div>
+                <div className="text-lg font-bold text-ink">EUR {kiPreisempfehlung(ticket.titel)}</div>
+                <div className="text-[10px] text-ink-faint mt-1">Basierend auf vergleichbaren Aufträgen in deiner Region</div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
@@ -734,11 +736,11 @@ export default function TicketDetailView() {
 
         {/* Handwerker: eigenes Angebot anzeigen */}
         {isHandwerker && hatBereitsAngebot && (
-          <Card className="mb-6 bg-[#3D8B7A]/5 border border-[#3D8B7A]/20">
+          <Card className="mb-6 bg-accent/5 border border-accent/20">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center text-[#3D8B7A] font-bold text-sm flex-shrink-0">✓</div>
+              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm flex-shrink-0">✓</div>
               <div className="flex-1">
-                <div className="text-sm font-medium text-[#3D8B7A]">Dein Angebot wurde eingereicht</div>
+                <div className="text-sm font-medium text-accent">Dein Angebot wurde eingereicht</div>
                 {(() => {
                   const meinAngebot = alleAngebote.find(a => a.handwerker_id === currentUser?.id) as
                     (typeof alleAngebote[number] & {
@@ -750,33 +752,33 @@ export default function TicketDetailView() {
                   if (!meinAngebot) return null
                   return (
                     <>
-                      <div className="text-xs text-[#8C857B] mt-0.5">
+                      <div className="text-xs text-ink-muted mt-0.5">
                         {meinAngebot.preis.toLocaleString("de")} EUR
-                        {meinAngebot.status === "angenommen" && <span className="ml-2 text-[#3D8B7A] font-medium">— Angenommen!</span>}
-                        {meinAngebot.status === "abgelehnt" && <span className="ml-2 text-[#C4574B] font-medium">— Leider nicht ausgewählt</span>}
+                        {meinAngebot.status === "angenommen" && <span className="ml-2 text-accent font-medium">— Angenommen!</span>}
+                        {meinAngebot.status === "abgelehnt" && <span className="ml-2 text-danger font-medium">— Leider nicht ausgewählt</span>}
                       </div>
                       {meinAngebot.smart_score != null && (
                         <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                          <div className="bg-white rounded-lg p-2.5 border border-[#EDE8E1]">
-                            <div className="text-[10px] text-[#8C857B] uppercase tracking-wide">Smart-Score</div>
-                            <div className="text-lg font-bold text-[#3D8B7A] tabular-nums">{meinAngebot.smart_score.toFixed(1)}</div>
+                          <div className="bg-white rounded-lg p-2.5 border border-line">
+                            <div className="text-[10px] text-ink-muted uppercase tracking-wide">Smart-Score</div>
+                            <div className="text-lg font-bold text-accent tabular-nums">{meinAngebot.smart_score.toFixed(1)}</div>
                           </div>
                           {meinAngebot.entfernung_km != null && (
-                            <div className="bg-white rounded-lg p-2.5 border border-[#EDE8E1]">
-                              <div className="text-[10px] text-[#8C857B] uppercase tracking-wide">Distanz</div>
-                              <div className="text-sm font-semibold text-[#2D2A26] tabular-nums">{meinAngebot.entfernung_km.toFixed(1)} km</div>
+                            <div className="bg-white rounded-lg p-2.5 border border-line">
+                              <div className="text-[10px] text-ink-muted uppercase tracking-wide">Distanz</div>
+                              <div className="text-sm font-semibold text-ink tabular-nums">{meinAngebot.entfernung_km.toFixed(1)} km</div>
                             </div>
                           )}
                           {meinAngebot.fahrzeit_min != null && (
-                            <div className="bg-white rounded-lg p-2.5 border border-[#EDE8E1]">
-                              <div className="text-[10px] text-[#8C857B] uppercase tracking-wide">Fahrzeit</div>
-                              <div className="text-sm font-semibold text-[#2D2A26] tabular-nums">{meinAngebot.fahrzeit_min} min</div>
+                            <div className="bg-white rounded-lg p-2.5 border border-line">
+                              <div className="text-[10px] text-ink-muted uppercase tracking-wide">Fahrzeit</div>
+                              <div className="text-sm font-semibold text-ink tabular-nums">{meinAngebot.fahrzeit_min} min</div>
                             </div>
                           )}
                           {meinAngebot.ist_routen_bonus && (
-                            <div className="bg-[#C4956A]/10 rounded-lg p-2.5 border border-[#C4956A]/30">
-                              <div className="text-[10px] text-[#C4956A] uppercase tracking-wide font-bold">Routen-Bonus</div>
-                              <div className="text-sm font-semibold text-[#C4956A]">+10 %</div>
+                            <div className="bg-warm/10 rounded-lg p-2.5 border border-warm/30">
+                              <div className="text-[10px] text-warm uppercase tracking-wide font-bold">Routen-Bonus</div>
+                              <div className="text-sm font-semibold text-warm">+10 %</div>
                             </div>
                           )}
                         </div>
@@ -790,14 +792,14 @@ export default function TicketDetailView() {
         )}
 
         {/* === CHAT ===
-            Audit-Befund: Overflow + zu wenig Kontrast (text-[#EDE8E1] und
-            bg-[#FAF8F5] auf demselben Hintergrund waren visuell unsichtbar).
+            Audit-Befund: Overflow + zu wenig Kontrast (text-line und
+            bg-surface auf demselben Hintergrund waren visuell unsichtbar).
             Plus: lange Wörter brachen aus den Bubbles aus (kein break-words). */}
-        <Card className="bg-white border border-[#EDE8E1]">
-          <h2 className="text-sm font-semibold text-[#2D2A26] mb-3">Nachrichten</h2>
-          <div ref={chatRef} className="bg-[#FAF8F5] rounded-xl p-3 sm:p-4 h-72 sm:h-80 overflow-y-auto overflow-x-hidden mb-3 flex flex-col gap-3">
+        <Card className="bg-white border border-line">
+          <h2 className="text-sm font-semibold text-ink mb-3">Nachrichten</h2>
+          <div ref={chatRef} className="bg-surface rounded-xl p-3 sm:p-4 h-72 sm:h-80 overflow-y-auto overflow-x-hidden mb-3 flex flex-col gap-3">
             {nachrichten.length === 0 ? (
-              <div className="text-xs text-[#8C857B] text-center py-8">Noch keine Nachrichten</div>
+              <div className="text-xs text-ink-muted text-center py-8">Noch keine Nachrichten</div>
             ) : nachrichten.map(m => {
               const isMe = m.absender_id === currentUser?.id
               const zeit = new Date(m.created_at).toLocaleTimeString("de", { hour: "2-digit", minute: "2-digit" })
@@ -809,12 +811,12 @@ export default function TicketDetailView() {
                     {!isMe && <div className="flex-shrink-0"><Avatar name={m.absender?.name || "?"} size="sm" /></div>}
                     <div className="min-w-0 flex-1">
                       <div className={"text-[10px] mb-0.5 flex items-center gap-1.5 flex-wrap " + (isMe ? "justify-end" : "")}>
-                        <span className="font-medium text-[#6B665E] truncate max-w-[120px]">{isMe ? "Du" : (m.absender?.name || "Unbekannt")}</span>
-                        {rolle && <span className="text-[9px] text-[#6B665E] bg-white border border-[#EDE8E1] px-1.5 py-0.5 rounded">{rolle}</span>}
-                        <span className="text-[#8C857B]">{datum} {zeit}</span>
+                        <span className="font-medium text-ink-secondary truncate max-w-[120px]">{isMe ? "Du" : (m.absender?.name || "Unbekannt")}</span>
+                        {rolle && <span className="text-[9px] text-ink-secondary bg-white border border-line px-1.5 py-0.5 rounded">{rolle}</span>}
+                        <span className="text-ink-muted">{datum} {zeit}</span>
                       </div>
                       <div className={"text-sm px-3 py-2 rounded-xl leading-relaxed break-words whitespace-pre-wrap " + (
-                        isMe ? "bg-[#3D8B7A] text-white" : "bg-white border border-[#EDE8E1] text-[#2D2A26]"
+                        isMe ? "bg-accent text-white" : "bg-white border border-line text-ink"
                       )}>
                         {m.text}
                       </div>
@@ -849,9 +851,9 @@ function BewertungForm({ onSubmit }: { onSubmit: (sterne: number, kommentar: str
   }
 
   return (
-    <div className="bg-white border border-[#EDE8E1] rounded-2xl p-6 mb-6">
-      <h3 className="text-base font-semibold text-[#2D2A26] mb-1">Wie zufrieden warst du?</h3>
-      <p className="text-xs text-[#8C857B] mb-4">Deine Bewertung hilft anderen Mietern und beeinflusst das Ranking des Handwerkers.</p>
+    <div className="bg-white border border-line rounded-2xl p-6 mb-6">
+      <h3 className="text-base font-semibold text-ink mb-1">Wie zufrieden warst du?</h3>
+      <p className="text-xs text-ink-muted mb-4">Deine Bewertung hilft anderen Mietern und beeinflusst das Ranking des Handwerkers.</p>
 
       <div className="flex items-center gap-1 mb-4" role="radiogroup" aria-label="Sterne-Bewertung">
         {[1, 2, 3, 4, 5].map(n => {
@@ -868,12 +870,12 @@ function BewertungForm({ onSubmit }: { onSubmit: (sterne: number, kommentar: str
               onClick={() => setSterne(n)}
               className="text-3xl transition-transform hover:scale-110"
             >
-              <span className={aktiv ? "text-[#C4956A]" : "text-[#EDE8E1]"}>★</span>
+              <span className={aktiv ? "text-warm" : "text-line"}>★</span>
             </button>
           )
         })}
         {sterne > 0 && (
-          <span className="ml-3 text-sm text-[#6B665E] font-medium">
+          <span className="ml-3 text-sm text-ink-secondary font-medium">
             {sterne === 5 ? "Hervorragend" : sterne === 4 ? "Gut" : sterne === 3 ? "Okay" : sterne === 2 ? "Mittelmäßig" : "Schlecht"}
           </span>
         )}
@@ -884,13 +886,13 @@ function BewertungForm({ onSubmit }: { onSubmit: (sterne: number, kommentar: str
         onChange={e => setKommentar(e.target.value)}
         placeholder="Kommentar (optional) — was war besonders gut, was hätte besser sein können?"
         rows={3}
-        className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-4 py-2.5 text-sm text-[#2D2A26] placeholder:text-[#8C857B]/60 focus:border-[#3D8B7A]/40 focus:outline-none focus:ring-1 focus:ring-[#3D8B7A]/20 transition-colors resize-none"
+        className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm text-ink placeholder:text-ink-muted/60 focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20 transition-colors resize-none"
       />
 
       <button
         onClick={speichern}
         disabled={sterne === 0 || saving}
-        className="mt-3 text-sm font-bold bg-[#3D8B7A] text-white px-5 py-2.5 rounded-xl hover:bg-[#2D6B5A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="mt-3 text-sm font-bold bg-accent text-white px-5 py-2.5 rounded-xl hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {saving ? "Speichert…" : "Bewertung absenden"}
       </button>

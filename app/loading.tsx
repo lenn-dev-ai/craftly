@@ -1,9 +1,9 @@
 export default function Loading() {
   return (
-    <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+    <div className="min-h-screen bg-surface flex items-center justify-center">
       <div className="flex flex-col items-center space-y-5">
         <div className="logo text-3xl">
-          <span className="text-[#2D2A26]">Repa</span>
+          <span className="text-ink">Repa</span>
           <span className="gradient-text">ro</span>
         </div>
 
@@ -15,7 +15,7 @@ export default function Loading() {
           />
         </div>
 
-        <p className="text-[#8C857B] text-xs tracking-wide">Wird geladen...</p>
+        <p className="text-ink-muted text-xs tracking-wide">Wird geladen...</p>
       </div>
     </div>
   );

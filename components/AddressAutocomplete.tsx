@@ -114,7 +114,7 @@ export default function AddressAutocomplete({
 
   return (
     <div className="flex flex-col gap-1 relative" ref={containerRef}>
-      {label && <label className="text-sm font-medium text-[#6B665E]">{label}</label>}
+      {label && <label className="text-sm font-medium text-ink-secondary">{label}</label>}
       <input
         type="text"
         value={text}
@@ -125,17 +125,17 @@ export default function AddressAutocomplete({
           suchen(e.target.value)
         }}
         onFocus={() => vorschlaege.length > 0 && setOpen(true)}
-        className="w-full px-3 py-2.5 border border-[#EDE8E1] rounded-lg text-sm bg-white focus:outline-none focus:border-[#3D8B7A] transition-colors disabled:bg-[#FAF8F5] disabled:cursor-not-allowed"
+        className="w-full px-3 py-2.5 border border-line rounded-lg text-sm bg-white focus:outline-none focus:border-[#3D8B7A] transition-colors disabled:bg-surface disabled:cursor-not-allowed"
         autoComplete="off"
       />
       {open && vorschlaege.length > 0 && (
-        <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#EDE8E1] rounded-lg shadow-lg z-20 max-h-72 overflow-auto">
+        <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-line rounded-lg shadow-lg z-20 max-h-72 overflow-auto">
           {vorschlaege.map((v, i) => (
             <li key={i}>
               <button
                 type="button"
                 onClick={() => waehlen(v)}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-[#FAF8F5] transition-colors"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-surface transition-colors"
               >
                 {v.label}
               </button>
@@ -144,7 +144,7 @@ export default function AddressAutocomplete({
         </ul>
       )}
       {loading && (
-        <p className="text-xs text-[#8C857B]">Suche…</p>
+        <p className="text-xs text-ink-muted">Suche…</p>
       )}
     </div>
   )

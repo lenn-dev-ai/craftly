@@ -11,9 +11,9 @@ import { haversineKm } from "@/lib/distance"
 type Dringlichkeit = "notfall" | "zeitnah" | "planbar"
 
 const DRINGLICHKEITS_BADGE: Record<Dringlichkeit, { label: string; cls: string }> = {
-  notfall: { label: "🔴 Notfall", cls: "bg-[#C4574B]/10 text-[#C4574B] border border-[#C4574B]/20" },
-  zeitnah: { label: "🟡 Zeitnah", cls: "bg-[#C4956A]/10 text-[#C4956A] border border-[#C4956A]/20" },
-  planbar: { label: "🟢 Planbar", cls: "bg-[#3D8B7A]/10 text-[#3D8B7A] border border-[#3D8B7A]/20" },
+  notfall: { label: "🔴 Notfall", cls: "bg-danger/10 text-danger border border-danger/20" },
+  zeitnah: { label: "🟡 Zeitnah", cls: "bg-warm/10 text-warm border border-warm/20" },
+  planbar: { label: "🟢 Planbar", cls: "bg-accent/10 text-accent border border-accent/20" },
 }
 
 export default function HandwerkerDashboard() {
@@ -64,8 +64,8 @@ export default function HandwerkerDashboard() {
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-2 border-[#3D8B7A]/30 border-t-[#3D8B7A] rounded-full animate-spin" />
-        <span className="text-sm text-[#8C857B]">Lädt…</span>
+        <div className="w-8 h-8 border-2 border-accent/30 border-t-[#3D8B7A] rounded-full animate-spin" />
+        <span className="text-sm text-ink-muted">Lädt…</span>
       </div>
     </div>
   )
@@ -124,17 +124,17 @@ export default function HandwerkerDashboard() {
     <div className="p-6 md:p-8 max-w-4xl mx-auto pt-16 md:pt-8">
       {/* Hero Greeting */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-[#2D2A26]">
+        <h1 className="text-3xl font-bold text-ink">
           Hallo, {profile?.firma || profile?.name || "Handwerker"}
         </h1>
-        <p className="text-sm text-[#8C857B] mt-1.5">
+        <p className="text-sm text-ink-muted mt-1.5">
           {profile?.gewerk && <span>{profile.gewerk}</span>}
           {/* React rendert die Number 0 als Text — daher explizit > 0
               prüfen, sonst sieht der HW "Heizung0Noch keine Bewertungen". */}
           {profile?.bewertung_avg != null && Number(profile.bewertung_avg) > 0 ? (
             <>
               {profile?.gewerk ? " · " : null}
-              <span className="text-[#C4956A] font-medium">★ {profile.bewertung_avg}</span>
+              <span className="text-warm font-medium">★ {profile.bewertung_avg}</span>
             </>
           ) : (
             <>
@@ -145,7 +145,7 @@ export default function HandwerkerDashboard() {
           {standortGesetzt && profile?.radius_km && (
             <>
               {" · "}
-              <span className="text-[#3D8B7A]">📍 {profile.radius_km} km Radius</span>
+              <span className="text-accent">📍 {profile.radius_km} km Radius</span>
             </>
           )}
         </p>
@@ -159,19 +159,19 @@ export default function HandwerkerDashboard() {
       {!standortGesetzt && (
         <Link
           href="/dashboard-handwerker/profil"
-          className="block mb-6 p-4 rounded-2xl border-2 border-[#C4956A]/40 bg-[#FAF1DE] hover:bg-[#F5E5D0] transition-colors"
+          className="block mb-6 p-4 rounded-2xl border-2 border-warm/40 bg-warm-light hover:bg-[#F5E5D0] transition-colors"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#C4956A]/20 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-warm/20 flex items-center justify-center flex-shrink-0">
               <span className="text-xl">📍</span>
             </div>
             <div className="flex-1">
-              <div className="text-sm font-semibold text-[#2D2A26]">Standort einrichten</div>
-              <div className="text-xs text-[#854F0B] mt-0.5">
+              <div className="text-sm font-semibold text-ink">Standort einrichten</div>
+              <div className="text-xs text-warm-dark mt-0.5">
                 Damit du nur Aufträge in deiner Nähe siehst und die Fahrzeit fair berechnet wird
               </div>
             </div>
-            <span className="text-[#854F0B]">→</span>
+            <span className="text-warm-dark">→</span>
           </div>
         </Link>
       )}
@@ -190,21 +190,21 @@ export default function HandwerkerDashboard() {
             )}
           </div>
         </div>
-        <div className="bg-white rounded-2xl border border-[#EDE8E1] p-5">
-          <div className="text-xs text-[#8C857B] font-medium mb-1 uppercase tracking-wide">
+        <div className="bg-white rounded-2xl border border-line p-5">
+          <div className="text-xs text-ink-muted font-medium mb-1 uppercase tracking-wide">
             Meine Aufträge
           </div>
-          <div className="text-4xl font-bold text-[#2D2A26] tabular-nums">{meineAuftraege.length}</div>
-          <div className="text-xs text-[#8C857B] mt-2">aktuell zugewiesen</div>
+          <div className="text-4xl font-bold text-ink tabular-nums">{meineAuftraege.length}</div>
+          <div className="text-xs text-ink-muted mt-2">aktuell zugewiesen</div>
         </div>
-        <div className="bg-white rounded-2xl border border-[#EDE8E1] p-5">
-          <div className="text-xs text-[#8C857B] font-medium mb-1 uppercase tracking-wide">
+        <div className="bg-white rounded-2xl border border-line p-5">
+          <div className="text-xs text-ink-muted font-medium mb-1 uppercase tracking-wide">
             Bewertung
           </div>
-          <div className="text-4xl font-bold text-[#C4956A] tabular-nums">
+          <div className="text-4xl font-bold text-warm tabular-nums">
             {profile?.bewertung_avg ? profile.bewertung_avg : "—"}
           </div>
-          <div className="text-xs text-[#8C857B] mt-2">
+          <div className="text-xs text-ink-muted mt-2">
             {profile?.auftraege_anzahl ? `aus ${profile.auftraege_anzahl} Aufträgen` : "Noch keine"}
           </div>
         </div>
@@ -221,44 +221,44 @@ export default function HandwerkerDashboard() {
       {/* Auktionen — der Hauptcontent */}
       <div className="mb-10">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <h2 className="text-lg font-semibold text-[#2D2A26]">Aktuelle Ausschreibungen</h2>
+          <h2 className="text-lg font-semibold text-ink">Aktuelle Ausschreibungen</h2>
           <div className="flex items-center gap-3 text-xs">
             {standortGesetzt && (
               zeigeAusserhalb ? (
                 <button
                   onClick={() => setZeigeAusserhalb(false)}
-                  className="text-[#3D8B7A] hover:underline font-medium"
+                  className="text-accent hover:underline font-medium"
                 >
                   Nur im Radius zeigen ({imRadius})
                 </button>
               ) : ausserhalb > 0 ? (
                 <button
                   onClick={() => setZeigeAusserhalb(true)}
-                  className="text-[#8C857B] hover:text-[#2D2A26] font-medium"
+                  className="text-ink-muted hover:text-ink font-medium"
                 >
                   + {ausserhalb} außerhalb anzeigen
                 </button>
               ) : (
-                <span className="text-[#8C857B]">Nach Smart-Score sortiert</span>
+                <span className="text-ink-muted">Nach Smart-Score sortiert</span>
               )
             )}
           </div>
         </div>
 
         {auktionenSortiert.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-[#EDE8E1] p-12 text-center">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-[#FAF8F5] flex items-center justify-center mb-3">
+          <div className="bg-white rounded-2xl border border-line p-12 text-center">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-surface flex items-center justify-center mb-3">
               <span className="text-2xl opacity-60">📋</span>
             </div>
-            <div className="text-base font-semibold text-[#2D2A26] mb-1">Aktuell keine Ausschreibungen</div>
-            <div className="text-sm text-[#8C857B] max-w-sm mx-auto">
+            <div className="text-base font-semibold text-ink mb-1">Aktuell keine Ausschreibungen</div>
+            <div className="text-sm text-ink-muted max-w-sm mx-auto">
               Sobald Verwalter neue Aufträge ausschreiben, erscheinen sie hier — du wirst auch per E-Mail informiert.
             </div>
             {ausgeblendetWegenGewerk > 0 && (
-              <div className="text-xs text-[#8C857B] mt-4">
+              <div className="text-xs text-ink-muted mt-4">
                 {ausgeblendetWegenGewerk} weitere Auktion(en) passen nicht zu deinem Gewerk
                 {profile?.gewerk && <> ({profile.gewerk})</>}.
-                <Link href="/dashboard-handwerker/profil" className="ml-1 text-[#3D8B7A] hover:underline">
+                <Link href="/dashboard-handwerker/profil" className="ml-1 text-accent hover:underline">
                   Gewerk ändern
                 </Link>
               </div>
@@ -271,14 +271,14 @@ export default function HandwerkerDashboard() {
               return (
                 <div
                   key={t.id}
-                  className="bg-white rounded-2xl border border-[#EDE8E1] p-5 cursor-pointer hover:border-[#3D8B7A]/40 hover:shadow-sm transition-all group"
+                  className="bg-white rounded-2xl border border-line p-5 cursor-pointer hover:border-accent/40 hover:shadow-sm transition-all group"
                   onClick={() => router.push(`/dashboard-handwerker/angebot/${t.id}`)}
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-1 self-stretch rounded-full bg-[#3D8B7A]/30 flex-shrink-0" />
+                    <div className="w-1 self-stretch rounded-full bg-accent/30 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-3 mb-2">
-                        <h3 className="text-base font-semibold text-[#2D2A26] truncate">{t.titel}</h3>
+                        <h3 className="text-base font-semibold text-ink truncate">{t.titel}</h3>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           {(() => {
                             const d = (t as Ticket & { dringlichkeit?: Dringlichkeit }).dringlichkeit
@@ -306,22 +306,22 @@ export default function HandwerkerDashboard() {
                           />
                         )}
                         {t.einsatzort_adresse && !standortGesetzt && (
-                          <span className="text-xs text-[#8C857B]">📍 {t.einsatzort_adresse}</span>
+                          <span className="text-xs text-ink-muted">📍 {t.einsatzort_adresse}</span>
                         )}
                         {t.wohnung && (
-                          <span className="text-xs text-[#8C857B]">{t.wohnung}</span>
+                          <span className="text-xs text-ink-muted">{t.wohnung}</span>
                         )}
-                        <span className="text-xs text-[#8C857B]">
+                        <span className="text-xs text-ink-muted">
                           · {angeboteCount} {angeboteCount === 1 ? "Angebot" : "Angebote"}
                         </span>
                       </div>
 
                       {t.beschreibung && (
-                        <p className="text-sm text-[#6B665E] line-clamp-2 mb-3">{t.beschreibung}</p>
+                        <p className="text-sm text-ink-secondary line-clamp-2 mb-3">{t.beschreibung}</p>
                       )}
 
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-[#3D8B7A] group-hover:translate-x-0.5 transition-transform">
+                        <span className="text-sm font-medium text-accent group-hover:translate-x-0.5 transition-transform">
                           Angebot abgeben →
                         </span>
                       </div>
@@ -338,8 +338,8 @@ export default function HandwerkerDashboard() {
       {meineAuftraege.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-[#2D2A26]">Meine laufenden Aufträge</h2>
-            <Link href="/dashboard-handwerker/auftraege" className="text-sm text-[#3D8B7A] hover:text-[#2D6B5A] font-medium">
+            <h2 className="text-lg font-semibold text-ink">Meine laufenden Aufträge</h2>
+            <Link href="/dashboard-handwerker/auftraege" className="text-sm text-accent hover:text-[#2D6B5A] font-medium">
               Alle anzeigen →
             </Link>
           </div>
@@ -347,26 +347,26 @@ export default function HandwerkerDashboard() {
             {meineAuftraege.slice(0, 5).map(t => (
               <div
                 key={t.id}
-                className="bg-white rounded-xl border border-[#EDE8E1] p-4 cursor-pointer hover:border-[#3D8B7A]/30 hover:shadow-sm transition-all"
+                className="bg-white rounded-xl border border-line p-4 cursor-pointer hover:border-accent/30 hover:shadow-sm transition-all"
                 onClick={() => router.push(`/dashboard-handwerker/ticket/${t.id}`)}
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                    t.status === "erledigt" ? "bg-[#3D8B7A]" : "bg-[#C4956A]"
+                    t.status === "erledigt" ? "bg-accent" : "bg-warm"
                   }`} />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-[#2D2A26] truncate">{t.titel}</div>
-                    <div className="text-xs text-[#8C857B] mt-0.5">
+                    <div className="text-sm font-medium text-ink truncate">{t.titel}</div>
+                    <div className="text-xs text-ink-muted mt-0.5">
                       {new Date(t.created_at).toLocaleDateString("de")}
                       {t.einsatzort_adresse && ` · 📍 ${t.einsatzort_adresse}`}
                     </div>
                   </div>
                   <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                     t.status === "erledigt"
-                      ? "bg-[#3D8B7A]/10 text-[#3D8B7A]"
+                      ? "bg-accent/10 text-accent"
                       : t.status === "in_bearbeitung"
-                      ? "bg-[#C4956A]/10 text-[#C4956A]"
-                      : "bg-[#EDE8E1] text-[#6B665E]"
+                      ? "bg-warm/10 text-warm"
+                      : "bg-line text-ink-secondary"
                   }`}>
                     {t.status === "erledigt" ? "Erledigt"
                       : t.status === "in_bearbeitung" ? "In Arbeit"
@@ -386,10 +386,10 @@ function QuickAction({ href, label, icon }: { href: string; label: string; icon:
   return (
     <Link
       href={href}
-      className="bg-white rounded-xl border border-[#EDE8E1] p-3 text-center hover:border-[#3D8B7A]/30 hover:shadow-sm transition-all group"
+      className="bg-white rounded-xl border border-line p-3 text-center hover:border-accent/30 hover:shadow-sm transition-all group"
     >
-      <div className="text-base mb-1 text-[#3D8B7A]">{icon}</div>
-      <div className="text-xs font-medium text-[#6B665E] group-hover:text-[#3D8B7A] transition-colors">{label}</div>
+      <div className="text-base mb-1 text-accent">{icon}</div>
+      <div className="text-xs font-medium text-ink-secondary group-hover:text-accent transition-colors">{label}</div>
     </Link>
   )
 }
@@ -404,9 +404,9 @@ function SichtbarkeitsBadge({ profile }: { profile: UserProfile | null }) {
   const treue = profile.angebotstreue ?? 100
 
   const stufeConfig = {
-    gold:   { bg: "bg-[#C4956A]/15", text: "text-[#854F0B]", border: "border-[#C4956A]/30", emoji: "🥇" },
-    silber: { bg: "bg-[#8C857B]/15", text: "text-[#6B665E]", border: "border-[#8C857B]/30", emoji: "🥈" },
-    bronze: { bg: "bg-[#A37749]/15", text: "text-[#854F0B]", border: "border-[#A37749]/30", emoji: "🥉" },
+    gold:   { bg: "bg-warm/15", text: "text-warm-dark", border: "border-warm/30", emoji: "🥇" },
+    silber: { bg: "bg-[#8C857B]/15", text: "text-ink-secondary", border: "border-[#8C857B]/30", emoji: "🥈" },
+    bronze: { bg: "bg-[#A37749]/15", text: "text-warm-dark", border: "border-[#A37749]/30", emoji: "🥉" },
   }[stufe]
 
   const naechsteStufe = stufe === "bronze" ? { name: "Silber", schwelle: 50 }
@@ -426,20 +426,20 @@ function SichtbarkeitsBadge({ profile }: { profile: UserProfile | null }) {
         </div>
         <div className="text-right">
           <div className={`text-2xl font-bold tabular-nums ${stufeConfig.text}`}>{Number(score).toFixed(0)}</div>
-          <div className="text-[10px] text-[#6B665E]">/ 100</div>
+          <div className="text-[10px] text-ink-secondary">/ 100</div>
         </div>
       </div>
-      <div className="text-xs text-[#6B665E] space-y-1 mb-2">
+      <div className="text-xs text-ink-secondary space-y-1 mb-2">
         <div>💡 <span className="font-medium">Angebotstreue: {Number(treue).toFixed(0)} %</span> · höher = besserer Bonus bei jedem Bid</div>
         <div>⚡ Stufe wirkt als Multiplier (×1.05 Silber, ×1.10 Gold) auf jeden Smart-Score</div>
       </div>
       {naechsteStufe && fehlend > 0 && (
-        <div className="text-xs text-[#3D8B7A] font-medium">
+        <div className="text-xs text-accent font-medium">
           Noch {fehlend} Punkte zur {naechsteStufe.name}-Stufe — mehr Zeitslots oder Bewertungen sammeln
         </div>
       )}
       {!naechsteStufe && (
-        <div className="text-xs text-[#3D8B7A] font-medium">
+        <div className="text-xs text-accent font-medium">
           Höchste Stufe erreicht — weiter aktiv bleiben um sie zu halten
         </div>
       )}

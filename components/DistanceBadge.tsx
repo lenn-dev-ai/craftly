@@ -17,10 +17,10 @@ type Props = {
 }
 
 const FARBEN: Record<string, string> = {
-  nah: "bg-[#E1F5EE] text-[#2D6B5A] border-[#3D8B7A]/20",
-  mittel: "bg-[#FAF1DE] text-[#854F0B] border-[#D4A24E]/30",
-  weit: "bg-[#F5EBDF] text-[#854F0B] border-[#C4956A]/30",
-  ausserhalb: "bg-[#FCEBEB] text-[#A32D2D] border-[#C4574B]/20",
+  nah: "bg-[#E1F5EE] text-[#2D6B5A] border-accent/20",
+  mittel: "bg-warm-light text-warm-dark border-[#D4A24E]/30",
+  weit: "bg-[#F5EBDF] text-warm-dark border-warm/30",
+  ausserhalb: "bg-[#FCEBEB] text-[#A32D2D] border-danger/20",
 }
 
 export default function DistanceBadge({

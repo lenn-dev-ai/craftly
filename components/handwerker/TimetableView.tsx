@@ -196,18 +196,18 @@ export default function TimetableView() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-[#2D2A26]">Zeitplan</h1>
-          <p className="text-sm text-[#8C857B] mt-1">
+          <h1 className="text-2xl font-bold text-ink">Zeitplan</h1>
+          <p className="text-sm text-ink-muted mt-1">
             {view === "tag" ? deutschesDatumLang(datum) : `Woche ab ${deutschesDatum(wochenStart)}`}
           </p>
         </div>
         <div className="flex items-center gap-2">
           {/* View-Toggle */}
-          <div className="inline-flex items-center gap-0.5 bg-white border border-[#EDE8E1] rounded-full p-0.5 shadow-sm">
+          <div className="inline-flex items-center gap-0.5 bg-white border border-line rounded-full p-0.5 shadow-sm">
             <button
               onClick={() => setView("tag")}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                view === "tag" ? "bg-[#3D8B7A] text-white" : "text-[#6B665E] hover:text-[#2D2A26]"
+                view === "tag" ? "bg-accent text-white" : "text-ink-secondary hover:text-ink"
               }`}
             >
               <Calendar size={12} /> Tag
@@ -215,30 +215,30 @@ export default function TimetableView() {
             <button
               onClick={() => setView("woche")}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                view === "woche" ? "bg-[#3D8B7A] text-white" : "text-[#6B665E] hover:text-[#2D2A26]"
+                view === "woche" ? "bg-accent text-white" : "text-ink-secondary hover:text-ink"
               }`}
             >
               <CalendarRange size={12} /> Woche
             </button>
           </div>
           {/* Datum-Navigation */}
-          <div className="inline-flex items-center gap-0.5 bg-white border border-[#EDE8E1] rounded-full p-0.5 shadow-sm">
+          <div className="inline-flex items-center gap-0.5 bg-white border border-line rounded-full p-0.5 shadow-sm">
             <button
               onClick={() => setDatum(d => shiftDatum(d, view === "tag" ? -1 : -7))}
-              className="w-7 h-7 rounded-full hover:bg-[#FAF8F5] flex items-center justify-center text-[#6B665E]"
+              className="w-7 h-7 rounded-full hover:bg-surface flex items-center justify-center text-ink-secondary"
               aria-label="Zurück"
             >
               <ChevronLeft size={14} />
             </button>
             <button
               onClick={() => setDatum(isoHeute())}
-              className="text-xs px-3 py-1 rounded-full text-[#3D8B7A] hover:bg-[#3D8B7A]/5 font-medium"
+              className="text-xs px-3 py-1 rounded-full text-accent hover:bg-accent/5 font-medium"
             >
               Heute
             </button>
             <button
               onClick={() => setDatum(d => shiftDatum(d, view === "tag" ? 1 : 7))}
-              className="w-7 h-7 rounded-full hover:bg-[#FAF8F5] flex items-center justify-center text-[#6B665E]"
+              className="w-7 h-7 rounded-full hover:bg-surface flex items-center justify-center text-ink-secondary"
               aria-label="Weiter"
             >
               <ChevronRight size={14} />
@@ -251,7 +251,7 @@ export default function TimetableView() {
       <EffizienzKarte stats={wochenStats} />
 
       {loading ? (
-        <div className="bg-white border border-[#EDE8E1] rounded-2xl p-8 text-center text-sm text-[#8C857B]">
+        <div className="bg-white border border-line rounded-2xl p-8 text-center text-sm text-ink-muted">
           Lädt…
         </div>
       ) : view === "tag" ? (
@@ -283,21 +283,21 @@ function EffizienzKarte({ stats }: {
               : stats.effizienz >= 30 ? "#C4956A"
               : "#C4574B"
   return (
-    <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5 shadow-sm">
+    <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
       <div className="flex items-baseline justify-between gap-4 mb-3 flex-wrap">
         <div className="flex items-baseline gap-3">
-          <span className="text-[10px] uppercase tracking-wider text-[#8C857B] font-medium">Effizienz diese Woche</span>
+          <span className="text-[10px] uppercase tracking-wider text-ink-muted font-medium">Effizienz diese Woche</span>
           <span className="text-2xl font-bold tabular-nums" style={{ color: farbe }}>
             {stats.effizienz} %
           </span>
         </div>
-        <div className="text-xs text-[#8C857B] tabular-nums">
+        <div className="text-xs text-ink-muted tabular-nums">
           {stats.belegtH} h von {stats.verfuegbarH} h verplant ·
           {" "}{stats.auftragsCount} {stats.auftragsCount === 1 ? "Auftrag" : "Aufträge"} ·
-          {" "}<span className="text-[#3D8B7A] font-semibold">{stats.umsatz.toLocaleString("de", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €</span> erwartet
+          {" "}<span className="text-accent font-semibold">{stats.umsatz.toLocaleString("de", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €</span> erwartet
         </div>
       </div>
-      <div className="w-full h-2 bg-[#FAF8F5] rounded-full overflow-hidden">
+      <div className="w-full h-2 bg-surface rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${stats.effizienz}%`, background: farbe }}
@@ -353,7 +353,7 @@ function Tagesansicht({ datum, eintraege, onAuftragKlick }: {
   }, [belegtMinSet])
 
   return (
-    <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5 shadow-sm">
+    <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
       <div className="relative" style={{ height: GESAMT_HOEHE, marginLeft: 48 }}>
         {/* Stunden-Linien + Labels */}
         {Array.from({ length: STUNDEN_PRO_TAG + 1 }, (_, i) => {
@@ -362,11 +362,11 @@ function Tagesansicht({ datum, eintraege, onAuftragKlick }: {
           return (
             <div key={i}>
               <div
-                className="absolute left-0 right-0 border-t border-[#EDE8E1]"
+                className="absolute left-0 right-0 border-t border-line"
                 style={{ top }}
               />
               <div
-                className="absolute text-[10px] tabular-nums text-[#8C857B] -translate-y-1/2"
+                className="absolute text-[10px] tabular-nums text-ink-muted -translate-y-1/2"
                 style={{ top, left: -44 }}
               >
                 {String(h).padStart(2, "0")}:00
@@ -383,10 +383,10 @@ function Tagesansicht({ datum, eintraege, onAuftragKlick }: {
           return (
             <div
               key={`frei-${i}`}
-              className="absolute left-0 right-0 bg-[#3D8B7A]/5 border-l-2 border-[#3D8B7A]/30 rounded-r-md flex items-center px-2"
+              className="absolute left-0 right-0 bg-accent/5 border-l-2 border-accent/30 rounded-r-md flex items-center px-2"
               style={{ top, height }}
             >
-              <span className="text-[10px] text-[#3D8B7A] font-semibold">
+              <span className="text-[10px] text-accent font-semibold">
                 Frei · {stunden} h
               </span>
             </div>
@@ -424,8 +424,8 @@ function Tagesansicht({ datum, eintraege, onAuftragKlick }: {
         {eintraege.length === 0 && freieSlots.length === 1 && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <div className="text-sm font-semibold text-[#3D8B7A] mb-1">{deutschesDatum(datum)} ist komplett frei</div>
-              <div className="text-xs text-[#8C857B]">Trage Zeitslots ein, damit Verwalter dich buchen können.</div>
+              <div className="text-sm font-semibold text-accent mb-1">{deutschesDatum(datum)} ist komplett frei</div>
+              <div className="text-xs text-ink-muted">Trage Zeitslots ein, damit Verwalter dich buchen können.</div>
             </div>
           </div>
         )}
@@ -445,7 +445,7 @@ function Wochenansicht({ tage, eintraege, onTagKlick, onAuftragKlick }: {
   onAuftragKlick: (id: string) => void
 }) {
   return (
-    <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5 shadow-sm">
+    <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
       <div className="grid grid-cols-7 gap-2">
         {tage.map((tag, i) => {
           const tageinträge = eintraege.filter(e => e.datum === tag)
@@ -460,22 +460,22 @@ function Wochenansicht({ tage, eintraege, onTagKlick, onAuftragKlick }: {
               key={tag}
               onClick={() => onTagKlick(tag)}
               className={`text-left rounded-xl border p-3 transition-all hover:shadow-sm ${
-                istHeute ? "border-[#3D8B7A] bg-[#3D8B7A]/5" : "border-[#EDE8E1] bg-white hover:bg-[#FAF8F5]"
+                istHeute ? "border-[#3D8B7A] bg-accent/5" : "border-line bg-white hover:bg-surface"
               } ${istWochenende ? "opacity-75" : ""}`}
             >
               <div className="flex items-baseline justify-between mb-2">
                 <span className={`text-[10px] uppercase tracking-wider font-bold ${
-                  istHeute ? "text-[#3D8B7A]" : "text-[#8C857B]"
+                  istHeute ? "text-accent" : "text-ink-muted"
                 }`}>
                   {WOCHENTAGE[i]}
                 </span>
-                <span className="text-sm font-semibold text-[#2D2A26] tabular-nums">
+                <span className="text-sm font-semibold text-ink tabular-nums">
                   {new Date(tag).getDate()}
                 </span>
               </div>
 
               {auftraege.length === 0 ? (
-                <div className="text-[10px] text-[#8C857B] italic py-3">frei</div>
+                <div className="text-[10px] text-ink-muted italic py-3">frei</div>
               ) : (
                 <div className="space-y-1">
                   {auftraege.slice(0, 3).map(e => {
@@ -492,7 +492,7 @@ function Wochenansicht({ tage, eintraege, onTagKlick, onAuftragKlick }: {
                     )
                   })}
                   {auftraege.length > 3 && (
-                    <div className="text-[10px] text-[#8C857B] font-medium pl-1">
+                    <div className="text-[10px] text-ink-muted font-medium pl-1">
                       +{auftraege.length - 3} weitere
                     </div>
                   )}
@@ -500,9 +500,9 @@ function Wochenansicht({ tage, eintraege, onTagKlick, onAuftragKlick }: {
               )}
 
               {auftraege.length > 0 && (
-                <div className="mt-2 pt-2 border-t border-[#EDE8E1] text-[10px] text-[#8C857B] tabular-nums space-y-0.5">
+                <div className="mt-2 pt-2 border-t border-line text-[10px] text-ink-muted tabular-nums space-y-0.5">
                   <div>{Math.round(belegtMin / 60 * 10) / 10} h</div>
-                  {umsatz > 0 && <div className="text-[#3D8B7A] font-semibold">{Math.round(umsatz)} €</div>}
+                  {umsatz > 0 && <div className="text-accent font-semibold">{Math.round(umsatz)} €</div>}
                 </div>
               )}
             </button>

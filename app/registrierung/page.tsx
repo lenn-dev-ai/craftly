@@ -78,20 +78,20 @@ export default function RegistrierungPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center p-4 overflow-y-auto">
+    <div className="min-h-screen bg-surface flex items-center justify-center p-4 overflow-y-auto">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2.5 mb-3">
-            <div className="w-9 h-9 rounded-lg bg-[#3D8B7A] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 <polyline points="9 22 9 12 15 12 15 22" />
               </svg>
             </div>
-            <span className="text-xl font-bold text-[#2D2A26]">Reparo</span>
+            <span className="text-xl font-bold text-ink">Reparo</span>
           </Link>
-          <h1 className="text-2xl font-bold text-[#2D2A26]">Kostenlos registrieren</h1>
-          <p className="text-sm text-[#6B665E] mt-1">In 2 Minuten startklar</p>
+          <h1 className="text-2xl font-bold text-ink">Kostenlos registrieren</h1>
+          <p className="text-sm text-ink-secondary mt-1">In 2 Minuten startklar</p>
         </div>
 
         <Card>
@@ -142,7 +142,7 @@ export default function RegistrierungPage() {
                 <PasswortRegeln passwort={password} />
                 <button
                   type="button"
-                  className="text-xs text-[#3D8B7A] hover:text-[#2D6B5A] mt-2"
+                  className="text-xs text-accent hover:text-[#2D6B5A] mt-2"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? "Verbergen" : "Anzeigen"}
@@ -194,7 +194,7 @@ export default function RegistrierungPage() {
               {serverError && (
                 <p
                   role="alert"
-                  className="text-xs text-[#C4574B] bg-[#C4574B]/10 border border-[#C4574B]/20 px-4 py-2.5 rounded-xl font-medium"
+                  className="text-xs text-danger bg-danger/10 border border-danger/20 px-4 py-2.5 rounded-xl font-medium"
                 >
                   {serverError}
                 </p>
@@ -208,7 +208,7 @@ export default function RegistrierungPage() {
                 {isSubmitting ? "Wird erstellt…" : "Konto erstellen"}
               </Button>
 
-              <div className="flex items-center justify-center gap-4 mt-2 text-xs text-[#8C857B]">
+              <div className="flex items-center justify-center gap-4 mt-2 text-xs text-ink-muted">
                 <div className="flex items-center gap-1">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" strokeWidth="2" />
@@ -224,19 +224,19 @@ export default function RegistrierungPage() {
                 </div>
               </div>
 
-              <p className="text-xs text-center text-[#8C857B] mt-2">
+              <p className="text-xs text-center text-ink-muted mt-2">
                 Mit der Registrierung akzeptieren Sie unsere{" "}
-                <Link href="/datenschutz" className="text-[#3D8B7A] hover:underline">
+                <Link href="/datenschutz" className="text-accent hover:underline">
                   Datenschutzbestimmungen
                 </Link>
                 .
               </p>
 
-              <p className="text-center text-xs text-[#6B665E]">
+              <p className="text-center text-xs text-ink-secondary">
                 Bereits registriert?{" "}
                 <Link
                   href="/login"
-                  className="text-[#3D8B7A] hover:text-[#2D6B5A] font-medium transition-colors"
+                  className="text-accent hover:text-[#2D6B5A] font-medium transition-colors"
                 >
                   Einloggen
                 </Link>
@@ -245,10 +245,10 @@ export default function RegistrierungPage() {
           </form>
         </Card>
 
-        <div className="mt-6 flex justify-center gap-4 text-xs text-[#8C857B]">
-          <Link href="/impressum" className="hover:text-[#2D2A26] transition-colors py-2 px-3">Impressum</Link>
-          <Link href="/agb" className="hover:text-[#2D2A26] transition-colors py-2 px-3">AGB</Link>
-          <Link href="/datenschutz" className="hover:text-[#2D2A26] transition-colors py-2 px-3">Datenschutz</Link>
+        <div className="mt-6 flex justify-center gap-4 text-xs text-ink-muted">
+          <Link href="/impressum" className="hover:text-ink transition-colors py-2 px-3">Impressum</Link>
+          <Link href="/agb" className="hover:text-ink transition-colors py-2 px-3">AGB</Link>
+          <Link href="/datenschutz" className="hover:text-ink transition-colors py-2 px-3">Datenschutz</Link>
         </div>
       </div>
     </div>
@@ -257,7 +257,7 @@ export default function RegistrierungPage() {
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null
-  return <p className="text-xs text-[#C4574B] mt-1.5" role="alert">{message}</p>
+  return <p className="text-xs text-danger mt-1.5" role="alert">{message}</p>
 }
 
 function PasswortRegeln({ passwort }: { passwort: string }) {
@@ -266,26 +266,26 @@ function PasswortRegeln({ passwort }: { passwort: string }) {
   const zahl = /[0-9]/.test(passwort)
   if (!passwort) return null
   return (
-    <div className="text-xs text-[#8C857B] mt-2 space-y-0.5" aria-live="polite">
-      <p className={lang ? "text-[#3D8B7A]" : ""}>{lang ? "✓" : "○"} Mindestens 8 Zeichen</p>
-      <p className={gross ? "text-[#3D8B7A]" : ""}>{gross ? "✓" : "○"} Ein Großbuchstabe</p>
-      <p className={zahl ? "text-[#3D8B7A]" : ""}>{zahl ? "✓" : "○"} Eine Zahl</p>
+    <div className="text-xs text-ink-muted mt-2 space-y-0.5" aria-live="polite">
+      <p className={lang ? "text-accent" : ""}>{lang ? "✓" : "○"} Mindestens 8 Zeichen</p>
+      <p className={gross ? "text-accent" : ""}>{gross ? "✓" : "○"} Ein Großbuchstabe</p>
+      <p className={zahl ? "text-accent" : ""}>{zahl ? "✓" : "○"} Eine Zahl</p>
     </div>
   )
 }
 
 function PasswortStaerke({ passwort }: { passwort: string }) {
   const stufe = passwort.length < 8 ? 1 : passwort.length < 12 ? 2 : 4
-  const farbe = passwort.length < 8 ? "bg-[#C4574B]" : passwort.length < 12 ? "bg-[#C4956A]" : "bg-[#3D8B7A]"
+  const farbe = passwort.length < 8 ? "bg-[#C4574B]" : passwort.length < 12 ? "bg-warm" : "bg-accent"
   const label = passwort.length < 8 ? "Mindestens 8 Zeichen" : passwort.length < 12 ? "Gut" : "Stark"
   return (
     <div className="mt-2">
       <div className="flex gap-1">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className={`h-1 flex-1 rounded ${i <= stufe ? farbe : "bg-[#EDE8E1]"}`} />
+          <div key={i} className={`h-1 flex-1 rounded ${i <= stufe ? farbe : "bg-line"}`} />
         ))}
       </div>
-      <p className="text-xs mt-1 text-[#8C857B]">{label}</p>
+      <p className="text-xs mt-1 text-ink-muted">{label}</p>
     </div>
   )
 }

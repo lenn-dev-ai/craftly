@@ -28,31 +28,31 @@ export default function PreisAufschluesselung({
     return (
       <div className={`text-xs ${className}`}>
         <div className="flex items-center justify-between">
-          <span className="text-[#6B665E]">Handwerkerkosten</span>
-          <span className="text-[#3D8B7A] font-medium tabular-nums">{formatEUR(auftragswert)}</span>
+          <span className="text-ink-secondary">Handwerkerkosten</span>
+          <span className="text-accent font-medium tabular-nums">{formatEUR(auftragswert)}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-[#8C857B]">
+          <span className="text-ink-muted">
             Reparo-Gebühr {istEarlyAdopter ? "(0 %)" : `(${formatProzent(provisionRate)})`}
           </span>
-          <span className="text-[#8C857B] tabular-nums">{formatEUR(provisionBetrag)}</span>
+          <span className="text-ink-muted tabular-nums">{formatEUR(provisionBetrag)}</span>
         </div>
-        <div className="flex items-center justify-between border-t border-[#EDE8E1] mt-1.5 pt-1.5">
-          <span className="font-semibold text-[#2D2A26]">Gesamt</span>
-          <span className="font-bold text-[#2D2A26] tabular-nums">{formatEUR(gesamt)}</span>
+        <div className="flex items-center justify-between border-t border-line mt-1.5 pt-1.5">
+          <span className="font-semibold text-ink">Gesamt</span>
+          <span className="font-bold text-ink tabular-nums">{formatEUR(gesamt)}</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className={`bg-white border border-[#EDE8E1] rounded-2xl p-5 ${className}`}>
+    <div className={`bg-white border border-line rounded-2xl p-5 ${className}`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-[#2D2A26] uppercase tracking-wide">
+        <h3 className="text-sm font-semibold text-ink uppercase tracking-wide">
           Kosten-Aufschlüsselung
         </h3>
         {istEarlyAdopter && (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#854F0B] bg-[#FAF1DE] border border-[#C4956A]/30 px-2 py-0.5 rounded">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-warm-dark bg-warm-light border border-warm/30 px-2 py-0.5 rounded">
             Early Adopter
           </span>
         )}
@@ -62,10 +62,10 @@ export default function PreisAufschluesselung({
         {/* Handwerkerkosten — grün */}
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-sm text-[#2D2A26]">Handwerkerkosten</div>
-            <div className="text-[11px] text-[#8C857B] mt-0.5">Geht 1:1 an den Handwerker</div>
+            <div className="text-sm text-ink">Handwerkerkosten</div>
+            <div className="text-[11px] text-ink-muted mt-0.5">Geht 1:1 an den Handwerker</div>
           </div>
-          <div className="text-sm font-semibold text-[#3D8B7A] tabular-nums">
+          <div className="text-sm font-semibold text-accent tabular-nums">
             {formatEUR(auftragswert)}
           </div>
         </div>
@@ -73,13 +73,13 @@ export default function PreisAufschluesselung({
         {/* Reparo-Gebühr — dezent */}
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-sm text-[#6B665E]">
+            <div className="text-sm text-ink-secondary">
               Reparo-Gebühr
-              <span className="text-[#8C857B] font-normal ml-1.5">
+              <span className="text-ink-muted font-normal ml-1.5">
                 ({istEarlyAdopter ? "0 %" : formatProzent(provisionRate)})
               </span>
             </div>
-            <div className="text-[11px] text-[#8C857B] mt-0.5">
+            <div className="text-[11px] text-ink-muted mt-0.5">
               {istEarlyAdopter
                 ? "Onboarding-Phase aktiv"
                 : "Plattform, Support, Vermittlung"}
@@ -87,7 +87,7 @@ export default function PreisAufschluesselung({
           </div>
           <div
             className={`text-sm tabular-nums ${
-              istEarlyAdopter ? "text-[#3D8B7A] font-semibold" : "text-[#6B665E]"
+              istEarlyAdopter ? "text-accent font-semibold" : "text-ink-secondary"
             }`}
           >
             {formatEUR(provisionBetrag)}
@@ -95,9 +95,9 @@ export default function PreisAufschluesselung({
         </div>
 
         {/* Gesamt — bold */}
-        <div className="flex items-start justify-between gap-3 border-t border-[#EDE8E1] pt-3">
-          <div className="text-base font-semibold text-[#2D2A26]">Gesamt</div>
-          <div className="text-lg font-bold text-[#2D2A26] tabular-nums">
+        <div className="flex items-start justify-between gap-3 border-t border-line pt-3">
+          <div className="text-base font-semibold text-ink">Gesamt</div>
+          <div className="text-lg font-bold text-ink tabular-nums">
             {formatEUR(gesamt)}
           </div>
         </div>
@@ -105,7 +105,7 @@ export default function PreisAufschluesselung({
 
       {/* Early-Adopter-Hinweis */}
       {istEarlyAdopter && earlyAdopterBis && (
-        <div className="mt-4 p-3 rounded-xl bg-[#FAF1DE] border border-[#C4956A]/30 text-xs text-[#854F0B]">
+        <div className="mt-4 p-3 rounded-xl bg-warm-light border border-warm/30 text-xs text-warm-dark">
           <strong>Ihre Onboarding-Phase:</strong> 0 % Gebühr bis {formatDatum(earlyAdopterBis)}.
           Danach werden 5 % auf den Auftragswert berechnet — der Handwerker bekommt weiterhin
           den vollen Stundensatz.

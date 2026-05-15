@@ -156,17 +156,17 @@ export default function DiagnosePreisePage() {
     <div className="p-6 max-w-3xl mx-auto space-y-6 pt-16 md:pt-8">
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-[#2D2A26] flex items-center gap-2">
-            <Stethoscope size={22} className="text-[#7C6CAB]" />
+          <h1 className="text-2xl font-bold text-ink flex items-center gap-2">
+            <Stethoscope size={22} className="text-rolle-admin" />
             Diagnose-Preise
           </h1>
-          <p className="text-sm text-[#8C857B] mt-1">
+          <p className="text-sm text-ink-muted mt-1">
             Festpreise pro Gewerk für Stufe 1 (Doctolib-Modell). Mieter sehen den Preis bei der Diagnose-Buchung,
             Handwerker können nur den Zeitslot anbieten — kein Preis-Wettbewerb.
           </p>
         </div>
         {toast && (
-          <div className="text-xs text-[#3D8B7A] bg-[#3D8B7A]/10 border border-[#3D8B7A]/20 rounded-full px-3 py-1.5">
+          <div className="text-xs text-accent bg-accent/10 border border-accent/20 rounded-full px-3 py-1.5">
             {toast}
           </div>
         )}
@@ -174,22 +174,22 @@ export default function DiagnosePreisePage() {
 
       {/* Liste — overflow-x-auto fängt die 5-Spalten-Tabelle auf <sm ab,
           sonst sprengt sie den Viewport */}
-      <div className="bg-white border border-[#EDE8E1] rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-line rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
         <table className="w-full min-w-[640px]">
           <thead>
-            <tr className="border-b border-[#EDE8E1]">
-              <th className="text-left text-[10px] font-semibold text-[#8C857B] uppercase tracking-wider px-4 py-2.5">Gewerk</th>
-              <th className="text-left text-[10px] font-semibold text-[#8C857B] uppercase tracking-wider px-4 py-2.5">Preis</th>
-              <th className="text-left text-[10px] font-semibold text-[#8C857B] uppercase tracking-wider px-4 py-2.5" title="Diagnose-Buchungen und avg Befund-Aufwand letzte 90 Tage">Markt (90d)</th>
-              <th className="text-left text-[10px] font-semibold text-[#8C857B] uppercase tracking-wider px-4 py-2.5">Aktualisiert</th>
-              <th className="text-right text-[10px] font-semibold text-[#8C857B] uppercase tracking-wider px-4 py-2.5">Aktion</th>
+            <tr className="border-b border-line">
+              <th className="text-left text-[10px] font-semibold text-ink-muted uppercase tracking-wider px-4 py-2.5">Gewerk</th>
+              <th className="text-left text-[10px] font-semibold text-ink-muted uppercase tracking-wider px-4 py-2.5">Preis</th>
+              <th className="text-left text-[10px] font-semibold text-ink-muted uppercase tracking-wider px-4 py-2.5" title="Diagnose-Buchungen und avg Befund-Aufwand letzte 90 Tage">Markt (90d)</th>
+              <th className="text-left text-[10px] font-semibold text-ink-muted uppercase tracking-wider px-4 py-2.5">Aktualisiert</th>
+              <th className="text-right text-[10px] font-semibold text-ink-muted uppercase tracking-wider px-4 py-2.5">Aktion</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-sm text-[#8C857B]">
+                <td colSpan={5} className="px-4 py-6 text-center text-sm text-ink-muted">
                   Noch keine Diagnose-Preise hinterlegt. Migration evtl. nicht gerollt.
                 </td>
               </tr>
@@ -198,12 +198,12 @@ export default function DiagnosePreisePage() {
               const istGeaendert = parseFloat(editVal.replace(",", ".")) !== row.preis
               const stat = stats.get(row.gewerk)
               return (
-                <tr key={row.id} className="border-b border-[#EDE8E1] last:border-0 hover:bg-[#FAF8F5]/50">
+                <tr key={row.id} className="border-b border-line last:border-0 hover:bg-surface/50">
                   <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-[#2D2A26]">
+                    <div className="text-sm font-medium text-ink">
                       {GEWERK_LABELS[row.gewerk] ?? row.gewerk}
                     </div>
-                    <div className="text-[10px] text-[#8C857B] font-mono">{row.gewerk}</div>
+                    <div className="text-[10px] text-ink-muted font-mono">{row.gewerk}</div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
@@ -212,20 +212,20 @@ export default function DiagnosePreisePage() {
                         value={editVal}
                         onChange={e => setEdits(prev => ({ ...prev, [row.id]: e.target.value }))}
                         onKeyDown={e => e.key === "Enter" && void speichere(row)}
-                        className="w-20 text-sm tabular-nums bg-[#FAF8F5] border border-[#EDE8E1] rounded-lg px-2 py-1 focus:outline-none focus:border-[#7C6CAB]/40"
+                        className="w-20 text-sm tabular-nums bg-surface border border-line rounded-lg px-2 py-1 focus:outline-none focus:border-[#7C6CAB]/40"
                       />
-                      <span className="text-sm text-[#8C857B]">€</span>
+                      <span className="text-sm text-ink-muted">€</span>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-xs">
                     {!stat ? (
-                      <span className="text-[#B5AEA4]">—</span>
+                      <span className="text-ink-faint">—</span>
                     ) : (
                       <div className="space-y-0.5">
-                        <div className="text-[#2D2A26] tabular-nums font-medium">
+                        <div className="text-ink tabular-nums font-medium">
                           {stat.buchungen90d} Buchung{stat.buchungen90d === 1 ? "" : "en"}
                         </div>
-                        <div className="text-[10px] text-[#8C857B] tabular-nums">
+                        <div className="text-[10px] text-ink-muted tabular-nums">
                           {stat.avgAufwand != null ? `ø ${stat.avgAufwand.toFixed(1)} h` : ""}
                           {stat.avgAufwand != null && stat.avgAngebot != null ? " · " : ""}
                           {stat.avgAngebot != null ? `Projekt ø ${stat.avgAngebot.toFixed(0)} €` : ""}
@@ -233,7 +233,7 @@ export default function DiagnosePreisePage() {
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs text-[#8C857B] tabular-nums">
+                  <td className="px-4 py-3 text-xs text-ink-muted tabular-nums">
                     {row.updated_at ? new Date(row.updated_at).toLocaleDateString("de") : "—"}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -242,7 +242,7 @@ export default function DiagnosePreisePage() {
                         <button
                           onClick={() => void speichere(row)}
                           disabled={saving === row.id}
-                          className="text-[#3D8B7A] hover:bg-[#3D8B7A]/10 p-1.5 rounded-lg transition-colors disabled:opacity-50"
+                          className="text-accent hover:bg-accent/10 p-1.5 rounded-lg transition-colors disabled:opacity-50"
                           aria-label="Speichern"
                         >
                           <Check size={14} />
@@ -250,7 +250,7 @@ export default function DiagnosePreisePage() {
                       )}
                       <button
                         onClick={() => void loesche(row)}
-                        className="text-[#8C857B] hover:text-[#C4574B] hover:bg-[#C4574B]/5 p-1.5 rounded-lg transition-colors"
+                        className="text-ink-muted hover:text-danger hover:bg-danger/5 p-1.5 rounded-lg transition-colors"
                         aria-label="Löschen"
                       >
                         <Trash2 size={14} />
@@ -266,31 +266,31 @@ export default function DiagnosePreisePage() {
       </div>
 
       {/* Neuer Eintrag */}
-      <div className="bg-white border border-[#EDE8E1] rounded-2xl shadow-sm p-4">
-        <div className="text-xs font-semibold text-[#2D2A26] mb-2 uppercase tracking-wider">Neuen Diagnose-Preis anlegen</div>
+      <div className="bg-white border border-line rounded-2xl shadow-sm p-4">
+        <div className="text-xs font-semibold text-ink mb-2 uppercase tracking-wider">Neuen Diagnose-Preis anlegen</div>
         <div className="flex flex-wrap items-center gap-2">
           <input
             type="text"
             value={neuGewerk}
             onChange={e => setNeuGewerk(e.target.value)}
             placeholder="Gewerk-Key (z. B. dachdecker)"
-            className="flex-1 min-w-[180px] text-sm bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-3 py-2 focus:outline-none focus:border-[#7C6CAB]/40"
+            className="flex-1 min-w-[180px] text-sm bg-surface border border-line rounded-xl px-3 py-2 focus:outline-none focus:border-[#7C6CAB]/40"
           />
           <input
             type="number" inputMode="decimal" step="1" min="1"
             value={neuPreis}
             onChange={e => setNeuPreis(e.target.value)}
             placeholder="Preis in €"
-            className="w-32 text-sm tabular-nums bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-3 py-2 focus:outline-none focus:border-[#7C6CAB]/40"
+            className="w-32 text-sm tabular-nums bg-surface border border-line rounded-xl px-3 py-2 focus:outline-none focus:border-[#7C6CAB]/40"
           />
           <button
             onClick={() => void lege_an()}
-            className="inline-flex items-center gap-1 text-xs font-medium bg-[#7C6CAB] text-white px-3 py-2 rounded-xl hover:bg-[#5B4E8A] transition-colors"
+            className="inline-flex items-center gap-1 text-xs font-medium bg-rolle-admin text-white px-3 py-2 rounded-xl hover:bg-[#5B4E8A] transition-colors"
           >
             <Plus size={12} /> Anlegen
           </button>
         </div>
-        <p className="text-[10px] text-[#8C857B] mt-2 leading-snug">
+        <p className="text-[10px] text-ink-muted mt-2 leading-snug">
           Gewerk-Keys müssen mit dem Wert in <code>tickets.gewerk</code> übereinstimmen
           (sanitaer/heizung/elektro/schreiner/dachdecker/maler/schlosser/allgemein …).
         </p>

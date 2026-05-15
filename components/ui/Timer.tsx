@@ -14,7 +14,7 @@ export function Timer({ end }: { end: string }) {
   }, [end])
 
   if (secs === 0) {
-    return <span className="text-xs text-[#C4574B] font-medium">Abgelaufen</span>
+    return <span className="text-xs text-danger font-medium">Abgelaufen</span>
   }
 
   const h = Math.floor(secs / 3600)
@@ -27,8 +27,8 @@ export function Timer({ end }: { end: string }) {
     <span
       className={`text-xs px-2.5 py-1 rounded-full font-medium tabular-nums ${
         dringend
-          ? "bg-[#C4574B]/10 text-[#C4574B] animate-pulse"
-          : "bg-[#C4956A]/10 text-[#C4956A]"
+          ? "bg-danger/10 text-danger animate-pulse"
+          : "bg-warm/10 text-warm"
       }`}
     >
       {h > 0 && `${fmt(h)}:`}{fmt(m)}:{fmt(s)}

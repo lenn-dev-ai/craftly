@@ -77,19 +77,19 @@ export default function ReportingPage() {
     return (
       <div className="p-6 md:p-8 max-w-4xl mx-auto pt-16 md:pt-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[#2D2A26]">Reporting</h1>
-          <p className="text-sm text-[#8C857B] mt-1">Kosten- und Provisions-Übersicht</p>
+          <h1 className="text-2xl font-bold text-ink">Reporting</h1>
+          <p className="text-sm text-ink-muted mt-1">Kosten- und Provisions-Übersicht</p>
         </div>
-        <div className="bg-white border border-[#EDE8E1] rounded-2xl p-10 text-center">
+        <div className="bg-white border border-line rounded-2xl p-10 text-center">
           <div className="text-5xl mb-4" aria-hidden="true">📊</div>
-          <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Noch keine Auswertung möglich</h2>
-          <p className="text-sm text-[#736B62] max-w-sm mx-auto mb-5">
+          <h2 className="text-lg font-semibold text-ink mb-2">Noch keine Auswertung möglich</h2>
+          <p className="text-sm text-ink-secondary max-w-sm mx-auto mb-5">
             Sobald die ersten Aufträge erledigt sind, siehst du hier Kosten pro
             Gewerk, Provisions-Aufschlüsselung und Trends.
           </p>
           <a
             href="/dashboard-verwalter/marktplatz"
-            className="inline-block text-sm font-semibold bg-[#3D8B7A] text-white px-4 py-2 rounded-xl hover:bg-[#2D6B5A] transition-colors"
+            className="inline-block text-sm font-semibold bg-accent text-white px-4 py-2 rounded-xl hover:bg-accent-hover transition-colors"
           >
             Zum Handwerker-Marktplatz →
           </a>
@@ -101,22 +101,22 @@ export default function ReportingPage() {
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto pt-16 md:pt-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#2D2A26]">Reporting</h1>
-        <p className="text-sm text-[#8C857B] mt-1">Kosten- und Provisions-Übersicht</p>
+        <h1 className="text-2xl font-bold text-ink">Reporting</h1>
+        <p className="text-sm text-ink-muted mt-1">Kosten- und Provisions-Übersicht</p>
       </div>
 
       {/* Early-Adopter-Banner */}
       {istEarlyAdopter && (
-        <div className="mb-6 p-4 rounded-2xl bg-[#FAF1DE] border-2 border-[#C4956A]/40">
+        <div className="mb-6 p-4 rounded-2xl bg-warm-light border-2 border-warm/40">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#C4956A]/20 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-warm/20 flex items-center justify-center flex-shrink-0">
               <span className="text-xl">🎁</span>
             </div>
             <div className="flex-1">
-              <div className="text-sm font-semibold text-[#854F0B]">
+              <div className="text-sm font-semibold text-warm-dark">
                 Early-Adopter-Bonus aktiv: 0 % Provision
               </div>
-              <div className="text-xs text-[#854F0B]/80 mt-0.5">
+              <div className="text-xs text-warm-dark/80 mt-0.5">
                 Du sparst die 5 % Plattform-Provision für noch <strong>{tageVerbleibend} {tageVerbleibend === 1 ? "Tag" : "Tage"}</strong>.
                 Danach werden 5 % vom Auftragswert fällig — Handwerker bekommt weiterhin den vollen Satz.
               </div>
@@ -144,10 +144,10 @@ export default function ReportingPage() {
 
       {/* Auktions-Ersparnis */}
       {ersparnis > 0 && (
-        <div className="mb-6 p-4 rounded-2xl bg-[#3D8B7A]/5 border border-[#3D8B7A]/20">
-          <div className="text-xs text-[#8C857B] uppercase tracking-wide font-medium mb-1">Auktions-Ersparnis</div>
-          <div className="text-2xl font-bold text-[#3D8B7A] tabular-nums">{formatEUR(ersparnis)}</div>
-          <div className="text-xs text-[#6B665E] mt-1">
+        <div className="mb-6 p-4 rounded-2xl bg-accent/5 border border-accent/20">
+          <div className="text-xs text-ink-muted uppercase tracking-wide font-medium mb-1">Auktions-Ersparnis</div>
+          <div className="text-2xl font-bold text-accent tabular-nums">{formatEUR(ersparnis)}</div>
+          <div className="text-xs text-ink-secondary mt-1">
             Differenz zwischen höchstem und gewähltem Angebot über alle Auktionen
           </div>
         </div>
@@ -155,7 +155,7 @@ export default function ReportingPage() {
 
       {/* Status-Verteilung */}
       <Card className="mb-4">
-        <h2 className="text-sm font-medium mb-4 text-[#2D2A26]">Tickets nach Status</h2>
+        <h2 className="text-sm font-medium mb-4 text-ink">Tickets nach Status</h2>
         {[
           { label: "Offen", count: tickets.filter(t => t.status === "offen").length, color: "#C4574B" },
           { label: "Auktion", count: tickets.filter(t => t.status === "auktion").length, color: "#5B6ABF" },
@@ -164,10 +164,10 @@ export default function ReportingPage() {
         ].map(({ label, count, color }) => (
           <div key={label} className="mb-3 last:mb-0">
             <div className="flex justify-between text-xs mb-1.5">
-              <span className="text-[#6B665E]">{label}</span>
-              <span className="font-medium tabular-nums text-[#2D2A26]">{count}</span>
+              <span className="text-ink-secondary">{label}</span>
+              <span className="font-medium tabular-nums text-ink">{count}</span>
             </div>
-            <div className="h-1.5 bg-[#FAF8F5] rounded-full overflow-hidden">
+            <div className="h-1.5 bg-surface rounded-full overflow-hidden">
               <div className="h-full rounded-full transition-all" style={{
                 width: tickets.length ? `${(count / tickets.length) * 100}%` : "0%",
                 background: color
@@ -181,8 +181,8 @@ export default function ReportingPage() {
       {erledigt.length > 0 && (
         <Card className="mt-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-medium text-[#2D2A26]">Abgeschlossene Aufträge</h2>
-            <span className="text-xs text-[#8C857B]">
+            <h2 className="text-sm font-medium text-ink">Abgeschlossene Aufträge</h2>
+            <span className="text-xs text-ink-muted">
               Auftragswert · Provision · Gesamt
             </span>
           </div>
@@ -192,12 +192,12 @@ export default function ReportingPage() {
               const snap = provisionen.find(p => p.ticket_id === t.id)
               if (!t.kosten_final && !snap) {
                 return (
-                  <div key={t.id} className="flex items-center justify-between text-sm py-2 border-b border-[#EDE8E1] last:border-0">
+                  <div key={t.id} className="flex items-center justify-between text-sm py-2 border-b border-line last:border-0">
                     <div>
-                      <div className="font-medium text-[#2D2A26]">{t.titel}</div>
-                      <div className="text-xs text-[#8C857B]">{new Date(t.created_at).toLocaleDateString("de")}</div>
+                      <div className="font-medium text-ink">{t.titel}</div>
+                      <div className="text-xs text-ink-muted">{new Date(t.created_at).toLocaleDateString("de")}</div>
                     </div>
-                    <span className="text-[#8C857B] text-xs">Kosten nicht erfasst</span>
+                    <span className="text-ink-muted text-xs">Kosten nicht erfasst</span>
                   </div>
                 )
               }
@@ -205,17 +205,17 @@ export default function ReportingPage() {
               const rate = snap?.provision_rate ?? (istEarlyAdopter ? 0 : 0.05)
               const calc = calculateCommission(auftragswert, rate)
               return (
-                <div key={t.id} className="text-sm py-2 border-b border-[#EDE8E1] last:border-0">
+                <div key={t.id} className="text-sm py-2 border-b border-line last:border-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <div className="font-medium text-[#2D2A26] truncate">{t.titel}</div>
-                      <div className="text-xs text-[#8C857B]">{new Date(t.created_at).toLocaleDateString("de")}</div>
+                      <div className="font-medium text-ink truncate">{t.titel}</div>
+                      <div className="text-xs text-ink-muted">{new Date(t.created_at).toLocaleDateString("de")}</div>
                     </div>
                     <div className="text-right tabular-nums flex-shrink-0">
-                      <div className="text-xs text-[#8C857B]">
+                      <div className="text-xs text-ink-muted">
                         {formatEUR(auftragswert)} + {formatEUR(calc.provisionBetrag)}
                       </div>
-                      <div className="text-sm font-semibold text-[#3D8B7A]">
+                      <div className="text-sm font-semibold text-accent">
                         = {formatEUR(calc.gesamt)}
                       </div>
                     </div>
@@ -225,7 +225,7 @@ export default function ReportingPage() {
             })}
           </div>
           {erledigt.length > 20 && (
-            <p className="text-xs text-[#8C857B] mt-3 text-center">+ {erledigt.length - 20} weitere</p>
+            <p className="text-xs text-ink-muted mt-3 text-center">+ {erledigt.length - 20} weitere</p>
           )}
         </Card>
       )}
@@ -237,12 +237,12 @@ function Kpi({ label, value, sub, accent }: {
   label: string; value: string; sub?: string
   accent?: "primary" | "warm"
 }) {
-  const farbe = accent === "primary" ? "text-[#3D8B7A]" : accent === "warm" ? "text-[#C4956A]" : "text-[#2D2A26]"
+  const farbe = accent === "primary" ? "text-accent" : accent === "warm" ? "text-warm" : "text-ink"
   return (
-    <div className="bg-white rounded-2xl border border-[#EDE8E1] p-4">
-      <div className="text-[10px] uppercase tracking-wider text-[#8C857B] font-medium mb-1">{label}</div>
+    <div className="bg-white rounded-2xl border border-line p-4">
+      <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-1">{label}</div>
       <div className={`text-xl font-bold tabular-nums ${farbe}`}>{value}</div>
-      {sub && <div className="text-xs text-[#B5AEA4] mt-1">{sub}</div>}
+      {sub && <div className="text-xs text-ink-faint mt-1">{sub}</div>}
     </div>
   )
 }

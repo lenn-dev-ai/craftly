@@ -253,18 +253,18 @@ export default function MeldenPage() {
   const stepIndex = ["foto", "analyse", "details", "ort", "dringlichkeit", "zusammenfassung", "gesendet"].indexOf(step)
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-[#2D2A26]">
+    <div className="min-h-screen bg-surface text-ink">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-[#EDE8E1]">
+      <div className="px-6 py-4 border-b border-line">
         <div className="flex items-center justify-between max-w-xl mx-auto">
-          <button onClick={() => router.back()} className="text-sm text-[#8C857B] hover:text-[#2D2A26]">&larr; Zurueck</button>
-          <h1 className="text-sm font-medium text-[#2D2A26]">Schaden melden</h1>
-          <span className="text-xs text-[#B5AEA4]">{Math.min(stepIndex + 1, 5)}/5</span>
+          <button onClick={() => router.back()} className="text-sm text-ink-muted hover:text-ink">&larr; Zurueck</button>
+          <h1 className="text-sm font-medium text-ink">Schaden melden</h1>
+          <span className="text-xs text-ink-faint">{Math.min(stepIndex + 1, 5)}/5</span>
         </div>
       </div>
 
       {/* Progress Bar */}
-      <div className="h-0.5 bg-[#F5F3F0]">
+      <div className="h-0.5 bg-surface-muted">
         <div className="h-full bg-gradient-to-r from-[#3D8B7A] to-[#4A9E8C] transition-all duration-700" style={{ width: Math.min((stepIndex + 1) / 5 * 100, 100) + "%" }} />
       </div>
 
@@ -274,11 +274,11 @@ export default function MeldenPage() {
         {step === "foto" && (
           <div className="animate-fade-in">
             <div className="text-center mb-8">
-              <div className="w-16 h-16 rounded-2xl bg-[#3D8B7A]/10 flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">AI</span>
               </div>
               <h2 className="text-xl font-semibold mb-2">Was ist passiert?</h2>
-              <p className="text-sm text-[#8C857B]">Beschreibe den Schaden -- unsere KI erkennt automatisch Kategorie, Gewerk und Dringlichkeit.</p>
+              <p className="text-sm text-ink-muted">Beschreibe den Schaden -- unsere KI erkennt automatisch Kategorie, Gewerk und Dringlichkeit.</p>
             </div>
 
             {/* Foto Upload Area */}
@@ -294,7 +294,7 @@ export default function MeldenPage() {
 
             {fotoPreviewUrl ? (
               <div className="mb-6">
-                <div className="relative rounded-2xl overflow-hidden border border-[#EDE8E1] bg-[#FAF8F5]">
+                <div className="relative rounded-2xl overflow-hidden border border-line bg-surface">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={fotoPreviewUrl}
@@ -310,12 +310,12 @@ export default function MeldenPage() {
                     ×
                   </button>
                 </div>
-                <div className="flex items-center justify-between mt-2 text-xs text-[#8C857B]">
+                <div className="flex items-center justify-between mt-2 text-xs text-ink-muted">
                   <span className="truncate">{fotoFile?.name}</span>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-[#3D8B7A] hover:text-[#2D6B5A] font-medium flex-shrink-0 ml-2"
+                    className="text-accent hover:text-[#2D6B5A] font-medium flex-shrink-0 ml-2"
                   >
                     Anderes Foto
                   </button>
@@ -325,38 +325,38 @@ export default function MeldenPage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full border-2 border-dashed border-[#EDE8E1] rounded-2xl p-8 text-center mb-6 hover:border-[#3D8B7A]/40 hover:bg-[#FAF8F5] transition-colors cursor-pointer flex flex-col items-center"
+                className="w-full border-2 border-dashed border-line rounded-2xl p-8 text-center mb-6 hover:border-accent/40 hover:bg-surface transition-colors cursor-pointer flex flex-col items-center"
               >
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3D8B7A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="mb-2">
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                   <circle cx="12" cy="13" r="4" />
                 </svg>
-                <p className="text-sm text-[#2D2A26] font-medium">Foto aufnehmen oder hochladen</p>
-                <p className="text-xs text-[#8C857B] mt-1">JPG, PNG, WebP — max. 5 MB · optional</p>
+                <p className="text-sm text-ink font-medium">Foto aufnehmen oder hochladen</p>
+                <p className="text-xs text-ink-muted mt-1">JPG, PNG, WebP — max. 5 MB · optional</p>
               </button>
             )}
 
             {fotoFehler && (
-              <div className="mb-4 p-3 rounded-lg bg-[#C4574B]/10 border border-[#C4574B]/20 text-xs text-[#C4574B]">
+              <div className="mb-4 p-3 rounded-lg bg-danger/10 border border-danger/20 text-xs text-danger">
                 {fotoFehler}
               </div>
             )}
 
             {/* Text Beschreibung */}
             <div className="mb-4">
-              <label className="block text-xs font-medium text-[#8C857B] mb-2">Oder beschreibe den Schaden</label>
+              <label className="block text-xs font-medium text-ink-muted mb-2">Oder beschreibe den Schaden</label>
               <textarea
                 value={beschreibung}
                 onChange={e => setBeschreibung(e.target.value)}
                 placeholder="z.B. Wasser tropft von der Decke im Bad, der Fleck wird groesser..."
                 rows={4}
-                className="w-full bg-white border border-[#EDE8E1] rounded-xl px-4 py-3 text-sm text-[#2D2A26] placeholder-[#B5AEA4] focus:outline-none focus:border-[#3D8B7A]/50 resize-none"
+                className="w-full bg-white border border-line rounded-xl px-4 py-3 text-sm text-ink placeholder-[#B5AEA4] focus:outline-none focus:border-accent/50 resize-none"
               />
             </div>
 
             {/* Quick-Select Buttons */}
             <div className="mb-6">
-              <p className="text-xs text-[#8C857B] mb-2">Oder schnell auswählen:</p>
+              <p className="text-xs text-ink-muted mb-2">Oder schnell auswählen:</p>
               <div className="flex flex-wrap gap-2">
                 {[
                   { label: "Heizung aus", icon: "!", val: "Heizung funktioniert nicht mehr, Wohnung wird kalt" },
@@ -368,7 +368,7 @@ export default function MeldenPage() {
                   <button
                     key={item.label}
                     onClick={() => { setBeschreibung(item.val); }}
-                    className="text-xs bg-[#F5F3F0] hover:bg-[#3D8B7A]/10 border border-[#EDE8E1] hover:border-[#3D8B7A]/30 rounded-full px-3 py-1.5 transition-all text-[#8C857B] hover:text-[#3D8B7A]"
+                    className="text-xs bg-surface-muted hover:bg-accent/10 border border-line hover:border-accent/30 rounded-full px-3 py-1.5 transition-all text-ink-muted hover:text-accent"
                   >
                     {item.icon} {item.label}
                   </button>
@@ -385,15 +385,15 @@ export default function MeldenPage() {
         {/* STEP 2: KI Analyse Animation */}
         {step === "analyse" && (
           <div className="animate-fade-in text-center py-16">
-            <div className="w-20 h-20 rounded-full bg-[#3D8B7A]/10 flex items-center justify-center mx-auto mb-6 animate-pulse">
+            <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-6 animate-pulse">
               <span className="text-2xl">AI</span>
             </div>
             <h2 className="text-lg font-semibold mb-2">KI analysiert deinen Schaden...</h2>
-            <p className="text-sm text-[#8C857B] mb-8">Kategorie, Gewerk und Dringlichkeit werden erkannt</p>
-            <div className="w-64 h-2 bg-[#F5F3F0] rounded-full mx-auto overflow-hidden">
+            <p className="text-sm text-ink-muted mb-8">Kategorie, Gewerk und Dringlichkeit werden erkannt</p>
+            <div className="w-64 h-2 bg-surface-muted rounded-full mx-auto overflow-hidden">
               <div className="h-full bg-gradient-to-r from-[#3D8B7A] to-[#4A9E8C] rounded-full transition-all duration-300" style={{ width: Math.min(analyseProgress, 100) + "%" }} />
             </div>
-            <div className="mt-4 space-y-2 text-xs text-[#8C857B]">
+            <div className="mt-4 space-y-2 text-xs text-ink-muted">
               {analyseProgress > 20 && <p className="animate-fade-in">Schadensbeschreibung wird analysiert...</p>}
               {analyseProgress > 50 && <p className="animate-fade-in">Gewerk und Fachgebiet erkannt...</p>}
               {analyseProgress > 80 && <p className="animate-fade-in">Dringlichkeit wird bewertet...</p>}
@@ -405,15 +405,15 @@ export default function MeldenPage() {
         {step === "details" && analyse && (
           <div className="animate-fade-in">
             <div className="text-center mb-6">
-              <div className="inline-flex items-center gap-2 bg-[#3D8B7A]/10 border border-[#3D8B7A]/20 rounded-full px-4 py-1.5 mb-4">
-                <div className="w-2 h-2 rounded-full bg-[#3D8B7A]" />
-                <span className="text-xs text-[#3D8B7A] font-medium">KI-Analyse abgeschlossen</span>
+              <div className="inline-flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-full px-4 py-1.5 mb-4">
+                <div className="w-2 h-2 rounded-full bg-accent" />
+                <span className="text-xs text-accent font-medium">KI-Analyse abgeschlossen</span>
                 {kiConfidence != null && (
                   <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ml-1 ${
                     kiConfidence >= 0.8
-                      ? "bg-[#3D8B7A] text-white"
+                      ? "bg-accent text-white"
                       : kiConfidence >= 0.5
-                      ? "bg-[#C4956A] text-white"
+                      ? "bg-warm text-white"
                       : "bg-[#C4574B] text-white"
                   }`}>
                     {kiConfidence >= 0.8 ? "Sicher" : kiConfidence >= 0.5 ? "Vorschlag" : "Bitte prüfen"} · {Math.round(kiConfidence * 100)} %
@@ -422,67 +422,67 @@ export default function MeldenPage() {
               </div>
               <h2 className="text-lg font-semibold">{form.titel || analyse.titel}</h2>
               {kiHinweis && (
-                <p className="text-xs text-[#C4956A] mt-2 italic max-w-md mx-auto">
+                <p className="text-xs text-warm mt-2 italic max-w-md mx-auto">
                   💡 Hinweis der KI: {kiHinweis}
                 </p>
               )}
             </div>
 
             {/* KI Insight Card */}
-            <Card className="mb-4 bg-white border border-[#EDE8E1]">
+            <Card className="mb-4 bg-white border border-line">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div className="text-[10px] text-[#8C857B] uppercase tracking-wider mb-1">Dringlichkeit</div>
-                  <div className={"text-sm font-semibold " + (form.prioritaet === "dringend" ? "text-[#C4574B]" : form.prioritaet === "hoch" ? "text-[#B07A3B]" : "text-[#3D8B7A]")}>
+                  <div className="text-[10px] text-ink-muted uppercase tracking-wider mb-1">Dringlichkeit</div>
+                  <div className={"text-sm font-semibold " + (form.prioritaet === "dringend" ? "text-danger" : form.prioritaet === "hoch" ? "text-[#B07A3B]" : "text-accent")}>
                     {form.prioritaet === "dringend" ? "DRINGEND" : form.prioritaet === "hoch" ? "HOCH" : "NORMAL"}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-[#8C857B] uppercase tracking-wider mb-1">Geschätzte Zeit</div>
-                  <div className="text-sm font-semibold text-[#2D2A26]">{analyse.zeit}</div>
+                  <div className="text-[10px] text-ink-muted uppercase tracking-wider mb-1">Geschätzte Zeit</div>
+                  <div className="text-sm font-semibold text-ink">{analyse.zeit}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-[#8C857B] uppercase tracking-wider mb-1">Fachgebiet</div>
-                  <div className="text-sm font-semibold text-[#2D2A26]">{form.gewerk === "heizung_sanitaer" ? "Sanitär" : form.gewerk === "elektro" ? "Elektro" : form.gewerk === "schreiner" ? "Schreiner" : form.gewerk === "maler" ? "Maler" : "Allgemein"}</div>
+                  <div className="text-[10px] text-ink-muted uppercase tracking-wider mb-1">Fachgebiet</div>
+                  <div className="text-sm font-semibold text-ink">{form.gewerk === "heizung_sanitaer" ? "Sanitär" : form.gewerk === "elektro" ? "Elektro" : form.gewerk === "schreiner" ? "Schreiner" : form.gewerk === "maler" ? "Maler" : "Allgemein"}</div>
                 </div>
               </div>
             </Card>
 
             {/* KI Tipp */}
-            <div className="bg-[#FFF3E8] border border-[#C4956A]/15 rounded-xl px-4 py-3 mb-6">
+            <div className="bg-[#FFF3E8] border border-warm/15 rounded-xl px-4 py-3 mb-6">
               <div className="flex items-start gap-2">
                 <span className="text-[#B07A3B] text-sm mt-0.5">!</span>
                 <div>
                   <div className="text-xs font-medium text-[#B07A3B] mb-0.5">KI-Soforttipp</div>
-                  <p className="text-xs text-[#8C857B]">{analyse.tipp}</p>
+                  <p className="text-xs text-ink-muted">{analyse.tipp}</p>
                 </div>
               </div>
             </div>
 
             {/* Beschreibung Review */}
             <div className="mb-4">
-              <label className="block text-xs font-medium text-[#8C857B] mb-2">Deine Beschreibung</label>
+              <label className="block text-xs font-medium text-ink-muted mb-2">Deine Beschreibung</label>
               <textarea
                 value={form.beschreibung}
                 onChange={e => setForm(f => ({ ...f, beschreibung: e.target.value }))}
                 rows={3}
-                className="w-full bg-white border border-[#EDE8E1] rounded-xl px-4 py-3 text-sm text-[#2D2A26] focus:outline-none focus:border-[#3D8B7A]/50 resize-none"
+                className="w-full bg-white border border-line rounded-xl px-4 py-3 text-sm text-ink focus:outline-none focus:border-accent/50 resize-none"
               />
             </div>
 
             {/* Dringlichkeit Override */}
             <div className="mb-6">
-              <label className="block text-xs font-medium text-[#8C857B] mb-2">Dringlichkeit anpassen</label>
+              <label className="block text-xs font-medium text-ink-muted mb-2">Dringlichkeit anpassen</label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { val: "normal", label: "Normal", sub: "Kein Eile", color: "border-[#3D8B7A]/30 bg-[#3D8B7A]/5 text-[#3D8B7A]" },
-                  { val: "hoch", label: "Hoch", sub: "Bitte bald", color: "border-[#C4956A]/30 bg-[#FFF3E8] text-[#B07A3B]" },
-                  { val: "dringend", label: "Notfall", sub: "Sofort", color: "border-[#C4574B]/30 bg-[#FDEEEC] text-[#C4574B]" },
+                  { val: "normal", label: "Normal", sub: "Kein Eile", color: "border-accent/30 bg-accent/5 text-accent" },
+                  { val: "hoch", label: "Hoch", sub: "Bitte bald", color: "border-warm/30 bg-[#FFF3E8] text-[#B07A3B]" },
+                  { val: "dringend", label: "Notfall", sub: "Sofort", color: "border-danger/30 bg-danger-light text-danger" },
                 ].map(d => (
                   <button
                     key={d.val}
                     onClick={() => setForm(f => ({ ...f, prioritaet: d.val }))}
-                    className={"rounded-xl p-3 border text-center transition-all " + (form.prioritaet === d.val ? d.color : "border-[#EDE8E1] bg-[#F5F3F0] text-[#8C857B]")}
+                    className={"rounded-xl p-3 border text-center transition-all " + (form.prioritaet === d.val ? d.color : "border-line bg-surface-muted text-ink-muted")}
                   >
                     <div className="text-sm font-medium">{d.label}</div>
                     <div className="text-[10px] mt-0.5 opacity-70">{d.sub}</div>
@@ -492,8 +492,8 @@ export default function MeldenPage() {
             </div>
 
             {/* Diagnose-Option — neue Stufe-1-Pipeline */}
-            <div className="bg-white border border-[#EDE8E1] rounded-2xl p-4 mb-4">
-              <div className="text-[10px] uppercase tracking-wider text-[#8C857B] font-bold mb-3">
+            <div className="bg-white border border-line rounded-2xl p-4 mb-4">
+              <div className="text-[10px] uppercase tracking-wider text-ink-muted font-bold mb-3">
                 Umfang klar?
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -503,14 +503,14 @@ export default function MeldenPage() {
                   aria-pressed={ticketTyp === "standard"}
                   className={`text-left rounded-xl p-3 border transition-all ${
                     ticketTyp === "standard"
-                      ? "border-[#3D8B7A] bg-[#3D8B7A]/5"
-                      : "border-[#EDE8E1] hover:border-[#3D8B7A]/30"
+                      ? "border-[#3D8B7A] bg-accent/5"
+                      : "border-line hover:border-accent/30"
                   }`}
                 >
-                  <div className="text-sm font-semibold text-[#2D2A26] mb-0.5">
+                  <div className="text-sm font-semibold text-ink mb-0.5">
                     Direkte Reparatur
                   </div>
-                  <div className="text-[11px] text-[#8C857B] leading-snug">
+                  <div className="text-[11px] text-ink-muted leading-snug">
                     Handwerker bieten direkt auf den Auftrag.
                   </div>
                 </button>
@@ -520,21 +520,21 @@ export default function MeldenPage() {
                   aria-pressed={ticketTyp === "diagnose"}
                   className={`text-left rounded-xl p-3 border transition-all ${
                     ticketTyp === "diagnose"
-                      ? "border-[#5B6ABF] bg-[#5B6ABF]/5"
-                      : "border-[#EDE8E1] hover:border-[#5B6ABF]/30"
+                      ? "border-[#5B6ABF] bg-rolle-mieter/5"
+                      : "border-line hover:border-[#5B6ABF]/30"
                   }`}
                 >
                   <div className="flex items-baseline justify-between gap-2 mb-0.5">
-                    <span className="text-sm font-semibold text-[#2D2A26]">
+                    <span className="text-sm font-semibold text-ink">
                       Erst Diagnose
                     </span>
                     {diagnosePreis != null && (
-                      <span className="text-sm font-bold text-[#5B6ABF] tabular-nums">
+                      <span className="text-sm font-bold text-rolle-mieter tabular-nums">
                         {diagnosePreis} €
                       </span>
                     )}
                   </div>
-                  <div className="text-[11px] text-[#8C857B] leading-snug">
+                  <div className="text-[11px] text-ink-muted leading-snug">
                     Handwerker kommt zur Begutachtung, fester Preis.
                     Bei Folgeauftrag wird die Gebühr angerechnet.
                   </div>
@@ -552,7 +552,7 @@ export default function MeldenPage() {
         {step === "ort" && (
           <div className="animate-fade-in">
             <h2 className="text-lg font-semibold mb-2">Wo ist das Problem?</h2>
-            <p className="text-sm text-[#8C857B] mb-6">Adresse und Raum angeben — damit der Handwerker dich findet.</p>
+            <p className="text-sm text-ink-muted mb-6">Adresse und Raum angeben — damit der Handwerker dich findet.</p>
 
             <div className="mb-5">
               <AddressAutocomplete
@@ -571,25 +571,25 @@ export default function MeldenPage() {
             </div>
 
             <div className="mb-4">
-              <label className="text-xs text-[#8C857B] mb-1.5 block font-medium">
+              <label className="text-xs text-ink-muted mb-1.5 block font-medium">
                 Wohnung / Raum
               </label>
               <input
                 value={form.wohnung}
                 onChange={e => setForm(f => ({ ...f, wohnung: e.target.value }))}
                 placeholder="z.B. Whg. 3 OG, Bad"
-                className="w-full bg-white border border-[#EDE8E1] rounded-xl px-4 py-3 text-sm text-[#2D2A26] placeholder-[#B5AEA4] focus:outline-none focus:border-[#3D8B7A]/50"
+                className="w-full bg-white border border-line rounded-xl px-4 py-3 text-sm text-ink placeholder-[#B5AEA4] focus:outline-none focus:border-accent/50"
               />
             </div>
 
             <div className="mb-6">
-              <p className="text-xs text-[#8C857B] mb-2">Schnellauswahl Raum:</p>
+              <p className="text-xs text-ink-muted mb-2">Schnellauswahl Raum:</p>
               <div className="flex flex-wrap gap-2">
                 {["Küche", "Bad", "Wohnzimmer", "Schlafzimmer", "Flur", "Keller", "Balkon"].map(r => (
                   <button
                     key={r}
                     onClick={() => setForm(f => ({ ...f, wohnung: f.wohnung ? f.wohnung + ", " + r : r }))}
-                    className="text-xs bg-[#F5F3F0] hover:bg-[#3D8B7A]/10 border border-[#EDE8E1] hover:border-[#3D8B7A]/30 rounded-full px-3 py-1.5 transition-all text-[#8C857B] hover:text-[#3D8B7A]"
+                    className="text-xs bg-surface-muted hover:bg-accent/10 border border-line hover:border-accent/30 rounded-full px-3 py-1.5 transition-all text-ink-muted hover:text-accent"
                   >
                     {r}
                   </button>
@@ -612,70 +612,70 @@ export default function MeldenPage() {
           <div className="animate-fade-in">
             <div className="text-center mb-6">
               <h2 className="text-lg font-semibold">Meldung prüfen</h2>
-              <p className="text-sm text-[#8C857B]">Alles korrekt? Dann ab damit.</p>
+              <p className="text-sm text-ink-muted">Alles korrekt? Dann ab damit.</p>
             </div>
 
-            <Card className="mb-6 bg-white border border-[#EDE8E1]">
+            <Card className="mb-6 bg-white border border-line">
               <div className="space-y-4">
                 <div className="flex justify-between items-start">
-                  <span className="text-xs text-[#8C857B]">Problem</span>
-                  <span className="text-sm font-medium text-[#2D2A26] text-right">{form.titel}</span>
+                  <span className="text-xs text-ink-muted">Problem</span>
+                  <span className="text-sm font-medium text-ink text-right">{form.titel}</span>
                 </div>
-                <div className="border-t border-[#EDE8E1]" />
+                <div className="border-t border-line" />
                 <div className="flex justify-between items-start">
-                  <span className="text-xs text-[#8C857B]">Beschreibung</span>
-                  <span className="text-sm text-[#2D2A26] text-right max-w-[65%]">{form.beschreibung}</span>
+                  <span className="text-xs text-ink-muted">Beschreibung</span>
+                  <span className="text-sm text-ink text-right max-w-[65%]">{form.beschreibung}</span>
                 </div>
-                <div className="border-t border-[#EDE8E1]" />
+                <div className="border-t border-line" />
                 <div className="flex justify-between">
-                  <span className="text-xs text-[#8C857B]">Ort</span>
-                  <span className="text-sm text-[#2D2A26]">{form.wohnung}</span>
+                  <span className="text-xs text-ink-muted">Ort</span>
+                  <span className="text-sm text-ink">{form.wohnung}</span>
                 </div>
-                <div className="border-t border-[#EDE8E1]" />
+                <div className="border-t border-line" />
                 <div className="flex justify-between">
-                  <span className="text-xs text-[#8C857B]">Dringlichkeit</span>
-                  <span className={"text-sm font-medium " + (form.prioritaet === "dringend" ? "text-[#C4574B]" : form.prioritaet === "hoch" ? "text-[#B07A3B]" : "text-[#3D8B7A]")}>
+                  <span className="text-xs text-ink-muted">Dringlichkeit</span>
+                  <span className={"text-sm font-medium " + (form.prioritaet === "dringend" ? "text-danger" : form.prioritaet === "hoch" ? "text-[#B07A3B]" : "text-accent")}>
                     {form.prioritaet === "dringend" ? "Notfall" : form.prioritaet === "hoch" ? "Hoch" : "Normal"}
                   </span>
                 </div>
-                <div className="border-t border-[#EDE8E1]" />
+                <div className="border-t border-line" />
                 <div className="flex justify-between">
-                  <span className="text-xs text-[#8C857B]">Geschätzte Bearbeitung</span>
-                  <span className="text-sm text-[#2D2A26]">{analyse.zeit}</span>
+                  <span className="text-xs text-ink-muted">Geschätzte Bearbeitung</span>
+                  <span className="text-sm text-ink">{analyse.zeit}</span>
                 </div>
               </div>
             </Card>
 
             {/* Was passiert als naechstes */}
-            <div className="bg-[#3D8B7A]/5 border border-[#3D8B7A]/10 rounded-xl px-4 py-3 mb-6">
-              <div className="text-xs font-medium text-[#3D8B7A] mb-2">Was passiert jetzt?</div>
+            <div className="bg-accent/5 border border-accent/10 rounded-xl px-4 py-3 mb-6">
+              <div className="text-xs font-medium text-accent mb-2">Was passiert jetzt?</div>
               <div className="space-y-1.5">
-                <div className="flex items-center gap-2 text-xs text-[#8C857B]">
-                  <div className="w-4 h-4 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center text-[8px] text-[#3D8B7A] font-bold">1</div>
+                <div className="flex items-center gap-2 text-xs text-ink-muted">
+                  <div className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[8px] text-accent font-bold">1</div>
                   Hausverwaltung wird sofort benachrichtigt
                 </div>
-                <div className="flex items-center gap-2 text-xs text-[#8C857B]">
-                  <div className="w-4 h-4 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center text-[8px] text-[#3D8B7A] font-bold">2</div>
+                <div className="flex items-center gap-2 text-xs text-ink-muted">
+                  <div className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[8px] text-accent font-bold">2</div>
                   Verwalter prüft und bewertet deine Meldung
                 </div>
-                <div className="flex items-center gap-2 text-xs text-[#8C857B]">
-                  <div className="w-4 h-4 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center text-[8px] text-[#3D8B7A] font-bold">3</div>
+                <div className="flex items-center gap-2 text-xs text-ink-muted">
+                  <div className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[8px] text-accent font-bold">3</div>
                   Passende Handwerker-Stunden werden auf dem Marktplatz gebucht
                 </div>
-                <div className="flex items-center gap-2 text-xs text-[#8C857B]">
-                  <div className="w-4 h-4 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center text-[8px] text-[#3D8B7A] font-bold">4</div>
+                <div className="flex items-center gap-2 text-xs text-ink-muted">
+                  <div className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[8px] text-accent font-bold">4</div>
                   Du wirst über jeden Schritt informiert
                 </div>
               </div>
             </div>
 
-            {error && <p className="text-xs text-[#C4574B] bg-[#FDEEEC] border border-[#C4574B]/15 px-4 py-2.5 rounded-xl mb-4">{error}</p>}
+            {error && <p className="text-xs text-danger bg-danger-light border border-danger/15 px-4 py-2.5 rounded-xl mb-4">{error}</p>}
 
             <div className="flex gap-3">
               <Button onClick={handleSubmit} disabled={loading} className="flex-1 justify-center">
                 {loading ? "Wird gesendet..." : "Meldung absenden"}
               </Button>
-              <button onClick={() => setStep("details")} className="text-sm text-[#8C857B] hover:text-[#2D2A26] px-4">Zurueck</button>
+              <button onClick={() => setStep("details")} className="text-sm text-ink-muted hover:text-ink px-4">Zurueck</button>
             </div>
           </div>
         )}
@@ -683,20 +683,20 @@ export default function MeldenPage() {
         {/* STEP 6: Gesendet - Erfolg */}
         {step === "gesendet" && (
           <div className="animate-fade-in text-center py-12">
-            <div className="w-20 h-20 rounded-full bg-[#3D8B7A]/10 flex items-center justify-center mx-auto mb-6">
-              <span className="text-3xl text-[#3D8B7A]">OK</span>
+            <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-6">
+              <span className="text-3xl text-accent">OK</span>
             </div>
             <h2 className="text-xl font-semibold mb-2">Meldung erfolgreich gesendet</h2>
-            <p className="text-sm text-[#8C857B] mb-8">Deine Hausverwaltung wurde benachrichtigt. Du erhaeltst Updates zu jedem Schritt.</p>
+            <p className="text-sm text-ink-muted mb-8">Deine Hausverwaltung wurde benachrichtigt. Du erhaeltst Updates zu jedem Schritt.</p>
 
             {/* Mini Pipeline */}
             <div className="flex items-center justify-center gap-2 mb-10">
               {["Gemeldet", "Prüfung", "Marktplatz", "Reparatur", "Fertig"].map((s, i) => (
                 <div key={s} className="flex items-center gap-2">
-                  <div className={"w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium " + (i === 0 ? "bg-[#3D8B7A] text-white" : "bg-[#F5F3F0] text-[#B5AEA4]")}>
+                  <div className={"w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium " + (i === 0 ? "bg-accent text-white" : "bg-surface-muted text-ink-faint")}>
                     {i + 1}
                   </div>
-                  {i < 4 && <div className={"w-6 h-0.5 " + (i === 0 ? "bg-[#3D8B7A]/30" : "bg-[#F5F3F0]")} />}
+                  {i < 4 && <div className={"w-6 h-0.5 " + (i === 0 ? "bg-accent/30" : "bg-surface-muted")} />}
                 </div>
               ))}
             </div>

@@ -89,8 +89,8 @@ export default function DiagnosenPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6 pt-16 md:pt-6">
       <header>
-        <h1 className="text-2xl font-bold text-[#2D2A26]">Diagnose-Aufträge</h1>
-        <p className="text-sm text-[#8C857B] mt-1">
+        <h1 className="text-2xl font-bold text-ink">Diagnose-Aufträge</h1>
+        <p className="text-sm text-ink-muted mt-1">
           Fester Diagnose-Preis, kein Preis-Wettbewerb. Nach dem Termin gibst du Befund und Festpreis-Angebot ab.
         </p>
       </header>
@@ -107,7 +107,7 @@ export default function DiagnosenPage() {
       {/* Meine offenen Diagnosen — Befund noch nicht erstellt */}
       {meineOhneBefund.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold text-[#2D2A26] uppercase tracking-wider mb-3">
+          <h2 className="text-sm font-semibold text-ink uppercase tracking-wider mb-3">
             Befund erstellen ({meineOhneBefund.length})
           </h2>
           <div className="grid gap-3 md:grid-cols-2">
@@ -115,11 +115,11 @@ export default function DiagnosenPage() {
               <TicketCard
                 key={t.id}
                 ticket={t}
-                badge={<span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#C4956A]/15 text-[#C4956A]">Befund offen</span>}
+                badge={<span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-warm/15 text-warm">Befund offen</span>}
                 action={
                   <button
                     onClick={() => setBefundFor(t)}
-                    className="text-xs font-medium bg-[#3D8B7A] text-white px-3 py-1.5 rounded-lg hover:bg-[#2D6B5A] transition-colors w-full"
+                    className="text-xs font-medium bg-accent text-white px-3 py-1.5 rounded-lg hover:bg-accent-hover transition-colors w-full"
                   >
                     Befund + Angebot erstellen
                   </button>
@@ -132,16 +132,16 @@ export default function DiagnosenPage() {
 
       {/* Offene Diagnose-Aufträge in der Nähe */}
       <section>
-        <h2 className="text-sm font-semibold text-[#2D2A26] uppercase tracking-wider mb-3">
+        <h2 className="text-sm font-semibold text-ink uppercase tracking-wider mb-3">
           Verfügbare Diagnose-Termine ({offen.length})
         </h2>
         {offen.length === 0 ? (
-          <div className="bg-white border border-[#EDE8E1] rounded-2xl p-8 text-center shadow-sm">
-            <Stethoscope size={28} className="text-[#8C857B] mx-auto mb-2" />
-            <div className="text-sm font-medium text-[#2D2A26] mb-1">
+          <div className="bg-white border border-line rounded-2xl p-8 text-center shadow-sm">
+            <Stethoscope size={28} className="text-ink-muted mx-auto mb-2" />
+            <div className="text-sm font-medium text-ink mb-1">
               Aktuell keine offenen Diagnose-Aufträge
             </div>
-            <div className="text-xs text-[#8C857B]">
+            <div className="text-xs text-ink-muted">
               Sobald Mieter Diagnose-Termine buchen, erscheinen sie hier.
             </div>
           </div>
@@ -154,7 +154,7 @@ export default function DiagnosenPage() {
                 action={
                   <button
                     onClick={() => router.push(`/dashboard-handwerker/ticket/${t.id}`)}
-                    className="text-xs font-medium border border-[#3D8B7A] text-[#3D8B7A] px-3 py-1.5 rounded-lg hover:bg-[#3D8B7A]/5 transition-colors w-full"
+                    className="text-xs font-medium border border-[#3D8B7A] text-accent px-3 py-1.5 rounded-lg hover:bg-accent/5 transition-colors w-full"
                   >
                     Termin annehmen →
                   </button>
@@ -168,7 +168,7 @@ export default function DiagnosenPage() {
       {/* Eigene erledigte Diagnosen (mit Befund) */}
       {meineErledigt.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold text-[#2D2A26] uppercase tracking-wider mb-3">
+          <h2 className="text-sm font-semibold text-ink uppercase tracking-wider mb-3">
             Erledigt — wartet auf Verwaltung ({meineErledigt.length})
           </h2>
           <div className="grid gap-3 md:grid-cols-2">
@@ -176,7 +176,7 @@ export default function DiagnosenPage() {
               <TicketCard
                 key={t.id}
                 ticket={t}
-                badge={<span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#3D8B7A]/15 text-[#3D8B7A]">Befund abgegeben</span>}
+                badge={<span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/15 text-accent">Befund abgegeben</span>}
                 preisHinweis={t.projekt_angebot != null ? `Angebot: ${t.projekt_angebot.toLocaleString("de")} €` : undefined}
               />
             ))}
@@ -198,30 +198,30 @@ function TicketCard({ ticket, badge, action, preisHinweis }: {
   preisHinweis?: string
 }) {
   return (
-    <article className="bg-white border border-[#EDE8E1] rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
+    <article className="bg-white border border-line rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-3 mb-2">
-        <h3 className="text-sm font-semibold text-[#2D2A26] flex-1 min-w-0 truncate">{ticket.titel}</h3>
+        <h3 className="text-sm font-semibold text-ink flex-1 min-w-0 truncate">{ticket.titel}</h3>
         {badge}
       </div>
       {ticket.beschreibung && (
-        <p className="text-xs text-[#6B665E] line-clamp-2 mb-2">{ticket.beschreibung}</p>
+        <p className="text-xs text-ink-secondary line-clamp-2 mb-2">{ticket.beschreibung}</p>
       )}
-      <div className="space-y-1 text-xs text-[#6B665E] mb-3">
+      <div className="space-y-1 text-xs text-ink-secondary mb-3">
         {ticket.gewerk && (
-          <div>Gewerk: <span className="text-[#2D2A26]">{GEWERK_LABELS[ticket.gewerk] ?? ticket.gewerk}</span></div>
+          <div>Gewerk: <span className="text-ink">{GEWERK_LABELS[ticket.gewerk] ?? ticket.gewerk}</span></div>
         )}
         {ticket.einsatzort_adresse && (
           <div className="flex items-start gap-1">
-            <MapPin size={11} className="mt-0.5 flex-shrink-0 text-[#8C857B]" />
+            <MapPin size={11} className="mt-0.5 flex-shrink-0 text-ink-muted" />
             <span className="truncate">{ticket.einsatzort_adresse}</span>
           </div>
         )}
-        <div className="flex items-center gap-1 text-[#8C857B]">
+        <div className="flex items-center gap-1 text-ink-muted">
           <Clock size={11} />
           <span>{new Date(ticket.created_at).toLocaleDateString("de", { day: "2-digit", month: "long" })}</span>
         </div>
         {preisHinweis && (
-          <div className="text-[#3D8B7A] font-semibold mt-1">{preisHinweis}</div>
+          <div className="text-accent font-semibold mt-1">{preisHinweis}</div>
         )}
       </div>
       {action}
@@ -316,60 +316,60 @@ function BefundForm({ ticket, onClose, onGespeichert }: {
         className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white border-b border-[#EDE8E1] p-5 flex items-start justify-between gap-4">
+        <div className="sticky top-0 bg-white border-b border-line p-5 flex items-start justify-between gap-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-[#3D8B7A] mb-1">Befund + Angebot</div>
-            <h2 className="text-base font-semibold text-[#2D2A26]">{ticket.titel}</h2>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-accent mb-1">Befund + Angebot</div>
+            <h2 className="text-base font-semibold text-ink">{ticket.titel}</h2>
           </div>
-          <button onClick={onClose} aria-label="Schließen" className="text-[#8C857B] hover:text-[#2D2A26]">
+          <button onClick={onClose} aria-label="Schließen" className="text-ink-muted hover:text-ink">
             <X size={20} />
           </button>
         </div>
 
         <div className="p-5 space-y-4">
           {error && (
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-[#C4574B]/10 border border-[#C4574B]/20 text-sm text-[#C4574B]">
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-danger/10 border border-danger/20 text-sm text-danger">
               <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           <div>
-            <label className="text-xs font-semibold text-[#2D2A26] block mb-1.5">Befund *</label>
+            <label className="text-xs font-semibold text-ink block mb-1.5">Befund *</label>
             <textarea
               value={befundText}
               onChange={e => setBefundText(e.target.value)}
               placeholder="Was hast du vor Ort festgestellt? Was ist defekt? Was muss konkret gemacht werden?"
               rows={4}
-              className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#3D8B7A]/40"
+              className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-accent/40"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-[#2D2A26] block mb-1.5">Aufwand (Stunden) *</label>
+              <label className="text-xs font-semibold text-ink block mb-1.5">Aufwand (Stunden) *</label>
               <input
                 type="number" inputMode="decimal" step="0.5" min="0.5"
                 value={aufwand}
                 onChange={e => setAufwand(e.target.value)}
                 placeholder="z. B. 2.5"
-                className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-3 py-2 text-sm tabular-nums focus:outline-none focus:border-[#3D8B7A]/40"
+                className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-sm tabular-nums focus:outline-none focus:border-accent/40"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-[#2D2A26] block mb-1.5">Festpreis-Angebot (€) *</label>
+              <label className="text-xs font-semibold text-ink block mb-1.5">Festpreis-Angebot (€) *</label>
               <input
                 type="number" inputMode="decimal" step="1" min="1"
                 value={angebot}
                 onChange={e => setAngebot(e.target.value)}
                 placeholder="z. B. 380"
-                className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-3 py-2 text-sm tabular-nums focus:outline-none focus:border-[#3D8B7A]/40"
+                className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-sm tabular-nums focus:outline-none focus:border-accent/40"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-[#2D2A26] block mb-1.5">Leistungsumfang *</label>
+            <label className="text-xs font-semibold text-ink block mb-1.5">Leistungsumfang *</label>
             <div className="flex gap-2 mb-2">
               <input
                 type="text"
@@ -377,12 +377,12 @@ function BefundForm({ ticket, onClose, onGespeichert }: {
                 onChange={e => setLeistungInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && (e.preventDefault(), leistungHinzu())}
                 placeholder="z. B. Dichtung wechseln · Material inklusive"
-                className="flex-1 bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#3D8B7A]/40"
+                className="flex-1 bg-surface border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-accent/40"
               />
               <button
                 type="button"
                 onClick={leistungHinzu}
-                className="text-xs font-medium bg-[#3D8B7A] text-white px-3 rounded-xl hover:bg-[#2D6B5A] transition-colors"
+                className="text-xs font-medium bg-accent text-white px-3 rounded-xl hover:bg-accent-hover transition-colors"
               >
                 +
               </button>
@@ -390,9 +390,9 @@ function BefundForm({ ticket, onClose, onGespeichert }: {
             {leistungen.length > 0 && (
               <ul className="space-y-1">
                 {leistungen.map((l, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-[#2D2A26] bg-[#FAF8F5] rounded-lg px-3 py-1.5">
+                  <li key={i} className="flex items-center gap-2 text-sm text-ink bg-surface rounded-lg px-3 py-1.5">
                     <span className="flex-1">{l}</span>
-                    <button onClick={() => leistungEntf(i)} className="text-[#8C857B] hover:text-[#C4574B]" aria-label="Entfernen">
+                    <button onClick={() => leistungEntf(i)} className="text-ink-muted hover:text-danger" aria-label="Entfernen">
                       <X size={12} />
                     </button>
                   </li>
@@ -402,23 +402,23 @@ function BefundForm({ ticket, onClose, onGespeichert }: {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-[#2D2A26] block mb-1.5">
-              Fotos * <span className="text-[#8C857B] font-normal">({fotos.length}/5, JPEG/PNG/WebP, max. 5 MB)</span>
+            <label className="text-xs font-semibold text-ink block mb-1.5">
+              Fotos * <span className="text-ink-muted font-normal">({fotos.length}/5, JPEG/PNG/WebP, max. 5 MB)</span>
             </label>
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
               multiple
               onChange={e => fotosHinzu(e.target.files)}
-              className="block w-full text-xs text-[#6B665E] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-[#3D8B7A] file:text-white file:text-xs file:font-medium hover:file:bg-[#2D6B5A] file:cursor-pointer"
+              className="block w-full text-xs text-ink-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-accent file:text-white file:text-xs file:font-medium hover:file:bg-accent-hover file:cursor-pointer"
             />
             {fotos.length > 0 && (
               <ul className="mt-2 space-y-1">
                 {fotos.map((f, i) => (
-                  <li key={i} className="flex items-center gap-2 text-xs text-[#6B665E] bg-[#FAF8F5] rounded-lg px-3 py-1.5">
+                  <li key={i} className="flex items-center gap-2 text-xs text-ink-secondary bg-surface rounded-lg px-3 py-1.5">
                     <span className="flex-1 truncate">{f.name}</span>
-                    <span className="text-[#8C857B] tabular-nums">{Math.round(f.size / 1024)} KB</span>
-                    <button onClick={() => setFotos(prev => prev.filter((_, idx) => idx !== i))} className="text-[#8C857B] hover:text-[#C4574B]" aria-label="Entfernen">
+                    <span className="text-ink-muted tabular-nums">{Math.round(f.size / 1024)} KB</span>
+                    <button onClick={() => setFotos(prev => prev.filter((_, idx) => idx !== i))} className="text-ink-muted hover:text-danger" aria-label="Entfernen">
                       <X size={12} />
                     </button>
                   </li>
@@ -428,18 +428,18 @@ function BefundForm({ ticket, onClose, onGespeichert }: {
           </div>
         </div>
 
-        <div className="sticky bottom-0 bg-white border-t border-[#EDE8E1] p-5 flex items-center justify-end gap-2">
+        <div className="sticky bottom-0 bg-white border-t border-line p-5 flex items-center justify-end gap-2">
           <button
             onClick={onClose}
             disabled={saving}
-            className="text-xs font-medium text-[#6B665E] hover:text-[#2D2A26] px-3 py-2"
+            className="text-xs font-medium text-ink-secondary hover:text-ink px-3 py-2"
           >
             Abbrechen
           </button>
           <button
             onClick={speichern}
             disabled={saving}
-            className="text-xs font-bold bg-[#3D8B7A] text-white px-4 py-2 rounded-xl hover:bg-[#2D6B5A] transition-colors disabled:opacity-50"
+            className="text-xs font-bold bg-accent text-white px-4 py-2 rounded-xl hover:bg-accent-hover transition-colors disabled:opacity-50"
           >
             {saving ? "Speichert…" : "Befund + Angebot speichern"}
           </button>

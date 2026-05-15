@@ -243,26 +243,26 @@ export default function HandwerkerAuswahlPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-3xl mx-auto pt-16 md:pt-8">
-      <button onClick={() => router.back()} className="text-sm text-[#6B665E] hover:text-[#2D2A26] mb-4 flex items-center gap-1">
+      <button onClick={() => router.back()} className="text-sm text-ink-secondary hover:text-ink mb-4 flex items-center gap-1">
         ← Zurück
       </button>
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#2D2A26]">Handwerker auswählen</h1>
-        <p className="text-sm text-[#8C857B] mt-1">
+        <h1 className="text-2xl font-bold text-ink">Handwerker auswählen</h1>
+        <p className="text-sm text-ink-muted mt-1">
           {ticket.titel} — {GEWERK_LABELS[ticket.gewerk || "allgemein"] || ticket.gewerk}
         </p>
         {ticket.einsatzort_adresse && (
-          <p className="text-xs text-[#8C857B] mt-1.5 flex items-center gap-1">
+          <p className="text-xs text-ink-muted mt-1.5 flex items-center gap-1">
             📍 <span>{ticket.einsatzort_adresse}</span>
           </p>
         )}
       </div>
 
       {/* Dringlichkeits-Auswahl: steuert Radius, Auktions-Laufzeit, Surge */}
-      <div className="bg-white rounded-2xl border border-[#EDE8E1] p-4 mb-4">
+      <div className="bg-white rounded-2xl border border-line p-4 mb-4">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs text-[#8C857B] font-medium uppercase tracking-wide">
+          <span className="text-xs text-ink-muted font-medium uppercase tracking-wide">
             Dringlichkeit der Auktion
           </span>
         </div>
@@ -296,14 +296,14 @@ export default function HandwerkerAuswahlPage() {
                 aria-pressed={aktiv}
                 className={`text-left rounded-xl border p-3 transition-all ${
                   aktiv
-                    ? "border-[#3D8B7A] bg-[#3D8B7A]/5 shadow-sm"
-                    : "border-[#EDE8E1] hover:border-[#3D8B7A]/30"
+                    ? "border-[#3D8B7A] bg-accent/5 shadow-sm"
+                    : "border-line hover:border-accent/30"
                 }`}
               >
-                <div className="text-sm font-semibold text-[#2D2A26] mb-0.5" style={{ color: aktiv ? opt.accent : undefined }}>
+                <div className="text-sm font-semibold text-ink mb-0.5" style={{ color: aktiv ? opt.accent : undefined }}>
                   {opt.titel}
                 </div>
-                <div className="text-[11px] text-[#8C857B] leading-snug">{opt.desc}</div>
+                <div className="text-[11px] text-ink-muted leading-snug">{opt.desc}</div>
               </button>
             )
           })}
@@ -311,10 +311,10 @@ export default function HandwerkerAuswahlPage() {
       </div>
 
       {/* Sort-Bar */}
-      <div className="bg-white rounded-2xl border border-[#EDE8E1] p-4 mb-4">
+      <div className="bg-white rounded-2xl border border-line p-4 mb-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-[#8C857B] font-medium">Sortieren:</span>
+            <span className="text-xs text-ink-muted font-medium">Sortieren:</span>
             <div className="flex flex-wrap gap-1">
               {([
                 { k: "effektiv", l: "Effektivpreis" },
@@ -328,8 +328,8 @@ export default function HandwerkerAuswahlPage() {
                   onClick={() => setSortKey(s.k)}
                   className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
                     sortKey === s.k
-                      ? "bg-[#3D8B7A] text-white"
-                      : "bg-[#FAF8F5] text-[#6B665E] hover:bg-[#EDE8E1]"
+                      ? "bg-accent text-white"
+                      : "bg-surface text-ink-secondary hover:bg-line"
                   }`}
                 >
                   {s.l}
@@ -337,18 +337,18 @@ export default function HandwerkerAuswahlPage() {
               ))}
             </div>
           </div>
-          <span className="text-xs text-[#8C857B]">{handwerker.length} verfügbar</span>
+          <span className="text-xs text-ink-muted">{handwerker.length} verfügbar</span>
         </div>
       </div>
 
       {/* Handwerker-Liste */}
       {sortiert.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-[#EDE8E1] p-8 text-center">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-[#FAF1DE] flex items-center justify-center mb-3">
+        <div className="bg-white rounded-2xl border border-line p-8 text-center">
+          <div className="w-12 h-12 mx-auto rounded-2xl bg-warm-light flex items-center justify-center mb-3">
             <span className="text-xl">⚠</span>
           </div>
-          <div className="text-sm font-medium text-[#2D2A26] mb-1">Keine Handwerker gefunden</div>
-          <div className="text-xs text-[#8C857B]">
+          <div className="text-sm font-medium text-ink mb-1">Keine Handwerker gefunden</div>
+          <div className="text-xs text-ink-muted">
             Für „{GEWERK_LABELS[ticket.gewerk || "allgemein"] || ticket.gewerk}“ sind aktuell keine Handwerker registriert.
           </div>
         </div>
@@ -366,13 +366,13 @@ export default function HandwerkerAuswahlPage() {
                 aria-pressed={hw.selected}
                 className={`text-left bg-white rounded-2xl border p-5 transition-all ${
                   hw.selected
-                    ? "border-[#3D8B7A] bg-[#3D8B7A]/5 shadow-sm"
-                    : "border-[#EDE8E1] hover:border-[#3D8B7A]/30 hover:shadow-sm"
+                    ? "border-[#3D8B7A] bg-accent/5 shadow-sm"
+                    : "border-line hover:border-accent/30 hover:shadow-sm"
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-5 h-5 rounded border-2 mt-1 flex items-center justify-center flex-shrink-0 transition-colors ${
-                    hw.selected ? "bg-[#3D8B7A] border-[#3D8B7A]" : "border-[#EDE8E1] bg-white"
+                    hw.selected ? "bg-accent border-[#3D8B7A]" : "border-line bg-white"
                   }`}>
                     {hw.selected && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
                   </div>
@@ -381,9 +381,9 @@ export default function HandwerkerAuswahlPage() {
                     {/* Header: Name + Bewertung */}
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
-                        <div className="text-base font-semibold text-[#2D2A26]">{hw.firma || hw.name}</div>
-                        <div className="text-xs text-[#8C857B] mt-0.5">
-                          {hw.bewertung_avg ? <span className="text-[#C4956A]">★ {hw.bewertung_avg}</span> : "Neu"}
+                        <div className="text-base font-semibold text-ink">{hw.firma || hw.name}</div>
+                        <div className="text-xs text-ink-muted mt-0.5">
+                          {hw.bewertung_avg ? <span className="text-warm">★ {hw.bewertung_avg}</span> : "Neu"}
                           {" · "}{hw.auftraege_anzahl || 0} Aufträge
                           {hw.gewerk && (" · " + (GEWERK_LABELS[hw.gewerk] || hw.gewerk))}
                         </div>
@@ -396,7 +396,7 @@ export default function HandwerkerAuswahlPage() {
                     </div>
 
                     {/* Routen-Daten Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t border-[#EDE8E1]">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t border-line">
                       <Cell
                         label="Stundensatz"
                         value={stundensatz != null ? `€${stundensatz}` : "—"}
@@ -442,11 +442,11 @@ export default function HandwerkerAuswahlPage() {
 
       {/* Footer Actions */}
       {sortiert.length > 0 && (
-        <div className="sticky bottom-4 bg-white rounded-2xl border border-[#EDE8E1] shadow-md p-4 flex items-center justify-between">
+        <div className="sticky bottom-4 bg-white rounded-2xl border border-line shadow-md p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-sm text-[#2D2A26] font-medium">{selectedCount} ausgewählt</span>
+            <span className="text-sm text-ink font-medium">{selectedCount} ausgewählt</span>
             {selectedCount === 0 && (
-              <button onClick={selectAll} className="text-xs text-[#3D8B7A] hover:text-[#2D6B5A] font-medium">
+              <button onClick={selectAll} className="text-xs text-accent hover:text-[#2D6B5A] font-medium">
                 Alle markieren
               </button>
             )}
@@ -454,7 +454,7 @@ export default function HandwerkerAuswahlPage() {
           <button
             onClick={sendeEinladungen}
             disabled={sending || selectedCount === 0}
-            className="text-sm font-bold bg-[#3D8B7A] text-white px-5 py-2.5 rounded-xl hover:bg-[#2D6B5A] transition-colors disabled:opacity-50"
+            className="text-sm font-bold bg-accent text-white px-5 py-2.5 rounded-xl hover:bg-accent-hover transition-colors disabled:opacity-50"
           >
             {sending ? "Wird gesendet…" : `${selectedCount} einladen`}
           </button>
@@ -471,9 +471,9 @@ function Cell({ label, value, muted, highlight }: {
 }) {
   return (
     <div>
-      <div className="text-[10px] text-[#8C857B] uppercase tracking-wide font-medium">{label}</div>
+      <div className="text-[10px] text-ink-muted uppercase tracking-wide font-medium">{label}</div>
       <div className={`text-sm font-semibold tabular-nums mt-0.5 ${
-        muted ? "text-[#B5AEA4]" : highlight ? "text-[#3D8B7A]" : "text-[#2D2A26]"
+        muted ? "text-ink-faint" : highlight ? "text-accent" : "text-ink"
       }`}>
         {value}
       </div>

@@ -60,7 +60,7 @@ export default function Faq() {
           <div
             key={i}
             className={`rounded-xl border bg-white transition-all ${
-              istOffen ? "border-[#3D8B7A]/40 shadow-sm" : "border-[#EDE8E1]"
+              istOffen ? "border-accent/40 shadow-sm" : "border-line"
             }`}
           >
             <button
@@ -68,11 +68,11 @@ export default function Faq() {
               aria-expanded={istOffen}
               className="w-full flex items-center justify-between gap-4 text-left px-5 py-4 cursor-pointer"
             >
-              <span className="text-base font-semibold text-[#2D2A26]">{item.frage}</span>
+              <span className="text-base font-semibold text-ink">{item.frage}</span>
               <span
                 aria-hidden
                 className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-                  istOffen ? "bg-[#3D8B7A] text-white rotate-45" : "bg-[#FAF8F5] text-[#8C857B]"
+                  istOffen ? "bg-accent text-white rotate-45" : "bg-surface text-ink-muted"
                 }`}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -82,7 +82,7 @@ export default function Faq() {
               </span>
             </button>
             {istOffen && (
-              <div className="px-5 pb-5 -mt-1 text-sm text-[#6B665E] leading-relaxed">
+              <div className="px-5 pb-5 -mt-1 text-sm text-ink-secondary leading-relaxed">
                 {item.antwort}
               </div>
             )}

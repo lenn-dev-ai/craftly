@@ -45,8 +45,8 @@ export default function TicketLegacyRedirect() {
   }, [id, router])
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-[#3D8B7A]/20 border-t-[#3D8B7A] rounded-full animate-spin" />
+    <div className="min-h-screen bg-surface flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-accent/20 border-t-[#3D8B7A] rounded-full animate-spin" />
     </div>
   )
 }

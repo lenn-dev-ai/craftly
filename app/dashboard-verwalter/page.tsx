@@ -19,10 +19,10 @@ function kostenSchaetzung(t: Ticket): string {
 }
 
 const PRIO_FARBEN: Record<string, { bar: string; pill: string }> = {
-  dringend: { bar: "bg-[#C4574B]", pill: "text-[#C4574B] bg-[#C4574B]/10 border-[#C4574B]/15" },
-  hoch:     { bar: "bg-[#C4956A]", pill: "text-[#854F0B] bg-[#FAF1DE] border-[#C4956A]/20" },
-  normal:   { bar: "bg-[#5B6ABF]", pill: "text-[#5B6ABF] bg-[#EEF0FF] border-[#5B6ABF]/15" },
-  niedrig:  { bar: "bg-[#8C857B]", pill: "text-[#6B665E] bg-[#EDE8E1] border-[#EDE8E1]" },
+  dringend: { bar: "bg-[#C4574B]", pill: "text-danger bg-danger/10 border-danger/15" },
+  hoch:     { bar: "bg-warm", pill: "text-warm-dark bg-warm-light border-warm/20" },
+  normal:   { bar: "bg-rolle-mieter", pill: "text-rolle-mieter bg-[#EEF0FF] border-[#5B6ABF]/15" },
+  niedrig:  { bar: "bg-[#8C857B]", pill: "text-ink-secondary bg-line border-line" },
 }
 
 const PRIO_LABEL: Record<string, string> = {
@@ -154,24 +154,24 @@ export default function VerwalterDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold text-[#2D2A26]">Übersicht</h1>
+            <h1 className="text-3xl font-bold text-ink">Übersicht</h1>
             <span
               title="Live-Updates aktiv"
               aria-label="Live-Updates aktiv"
-              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#3D8B7A]"
+              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-accent"
             >
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-[#3D8B7A] opacity-50 animate-ping" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#3D8B7A]" />
+                <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-50 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
               </span>
               Live
             </span>
           </div>
-          <p className="text-sm text-[#8C857B] mt-1.5">
+          <p className="text-sm text-ink-muted mt-1.5">
             {tickets.length} {tickets.length === 1 ? "Vorgang" : "Vorgänge"}
             {hatAttention && ` · `}
             {hatAttention && (
-              <span className="text-[#C4574B] font-medium">
+              <span className="text-danger font-medium">
                 {offene.length} {offene.length === 1 ? "wartet" : "warten"} auf dich
               </span>
             )}
@@ -180,7 +180,7 @@ export default function VerwalterDashboard() {
         </div>
         <Link
           href="/dashboard-verwalter/marktplatz"
-          className="inline-flex items-center gap-2 text-sm font-semibold bg-[#3D8B7A] text-white px-5 py-2.5 rounded-xl hover:bg-[#2D6B5A] transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-semibold bg-accent text-white px-5 py-2.5 rounded-xl hover:bg-accent-hover transition-colors"
         >
           Handwerker-Marktplatz
           <span>→</span>
@@ -189,13 +189,13 @@ export default function VerwalterDashboard() {
 
       {/* Attention Banner — wenn dringende offene Meldungen */}
       {dringendeOffene > 0 && (
-        <div className="mb-6 p-4 rounded-2xl bg-[#C4574B]/8 border-2 border-[#C4574B]/20">
+        <div className="mb-6 p-4 rounded-2xl bg-danger/8 border-2 border-danger/20">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#C4574B]/15 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-danger/15 flex items-center justify-center flex-shrink-0">
               <span className="text-xl">⚠️</span>
             </div>
             <div className="flex-1">
-              <div className="text-sm font-semibold text-[#C4574B]">
+              <div className="text-sm font-semibold text-danger">
                 {dringendeOffene} {dringendeOffene === 1 ? "dringende Meldung" : "dringende Meldungen"}
               </div>
               <div className="text-xs text-[#854240] mt-0.5">
@@ -208,15 +208,15 @@ export default function VerwalterDashboard() {
 
       {/* Empty-State: Verwalter ohne Tickets → Onboarding-Hilfe (V2) */}
       {tickets.length === 0 && (
-        <section className="mb-8 bg-white border border-[#EDE8E1] rounded-2xl p-8">
+        <section className="mb-8 bg-white border border-line rounded-2xl p-8">
           <div className="max-w-xl">
-            <div className="text-xs font-bold text-[#3D8B7A] uppercase tracking-wider mb-2">
+            <div className="text-xs font-bold text-accent uppercase tracking-wider mb-2">
               Willkommen bei Reparo
             </div>
-            <h2 className="text-2xl font-semibold text-[#2D2A26] mb-3">
+            <h2 className="text-2xl font-semibold text-ink mb-3">
               Noch keine Tickets — los geht&apos;s
             </h2>
-            <p className="text-sm text-[#6B665E] mb-6 leading-relaxed">
+            <p className="text-sm text-ink-secondary mb-6 leading-relaxed">
               Tickets entstehen entweder durch Mieter-Meldungen (sobald du Objekte
               und Mieter angelegt hast) oder direkt durch dich, wenn du
               Handwerker beauftragst.
@@ -224,33 +224,33 @@ export default function VerwalterDashboard() {
             <div className="space-y-3">
               <Link
                 href="/dashboard-verwalter/marktplatz"
-                className="flex items-center justify-between gap-3 bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl p-4 hover:border-[#3D8B7A]/40 transition-colors"
+                className="flex items-center justify-between gap-3 bg-surface border border-line rounded-xl p-4 hover:border-accent/40 transition-colors"
               >
                 <div>
-                  <div className="text-sm font-semibold text-[#2D2A26]">Handwerker-Marktplatz</div>
-                  <div className="text-xs text-[#8C857B]">Stundenslots buchen, Auktionen starten</div>
+                  <div className="text-sm font-semibold text-ink">Handwerker-Marktplatz</div>
+                  <div className="text-xs text-ink-muted">Stundenslots buchen, Auktionen starten</div>
                 </div>
-                <span className="text-[#3D8B7A] text-lg">→</span>
+                <span className="text-accent text-lg">→</span>
               </Link>
               <Link
                 href="/dashboard-verwalter/handwerker"
-                className="flex items-center justify-between gap-3 bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl p-4 hover:border-[#3D8B7A]/40 transition-colors"
+                className="flex items-center justify-between gap-3 bg-surface border border-line rounded-xl p-4 hover:border-accent/40 transition-colors"
               >
                 <div>
-                  <div className="text-sm font-semibold text-[#2D2A26]">Handwerker-Pool</div>
-                  <div className="text-xs text-[#8C857B]">Stamm-Handwerker hinzufügen</div>
+                  <div className="text-sm font-semibold text-ink">Handwerker-Pool</div>
+                  <div className="text-xs text-ink-muted">Stamm-Handwerker hinzufügen</div>
                 </div>
-                <span className="text-[#3D8B7A] text-lg">→</span>
+                <span className="text-accent text-lg">→</span>
               </Link>
               <Link
                 href="/dashboard-verwalter/reporting"
-                className="flex items-center justify-between gap-3 bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl p-4 hover:border-[#3D8B7A]/40 transition-colors"
+                className="flex items-center justify-between gap-3 bg-surface border border-line rounded-xl p-4 hover:border-accent/40 transition-colors"
               >
                 <div>
-                  <div className="text-sm font-semibold text-[#2D2A26]">Reporting</div>
-                  <div className="text-xs text-[#8C857B]">Provisionen + Ausgaben überblicken</div>
+                  <div className="text-sm font-semibold text-ink">Reporting</div>
+                  <div className="text-xs text-ink-muted">Provisionen + Ausgaben überblicken</div>
                 </div>
-                <span className="text-[#3D8B7A] text-lg">→</span>
+                <span className="text-accent text-lg">→</span>
               </Link>
             </div>
           </div>
@@ -261,21 +261,21 @@ export default function VerwalterDashboard() {
       {hatPipelineAction && (
         <section className="mb-6 bg-white border border-[#7C6CAB]/20 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <span className="w-2 h-2 rounded-full bg-[#7C6CAB] animate-pulse" />
-            <h2 className="text-sm font-semibold text-[#7C6CAB] uppercase tracking-wider">Wartet auf deine Entscheidung</h2>
+            <span className="w-2 h-2 rounded-full bg-rolle-admin animate-pulse" />
+            <h2 className="text-sm font-semibold text-rolle-admin uppercase tracking-wider">Wartet auf deine Entscheidung</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {befundeWartend.length > 0 && (
               <button
                 onClick={() => router.push(`/dashboard-verwalter/ticket/${befundeWartend[0].id}`)}
-                className="text-left bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl p-4 hover:border-[#7C6CAB]/40 transition-colors"
+                className="text-left bg-surface border border-line rounded-xl p-4 hover:border-[#7C6CAB]/40 transition-colors"
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <Stethoscope size={16} className="text-[#7C6CAB]" />
-                  <span className="text-[10px] font-bold text-[#7C6CAB] uppercase tracking-wider">Diagnose-Befunde</span>
+                  <Stethoscope size={16} className="text-rolle-admin" />
+                  <span className="text-[10px] font-bold text-rolle-admin uppercase tracking-wider">Diagnose-Befunde</span>
                 </div>
-                <div className="text-3xl font-bold text-[#2D2A26] tabular-nums">{befundeWartend.length}</div>
-                <div className="text-xs text-[#6B665E] mt-1 flex items-center gap-1">
+                <div className="text-3xl font-bold text-ink tabular-nums">{befundeWartend.length}</div>
+                <div className="text-xs text-ink-secondary mt-1 flex items-center gap-1">
                   {befundeWartend.length === 1 ? "Befund mit Festpreis-Angebot" : "Befunde mit Festpreis-Angebot"}
                   <ArrowRight size={11} className="ml-0.5" />
                 </div>
@@ -284,14 +284,14 @@ export default function VerwalterDashboard() {
             {offeneNachtraege.length > 0 && (
               <button
                 onClick={() => router.push(`/dashboard-verwalter/ticket/${offeneNachtraege[0].ticket_id}`)}
-                className="text-left bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl p-4 hover:border-[#C4956A]/40 transition-colors"
+                className="text-left bg-surface border border-line rounded-xl p-4 hover:border-warm/40 transition-colors"
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <FileEdit size={16} className="text-[#C4956A]" />
-                  <span className="text-[10px] font-bold text-[#C4956A] uppercase tracking-wider">Nachträge</span>
+                  <FileEdit size={16} className="text-warm" />
+                  <span className="text-[10px] font-bold text-warm uppercase tracking-wider">Nachträge</span>
                 </div>
-                <div className="text-3xl font-bold text-[#2D2A26] tabular-nums">{offeneNachtraege.length}</div>
-                <div className="text-xs text-[#6B665E] mt-1 flex items-center gap-1">
+                <div className="text-3xl font-bold text-ink tabular-nums">{offeneNachtraege.length}</div>
+                <div className="text-xs text-ink-secondary mt-1 flex items-center gap-1">
                   {offeneNachtraege.length === 1 ? "Nachtrag offen" : "Nachträge offen"}
                   <ArrowRight size={11} className="ml-0.5" />
                 </div>
@@ -300,14 +300,14 @@ export default function VerwalterDashboard() {
             {auktionenAbgelaufen.length > 0 && (
               <button
                 onClick={() => router.push(`/dashboard-verwalter/ticket/${auktionenAbgelaufen[0].id}`)}
-                className="text-left bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl p-4 hover:border-[#C4574B]/40 transition-colors"
+                className="text-left bg-surface border border-line rounded-xl p-4 hover:border-danger/40 transition-colors"
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <Clock size={16} className="text-[#C4574B]" />
-                  <span className="text-[10px] font-bold text-[#C4574B] uppercase tracking-wider">Auktion abgelaufen</span>
+                  <Clock size={16} className="text-danger" />
+                  <span className="text-[10px] font-bold text-danger uppercase tracking-wider">Auktion abgelaufen</span>
                 </div>
-                <div className="text-3xl font-bold text-[#2D2A26] tabular-nums">{auktionenAbgelaufen.length}</div>
-                <div className="text-xs text-[#6B665E] mt-1 flex items-center gap-1">
+                <div className="text-3xl font-bold text-ink tabular-nums">{auktionenAbgelaufen.length}</div>
+                <div className="text-xs text-ink-secondary mt-1 flex items-center gap-1">
                   ohne Vergabe
                   <ArrowRight size={11} className="ml-0.5" />
                 </div>
@@ -334,8 +334,8 @@ export default function VerwalterDashboard() {
       {offene.length > 0 && (
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-lg font-semibold text-[#2D2A26]">Neue Meldungen von Mietern</h2>
-            <span className="text-xs bg-[#C4574B]/10 text-[#C4574B] font-bold px-2 py-0.5 rounded-md uppercase tracking-wide">
+            <h2 className="text-lg font-semibold text-ink">Neue Meldungen von Mietern</h2>
+            <span className="text-xs bg-danger/10 text-danger font-bold px-2 py-0.5 rounded-md uppercase tracking-wide">
               Neu
             </span>
           </div>
@@ -343,44 +343,44 @@ export default function VerwalterDashboard() {
             {offene.map(t => {
               const farben = PRIO_FARBEN[t.prioritaet] || PRIO_FARBEN.normal
               return (
-                <article key={t.id} className="bg-white rounded-2xl border border-[#EDE8E1] p-5 hover:shadow-sm transition-shadow">
+                <article key={t.id} className="bg-white rounded-2xl border border-line p-5 hover:shadow-sm transition-shadow">
                   <div className="flex items-start gap-4">
                     <div className={`w-1 self-stretch rounded-full ${farben.bar} flex-shrink-0`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-3 mb-1.5">
-                        <h3 className="text-base font-semibold text-[#2D2A26]">{t.titel}</h3>
+                        <h3 className="text-base font-semibold text-ink">{t.titel}</h3>
                         <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded border flex-shrink-0 ${farben.pill}`}>
                           {PRIO_LABEL[t.prioritaet] || t.prioritaet}
                         </span>
                       </div>
 
-                      <div className="text-xs text-[#8C857B] mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <div className="text-xs text-ink-muted mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
                         {t.wohnung && <span>{t.wohnung}</span>}
                         {t.einsatzort_adresse && (
-                          <span className="text-[#3D8B7A]">📍 {t.einsatzort_adresse}</span>
+                          <span className="text-accent">📍 {t.einsatzort_adresse}</span>
                         )}
                         <span>·</span>
                         <span>{new Date(t.created_at).toLocaleDateString("de", { day: "numeric", month: "short" })}</span>
                       </div>
 
                       {t.beschreibung && (
-                        <p className="text-sm text-[#6B665E] line-clamp-2 mb-3">{t.beschreibung}</p>
+                        <p className="text-sm text-ink-secondary line-clamp-2 mb-3">{t.beschreibung}</p>
                       )}
 
                       <div className="flex items-center justify-between gap-3 flex-wrap">
-                        <span className="text-xs text-[#8C857B]">
-                          KI-Schätzung: <span className="text-[#2D2A26] font-medium">{kostenSchaetzung(t)} €</span>
+                        <span className="text-xs text-ink-muted">
+                          KI-Schätzung: <span className="text-ink font-medium">{kostenSchaetzung(t)} €</span>
                         </span>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => router.push(`/dashboard-verwalter/ticket/${t.id}`)}
-                            className="text-xs text-[#6B665E] hover:text-[#2D2A26] px-3 py-1.5 transition-colors"
+                            className="text-xs text-ink-secondary hover:text-ink px-3 py-1.5 transition-colors"
                           >
                             Details
                           </button>
                           <button
                             onClick={() => router.push("/dashboard-verwalter/marktplatz")}
-                            className="text-xs font-semibold bg-[#3D8B7A] text-white px-3.5 py-1.5 rounded-lg hover:bg-[#2D6B5A] transition-colors"
+                            className="text-xs font-semibold bg-accent text-white px-3.5 py-1.5 rounded-lg hover:bg-accent-hover transition-colors"
                           >
                             Handwerker buchen
                           </button>
@@ -398,26 +398,26 @@ export default function VerwalterDashboard() {
       {/* Auf Marktplatz */}
       {marktplatz.length > 0 && (
         <section className="mb-10">
-          <h2 className="text-sm font-semibold text-[#2D2A26] uppercase tracking-wide mb-4">
-            Auf dem Marktplatz <span className="text-[#8C857B] font-normal">({marktplatz.length})</span>
+          <h2 className="text-sm font-semibold text-ink uppercase tracking-wide mb-4">
+            Auf dem Marktplatz <span className="text-ink-muted font-normal">({marktplatz.length})</span>
           </h2>
           <div className="flex flex-col gap-2">
             {marktplatz.map(t => (
               <button
                 key={t.id}
                 onClick={() => router.push(`/dashboard-verwalter/ticket/${t.id}`)}
-                className="text-left bg-white rounded-xl border border-[#EDE8E1] p-4 hover:border-[#3D8B7A]/30 hover:shadow-sm transition-all"
+                className="text-left bg-white rounded-xl border border-line p-4 hover:border-accent/30 hover:shadow-sm transition-all"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-[#3D8B7A] animate-pulse flex-shrink-0" />
+                  <div className="w-2 h-2 rounded-full bg-accent animate-pulse flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-[#2D2A26] truncate">{t.titel}</div>
-                    <div className="text-xs text-[#8C857B] truncate">
+                    <div className="text-sm font-medium text-ink truncate">{t.titel}</div>
+                    <div className="text-xs text-ink-muted truncate">
                       {t.wohnung && `${t.wohnung} · `}
                       {t.einsatzort_adresse}
                     </div>
                   </div>
-                  <span className="text-xs text-[#3D8B7A] font-medium flex-shrink-0">
+                  <span className="text-xs text-accent font-medium flex-shrink-0">
                     Wartet auf Angebot
                   </span>
                 </div>
@@ -430,26 +430,26 @@ export default function VerwalterDashboard() {
       {/* In Arbeit */}
       {inArbeit.length > 0 && (
         <section className="mb-10">
-          <h2 className="text-sm font-semibold text-[#2D2A26] uppercase tracking-wide mb-4">
-            In Arbeit <span className="text-[#8C857B] font-normal">({inArbeit.length})</span>
+          <h2 className="text-sm font-semibold text-ink uppercase tracking-wide mb-4">
+            In Arbeit <span className="text-ink-muted font-normal">({inArbeit.length})</span>
           </h2>
           <div className="flex flex-col gap-2">
             {inArbeit.map(t => (
               <button
                 key={t.id}
                 onClick={() => router.push(`/dashboard-verwalter/ticket/${t.id}`)}
-                className="text-left bg-white rounded-xl border border-[#EDE8E1] p-4 hover:border-[#3D8B7A]/30 hover:shadow-sm transition-all"
+                className="text-left bg-white rounded-xl border border-line p-4 hover:border-accent/30 hover:shadow-sm transition-all"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-[#5B6ABF] flex-shrink-0" />
+                  <div className="w-2 h-2 rounded-full bg-rolle-mieter flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-[#2D2A26] truncate">{t.titel}</div>
-                    <div className="text-xs text-[#8C857B] truncate">
+                    <div className="text-sm font-medium text-ink truncate">{t.titel}</div>
+                    <div className="text-xs text-ink-muted truncate">
                       {t.wohnung && `${t.wohnung} · `}
                       {t.einsatzort_adresse}
                     </div>
                   </div>
-                  <span className="text-xs text-[#5B6ABF] font-medium flex-shrink-0">In Arbeit</span>
+                  <span className="text-xs text-rolle-mieter font-medium flex-shrink-0">In Arbeit</span>
                 </div>
               </button>
             ))}
@@ -459,17 +459,17 @@ export default function VerwalterDashboard() {
 
       {/* Empty state */}
       {tickets.length === 0 && (
-        <div className="bg-white rounded-2xl border border-[#EDE8E1] p-12 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-[#3D8B7A]/10 flex items-center justify-center mx-auto mb-4">
+        <div className="bg-white rounded-2xl border border-line p-12 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">📥</span>
           </div>
-          <h2 className="text-lg font-semibold text-[#2D2A26] mb-2">Noch keine Vorgänge</h2>
-          <p className="text-sm text-[#8C857B] mb-6 max-w-sm mx-auto">
+          <h2 className="text-lg font-semibold text-ink mb-2">Noch keine Vorgänge</h2>
+          <p className="text-sm text-ink-muted mb-6 max-w-sm mx-auto">
             Sobald deine Mieter Schäden melden oder du Aufträge auf dem Marktplatz vergibst, erscheinen sie hier.
           </p>
           <Link
             href="/dashboard-verwalter/marktplatz"
-            className="inline-block text-sm font-semibold bg-[#3D8B7A] text-white px-5 py-2.5 rounded-xl hover:bg-[#2D6B5A] transition-colors"
+            className="inline-block text-sm font-semibold bg-accent text-white px-5 py-2.5 rounded-xl hover:bg-accent-hover transition-colors"
           >
             Marktplatz öffnen
           </Link>
@@ -481,7 +481,7 @@ export default function VerwalterDashboard() {
         <div className="text-center mt-6">
           <Link
             href="/dashboard-verwalter/tickets"
-            className="text-xs text-[#B5AEA4] hover:text-[#3D8B7A] transition-colors"
+            className="text-xs text-ink-faint hover:text-accent transition-colors"
           >
             {erledigt.length} {erledigt.length === 1 ? "erledigter Vorgang" : "erledigte Vorgänge"} im Archiv →
           </Link>
@@ -588,27 +588,27 @@ function ErsparnisWidget({ data }: { data: ErsparnisAggregat }) {
                   : data.trend.richtung === "down" ? TrendingDown
                   : Minus
   return (
-    <section className="mb-8 rounded-2xl border border-[#3D8B7A]/25 bg-gradient-to-br from-[#3D8B7A]/[0.06] to-[#3D8B7A]/[0.02] p-6 shadow-sm">
+    <section className="mb-8 rounded-2xl border border-accent/25 bg-gradient-to-br from-[#3D8B7A]/[0.06] to-[#3D8B7A]/[0.02] p-6 shadow-sm">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#3D8B7A]/15 flex items-center justify-center">
-            <PiggyBank size={20} className="text-[#3D8B7A]" />
+          <div className="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center">
+            <PiggyBank size={20} className="text-accent" />
           </div>
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-[#3D8B7A]">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-accent">
               Auktions-Ersparnis
             </div>
-            <div className="text-xs text-[#6B665E] mt-0.5">
+            <div className="text-xs text-ink-secondary mt-0.5">
               Versus höchstes abgegebenes Gebot · {data.eligibleCount} Ticket{data.eligibleCount === 1 ? "" : "s"}
             </div>
           </div>
         </div>
         {data.trend.delta !== null && (
           <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full ${
-            data.trend.richtung === "up" ? "bg-[#3D8B7A]/15 text-[#3D8B7A]"
-            : data.trend.richtung === "down" ? "bg-[#C4574B]/10 text-[#C4574B]"
-            : "bg-[#EDE8E1] text-[#6B665E]"
+            data.trend.richtung === "up" ? "bg-accent/15 text-accent"
+            : data.trend.richtung === "down" ? "bg-danger/10 text-danger"
+            : "bg-line text-ink-secondary"
           }`}>
             <TrendIcon size={12} /> {Math.abs(data.trend.delta)} % vs. Vormonat
           </span>
@@ -618,26 +618,26 @@ function ErsparnisWidget({ data }: { data: ErsparnisAggregat }) {
       {/* Drei-Spalten KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-[#8C857B] font-medium mb-1">
+          <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-1">
             Gesamt
           </div>
-          <div className="text-3xl font-bold tabular-nums text-[#3D8B7A]">
+          <div className="text-3xl font-bold tabular-nums text-accent">
             {data.gesamtAbsolut.toLocaleString("de", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €
           </div>
         </div>
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-[#8C857B] font-medium mb-1">
+          <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-1">
             Diesen Monat
           </div>
-          <div className="text-2xl font-semibold tabular-nums text-[#2D2A26]">
+          <div className="text-2xl font-semibold tabular-nums text-ink">
             {data.monatAbsolut.toLocaleString("de", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €
           </div>
         </div>
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-[#8C857B] font-medium mb-1">
+          <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-1">
             Ø pro Auftrag
           </div>
-          <div className="text-2xl font-semibold tabular-nums text-[#2D2A26]">
+          <div className="text-2xl font-semibold tabular-nums text-ink">
             {data.durchschnittProzent.toFixed(1)} %
           </div>
         </div>
@@ -645,21 +645,21 @@ function ErsparnisWidget({ data }: { data: ErsparnisAggregat }) {
 
       {/* Letzte 5 Liste */}
       {data.letzte5.length > 0 && (
-        <div className="pt-4 border-t border-[#3D8B7A]/15">
-          <div className="text-[10px] uppercase tracking-wider text-[#8C857B] font-medium mb-2">
+        <div className="pt-4 border-t border-accent/15">
+          <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-2">
             Letzte abgeschlossene Aufträge
           </div>
           <ul className="space-y-1">
             {data.letzte5.map(e => (
               <li key={e.ticket.id} className="flex items-center gap-3 text-sm py-1">
-                <span className="flex-1 min-w-0 truncate text-[#2D2A26]">{e.ticket.titel}</span>
-                <span className="text-xs text-[#8C857B] tabular-nums hidden sm:inline">
+                <span className="flex-1 min-w-0 truncate text-ink">{e.ticket.titel}</span>
+                <span className="text-xs text-ink-muted tabular-nums hidden sm:inline">
                   {e.bezahlt.toLocaleString("de")} € statt {e.baseline.toLocaleString("de")} €
                 </span>
-                <span className="font-semibold tabular-nums text-[#3D8B7A] flex-shrink-0">
+                <span className="font-semibold tabular-nums text-accent flex-shrink-0">
                   − {e.absolut.toLocaleString("de", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €
                 </span>
-                <span className="text-[10px] font-bold text-[#3D8B7A] bg-[#3D8B7A]/10 px-1.5 py-0.5 rounded-full tabular-nums flex-shrink-0">
+                <span className="text-[10px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full tabular-nums flex-shrink-0">
                   −{Math.round(e.prozent)} %
                 </span>
               </li>
@@ -678,16 +678,16 @@ function Kpi({ label, value, sub, accent }: {
   accent?: "primary" | "warn" | "info" | "muted"
 }) {
   const farben = {
-    primary: "text-[#3D8B7A]",
-    warn: "text-[#C4574B]",
-    info: "text-[#5B6ABF]",
-    muted: "text-[#2D2A26]",
+    primary: "text-accent",
+    warn: "text-danger",
+    info: "text-rolle-mieter",
+    muted: "text-ink",
   }
   return (
-    <div className="bg-white rounded-2xl border border-[#EDE8E1] p-4">
-      <div className="text-[10px] uppercase tracking-wider text-[#8C857B] font-medium mb-1">{label}</div>
+    <div className="bg-white rounded-2xl border border-line p-4">
+      <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-1">{label}</div>
       <div className={`text-2xl font-bold tabular-nums ${farben[accent || "muted"]}`}>{value}</div>
-      {sub && <div className="text-xs text-[#B5AEA4] mt-1">{sub}</div>}
+      {sub && <div className="text-xs text-ink-faint mt-1">{sub}</div>}
     </div>
   )
 }

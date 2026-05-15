@@ -8,7 +8,7 @@ import type { Ticket, Angebot } from "@/types"
 const PRIO_COLORS: Record<string, string> = {
   normal: "bg-green-500/20 text-green-400",
   hoch: "bg-yellow-500/20 text-yellow-400",
-  dringend: "bg-[#C4574B]/20 text-[#C4574B]",
+  dringend: "bg-danger/20 text-danger",
 }
 
 export default function AngebotAbgeben() {
@@ -109,7 +109,7 @@ export default function AngebotAbgeben() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+      <div className="min-h-screen bg-surface flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#3D8B7A]" />
       </div>
     )
@@ -117,14 +117,14 @@ export default function AngebotAbgeben() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center px-4">
-        <div className="bg-white border border-[#3D8B7A]/30 rounded-2xl p-8 text-center max-w-md w-full">
-          <div className="w-16 h-16 rounded-full bg-[#3D8B7A]/20 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-[#3D8B7A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="min-h-screen bg-surface flex items-center justify-center px-4">
+        <div className="bg-white border border-accent/30 rounded-2xl p-8 text-center max-w-md w-full">
+          <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-[#2D2A26] mb-2">Angebot gesendet!</h2>
+          <h2 className="text-xl font-bold text-ink mb-2">Angebot gesendet!</h2>
           <p className="text-gray-400 text-sm">Dein Angebot über {preis}€ wurde erfolgreich eingereicht. Du wirst weitergeleitet...</p>
         </div>
       </div>
@@ -133,7 +133,7 @@ export default function AngebotAbgeben() {
 
   if (!ticket) {
     return (
-      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+      <div className="min-h-screen bg-surface flex items-center justify-center">
         <p className="text-gray-400">Ticket nicht gefunden</p>
       </div>
     )
@@ -142,11 +142,11 @@ export default function AngebotAbgeben() {
   const tl = timeLeft()
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-[#2D2A26]">
+    <div className="min-h-screen bg-surface text-ink">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#FAF8F5]/95 backdrop-blur border-b border-[#EDE8E1] px-4 py-3">
+      <div className="sticky top-0 z-10 bg-surface/95 backdrop-blur border-b border-line px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-3">
-          <button onClick={() => router.back()} className="text-gray-400 hover:text-[#2D2A26] transition-colors">
+          <button onClick={() => router.back()} className="text-gray-400 hover:text-ink transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -157,9 +157,9 @@ export default function AngebotAbgeben() {
 
       <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
         {/* Ticket Info Card */}
-        <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5">
+        <div className="bg-white border border-line rounded-2xl p-5">
           <div className="flex items-start justify-between mb-3">
-            <h2 className="text-base font-semibold text-[#2D2A26] leading-tight pr-3">{ticket.titel}</h2>
+            <h2 className="text-base font-semibold text-ink leading-tight pr-3">{ticket.titel}</h2>
             <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${PRIO_COLORS[ticket.prioritaet] || PRIO_COLORS.normal}`}>
               {ticket.prioritaet}
             </span>
@@ -169,13 +169,13 @@ export default function AngebotAbgeben() {
           )}
           <div className="flex flex-wrap gap-2 text-[11px]">
             {ticket.gewerk && (
-              <span className="bg-[#FAF8F5] text-gray-300 px-2 py-0.5 rounded-full">{ticket.gewerk}</span>
+              <span className="bg-surface text-gray-300 px-2 py-0.5 rounded-full">{ticket.gewerk}</span>
             )}
             {ticket.objekte && (
-              <span className="bg-[#FAF8F5] text-gray-300 px-2 py-0.5 rounded-full">{(ticket.objekte as any).name}</span>
+              <span className="bg-surface text-gray-300 px-2 py-0.5 rounded-full">{(ticket.objekte as any).name}</span>
             )}
             {tl && (
-              <span className="bg-[#5B6ABF]/10 text-[#5B6ABF] px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="bg-rolle-mieter/10 text-rolle-mieter px-2 py-0.5 rounded-full flex items-center gap-1">
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -186,14 +186,14 @@ export default function AngebotAbgeben() {
         </div>
 
         {/* Market Info */}
-        <div className="bg-white border border-[#EDE8E1] rounded-2xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-[#3D8B7A]/10 flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-[#3D8B7A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="bg-white border border-line rounded-2xl p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+            <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
           </div>
           <div>
-            <p className="text-sm font-medium text-[#2D2A26]">{bidCount} Angebot{bidCount !== 1 ? "e" : ""} bisher</p>
+            <p className="text-sm font-medium text-ink">{bidCount} Angebot{bidCount !== 1 ? "e" : ""} bisher</p>
             <p className="text-xs text-gray-500">Gib ein wettbewerbsfähiges Angebot ab</p>
           </div>
         </div>
@@ -201,9 +201,9 @@ export default function AngebotAbgeben() {
         {/* Bid Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Price */}
-          <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5">
-            <label className="block text-sm font-medium text-[#2D2A26] mb-3">
-              Dein Preis <span className="text-[#3D8B7A]">*</span>
+          <div className="bg-white border border-line rounded-2xl p-5">
+            <label className="block text-sm font-medium text-ink mb-3">
+              Dein Preis <span className="text-accent">*</span>
             </label>
             <div className="relative">
               <input
@@ -214,7 +214,7 @@ export default function AngebotAbgeben() {
                 value={preis}
                 onChange={(e) => setPreis(e.target.value)}
                 placeholder="z.B. 350"
-                className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-4 py-3 pr-12 text-[#2D2A26] text-lg font-semibold placeholder:text-gray-600 focus:outline-none focus:border-[#3D8B7A]/50 focus:ring-1 focus:ring-[#00D4AA]/30 transition-all"
+                className="w-full bg-surface border border-line rounded-xl px-4 py-3 pr-12 text-ink text-lg font-semibold placeholder:text-gray-600 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-[#00D4AA]/30 transition-all"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">€</span>
             </div>
@@ -222,8 +222,8 @@ export default function AngebotAbgeben() {
           </div>
 
           {/* Date */}
-          <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5">
-            <label className="block text-sm font-medium text-[#2D2A26] mb-3">
+          <div className="bg-white border border-line rounded-2xl p-5">
+            <label className="block text-sm font-medium text-ink mb-3">
               Frühester Termin
             </label>
             <input
@@ -231,14 +231,14 @@ export default function AngebotAbgeben() {
               min={today}
               value={fruehesterTermin}
               onChange={(e) => setFruehesterTermin(e.target.value)}
-              className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-4 py-3 text-[#2D2A26] placeholder:text-gray-600 focus:outline-none focus:border-[#3D8B7A]/50 focus:ring-1 focus:ring-[#00D4AA]/30 transition-all [color-scheme:dark]"
+              className="w-full bg-surface border border-line rounded-xl px-4 py-3 text-ink placeholder:text-gray-600 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-[#00D4AA]/30 transition-all [color-scheme:dark]"
             />
             <p className="text-[11px] text-gray-500 mt-2">Wann könntest du frühestens anfangen?</p>
           </div>
 
           {/* Message */}
-          <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5">
-            <label className="block text-sm font-medium text-[#2D2A26] mb-3">
+          <div className="bg-white border border-line rounded-2xl p-5">
+            <label className="block text-sm font-medium text-ink mb-3">
               Nachricht an Verwalter
             </label>
             <textarea
@@ -246,13 +246,13 @@ export default function AngebotAbgeben() {
               value={nachricht}
               onChange={(e) => setNachricht(e.target.value)}
               placeholder="Beschreibe kurz deine Vorgehensweise, Erfahrung oder gib weitere Details..."
-              className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-4 py-3 text-[#2D2A26] text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#3D8B7A]/50 focus:ring-1 focus:ring-[#00D4AA]/30 transition-all resize-none"
+              className="w-full bg-surface border border-line rounded-xl px-4 py-3 text-ink text-sm placeholder:text-gray-600 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-[#00D4AA]/30 transition-all resize-none"
             />
           </div>
 
           {/* Error */}
           {error && (
-            <div className="bg-[#C4574B]/10 border border-[#C4574B]/20 rounded-xl px-4 py-3 text-[#C4574B] text-sm">
+            <div className="bg-danger/10 border border-danger/20 rounded-xl px-4 py-3 text-danger text-sm">
               {error}
             </div>
           )}

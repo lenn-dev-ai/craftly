@@ -37,16 +37,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
   if (!authorized) return (
-    <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-[#3D8B7A]/20 border-t-[#3D8B7A] rounded-full animate-spin" />
+    <div className="min-h-screen bg-surface flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-accent/20 border-t-[#3D8B7A] rounded-full animate-spin" />
     </div>
   )
 
   const sidebarContent = (
     <>
-      <div className="p-5 border-b border-[#EDE8E1]">
-        <div className="text-xl tracking-tight text-[#2D2A26]">Repa<span className="text-[#3D8B7A]">ro</span></div>
-        <div className="text-[10px] font-bold text-[#7C6CAB] uppercase tracking-widest mt-1">Admin Panel</div>
+      <div className="p-5 border-b border-line">
+        <div className="text-xl tracking-tight text-ink">Repa<span className="text-accent">ro</span></div>
+        <div className="text-[10px] font-bold text-rolle-admin uppercase tracking-widest mt-1">Admin Panel</div>
       </div>
 
       <div className="px-3 pt-3 pb-1">
@@ -67,26 +67,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 aktiv
-                  ? "bg-[#7C6CAB] text-white shadow-sm"
-                  : "text-[#6B665E] hover:text-[#2D2A26] hover:bg-[#F5F0EB]"
+                  ? "bg-rolle-admin text-white shadow-sm"
+                  : "text-ink-secondary hover:text-ink hover:bg-surface-muted"
               }`}>
-              <item.Icon size={16} className={aktiv ? "text-white" : "text-[#8C857B]"} />
+              <item.Icon size={16} className={aktiv ? "text-white" : "text-ink-muted"} />
               <span>{item.label}</span>
             </button>
           )
         })}
       </nav>
-      <div className="p-3 border-t border-[#EDE8E1]">
+      <div className="p-3 border-t border-line">
         <button
           onClick={async () => { const s = createClient(); await s.auth.signOut(); router.push("/login") }}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#8C857B] hover:text-[#C4574B] hover:bg-[#C4574B]/5 transition-all">
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-ink-muted hover:text-danger hover:bg-danger/5 transition-all">
           <LogOut size={16} />
           <span>Abmelden</span>
         </button>
-        <div className="mt-3 flex gap-3 px-3 text-[11px] text-[#A8A29A]">
-          <a href="/impressum" className="hover:text-[#2D2A26] transition-colors">Impressum</a>
-          <a href="/agb" className="hover:text-[#2D2A26] transition-colors">AGB</a>
-          <a href="/datenschutz" className="hover:text-[#2D2A26] transition-colors">Datenschutz</a>
+        <div className="mt-3 flex gap-3 px-3 text-[11px] text-ink-faint">
+          <a href="/impressum" className="hover:text-ink transition-colors">Impressum</a>
+          <a href="/agb" className="hover:text-ink transition-colors">AGB</a>
+          <a href="/datenschutz" className="hover:text-ink transition-colors">Datenschutz</a>
         </div>
       </div>
     </>
@@ -94,7 +94,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <ActiveRoleProvider istAdmin={true} defaultRolle="admin">
-      <div className="flex min-h-screen bg-[#FAF8F5]">
+      <div className="flex min-h-screen bg-surface">
         {/* Mobile Hamburger — z-[60], damit der ✕-Button über der
             offenen Sidebar (z-50) klickbar bleibt. Sonst überdeckt die
             Sidebar (später im DOM, gleicher z-index) den Toggle.
@@ -103,8 +103,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           onClick={() => setMobileOpen(!mobileOpen)}
           className={`md:hidden fixed top-4 left-4 z-[60] w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm ${
             mobileOpen
-              ? "bg-[#F5F0EB] border border-[#D5CFC7] text-[#2D2A26]"
-              : "bg-white border border-[#EDE8E1] text-[#2D2A26] hover:bg-[#F5F0EB]"
+              ? "bg-surface-muted border border-line-strong text-ink"
+              : "bg-white border border-line text-ink hover:bg-surface-muted"
           }`}
           aria-label={mobileOpen ? "Admin-Menü schließen" : "Admin-Menü öffnen"}
           aria-expanded={mobileOpen}
@@ -129,14 +129,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         )}
 
         {/* Desktop Sidebar */}
-        <aside className="hidden md:flex w-56 bg-white border-r border-[#EDE8E1] flex-col">
+        <aside className="hidden md:flex w-56 bg-white border-r border-line flex-col">
           {sidebarContent}
         </aside>
 
         {/* Mobile Sidebar (slide-in) — max 85vw, sonst füllt sie auf
             390px-Screens fast den ganzen Viewport. */}
         <aside
-          className={`md:hidden fixed left-0 top-0 h-full w-[min(20rem,85vw)] bg-white border-r border-[#EDE8E1] flex flex-col z-50 transform transition-transform duration-300 shadow-xl ${
+          className={`md:hidden fixed left-0 top-0 h-full w-[min(20rem,85vw)] bg-white border-r border-line flex flex-col z-50 transform transition-transform duration-300 shadow-xl ${
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >

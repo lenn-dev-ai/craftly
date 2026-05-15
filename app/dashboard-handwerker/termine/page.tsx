@@ -259,7 +259,7 @@ export default function TerminePage() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
-      <div className="w-8 h-8 border-2 border-[#3D8B7A]/30 border-t-[#3D8B7A] rounded-full animate-spin" />
+      <div className="w-8 h-8 border-2 border-accent/30 border-t-[#3D8B7A] rounded-full animate-spin" />
     </div>
   )
 
@@ -267,29 +267,29 @@ export default function TerminePage() {
     <div className="p-6 md:p-8 max-w-3xl mx-auto pt-16 md:pt-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#2D2A26]">Termine &amp; Route</h1>
-        <p className="text-sm text-[#8C857B] mt-1">
+        <h1 className="text-2xl font-bold text-ink">Termine &amp; Route</h1>
+        <p className="text-sm text-ink-muted mt-1">
           Tagesplan mit Adressen — Basis für die Routen-Optimierung in Auktionen
         </p>
       </div>
 
       {/* Datums-Picker */}
-      <div className="bg-white rounded-2xl border border-[#EDE8E1] p-4 mb-4 flex items-center justify-between">
+      <div className="bg-white rounded-2xl border border-line p-4 mb-4 flex items-center justify-between">
         <button
           onClick={() => setDatum(d => shiftDatum(d, -1))}
           aria-label="Vorheriger Tag"
-          className="w-10 h-10 rounded-xl border border-[#EDE8E1] hover:bg-[#FAF8F5] transition-colors flex items-center justify-center"
+          className="w-10 h-10 rounded-xl border border-line hover:bg-surface transition-colors flex items-center justify-center"
         >
           ←
         </button>
         <div className="text-center">
-          <div className="text-base font-semibold text-[#2D2A26]">
+          <div className="text-base font-semibold text-ink">
             {datum === isoHeute() ? "Heute" : deutschesDatum(datum)}
           </div>
           {datum !== isoHeute() && (
             <button
               onClick={() => setDatum(isoHeute())}
-              className="text-xs text-[#3D8B7A] hover:text-[#2D6B5A] mt-0.5 font-medium"
+              className="text-xs text-accent hover:text-[#2D6B5A] mt-0.5 font-medium"
             >
               Zurück zu Heute
             </button>
@@ -298,7 +298,7 @@ export default function TerminePage() {
         <button
           onClick={() => setDatum(d => shiftDatum(d, 1))}
           aria-label="Nächster Tag"
-          className="w-10 h-10 rounded-xl border border-[#EDE8E1] hover:bg-[#FAF8F5] transition-colors flex items-center justify-center"
+          className="w-10 h-10 rounded-xl border border-line hover:bg-surface transition-colors flex items-center justify-center"
         >
           →
         </button>
@@ -306,35 +306,35 @@ export default function TerminePage() {
 
       {/* Startort-Hint */}
       {!startortGesetzt && (
-        <div className="mb-4 p-4 rounded-2xl bg-[#FAF1DE] border border-[#C4956A]/40 text-sm text-[#854F0B]">
+        <div className="mb-4 p-4 rounded-2xl bg-warm-light border border-warm/40 text-sm text-warm-dark">
           Tipp: Setze deinen <a href="/dashboard-handwerker/profil" className="underline font-semibold">Startort</a> im Profil — dann kann das System die Anfahrt zum ersten Termin mit einrechnen.
         </div>
       )}
 
       {/* Bündel-Optimierung (aus routen_planung / /api/route) */}
       {optimierteRoute && optimierteRoute.reihenfolge.length >= 2 && (
-        <div className="bg-gradient-to-br from-[#3D8B7A]/5 to-[#5B6ABF]/5 rounded-2xl border border-[#3D8B7A]/20 p-5 mb-4">
+        <div className="bg-gradient-to-br from-[#3D8B7A]/5 to-[#5B6ABF]/5 rounded-2xl border border-accent/20 p-5 mb-4">
           <div className="flex items-start justify-between gap-3 mb-4">
             <div>
-              <div className="text-[10px] uppercase tracking-wider font-bold text-[#3D8B7A] mb-1">Routen-Optimierung</div>
-              <h2 className="text-base font-semibold text-[#2D2A26]">Empfohlene Reihenfolge</h2>
-              <p className="text-xs text-[#8C857B] mt-1">Bündelt {optimierteRoute.reihenfolge.length} Aufträge in der kürzesten Tour ab Startort.</p>
+              <div className="text-[10px] uppercase tracking-wider font-bold text-accent mb-1">Routen-Optimierung</div>
+              <h2 className="text-base font-semibold text-ink">Empfohlene Reihenfolge</h2>
+              <p className="text-xs text-ink-muted mt-1">Bündelt {optimierteRoute.reihenfolge.length} Aufträge in der kürzesten Tour ab Startort.</p>
             </div>
           </div>
 
           {/* KPI-Reihe */}
           <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="bg-white rounded-xl p-3 border border-[#EDE8E1]">
-              <div className="text-[10px] text-[#8C857B] uppercase tracking-wide">Stops</div>
-              <div className="text-xl font-bold text-[#2D2A26] tabular-nums">{optimierteRoute.reihenfolge.length}</div>
+            <div className="bg-white rounded-xl p-3 border border-line">
+              <div className="text-[10px] text-ink-muted uppercase tracking-wide">Stops</div>
+              <div className="text-xl font-bold text-ink tabular-nums">{optimierteRoute.reihenfolge.length}</div>
             </div>
-            <div className="bg-white rounded-xl p-3 border border-[#EDE8E1]">
-              <div className="text-[10px] text-[#8C857B] uppercase tracking-wide">Fahrzeit</div>
-              <div className="text-xl font-bold text-[#3D8B7A] tabular-nums">{formatiereFahrzeit(optimierteRoute.gesamtFahrzeitMin)}</div>
+            <div className="bg-white rounded-xl p-3 border border-line">
+              <div className="text-[10px] text-ink-muted uppercase tracking-wide">Fahrzeit</div>
+              <div className="text-xl font-bold text-accent tabular-nums">{formatiereFahrzeit(optimierteRoute.gesamtFahrzeitMin)}</div>
             </div>
-            <div className="bg-white rounded-xl p-3 border border-[#EDE8E1]">
-              <div className="text-[10px] text-[#8C857B] uppercase tracking-wide">Distanz</div>
-              <div className="text-xl font-bold text-[#5B6ABF] tabular-nums">{formatiereDistanz(optimierteRoute.gesamtDistanzKm)}</div>
+            <div className="bg-white rounded-xl p-3 border border-line">
+              <div className="text-[10px] text-ink-muted uppercase tracking-wide">Distanz</div>
+              <div className="text-xl font-bold text-rolle-mieter tabular-nums">{formatiereDistanz(optimierteRoute.gesamtDistanzKm)}</div>
             </div>
           </div>
 
@@ -344,14 +344,14 @@ export default function TerminePage() {
               const t = termine.find(t => t.ticket_id === stop.ticketId)
               return (
                 <li key={stop.ticketId} className="flex items-center gap-3 text-xs">
-                  <span className="w-5 h-5 rounded-full bg-[#3D8B7A] text-white flex items-center justify-center text-[10px] font-bold tabular-nums flex-shrink-0">
+                  <span className="w-5 h-5 rounded-full bg-accent text-white flex items-center justify-center text-[10px] font-bold tabular-nums flex-shrink-0">
                     {i + 1}
                   </span>
-                  <span className="text-[#2D2A26] truncate">
+                  <span className="text-ink truncate">
                     {stop.adresse || t?.titel || stop.ticketId.slice(0, 8)}
                   </span>
                   {t && (
-                    <span className="text-[#8C857B] tabular-nums ml-auto flex-shrink-0">{t.von}</span>
+                    <span className="text-ink-muted tabular-nums ml-auto flex-shrink-0">{t.von}</span>
                   )}
                 </li>
               )
@@ -361,15 +361,15 @@ export default function TerminePage() {
           {/* Spar-Anzeige */}
           {optimierteRoute.ersparnis && optimierteRoute.ohneOptimierung &&
            optimierteRoute.ersparnis.fahrzeitMin > 0 && (
-            <div className="mt-4 pt-4 border-t border-[#EDE8E1]">
-              <div className="text-xs text-[#8C857B]">
+            <div className="mt-4 pt-4 border-t border-line">
+              <div className="text-xs text-ink-muted">
                 Ohne Optimierung (Hub-and-Spoke):{" "}
-                <span className="text-[#2D2A26] tabular-nums">
+                <span className="text-ink tabular-nums">
                   {formatiereFahrzeit(optimierteRoute.ohneOptimierung.gesamtFahrzeitMin)} ·{" "}
                   {formatiereDistanz(optimierteRoute.ohneOptimierung.gesamtDistanzKm)}
                 </span>
               </div>
-              <div className="text-sm text-[#3D8B7A] font-semibold mt-1">
+              <div className="text-sm text-accent font-semibold mt-1">
                 💡 Du sparst {formatiereFahrzeit(optimierteRoute.ersparnis.fahrzeitMin)}
                 {optimierteRoute.ersparnis.distanzKm > 0 && (
                   <> und {formatiereDistanz(optimierteRoute.ersparnis.distanzKm)}</>
@@ -382,14 +382,14 @@ export default function TerminePage() {
 
       {/* Routen-Übersicht (chronologisch nach Termin-Zeit) */}
       {termine.length > 0 && (
-        <div className="bg-white rounded-2xl border border-[#EDE8E1] p-5 mb-4">
-          <h2 className="text-sm font-semibold text-[#2D2A26] uppercase tracking-wide mb-3">Tagesroute (chronologisch)</h2>
+        <div className="bg-white rounded-2xl border border-line p-5 mb-4">
+          <h2 className="text-sm font-semibold text-ink uppercase tracking-wide mb-3">Tagesroute (chronologisch)</h2>
           <div className="space-y-3">
             {/* Startort */}
             {startortGesetzt && (
               <div className="flex items-center gap-3 text-xs">
-                <span className="w-2 h-2 rounded-full bg-[#3D8B7A]" />
-                <span className="text-[#2D2A26] font-medium">Start: {profile?.startort_adresse || "Startort"}</span>
+                <span className="w-2 h-2 rounded-full bg-accent" />
+                <span className="text-ink font-medium">Start: {profile?.startort_adresse || "Startort"}</span>
               </div>
             )}
             {termine.map((t, i) => {
@@ -399,16 +399,16 @@ export default function TerminePage() {
               return (
                 <div key={t.id}>
                   {zeigeHop && (
-                    <div className="ml-1 flex items-center gap-2 text-[10px] text-[#8C857B] my-1">
-                      <span className="w-px h-4 bg-[#EDE8E1] ml-px" />
+                    <div className="ml-1 flex items-center gap-2 text-[10px] text-ink-muted my-1">
+                      <span className="w-px h-4 bg-line ml-px" />
                       <span>↓ {formatiereFahrzeit(hop.fahrzeit)} · {formatiereDistanz(hop.distanz)}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-3 text-xs">
-                    <span className={`w-2 h-2 rounded-full ${t.source === "auftrag" ? "bg-[#3D8B7A]" : "bg-[#8C857B]"}`} />
-                    <span className="text-[#2D2A26] font-medium tabular-nums">{t.von}–{t.bis}</span>
-                    <span className="text-[#6B665E]">·</span>
-                    <span className="text-[#2D2A26] truncate">{t.adresse || t.titel}</span>
+                    <span className={`w-2 h-2 rounded-full ${t.source === "auftrag" ? "bg-accent" : "bg-[#8C857B]"}`} />
+                    <span className="text-ink font-medium tabular-nums">{t.von}–{t.bis}</span>
+                    <span className="text-ink-secondary">·</span>
+                    <span className="text-ink truncate">{t.adresse || t.titel}</span>
                   </div>
                 </div>
               )
@@ -420,38 +420,38 @@ export default function TerminePage() {
       {/* Termine-Liste */}
       <div className="space-y-2 mb-4">
         {termine.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-[#EDE8E1] p-8 text-center">
-            <div className="w-12 h-12 mx-auto rounded-2xl bg-[#FAF8F5] flex items-center justify-center mb-3">
+          <div className="bg-white rounded-2xl border border-line p-8 text-center">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-surface flex items-center justify-center mb-3">
               <span className="text-xl">📅</span>
             </div>
-            <div className="text-sm font-medium text-[#2D2A26] mb-1">Keine Termine an diesem Tag</div>
-            <div className="text-xs text-[#8C857B]">Privattermine eintragen, damit die Auktion deine echte Route kennt.</div>
+            <div className="text-sm font-medium text-ink mb-1">Keine Termine an diesem Tag</div>
+            <div className="text-xs text-ink-muted">Privattermine eintragen, damit die Auktion deine echte Route kennt.</div>
           </div>
         ) : (
           termine.map(t => (
             <div
               key={t.id}
               className={`bg-white rounded-2xl border p-4 ${
-                t.source === "auftrag" ? "border-[#3D8B7A]/30" : "border-[#EDE8E1]"
+                t.source === "auftrag" ? "border-accent/30" : "border-line"
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-semibold text-[#2D2A26] tabular-nums">
+                    <span className="text-sm font-semibold text-ink tabular-nums">
                       {t.von} – {t.bis}
                     </span>
                     <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${
                       t.source === "auftrag"
-                        ? "bg-[#3D8B7A]/10 text-[#3D8B7A]"
-                        : "bg-[#EDE8E1] text-[#6B665E]"
+                        ? "bg-accent/10 text-accent"
+                        : "bg-line text-ink-secondary"
                     }`}>
                       {t.source === "auftrag" ? "Auftrag" : "Privat"}
                     </span>
                   </div>
-                  <div className="text-sm text-[#2D2A26]">{t.titel}</div>
+                  <div className="text-sm text-ink">{t.titel}</div>
                   {t.adresse && (
-                    <div className="text-xs text-[#8C857B] mt-1 flex items-start gap-1">
+                    <div className="text-xs text-ink-muted mt-1 flex items-start gap-1">
                       <span className="flex-shrink-0">📍</span>
                       <span>{t.adresse}</span>
                     </div>
@@ -461,7 +461,7 @@ export default function TerminePage() {
                   <button
                     onClick={() => privatLoeschen(t.id)}
                     aria-label="Privattermin löschen"
-                    className="text-xs text-[#C4574B] hover:bg-[#C4574B]/10 px-2 py-1 rounded-lg transition-colors flex-shrink-0"
+                    className="text-xs text-danger hover:bg-danger/10 px-2 py-1 rounded-lg transition-colors flex-shrink-0"
                   >
                     Löschen
                   </button>
@@ -469,7 +469,7 @@ export default function TerminePage() {
                 {t.source === "auftrag" && t.ticket_id && (
                   <button
                     onClick={() => router.push(`/dashboard-handwerker/ticket/${t.ticket_id}`)}
-                    className="text-xs text-[#3D8B7A] hover:text-[#2D6B5A] font-medium flex-shrink-0"
+                    className="text-xs text-accent hover:text-[#2D6B5A] font-medium flex-shrink-0"
                   >
                     Details →
                   </button>
@@ -484,45 +484,45 @@ export default function TerminePage() {
       {!showPrivatForm ? (
         <button
           onClick={() => setShowPrivatForm(true)}
-          className="w-full bg-white border-2 border-dashed border-[#EDE8E1] hover:border-[#3D8B7A]/40 hover:bg-[#FAF8F5] transition-colors rounded-2xl p-4 text-sm font-medium text-[#6B665E] hover:text-[#2D2A26]"
+          className="w-full bg-white border-2 border-dashed border-line hover:border-accent/40 hover:bg-surface transition-colors rounded-2xl p-4 text-sm font-medium text-ink-secondary hover:text-ink"
         >
           + Privattermin eintragen
         </button>
       ) : (
-        <div className="bg-white rounded-2xl border border-[#3D8B7A]/30 p-5">
-          <h3 className="text-base font-semibold text-[#2D2A26] mb-3">Privattermin eintragen</h3>
-          <p className="text-xs text-[#8C857B] mb-4">
+        <div className="bg-white rounded-2xl border border-accent/30 p-5">
+          <h3 className="text-base font-semibold text-ink mb-3">Privattermin eintragen</h3>
+          <p className="text-xs text-ink-muted mb-4">
             Auch Termine außerhalb von Reparo eintragen (Mittagessen, Privattermin) — damit das System deine echte Route kennt. Details bleiben privat.
           </p>
 
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-[#8C857B] mb-1.5 block font-medium">Bezeichnung</label>
+              <label className="text-xs text-ink-muted mb-1.5 block font-medium">Bezeichnung</label>
               <input
                 type="text"
                 value={privatForm.bezeichnung}
                 onChange={e => setPrivatForm(f => ({ ...f, bezeichnung: e.target.value }))}
                 placeholder="z.B. Mittagessen, Arzttermin, Privat"
-                className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-4 py-2.5 text-sm focus:border-[#3D8B7A]/40 focus:outline-none"
+                className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm focus:border-accent/40 focus:outline-none"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-[#8C857B] mb-1.5 block font-medium">Von</label>
+                <label className="text-xs text-ink-muted mb-1.5 block font-medium">Von</label>
                 <input
                   type="time"
                   value={privatForm.von}
                   onChange={e => setPrivatForm(f => ({ ...f, von: e.target.value }))}
-                  className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-4 py-2.5 text-sm focus:border-[#3D8B7A]/40 focus:outline-none tabular-nums"
+                  className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm focus:border-accent/40 focus:outline-none tabular-nums"
                 />
               </div>
               <div>
-                <label className="text-xs text-[#8C857B] mb-1.5 block font-medium">Bis</label>
+                <label className="text-xs text-ink-muted mb-1.5 block font-medium">Bis</label>
                 <input
                   type="time"
                   value={privatForm.bis}
                   onChange={e => setPrivatForm(f => ({ ...f, bis: e.target.value }))}
-                  className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-4 py-2.5 text-sm focus:border-[#3D8B7A]/40 focus:outline-none tabular-nums"
+                  className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm focus:border-accent/40 focus:outline-none tabular-nums"
                 />
               </div>
             </div>
@@ -536,7 +536,7 @@ export default function TerminePage() {
             />
 
             {error && (
-              <div className="text-xs text-[#C4574B] bg-[#C4574B]/10 border border-[#C4574B]/20 rounded-lg p-2.5">
+              <div className="text-xs text-danger bg-danger/10 border border-danger/20 rounded-lg p-2.5">
                 {error}
               </div>
             )}
@@ -545,13 +545,13 @@ export default function TerminePage() {
               <button
                 onClick={privatSpeichern}
                 disabled={privatSaving}
-                className="text-sm font-bold bg-[#3D8B7A] text-white px-5 py-2.5 rounded-xl hover:bg-[#2D6B5A] transition-colors disabled:opacity-50"
+                className="text-sm font-bold bg-accent text-white px-5 py-2.5 rounded-xl hover:bg-accent-hover transition-colors disabled:opacity-50"
               >
                 {privatSaving ? "Speichert…" : "Speichern"}
               </button>
               <button
                 onClick={() => { setShowPrivatForm(false); setError("") }}
-                className="text-sm text-[#6B665E] hover:text-[#2D2A26] px-4 py-2.5 transition-colors"
+                className="text-sm text-ink-secondary hover:text-ink px-4 py-2.5 transition-colors"
               >
                 Abbrechen
               </button>
@@ -563,21 +563,21 @@ export default function TerminePage() {
       {/* Statistik */}
       {termine.length > 0 && (
         <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-          <div className="bg-white rounded-xl border border-[#EDE8E1] p-3">
-            <div className="text-xl font-bold text-[#2D2A26] tabular-nums">{termine.length}</div>
-            <div className="text-[10px] text-[#8C857B] uppercase tracking-wide mt-0.5">Termine</div>
+          <div className="bg-white rounded-xl border border-line p-3">
+            <div className="text-xl font-bold text-ink tabular-nums">{termine.length}</div>
+            <div className="text-[10px] text-ink-muted uppercase tracking-wide mt-0.5">Termine</div>
           </div>
-          <div className="bg-white rounded-xl border border-[#EDE8E1] p-3">
-            <div className="text-xl font-bold text-[#3D8B7A] tabular-nums">
+          <div className="bg-white rounded-xl border border-line p-3">
+            <div className="text-xl font-bold text-accent tabular-nums">
               {formatStunden(hops.reduce((s, h) => s + h.fahrzeit, 0))}
             </div>
-            <div className="text-[10px] text-[#8C857B] uppercase tracking-wide mt-0.5">Fahrzeit</div>
+            <div className="text-[10px] text-ink-muted uppercase tracking-wide mt-0.5">Fahrzeit</div>
           </div>
-          <div className="bg-white rounded-xl border border-[#EDE8E1] p-3">
-            <div className="text-xl font-bold text-[#C4956A] tabular-nums">
+          <div className="bg-white rounded-xl border border-line p-3">
+            <div className="text-xl font-bold text-warm tabular-nums">
               {formatiereDistanz(hops.reduce((s, h) => s + h.distanz, 0))}
             </div>
-            <div className="text-[10px] text-[#8C857B] uppercase tracking-wide mt-0.5">Distanz</div>
+            <div className="text-[10px] text-ink-muted uppercase tracking-wide mt-0.5">Distanz</div>
           </div>
         </div>
       )}

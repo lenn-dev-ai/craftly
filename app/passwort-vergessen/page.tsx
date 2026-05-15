@@ -37,37 +37,37 @@ export default function PasswortVergessenPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-surface flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2.5 mb-3">
-            <div className="w-9 h-9 rounded-lg bg-[#3D8B7A] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 <polyline points="9 22 9 12 15 12 15 22" />
               </svg>
             </div>
-            <span className="text-xl font-bold text-[#2D2A26]">Reparo</span>
+            <span className="text-xl font-bold text-ink">Reparo</span>
           </Link>
         </div>
 
         <Card className="p-8">
           {success ? (
             <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-[#3D8B7A]/10 flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-accent/10 flex items-center justify-center">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3D8B7A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
-              <h1 className="text-xl font-bold text-[#2D2A26] mb-2">E-Mail unterwegs</h1>
-              <p className="text-sm text-[#6B665E] mb-6">
-                Wenn ein Konto mit <strong className="text-[#2D2A26]">{email}</strong> existiert,
+              <h1 className="text-xl font-bold text-ink mb-2">E-Mail unterwegs</h1>
+              <p className="text-sm text-ink-secondary mb-6">
+                Wenn ein Konto mit <strong className="text-ink">{email}</strong> existiert,
                 erhalten Sie in den nächsten Minuten eine E-Mail mit einem Link zum Zurücksetzen.
                 Bitte prüfen Sie auch den Spam-Ordner.
               </p>
               <Link
                 href="/login"
-                className="inline-block text-sm font-medium text-[#3D8B7A] hover:text-[#2D6B5A]"
+                className="inline-block text-sm font-medium text-accent hover:text-[#2D6B5A]"
               >
                 ← Zurück zum Login
               </Link>
@@ -75,21 +75,21 @@ export default function PasswortVergessenPage() {
           ) : (
             <>
               <div className="text-center mb-6">
-                <h1 className="text-2xl font-bold text-[#2D2A26] mb-2">Passwort vergessen?</h1>
-                <p className="text-sm text-[#6B665E]">
+                <h1 className="text-2xl font-bold text-ink mb-2">Passwort vergessen?</h1>
+                <p className="text-sm text-ink-secondary">
                   Geben Sie Ihre E-Mail-Adresse ein. Wir senden Ihnen einen sicheren Link zum Zurücksetzen.
                 </p>
               </div>
 
               {error && (
-                <div className="mb-4 p-3 rounded-lg bg-[#C4574B]/10 border border-[#C4574B]/20">
-                  <p className="text-sm text-[#C4574B]">{error}</p>
+                <div className="mb-4 p-3 rounded-lg bg-danger/10 border border-danger/20">
+                  <p className="text-sm text-danger">{error}</p>
                 </div>
               )}
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#2D2A26] mb-1.5" htmlFor="email">
+                  <label className="block text-sm font-medium text-ink mb-1.5" htmlFor="email">
                     E-Mail-Adresse
                   </label>
                   <Input
@@ -108,8 +108,8 @@ export default function PasswortVergessenPage() {
                 {loading ? "Wird gesendet..." : "Link senden"}
               </Button>
 
-              <div className="mt-6 text-center text-sm text-[#6B665E]">
-                <Link href="/login" className="text-[#3D8B7A] hover:text-[#2D6B5A] font-medium">
+              <div className="mt-6 text-center text-sm text-ink-secondary">
+                <Link href="/login" className="text-accent hover:text-[#2D6B5A] font-medium">
                   Zurück zum Login
                 </Link>
               </div>
@@ -117,10 +117,10 @@ export default function PasswortVergessenPage() {
           )}
         </Card>
 
-        <div className="mt-6 flex justify-center gap-4 text-xs text-[#8C857B]">
-          <Link href="/impressum" className="hover:text-[#2D2A26] transition-colors py-2 px-3">Impressum</Link>
-          <Link href="/agb" className="hover:text-[#2D2A26] transition-colors py-2 px-3">AGB</Link>
-          <Link href="/datenschutz" className="hover:text-[#2D2A26] transition-colors py-2 px-3">Datenschutz</Link>
+        <div className="mt-6 flex justify-center gap-4 text-xs text-ink-muted">
+          <Link href="/impressum" className="hover:text-ink transition-colors py-2 px-3">Impressum</Link>
+          <Link href="/agb" className="hover:text-ink transition-colors py-2 px-3">AGB</Link>
+          <Link href="/datenschutz" className="hover:text-ink transition-colors py-2 px-3">Datenschutz</Link>
         </div>
       </div>
     </div>

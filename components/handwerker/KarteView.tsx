@@ -240,7 +240,7 @@ export default function KarteView() {
   if (loading) {
     return (
       <div className="p-6 max-w-6xl mx-auto">
-        <div className="text-sm text-[#8C857B]">Karte lädt…</div>
+        <div className="text-sm text-ink-muted">Karte lädt…</div>
       </div>
     )
   }
@@ -259,8 +259,8 @@ export default function KarteView() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-[#2D2A26]">Karte</h1>
-          <p className="text-sm text-[#8C857B] mt-1">
+          <h1 className="text-2xl font-bold text-ink">Karte</h1>
+          <p className="text-sm text-ink-muted mt-1">
             {sichtbar.length} {sichtbar.length === 1 ? "Auftrag" : "Aufträge"} sichtbar
             {!zeigeAlle && route && route.reihenfolge.length >= 2 && (
               <> · Tagesroute {route.gesamtDistanzKm} km · {route.gesamtFahrzeitMin} min</>
@@ -273,14 +273,14 @@ export default function KarteView() {
             value={datum}
             onChange={e => setDatum(e.target.value)}
             disabled={zeigeAlle}
-            className="text-sm bg-white border border-[#EDE8E1] rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#3D8B7A]/40 disabled:opacity-50"
+            className="text-sm bg-white border border-line rounded-xl px-3 py-1.5 focus:outline-none focus:border-accent/40 disabled:opacity-50"
           />
           <button
             onClick={() => setZeigeAlle(z => !z)}
             className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
               zeigeAlle
-                ? "bg-[#3D8B7A] text-white"
-                : "bg-white border border-[#EDE8E1] text-[#6B665E] hover:bg-[#FAF8F5]"
+                ? "bg-accent text-white"
+                : "bg-white border border-line text-ink-secondary hover:bg-surface"
             }`}
           >
             {zeigeAlle ? "Nur heute" : "Alle Aufträge"}
@@ -289,7 +289,7 @@ export default function KarteView() {
       </div>
 
       {/* Legende */}
-      <div className="flex items-center gap-4 text-xs text-[#6B665E] flex-wrap">
+      <div className="flex items-center gap-4 text-xs text-ink-secondary flex-wrap">
         <Legende farbe={FARBE.notfall} label="Notfall" />
         <Legende farbe={FARBE.zeitnah} label="Zeitnah" />
         <Legende farbe={FARBE.planbar} label="Planbar" />
@@ -300,12 +300,12 @@ export default function KarteView() {
 
       {/* Map oder Empty-State */}
       {fitPunkte.length === 0 ? (
-        <div className="bg-white border border-[#EDE8E1] rounded-2xl p-12 text-center shadow-sm">
-          <MapIcon size={32} className="text-[#8C857B] mx-auto mb-3" />
-          <div className="text-sm font-semibold text-[#2D2A26] mb-1">
+        <div className="bg-white border border-line rounded-2xl p-12 text-center shadow-sm">
+          <MapIcon size={32} className="text-ink-muted mx-auto mb-3" />
+          <div className="text-sm font-semibold text-ink mb-1">
             {!startLat ? "Startort nicht hinterlegt" : "Keine Aufträge mit Adresse"}
           </div>
-          <div className="text-xs text-[#8C857B] mb-4">
+          <div className="text-xs text-ink-muted mb-4">
             {!startLat
               ? "Trage deinen Startort im Profil ein, damit Routen berechnet werden können."
               : "Sobald dir Aufträge mit Einsatzort zugewiesen werden, erscheinen sie hier."}
@@ -313,14 +313,14 @@ export default function KarteView() {
           {!startLat && (
             <button
               onClick={() => router.push("/dashboard-handwerker/profil")}
-              className="text-xs font-medium bg-[#3D8B7A] text-white px-4 py-2 rounded-xl hover:bg-[#2D6B5A] transition-colors"
+              className="text-xs font-medium bg-accent text-white px-4 py-2 rounded-xl hover:bg-accent-hover transition-colors"
             >
               Startort eintragen
             </button>
           )}
         </div>
       ) : (
-        <div className="rounded-2xl overflow-hidden border border-[#EDE8E1] shadow-sm" style={{ height: 540 }}>
+        <div className="rounded-2xl overflow-hidden border border-line shadow-sm" style={{ height: 540 }}>
           <MapContainer
             center={center}
             zoom={13}
@@ -338,7 +338,7 @@ export default function KarteView() {
                 <Popup>
                   <div className="text-xs">
                     <strong>Startort</strong>
-                    {profilGeo?.startort_adresse && <div className="text-[#6B665E]">{profilGeo.startort_adresse}</div>}
+                    {profilGeo?.startort_adresse && <div className="text-ink-secondary">{profilGeo.startort_adresse}</div>}
                   </div>
                 </Popup>
               </Marker>
@@ -355,16 +355,16 @@ export default function KarteView() {
                 >
                   <Popup>
                     <div className="text-xs space-y-1 min-w-[180px]">
-                      <div className="font-semibold text-[#2D2A26] text-sm">{s.titel}</div>
+                      <div className="font-semibold text-ink text-sm">{s.titel}</div>
                       <div style={{ color: FARBE[s.dringlichkeit] }} className="font-medium">{LABEL[s.dringlichkeit]}</div>
-                      {s.gewerk && <div className="text-[#6B665E]">Gewerk: {s.gewerk}</div>}
-                      {s.adresse && <div className="text-[#6B665E]">📍 {s.adresse}</div>}
+                      {s.gewerk && <div className="text-ink-secondary">Gewerk: {s.gewerk}</div>}
+                      {s.adresse && <div className="text-ink-secondary">📍 {s.adresse}</div>}
                       {s.von && s.bis && (
-                        <div className="text-[#6B665E]">⏰ {s.von}–{s.bis} {s.datum && `· ${s.datum}`}</div>
+                        <div className="text-ink-secondary">⏰ {s.von}–{s.bis} {s.datum && `· ${s.datum}`}</div>
                       )}
                       <button
                         onClick={() => router.push(`/dashboard-handwerker/ticket/${s.ticketId}`)}
-                        className="mt-2 text-[#3D8B7A] hover:underline font-medium"
+                        className="mt-2 text-accent hover:underline font-medium"
                       >
                         Auftrag öffnen →
                       </button>
@@ -389,8 +389,8 @@ export default function KarteView() {
 
       {/* Info zu Routen-Vorschau */}
       {!zeigeAlle && tagesStops.length >= 2 && route && (
-        <div className="bg-white border border-[#EDE8E1] rounded-2xl p-4 shadow-sm text-xs text-[#6B665E] flex items-start gap-2">
-          <AlertCircle size={14} className="text-[#5B6ABF] flex-shrink-0 mt-0.5" />
+        <div className="bg-white border border-line rounded-2xl p-4 shadow-sm text-xs text-ink-secondary flex items-start gap-2">
+          <AlertCircle size={14} className="text-rolle-mieter flex-shrink-0 mt-0.5" />
           <span>
             Die gestrichelte Linie zeigt die optimierte Tagesroute (Nearest-Neighbor, Luftlinie).
             Stops sind nummeriert in der Reihenfolge, in der sie angefahren werden sollten.

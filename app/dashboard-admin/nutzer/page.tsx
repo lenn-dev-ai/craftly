@@ -124,7 +124,7 @@ export default function NutzerPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+    <div className="min-h-screen bg-surface flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-[#8B5CF6]/20 border-t-[#8B5CF6] rounded-full animate-spin" />
     </div>
   )
@@ -135,7 +135,7 @@ export default function NutzerPage() {
     <div className="p-8 max-w-6xl mx-auto pt-16 md:pt-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#2D2A26] tracking-tight">Nutzer-Verwaltung</h1>
+          <h1 className="text-2xl font-extrabold text-ink tracking-tight">Nutzer-Verwaltung</h1>
           <p className="text-sm text-gray-500 mt-1">{users.length} registrierte Accounts</p>
         </div>
         <div className="flex gap-2">
@@ -167,12 +167,12 @@ export default function NutzerPage() {
 
       <div className="flex gap-3 mb-6 flex-wrap items-center">
         <input type="text" placeholder="Suche nach Name, E-Mail, Firma..." value={search} onChange={e => setSearch(e.target.value)}
-          className="px-4 py-2.5 bg-[#FAF8F5] border border-white/[0.08] rounded-xl text-sm text-[#2D2A26] placeholder:text-gray-600 focus:outline-none focus:border-[#8B5CF6]/40 w-72" />
+          className="px-4 py-2.5 bg-surface border border-white/[0.08] rounded-xl text-sm text-ink placeholder:text-gray-600 focus:outline-none focus:border-[#8B5CF6]/40 w-72" />
         {["alle", "verwalter", "handwerker", "mieter", "admin"].map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className={"px-3 py-1.5 rounded-full text-xs font-medium border transition-all " + (filter === f
-              ? "bg-[#8B5CF6] text-[#2D2A26] border-[#8B5CF6]"
-              : "bg-[#FAF8F5] text-gray-400 border-white/[0.08] hover:border-white/[0.15]")}>
+              ? "bg-[#8B5CF6] text-ink border-[#8B5CF6]"
+              : "bg-surface text-gray-400 border-white/[0.08] hover:border-white/[0.15]")}>
             {f.charAt(0).toUpperCase() + f.slice(1)}
             <span className="ml-1 opacity-70">{f === "alle" ? users.length : users.filter(u => u.rolle === f).length}</span>
           </button>
@@ -197,15 +197,15 @@ export default function NutzerPage() {
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center">
                     <div className="text-3xl mb-2" aria-hidden="true">🔍</div>
-                    <div className="text-sm font-medium text-[#2D2A26]">Keine Nutzer für diesen Filter</div>
-                    <div className="text-xs text-[#8C857B] mt-1">Filter oder Suchbegriff anpassen.</div>
+                    <div className="text-sm font-medium text-ink">Keine Nutzer für diesen Filter</div>
+                    <div className="text-xs text-ink-muted mt-1">Filter oder Suchbegriff anpassen.</div>
                   </td>
                 </tr>
               )}
               {filtered.map(u => {
                 const score = kiAktivitaetsScore(u, tickets, angebote)
                 return (
-                  <tr key={u.id} className="border-b border-white/[0.04] hover:bg-[#FAF8F5] transition-colors">
+                  <tr key={u.id} className="border-b border-white/[0.04] hover:bg-surface transition-colors">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -213,7 +213,7 @@ export default function NutzerPage() {
                           {(u.name || u.email || "?").charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-[#2D2A26]">{u.name || u.email || "—"}</div>
+                          <div className="text-sm font-medium text-ink">{u.name || u.email || "—"}</div>
                           {u.name && <div className="text-[11px] text-gray-500">{u.email}</div>}
                         </div>
                       </div>
@@ -221,42 +221,42 @@ export default function NutzerPage() {
                     <td className="px-5 py-3.5">
                       {u.rolle ? (
                         <span className={"text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider " + (
-                          u.rolle === "admin" ? "bg-[#7C6CAB]/15 text-[#7C6CAB]"
-                          : u.rolle === "verwalter" ? "bg-[#3D8B7A]/15 text-[#3D8B7A]"
-                          : u.rolle === "handwerker" ? "bg-[#C4956A]/15 text-[#C4956A]"
-                          : u.rolle === "mieter" ? "bg-[#5B6ABF]/15 text-[#5B6ABF]"
-                          : "bg-[#EDE8E1] text-[#6B665E]"
+                          u.rolle === "admin" ? "bg-rolle-admin/15 text-rolle-admin"
+                          : u.rolle === "verwalter" ? "bg-accent/15 text-accent"
+                          : u.rolle === "handwerker" ? "bg-warm/15 text-warm"
+                          : u.rolle === "mieter" ? "bg-rolle-mieter/15 text-rolle-mieter"
+                          : "bg-line text-ink-secondary"
                         )}>{u.rolle}</span>
                       ) : (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-[#C4574B]/10 text-[#C4574B]">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-danger/10 text-danger">
                           Keine Rolle
                         </span>
                       )}
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
-                        <div className="w-12 h-1.5 bg-[#FAF8F5] rounded-full overflow-hidden">
+                        <div className="w-12 h-1.5 bg-surface rounded-full overflow-hidden">
                           <div className="h-full rounded-full" style={{ width: score + "%", background: score >= 60 ? "#3D8B7A" : score >= 30 ? "#F59E0B" : "#FF6363" }} />
                         </div>
-                        <span className={"text-[10px] font-bold " + (score >= 60 ? "text-[#3D8B7A]" : score >= 30 ? "text-[#C4956A]" : "text-[#FF6363]")}>{score}</span>
+                        <span className={"text-[10px] font-bold " + (score >= 60 ? "text-accent" : score >= 30 ? "text-warm" : "text-[#FF6363]")}>{score}</span>
                       </div>
                     </td>
                     <td className="px-5 py-3.5 text-sm text-gray-400">{new Date(u.created_at).toLocaleDateString("de")}</td>
                     <td className="px-5 py-3.5 text-sm text-gray-500">
                       {u.firma && <span className="text-gray-400">{u.firma}</span>}
-                      {u.gewerk && <span className="ml-2 text-[11px] bg-[#FAF8F5] px-2 py-0.5 rounded">{u.gewerk}</span>}
+                      {u.gewerk && <span className="ml-2 text-[11px] bg-surface px-2 py-0.5 rounded">{u.gewerk}</span>}
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="inline-flex items-center gap-2 justify-end">
                         {u.id === currentUserId && (
-                          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#7C6CAB]/15 text-[#7C6CAB]">
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-rolle-admin/15 text-rolle-admin">
                             Du
                           </span>
                         )}
                         <select
                           value={u.rolle}
                           onChange={e => changeRolle(u.id, e.target.value, u.rolle)}
-                          className="text-xs bg-[#FAF8F5] border border-[#EDE8E1] rounded-lg px-2 py-1 text-[#2D2A26] cursor-pointer focus:outline-none focus:border-[#7C6CAB]/40"
+                          className="text-xs bg-surface border border-line rounded-lg px-2 py-1 text-ink cursor-pointer focus:outline-none focus:border-[#7C6CAB]/40"
                           aria-label={`Rolle für ${u.name || u.email} ändern`}
                         >
                           <option value="verwalter">Verwalter</option>

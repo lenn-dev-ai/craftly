@@ -75,7 +75,7 @@ export default function SystemPage() {
   }, [])
 
   if (loading) return (
-    <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+    <div className="min-h-screen bg-surface flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-[#8B5CF6]/20 border-t-[#8B5CF6] rounded-full animate-spin" />
     </div>
   )
@@ -90,7 +90,7 @@ export default function SystemPage() {
     <div className="p-8 max-w-6xl mx-auto pt-16 md:pt-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#2D2A26] tracking-tight">System-Metriken</h1>
+          <h1 className="text-2xl font-extrabold text-ink tracking-tight">System-Metriken</h1>
           <p className="text-sm text-gray-500 mt-1">Detaillierte Plattform-Statistiken</p>
         </div>
       </div>
@@ -99,16 +99,16 @@ export default function SystemPage() {
       <div className="bg-white border border-white/[0.06] rounded-2xl p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
           <span className="text-xs font-bold text-[#8B5CF6] uppercase tracking-wider">KI System-Health</span>
-          <span className={"text-lg font-bold " + (health.score >= 80 ? "text-[#3D8B7A]" : health.score >= 50 ? "text-[#C4956A]" : "text-[#FF6363]")}>{health.score}%</span>
+          <span className={"text-lg font-bold " + (health.score >= 80 ? "text-accent" : health.score >= 50 ? "text-warm" : "text-[#FF6363]")}>{health.score}%</span>
         </div>
-        <div className="w-full h-2 bg-[#FAF8F5] rounded-full overflow-hidden mb-4">
+        <div className="w-full h-2 bg-surface rounded-full overflow-hidden mb-4">
           <div className="h-full rounded-full transition-all" style={{ width: health.score + "%", background: health.score >= 80 ? "#3D8B7A" : health.score >= 50 ? "#F59E0B" : "#FF6363" }} />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {health.checks.map((c, i) => (
-            <div key={i} className={"p-3 rounded-xl border " + (c.ok ? "bg-[#3D8B7A]/[0.06] border-[#3D8B7A]/20" : "bg-[#FF6363]/[0.06] border-[#FF6363]/20")}>
-              <div className={"text-[10px] font-bold uppercase tracking-wider " + (c.ok ? "text-[#3D8B7A]" : "text-[#FF6363]")}>{c.ok ? "OK" : "!"} {c.name}</div>
-              <div className={"text-[11px] mt-1 " + (c.ok ? "text-[#3D8B7A]/70" : "text-[#FF6363]/70")}>{c.text}</div>
+            <div key={i} className={"p-3 rounded-xl border " + (c.ok ? "bg-accent/[0.06] border-accent/20" : "bg-[#FF6363]/[0.06] border-[#FF6363]/20")}>
+              <div className={"text-[10px] font-bold uppercase tracking-wider " + (c.ok ? "text-accent" : "text-[#FF6363]")}>{c.ok ? "OK" : "!"} {c.name}</div>
+              <div className={"text-[11px] mt-1 " + (c.ok ? "text-accent/70" : "text-[#FF6363]/70")}>{c.text}</div>
             </div>
           ))}
         </div>
@@ -140,7 +140,7 @@ export default function SystemPage() {
             <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style={{ background: m.color + "15" }}>
               <div className="w-2.5 h-2.5 rounded-full" style={{ background: m.color }} />
             </div>
-            <div className="text-xl font-bold text-[#2D2A26]">{m.value}</div>
+            <div className="text-xl font-bold text-ink">{m.value}</div>
             <div className="text-[11px] text-gray-500 mt-1 uppercase tracking-wider">{m.label}</div>
           </div>
         ))}
@@ -148,7 +148,7 @@ export default function SystemPage() {
 
       <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-white border border-white/[0.06] rounded-2xl p-5">
-          <h3 className="text-sm font-semibold text-[#2D2A26] mb-4">Tickets nach Status</h3>
+          <h3 className="text-sm font-semibold text-ink mb-4">Tickets nach Status</h3>
           <div className="space-y-3">
             {Object.entries(data.statusCount).map(([status, count]: [string, any]) => {
               const total = Object.values(data.statusCount).reduce((s: number, v: any) => s + v, 0) as number
@@ -157,9 +157,9 @@ export default function SystemPage() {
                 <div key={status}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm text-gray-300">{statusLabels[status] || status}</span>
-                    <span className="text-sm font-semibold text-[#2D2A26]">{count} ({pct}%)</span>
+                    <span className="text-sm font-semibold text-ink">{count} ({pct}%)</span>
                   </div>
-                  <div className="w-full h-2 bg-[#FAF8F5] rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-surface rounded-full overflow-hidden">
                     <div className="h-full rounded-full transition-all" style={{ width: pct + "%", background: statusColors[status] || "#666" }} />
                   </div>
                 </div>
@@ -169,15 +169,15 @@ export default function SystemPage() {
         </div>
 
         <div className="bg-white border border-white/[0.06] rounded-2xl p-5">
-          <h3 className="text-sm font-semibold text-[#2D2A26] mb-4">Handwerker nach Gewerk</h3>
+          <h3 className="text-sm font-semibold text-ink mb-4">Handwerker nach Gewerk</h3>
           {Object.keys(data.gewerkCount).length === 0 ? (
             <p className="text-sm text-gray-600 text-center py-4">Keine Gewerk-Daten vorhanden</p>
           ) : (
             <div className="space-y-3">
               {Object.entries(data.gewerkCount).sort(([,a]: any, [,b]: any) => b - a).map(([gewerk, count]: [string, any]) => (
                 <div key={gewerk} className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0">
-                  <span className="text-sm text-[#6B665E]">{GEWERK_LABELS[gewerk] ?? gewerk}</span>
-                  <span className="text-sm font-semibold text-[#3D8B7A]">{count}</span>
+                  <span className="text-sm text-ink-secondary">{GEWERK_LABELS[gewerk] ?? gewerk}</span>
+                  <span className="text-sm font-semibold text-accent">{count}</span>
                 </div>
               ))}
             </div>

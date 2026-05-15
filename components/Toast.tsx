@@ -65,8 +65,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               t.type === "error"
                 ? "bg-[#C4574B] text-white border-[#C4574B]"
                 : t.type === "success"
-                  ? "bg-[#3D8B7A] text-white border-[#3D8B7A]"
-                  : "bg-white text-[#2D2A26] border-[#EDE8E1]"
+                  ? "bg-accent text-white border-[#3D8B7A]"
+                  : "bg-white text-ink border-line"
             }`}
           >
             {t.message}
@@ -81,11 +81,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6"
             onClick={e => e.stopPropagation()}
           >
-            <p className="text-sm text-[#2D2A26] leading-relaxed mb-5 whitespace-pre-wrap">{pendingConfirm.message}</p>
+            <p className="text-sm text-ink leading-relaxed mb-5 whitespace-pre-wrap">{pendingConfirm.message}</p>
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => answerConfirm(false)}
-                className="px-4 py-2 text-sm font-medium text-[#6B665E] hover:bg-[#FAF8F5] rounded-lg"
+                className="px-4 py-2 text-sm font-medium text-ink-secondary hover:bg-surface rounded-lg"
               >
                 Abbrechen
               </button>

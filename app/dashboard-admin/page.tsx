@@ -211,7 +211,7 @@ export default function AdminDashboard() {
   const trendErstellt = useMemo(() => trend(wochen, "erstellt"), [wochen])
 
   if (loading) return (
-    <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+    <div className="min-h-screen bg-surface flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-[#7C6CAB]/20 border-t-[#7C6CAB] rounded-full animate-spin" />
     </div>
   )
@@ -233,28 +233,28 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-[#2D2A26] tracking-tight">Dashboard</h1>
-          <p className="text-sm text-[#8C857B] mt-1">Plattform-Übersicht in Echtzeit</p>
+          <h1 className="text-2xl font-bold text-ink tracking-tight">Dashboard</h1>
+          <p className="text-sm text-ink-muted mt-1">Plattform-Übersicht in Echtzeit</p>
         </div>
         <div className="flex items-center gap-3">
           <form onSubmit={onSuche} className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8C857B] pointer-events-none" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
             <input
               type="text"
               placeholder="Suche…"
               value={suche}
               onChange={e => setSuche(e.target.value)}
-              className="pl-9 pr-3 py-2 text-sm bg-white border border-[#EDE8E1] rounded-xl w-56 focus:outline-none focus:border-[#7C6CAB]/40 transition-colors"
+              className="pl-9 pr-3 py-2 text-sm bg-white border border-line rounded-xl w-56 focus:outline-none focus:border-[#7C6CAB]/40 transition-colors"
               aria-label="Globale Suche"
             />
           </form>
-          <div className="flex items-center gap-2.5 px-3 py-1.5 bg-white border border-[#EDE8E1] rounded-xl shadow-sm">
+          <div className="flex items-center gap-2.5 px-3 py-1.5 bg-white border border-line rounded-xl shadow-sm">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C6CAB] to-[#5B6ABF] flex items-center justify-center text-white text-xs font-bold">
               {(me?.name || "A").charAt(0).toUpperCase()}
             </div>
             <div className="leading-tight">
-              <div className="text-xs font-semibold text-[#2D2A26]">{me?.name || "Admin"}</div>
-              <div className="text-[10px] uppercase tracking-wider text-[#7C6CAB] font-bold">{me?.rolle || "admin"}</div>
+              <div className="text-xs font-semibold text-ink">{me?.name || "Admin"}</div>
+              <div className="text-[10px] uppercase tracking-wider text-rolle-admin font-bold">{me?.rolle || "admin"}</div>
             </div>
           </div>
         </div>
@@ -262,11 +262,11 @@ export default function AdminDashboard() {
 
       {/* KI-Anomalien */}
       {anomalien.length > 0 && (
-        <div className="p-4 bg-[#C4574B]/5 border border-[#C4574B]/20 rounded-2xl shadow-sm">
-          <span className="text-[11px] font-bold text-[#C4574B] uppercase tracking-wider">KI-Anomalie-Erkennung</span>
+        <div className="p-4 bg-danger/5 border border-danger/20 rounded-2xl shadow-sm">
+          <span className="text-[11px] font-bold text-danger uppercase tracking-wider">KI-Anomalie-Erkennung</span>
           <ul className="space-y-1 mt-2">
             {anomalien.map((a, i) => (
-              <li key={i} className="text-sm text-[#C4574B]">• {a}</li>
+              <li key={i} className="text-sm text-danger">• {a}</li>
             ))}
           </ul>
         </div>
@@ -274,11 +274,11 @@ export default function AdminDashboard() {
 
       {/* KI-Empfehlungen */}
       {empfehlungen.length > 0 && (
-        <div className="p-4 bg-[#7C6CAB]/5 border border-[#7C6CAB]/20 rounded-2xl shadow-sm">
-          <span className="text-[11px] font-bold text-[#7C6CAB] uppercase tracking-wider">KI-Empfehlungen</span>
+        <div className="p-4 bg-rolle-admin/5 border border-[#7C6CAB]/20 rounded-2xl shadow-sm">
+          <span className="text-[11px] font-bold text-rolle-admin uppercase tracking-wider">KI-Empfehlungen</span>
           <ul className="space-y-1 mt-2">
             {empfehlungen.map((e, i) => (
-              <li key={i} className="text-sm text-[#7C6CAB]">– {e}</li>
+              <li key={i} className="text-sm text-rolle-admin">– {e}</li>
             ))}
           </ul>
         </div>
@@ -318,10 +318,10 @@ export default function AdminDashboard() {
       </div>
 
       {/* Ticket-Verlauf-Chart */}
-      <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5 shadow-sm">
+      <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
         <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-sm font-semibold text-[#2D2A26]">Tickets pro Woche · letzte {ANZAHL_WOCHEN} Wochen</h2>
-          <div className="text-[11px] text-[#8C857B]">Erstellt vs. Erledigt</div>
+          <h2 className="text-sm font-semibold text-ink">Tickets pro Woche · letzte {ANZAHL_WOCHEN} Wochen</h2>
+          <div className="text-[11px] text-ink-muted">Erstellt vs. Erledigt</div>
         </div>
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
@@ -347,14 +347,14 @@ export default function AdminDashboard() {
 
       {/* Erledigungsrate + Plattform-Health */}
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5 shadow-sm">
+        <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
           <div className="flex items-baseline justify-between mb-2">
-            <span className="text-sm font-semibold text-[#2D2A26]">Erledigungsrate</span>
+            <span className="text-sm font-semibold text-ink">Erledigungsrate</span>
             <span className={`text-2xl font-bold tabular-nums ${
-              erlRate >= 70 ? "text-[#3D8B7A]" : erlRate >= 30 ? "text-[#C4956A]" : "text-[#C4574B]"
+              erlRate >= 70 ? "text-accent" : erlRate >= 30 ? "text-warm" : "text-danger"
             }`}>{erlRate}%</span>
           </div>
-          <div className="w-full h-3 bg-[#FAF8F5] rounded-full overflow-hidden">
+          <div className="w-full h-3 bg-surface rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-700 ease-out"
               style={{
@@ -366,23 +366,23 @@ export default function AdminDashboard() {
               }}
             />
           </div>
-          <div className="text-[11px] text-[#8C857B] mt-2">
+          <div className="text-[11px] text-ink-muted mt-2">
             {stats.erledigteTickets} von {stats.totalTickets} Tickets erledigt
           </div>
         </div>
 
-        <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5 shadow-sm">
+        <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
           <div className="flex items-baseline justify-between mb-2">
-            <span className="text-sm font-semibold text-[#2D2A26]">KI-Health-Score</span>
-            <span className="text-2xl font-bold text-[#7C6CAB] tabular-nums">{health}</span>
+            <span className="text-sm font-semibold text-ink">KI-Health-Score</span>
+            <span className="text-2xl font-bold text-rolle-admin tabular-nums">{health}</span>
           </div>
-          <div className="w-full h-3 bg-[#FAF8F5] rounded-full overflow-hidden">
+          <div className="w-full h-3 bg-surface rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r from-[#7C6CAB] to-[#5B6ABF]"
               style={{ width: `${health}%` }}
             />
           </div>
-          <div className="text-[11px] text-[#8C857B] mt-2">
+          <div className="text-[11px] text-ink-muted mt-2">
             {health >= 80 ? "Exzellent" : health >= 60 ? "Gut" : health >= 40 ? "Okay" : "Kritisch"}
           </div>
         </div>
@@ -391,32 +391,32 @@ export default function AdminDashboard() {
       {/* Listen */}
       <div className="grid md:grid-cols-2 gap-4">
         {/* Neueste Nutzer */}
-        <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5 shadow-sm">
+        <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
           <div className="flex items-baseline justify-between mb-3">
-            <h3 className="text-sm font-semibold text-[#2D2A26]">Neueste Nutzer</h3>
+            <h3 className="text-sm font-semibold text-ink">Neueste Nutzer</h3>
             <button
               onClick={() => router.push("/dashboard-admin/nutzer")}
-              className="text-[11px] text-[#7C6CAB] hover:text-[#5B4E8A] font-medium transition-colors"
+              className="text-[11px] text-rolle-admin hover:text-[#5B4E8A] font-medium transition-colors"
             >
               Alle ansehen →
             </button>
           </div>
           {stats.recentUsers.length === 0 ? (
-            <p className="text-sm text-[#8C857B] text-center py-6">Keine Nutzer vorhanden</p>
+            <p className="text-sm text-ink-muted text-center py-6">Keine Nutzer vorhanden</p>
           ) : (
             <ul className="space-y-1">
               {stats.recentUsers.map(u => (
                 <li key={u.id}>
                   <button
                     onClick={() => router.push("/dashboard-admin/nutzer")}
-                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-[#FAF8F5] transition-colors"
+                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-surface transition-colors"
                   >
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7C6CAB] to-[#5B6ABF] flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
                       {(u.name || u.email || "?").charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0 text-left">
-                      <div className="text-sm font-medium text-[#2D2A26] truncate">{u.name || u.email}</div>
-                      <div className="text-[11px] text-[#8C857B]">{new Date(u.created_at).toLocaleDateString("de")}</div>
+                      <div className="text-sm font-medium text-ink truncate">{u.name || u.email}</div>
+                      <div className="text-[11px] text-ink-muted">{new Date(u.created_at).toLocaleDateString("de")}</div>
                     </div>
                     <RolleBadge rolle={u.rolle} />
                   </button>
@@ -427,33 +427,33 @@ export default function AdminDashboard() {
         </div>
 
         {/* Neueste Tickets */}
-        <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5 shadow-sm">
+        <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
           <div className="flex items-baseline justify-between mb-3">
-            <h3 className="text-sm font-semibold text-[#2D2A26]">Neueste Tickets</h3>
+            <h3 className="text-sm font-semibold text-ink">Neueste Tickets</h3>
             <button
               onClick={() => router.push("/dashboard-verwalter/tickets")}
-              className="text-[11px] text-[#7C6CAB] hover:text-[#5B4E8A] font-medium transition-colors"
+              className="text-[11px] text-rolle-admin hover:text-[#5B4E8A] font-medium transition-colors"
             >
               Alle ansehen →
             </button>
           </div>
           {stats.recentTickets.length === 0 ? (
-            <p className="text-sm text-[#8C857B] text-center py-6">Keine Tickets vorhanden</p>
+            <p className="text-sm text-ink-muted text-center py-6">Keine Tickets vorhanden</p>
           ) : (
             <ul className="space-y-1">
               {stats.recentTickets.map(t => (
                 <li key={t.id}>
                   <button
                     onClick={() => router.push(`/dashboard-admin/ticket/${t.id}`)}
-                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-[#FAF8F5] transition-colors text-left"
+                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-surface transition-colors text-left"
                   >
                     <StatusBadge status={t.status} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-[#2D2A26] truncate">{t.titel}</div>
-                      <div className="text-[11px] text-[#8C857B]">{new Date(t.created_at).toLocaleDateString("de")}</div>
+                      <div className="text-sm font-medium text-ink truncate">{t.titel}</div>
+                      <div className="text-[11px] text-ink-muted">{new Date(t.created_at).toLocaleDateString("de")}</div>
                     </div>
                     {(t.angebote?.length ?? 0) > 0 && (
-                      <span className="text-[11px] font-semibold text-[#3D8B7A] flex-shrink-0">
+                      <span className="text-[11px] font-semibold text-accent flex-shrink-0">
                         {t.angebote!.length} Angebot{t.angebote!.length === 1 ? "" : "e"}
                       </span>
                     )}
@@ -486,7 +486,7 @@ function KpiCard({
   return (
     <Wrapper
       onClick={onClick}
-      className={`bg-white border border-[#EDE8E1] rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow text-left w-full ${
+      className={`bg-white border border-line rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow text-left w-full ${
         onClick ? "cursor-pointer hover:border-[#7C6CAB]/30 focus:outline-none focus:ring-2 focus:ring-[#7C6CAB]/30" : ""
       }`}
       {...(onClick && { type: "button" as const })}
@@ -497,8 +497,8 @@ function KpiCard({
         </div>
         {trend && <TrendBadge t={trend} />}
       </div>
-      <div className="text-2xl font-bold text-[#2D2A26] tabular-nums">{value}</div>
-      <div className="text-[10px] text-[#8C857B] mt-1 font-medium uppercase tracking-wider">{label}</div>
+      <div className="text-2xl font-bold text-ink tabular-nums">{value}</div>
+      <div className="text-[10px] text-ink-muted mt-1 font-medium uppercase tracking-wider">{label}</div>
       {sparkline && sparkline.length > 0 && (
         <div className="mt-3 flex items-end gap-0.5 h-6">
           {(() => {
@@ -523,27 +523,27 @@ function KpiCard({
 function TrendBadge({ t }: { t: { delta: number | null; richtung: "up" | "down" | "flat" | "none" } }) {
   if (t.delta == null) {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#8C857B]">
+      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-ink-muted">
         <Minus size={10} /> —
       </span>
     )
   }
   if (t.richtung === "up") {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#3D8B7A] bg-[#3D8B7A]/10 px-1.5 py-0.5 rounded-full">
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">
         <TrendingUp size={10} /> {t.delta}%
       </span>
     )
   }
   if (t.richtung === "down") {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#C4574B] bg-[#C4574B]/10 px-1.5 py-0.5 rounded-full">
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-danger bg-danger/10 px-1.5 py-0.5 rounded-full">
         <TrendingDown size={10} /> {t.delta}%
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#8C857B]">
+    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-ink-muted">
       <Minus size={10} /> 0%
     </span>
   )
@@ -551,12 +551,12 @@ function TrendBadge({ t }: { t: { delta: number | null; richtung: "up" | "down" 
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; bg: string; fg: string }> = {
-    offen:          { label: "Offen",          bg: "bg-[#C4574B]/10", fg: "text-[#C4574B]" },
-    auktion:        { label: "Auktion",        bg: "bg-[#5B6ABF]/10", fg: "text-[#5B6ABF]" },
-    in_bearbeitung: { label: "In Arbeit",      bg: "bg-[#C4956A]/10", fg: "text-[#C4956A]" },
-    erledigt:       { label: "Erledigt",       bg: "bg-[#3D8B7A]/10", fg: "text-[#3D8B7A]" },
+    offen:          { label: "Offen",          bg: "bg-danger/10", fg: "text-danger" },
+    auktion:        { label: "Auktion",        bg: "bg-rolle-mieter/10", fg: "text-rolle-mieter" },
+    in_bearbeitung: { label: "In Arbeit",      bg: "bg-warm/10", fg: "text-warm" },
+    erledigt:       { label: "Erledigt",       bg: "bg-accent/10", fg: "text-accent" },
   }
-  const c = map[status] ?? { label: status, bg: "bg-[#EDE8E1]", fg: "text-[#6B665E]" }
+  const c = map[status] ?? { label: status, bg: "bg-line", fg: "text-ink-secondary" }
   return (
     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0 ${c.bg} ${c.fg}`}>
       {c.label}
@@ -567,13 +567,13 @@ function StatusBadge({ status }: { status: string }) {
 function RolleBadge({ rolle }: { rolle: string | null }) {
   if (!rolle) return null
   const map: Record<string, string> = {
-    admin:      "bg-[#7C6CAB]/10 text-[#7C6CAB]",
-    verwalter:  "bg-[#3D8B7A]/10 text-[#3D8B7A]",
-    handwerker: "bg-[#C4956A]/10 text-[#C4956A]",
-    mieter:     "bg-[#5B6ABF]/10 text-[#5B6ABF]",
+    admin:      "bg-rolle-admin/10 text-rolle-admin",
+    verwalter:  "bg-accent/10 text-accent",
+    handwerker: "bg-warm/10 text-warm",
+    mieter:     "bg-rolle-mieter/10 text-rolle-mieter",
   }
   return (
-    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0 ${map[rolle] ?? "bg-[#EDE8E1] text-[#6B665E]"}`}>
+    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0 ${map[rolle] ?? "bg-line text-ink-secondary"}`}>
       {rolle}
     </span>
   )

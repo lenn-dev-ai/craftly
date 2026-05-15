@@ -74,15 +74,15 @@ export default function NachtragsBox({ ticket, currentUser, onReload }: Props) {
     .reduce((s, n) => s + n.nachtrag_betrag, 0)
 
   return (
-    <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5 mb-6">
+    <div className="bg-white border border-line rounded-2xl p-5 mb-6">
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#C4956A]/15 flex items-center justify-center">
-            <FileEdit size={16} className="text-[#C4956A]" />
+          <div className="w-8 h-8 rounded-lg bg-warm/15 flex items-center justify-center">
+            <FileEdit size={16} className="text-warm" />
           </div>
           <div>
-            <div className="text-xs font-semibold text-[#C4956A] uppercase tracking-wider">Nachträge</div>
-            <div className="text-sm text-[#6B665E]">
+            <div className="text-xs font-semibold text-warm uppercase tracking-wider">Nachträge</div>
+            <div className="text-sm text-ink-secondary">
               {nachtraege.length === 0
                 ? "Festpreis-Angebot — keine Nachträge"
                 : `${nachtraege.length} Nachtrag${nachtraege.length === 1 ? "" : "e"} · ${nachtraege.filter(n => n.status === "genehmigt").length} genehmigt`}
@@ -92,7 +92,7 @@ export default function NachtragsBox({ ticket, currentUser, onReload }: Props) {
         {istZugewiesenerHw && !showForm && (
           <button
             onClick={() => setShowForm(true)}
-            className="text-xs font-semibold bg-[#C4956A] text-white px-3 py-1.5 rounded-lg hover:bg-[#A37749] transition-colors inline-flex items-center gap-1"
+            className="text-xs font-semibold bg-warm text-white px-3 py-1.5 rounded-lg hover:bg-[#A37749] transition-colors inline-flex items-center gap-1"
           >
             <Plus size={12} /> Nachtrag einreichen
           </button>
@@ -112,23 +112,23 @@ export default function NachtragsBox({ ticket, currentUser, onReload }: Props) {
       {/* Side-by-Side: Original vs Nachträge */}
       <div className="grid md:grid-cols-2 gap-3 mt-4">
         {/* Original-Befund */}
-        <div className="bg-[#FAF8F5] rounded-xl p-3 border border-[#EDE8E1]">
-          <div className="text-[10px] font-semibold text-[#8C857B] uppercase tracking-wider mb-2">Ursprung (Festpreis)</div>
-          <div className="text-base font-mono tabular-nums text-[#2D2A26] font-bold mb-1">{fmtEur(ursprungspreis)}</div>
+        <div className="bg-surface rounded-xl p-3 border border-line">
+          <div className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider mb-2">Ursprung (Festpreis)</div>
+          <div className="text-base font-mono tabular-nums text-ink font-bold mb-1">{fmtEur(ursprungspreis)}</div>
           {ticket.befund_text && (
-            <p className="text-xs text-[#6B665E] leading-relaxed line-clamp-4">{ticket.befund_text}</p>
+            <p className="text-xs text-ink-secondary leading-relaxed line-clamp-4">{ticket.befund_text}</p>
           )}
         </div>
 
         {/* Nachträge-Summe + aktuelle Gesamt */}
-        <div className="bg-[#FAF8F5] rounded-xl p-3 border border-[#EDE8E1]">
-          <div className="text-[10px] font-semibold text-[#8C857B] uppercase tracking-wider mb-2">Nachträge genehmigt</div>
-          <div className="text-base font-mono tabular-nums text-[#2D2A26] font-bold mb-1">
+        <div className="bg-surface rounded-xl p-3 border border-line">
+          <div className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider mb-2">Nachträge genehmigt</div>
+          <div className="text-base font-mono tabular-nums text-ink font-bold mb-1">
             {summeGenehmigt > 0 ? `+${fmtEur(summeGenehmigt)}` : "—"}
           </div>
-          <div className="text-xs text-[#6B665E]">
+          <div className="text-xs text-ink-secondary">
             Aktueller Auftragswert:
-            <span className="text-[#2D2A26] font-semibold tabular-nums ml-1">
+            <span className="text-ink font-semibold tabular-nums ml-1">
               {fmtEur(ursprungspreis + summeGenehmigt)}
             </span>
           </div>
@@ -137,7 +137,7 @@ export default function NachtragsBox({ ticket, currentUser, onReload }: Props) {
 
       {/* Nachträge-Liste */}
       {loading ? (
-        <div className="text-xs text-[#8C857B] mt-4">Lädt…</div>
+        <div className="text-xs text-ink-muted mt-4">Lädt…</div>
       ) : nachtraege.length > 0 && (
         <div className="mt-5 space-y-2">
           {nachtraege.map(n => (
@@ -153,7 +153,7 @@ export default function NachtragsBox({ ticket, currentUser, onReload }: Props) {
 
       {/* Hinweis */}
       {offen.length > 0 && isVerwalter && istErsteller && (
-        <div className="mt-4 flex items-start gap-2 p-3 rounded-xl bg-[#FAF1DE] border border-[#C4956A]/30 text-xs text-[#854F0B]">
+        <div className="mt-4 flex items-start gap-2 p-3 rounded-xl bg-warm-light border border-warm/30 text-xs text-warm-dark">
           <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
           <span>
             {offen.length === 1 ? "Ein Nachtrag wartet" : `${offen.length} Nachträge warten`} auf deine Entscheidung.
@@ -198,13 +198,13 @@ function NachtragZeile({
   }
 
   const statusColor = nachtrag.status === "genehmigt"
-    ? "bg-[#3D8B7A]/10 text-[#3D8B7A] border-[#3D8B7A]/30"
+    ? "bg-accent/10 text-accent border-accent/30"
     : nachtrag.status === "abgelehnt"
-      ? "bg-[#C4574B]/10 text-[#C4574B] border-[#C4574B]/30"
-      : "bg-[#FAF1DE] text-[#854F0B] border-[#C4956A]/30"
+      ? "bg-danger/10 text-danger border-danger/30"
+      : "bg-warm-light text-warm-dark border-warm/30"
 
   return (
-    <div className="border border-[#EDE8E1] rounded-xl p-3 bg-white">
+    <div className="border border-line rounded-xl p-3 bg-white">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-2 flex-wrap">
           <StufeBadge stufe={nachtrag.stufe} />
@@ -212,14 +212,14 @@ function NachtragZeile({
             {nachtrag.status}
           </span>
         </div>
-        <div className="text-base font-mono tabular-nums font-bold text-[#2D2A26] flex-shrink-0">
+        <div className="text-base font-mono tabular-nums font-bold text-ink flex-shrink-0">
           +{fmtEur(nachtrag.nachtrag_betrag)}
         </div>
       </div>
 
-      <p className="text-sm text-[#2D2A26] whitespace-pre-wrap mb-2 leading-relaxed">{nachtrag.begruendung}</p>
+      <p className="text-sm text-ink whitespace-pre-wrap mb-2 leading-relaxed">{nachtrag.begruendung}</p>
 
-      <div className="flex items-center justify-between gap-3 text-[11px] text-[#8C857B]">
+      <div className="flex items-center justify-between gap-3 text-[11px] text-ink-muted">
         <span>
           {new Date(nachtrag.created_at).toLocaleString("de-DE", {
             day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit",
@@ -231,15 +231,15 @@ function NachtragZeile({
       </div>
 
       {error && (
-        <div className="mt-2 text-xs text-[#C4574B]">{error}</div>
+        <div className="mt-2 text-xs text-danger">{error}</div>
       )}
 
       {kannEntscheiden && (
-        <div className="mt-3 pt-3 border-t border-[#EDE8E1] flex gap-2">
+        <div className="mt-3 pt-3 border-t border-line flex gap-2">
           <button
             onClick={() => entscheide("genehmigt")}
             disabled={!!busy}
-            className="flex-1 text-xs font-semibold bg-[#3D8B7A] text-white px-3 py-2 rounded-lg hover:bg-[#2D6B5A] transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-1"
+            className="flex-1 text-xs font-semibold bg-accent text-white px-3 py-2 rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-1"
           >
             <Check size={12} />
             {busy === "genehmigt" ? "Genehmigt…" : "Genehmigen"}
@@ -247,7 +247,7 @@ function NachtragZeile({
           <button
             onClick={() => entscheide("abgelehnt")}
             disabled={!!busy}
-            className="flex-1 text-xs font-semibold border border-[#C4574B] text-[#C4574B] px-3 py-2 rounded-lg hover:bg-[#C4574B]/5 transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-1"
+            className="flex-1 text-xs font-semibold border border-[#C4574B] text-danger px-3 py-2 rounded-lg hover:bg-danger/5 transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-1"
           >
             <X size={12} />
             {busy === "abgelehnt" ? "Lehnt ab…" : "Ablehnen"}
@@ -311,16 +311,16 @@ function NachtragForm({
   }
 
   return (
-    <div className="mt-4 p-4 bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl space-y-3">
+    <div className="mt-4 p-4 bg-surface border border-line rounded-xl space-y-3">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-semibold text-[#2D2A26]">Neuer Nachtrag</div>
-        <button onClick={onClose} className="text-[#8C857B] hover:text-[#2D2A26]" aria-label="Schließen">
+        <div className="text-xs font-semibold text-ink">Neuer Nachtrag</div>
+        <button onClick={onClose} className="text-ink-muted hover:text-ink" aria-label="Schließen">
           <X size={16} />
         </button>
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 p-2 rounded-lg bg-[#C4574B]/10 border border-[#C4574B]/20 text-xs text-[#C4574B]">
+        <div className="flex items-start gap-2 p-2 rounded-lg bg-danger/10 border border-danger/20 text-xs text-danger">
           <AlertCircle size={12} className="mt-0.5 flex-shrink-0" />
           <span>{error}</span>
         </div>
@@ -328,36 +328,36 @@ function NachtragForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs font-semibold text-[#2D2A26] block mb-1">Nachtrag in €</label>
+          <label className="text-xs font-semibold text-ink block mb-1">Nachtrag in €</label>
           <input
             type="number" inputMode="decimal" step="1" min="1"
             value={betrag}
             onChange={e => setBetrag(e.target.value)}
             placeholder="z. B. 80"
-            className="w-full text-sm tabular-nums bg-white border border-[#EDE8E1] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C4956A]"
+            className="w-full text-sm tabular-nums bg-white border border-line rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C4956A]"
           />
         </div>
         <div>
-          <label className="text-xs font-semibold text-[#2D2A26] block mb-1">Vorschau</label>
+          <label className="text-xs font-semibold text-ink block mb-1">Vorschau</label>
           <div className="text-sm py-1.5">
             {vorschauStufe
               ? <StufeBadge stufe={vorschauStufe} />
-              : <span className="text-xs text-[#8C857B]">—</span>}
+              : <span className="text-xs text-ink-muted">—</span>}
             {vorschauStufe === "bagatell" && (
-              <div className="text-[10px] text-[#3D8B7A] mt-1">Wird automatisch genehmigt</div>
+              <div className="text-[10px] text-accent mt-1">Wird automatisch genehmigt</div>
             )}
           </div>
         </div>
       </div>
 
       <div>
-        <label className="text-xs font-semibold text-[#2D2A26] block mb-1">Begründung (mind. 10 Zeichen)</label>
+        <label className="text-xs font-semibold text-ink block mb-1">Begründung (mind. 10 Zeichen)</label>
         <textarea
           value={begruendung}
           onChange={e => setBegruendung(e.target.value)}
           rows={3}
           placeholder="z. B. Zusätzliche Dichtung war zerbrochen, musste mit ausgetauscht werden."
-          className="w-full text-sm bg-white border border-[#EDE8E1] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C4956A]"
+          className="w-full text-sm bg-white border border-line rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C4956A]"
         />
       </div>
 
@@ -365,14 +365,14 @@ function NachtragForm({
         <button
           onClick={onClose}
           disabled={saving}
-          className="text-xs font-medium text-[#6B665E] hover:text-[#2D2A26] px-3 py-1.5"
+          className="text-xs font-medium text-ink-secondary hover:text-ink px-3 py-1.5"
         >
           Abbrechen
         </button>
         <button
           onClick={speichern}
           disabled={saving}
-          className="text-xs font-bold bg-[#C4956A] text-white px-4 py-1.5 rounded-lg hover:bg-[#A37749] transition-colors disabled:opacity-50"
+          className="text-xs font-bold bg-warm text-white px-4 py-1.5 rounded-lg hover:bg-[#A37749] transition-colors disabled:opacity-50"
         >
           {saving ? "Speichert…" : "Einreichen"}
         </button>

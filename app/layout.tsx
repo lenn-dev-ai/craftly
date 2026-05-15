@@ -216,7 +216,7 @@ export default function RootLayout({
           />
         )}
       </head>
-      <body className={`${inter.className} antialiased bg-[#FAF8F5] text-[#2D2A26]`}>
+      <body className={`${inter.className} antialiased bg-surface text-ink`}>
         <ToastProvider>
           {children}
         </ToastProvider>

@@ -16,10 +16,10 @@ const OPTIONEN: Array<{
   ziel: string
   aktivCls: string
 }> = [
-  { rolle: "admin",      label: "Admin",      ziel: "/dashboard-admin",     aktivCls: "bg-[#7C6CAB] text-white" },
-  { rolle: "verwaltung", label: "Verwaltung", ziel: "/dashboard-verwalter", aktivCls: "bg-[#3D8B7A] text-white" },
-  { rolle: "handwerker", label: "Handwerker", ziel: "/dashboard-handwerker", aktivCls: "bg-[#C4956A] text-white" },
-  { rolle: "mieter",     label: "Mieter",     ziel: "/dashboard-mieter",     aktivCls: "bg-[#5B6ABF] text-white" },
+  { rolle: "admin",      label: "Admin",      ziel: "/dashboard-admin",     aktivCls: "bg-rolle-admin text-white" },
+  { rolle: "verwaltung", label: "Verwaltung", ziel: "/dashboard-verwalter", aktivCls: "bg-accent text-white" },
+  { rolle: "handwerker", label: "Handwerker", ziel: "/dashboard-handwerker", aktivCls: "bg-warm text-white" },
+  { rolle: "mieter",     label: "Mieter",     ziel: "/dashboard-mieter",     aktivCls: "bg-rolle-mieter text-white" },
 ]
 
 export function RollenWechsel() {
@@ -33,11 +33,11 @@ export function RollenWechsel() {
 
   return (
     <div className="w-full">
-      <div className="text-[9px] font-bold uppercase tracking-wider text-[#8C857B] mb-1.5 px-1">
+      <div className="text-[9px] font-bold uppercase tracking-wider text-ink-muted mb-1.5 px-1">
         Sicht wechseln
       </div>
       <div
-        className="grid grid-cols-2 gap-1 bg-white border border-[#EDE8E1] rounded-xl p-1 shadow-sm"
+        className="grid grid-cols-2 gap-1 bg-white border border-line rounded-xl p-1 shadow-sm"
         role="radiogroup"
         aria-label="Aktive Sicht"
       >
@@ -51,7 +51,7 @@ export function RollenWechsel() {
               aria-checked={aktiv}
               onClick={() => wechsel(opt)}
               className={`px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all text-center ${
-                aktiv ? opt.aktivCls : "text-[#6B665E] hover:text-[#2D2A26] hover:bg-[#F5F0EB]"
+                aktiv ? opt.aktivCls : "text-ink-secondary hover:text-ink hover:bg-surface-muted"
               }`}
             >
               {opt.label}

@@ -203,8 +203,8 @@ export default function ZeitslotsPage() {
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-2 border-[#3D8B7A]/30 border-t-[#3D8B7A] rounded-full animate-spin" />
-        <span className="text-sm text-[#8C857B]">Zeitslots laden...</span>
+        <div className="w-8 h-8 border-2 border-accent/30 border-t-[#3D8B7A] rounded-full animate-spin" />
+        <span className="text-sm text-ink-muted">Zeitslots laden...</span>
       </div>
     </div>
   )
@@ -214,10 +214,10 @@ export default function ZeitslotsPage() {
   const vergangeneSlots = slots.filter(s => s.status === "abgelaufen" || (s.status === "vergeben" && s.datum < heute))
 
   const statusColors: Record<string, string> = {
-    verfuegbar: "bg-[#3D8B7A]/8 text-[#3D8B7A] border-[#3D8B7A]/15",
-    reserviert: "bg-[#C4956A]/10 text-[#C4956A] border-[#C4956A]/15",
-    vergeben: "bg-[#2D2A26]/8 text-[#2D2A26] border-[#2D2A26]/15",
-    abgelaufen: "bg-[#EDE8E1] text-[#8C857B] border-[#EDE8E1]",
+    verfuegbar: "bg-accent/8 text-accent border-accent/15",
+    reserviert: "bg-warm/10 text-warm border-warm/15",
+    vergeben: "bg-[#2D2A26]/8 text-ink border-[#2D2A26]/15",
+    abgelaufen: "bg-line text-ink-muted border-line",
   }
   const statusLabels: Record<string, string> = {
     verfuegbar: "Online",
@@ -230,7 +230,7 @@ export default function ZeitslotsPage() {
     <div className="p-6 md:p-8 max-w-4xl mx-auto pt-16 md:pt-8">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-white border border-[#3D8B7A]/30 text-[#2D2A26] text-sm px-4 py-3 rounded-xl shadow-lg">
+        <div className="fixed top-4 right-4 z-50 bg-white border border-accent/30 text-ink text-sm px-4 py-3 rounded-xl shadow-lg">
           {toast}
         </div>
       )}
@@ -238,12 +238,12 @@ export default function ZeitslotsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#2D2A26]">Meine Zeitslots</h1>
-          <p className="text-sm text-[#8C857B] mt-1">Verwalte deine Verfügbarkeit — Dynamisches Pricing inklusive</p>
+          <h1 className="text-2xl font-bold text-ink">Meine Zeitslots</h1>
+          <p className="text-sm text-ink-muted mt-1">Verwalte deine Verfügbarkeit — Dynamisches Pricing inklusive</p>
         </div>
         <button
           onClick={() => setTab("erstellen")}
-          className="text-xs font-bold bg-[#3D8B7A] text-white px-4 py-2.5 rounded-xl hover:bg-[#2D7A6A] transition-colors"
+          className="text-xs font-bold bg-accent text-white px-4 py-2.5 rounded-xl hover:bg-accent-hover transition-colors"
         >
           + Neuer Slot
         </button>
@@ -253,7 +253,7 @@ export default function ZeitslotsPage() {
       {sichtbarkeit && <SichtbarkeitsCard info={sichtbarkeit} />}
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-white p-1 rounded-xl mb-6 border border-[#EDE8E1]">
+      <div className="flex gap-1 bg-white p-1 rounded-xl mb-6 border border-line">
         {([
           { key: "aktiv", label: `Aktiv (${aktiveSlots.length})` },
           { key: "vergangen", label: `Vergangen (${vergangeneSlots.length})` },
@@ -264,8 +264,8 @@ export default function ZeitslotsPage() {
             onClick={() => setTab(t.key)}
             className={`flex-1 text-xs font-medium py-2.5 rounded-lg transition-all ${
               tab === t.key
-                ? "bg-[#3D8B7A]/8 text-[#3D8B7A] border border-[#3D8B7A]/15 font-semibold"
-                : "text-[#8C857B] hover:text-[#6B665E]"
+                ? "bg-accent/8 text-accent border border-accent/15 font-semibold"
+                : "text-ink-muted hover:text-ink-secondary"
             }`}
           >
             {t.label}
@@ -275,31 +275,31 @@ export default function ZeitslotsPage() {
 
       {/* Lücken-Erkennung Banner */}
       {luecken.length > 0 && tab === "aktiv" && (
-        <div className="bg-[#C4956A]/5 border border-[#C4956A]/15 rounded-xl p-4 mb-6">
+        <div className="bg-warm/5 border border-warm/15 rounded-xl p-4 mb-6">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs bg-[#C4956A]/15 text-[#C4956A] px-2 py-0.5 rounded-full font-bold">AI</span>
-            <span className="text-sm font-semibold text-[#2D2A26]">
+            <span className="text-xs bg-warm/15 text-warm px-2 py-0.5 rounded-full font-bold">AI</span>
+            <span className="text-sm font-semibold text-ink">
               {luecken.length} Lücke{luecken.length > 1 ? "n" : ""} erkannt
             </span>
-            <span className="text-xs text-[#8C857B]">— Monetarisiere leere Zeitfenster mit –15% Rabatt</span>
+            <span className="text-xs text-ink-muted">— Monetarisiere leere Zeitfenster mit –15% Rabatt</span>
           </div>
           <div className="flex flex-col gap-2">
             {luecken.slice(0, 3).map((l, i) => (
-              <div key={i} className="flex items-center justify-between bg-white rounded-lg p-3 border border-[#EDE8E1]">
+              <div key={i} className="flex items-center justify-between bg-white rounded-lg p-3 border border-line">
                 <div>
-                  <div className="text-xs font-medium text-[#2D2A26]">
+                  <div className="text-xs font-medium text-ink">
                     {new Date(l.datum).toLocaleDateString("de", { weekday: "short", day: "numeric", month: "short" })}
                     {" — "}
                     {formatZeit(l.von)} bis {formatZeit(l.bis)} ({l.stunden}h)
                   </div>
-                  <div className="text-[10px] text-[#8C857B] mt-0.5">
+                  <div className="text-[10px] text-ink-muted mt-0.5">
                     Zwischen &ldquo;{l.vorher}&rdquo; und &ldquo;{l.nachher}&rdquo;
                   </div>
                 </div>
                 <button
                   onClick={() => createLueckenSlot(l)}
                   disabled={saving}
-                  className="text-xs font-semibold bg-[#C4956A]/10 text-[#C4956A] border border-[#C4956A]/20 px-3 py-1.5 rounded-lg hover:bg-[#C4956A]/20 transition-colors"
+                  className="text-xs font-semibold bg-warm/10 text-warm border border-warm/20 px-3 py-1.5 rounded-lg hover:bg-warm/20 transition-colors"
                 >
                   Als Slot anbieten
                 </button>
@@ -311,25 +311,25 @@ export default function ZeitslotsPage() {
 
       {/* Tab: Erstellen */}
       {tab === "erstellen" && (
-        <form onSubmit={createSlot} className="bg-white border border-[#EDE8E1] rounded-2xl p-6 mb-6">
-          <h2 className="text-lg font-semibold text-[#2D2A26] mb-4">Neuen Zeitslot erstellen</h2>
+        <form onSubmit={createSlot} className="bg-white border border-line rounded-2xl p-6 mb-6">
+          <h2 className="text-lg font-semibold text-ink mb-4">Neuen Zeitslot erstellen</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-[#8C857B] mb-1 block font-medium">Titel (optional)</label>
+              <label className="text-xs text-ink-muted mb-1 block font-medium">Titel (optional)</label>
               <input
                 type="text"
                 value={form.titel}
                 onChange={(e) => setForm({ ...form, titel: e.target.value })}
                 placeholder="z.B. Sanitär-Einsatz Vormittag"
-                className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-4 py-2.5 text-sm text-[#2D2A26] placeholder:text-[#8C857B]/60 focus:border-[#3D8B7A]/40 focus:outline-none focus:ring-1 focus:ring-[#3D8B7A]/20 transition-colors"
+                className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm text-ink placeholder:text-ink-muted/60 focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20 transition-colors"
               />
             </div>
             <div>
-              <label className="text-xs text-[#8C857B] mb-1 block font-medium">Gewerk</label>
+              <label className="text-xs text-ink-muted mb-1 block font-medium">Gewerk</label>
               <select
                 value={form.gewerk}
                 onChange={(e) => setForm({ ...form, gewerk: e.target.value })}
-                className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-4 py-2.5 text-sm text-[#2D2A26] focus:border-[#3D8B7A]/40 focus:outline-none focus:ring-1 focus:ring-[#3D8B7A]/20 transition-colors"
+                className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm text-ink focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20 transition-colors"
               >
                 <option value="">Standard ({GEWERK_LABELS[profile?.gewerk || "allgemein"]})</option>
                 {Object.entries(GEWERK_LABELS).map(([k, v]) => (
@@ -338,54 +338,54 @@ export default function ZeitslotsPage() {
               </select>
             </div>
             <div>
-              <label className="text-xs text-[#8C857B] mb-1 block font-medium">Datum *</label>
+              <label className="text-xs text-ink-muted mb-1 block font-medium">Datum *</label>
               <input
                 type="date"
                 required
                 value={form.datum}
                 onChange={(e) => setForm({ ...form, datum: e.target.value })}
                 min={heute}
-                className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-4 py-2.5 text-sm text-[#2D2A26] focus:border-[#3D8B7A]/40 focus:outline-none focus:ring-1 focus:ring-[#3D8B7A]/20 transition-colors"
+                className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm text-ink focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20 transition-colors"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-[#8C857B] mb-1 block font-medium">Von *</label>
+                <label className="text-xs text-ink-muted mb-1 block font-medium">Von *</label>
                 <input
                   type="time"
                   required
                   value={form.von}
                   onChange={(e) => setForm({ ...form, von: e.target.value })}
-                  className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-4 py-2.5 text-sm text-[#2D2A26] focus:border-[#3D8B7A]/40 focus:outline-none focus:ring-1 focus:ring-[#3D8B7A]/20 transition-colors"
+                  className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm text-ink focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20 transition-colors"
                 />
               </div>
               <div>
-                <label className="text-xs text-[#8C857B] mb-1 block font-medium">Bis *</label>
+                <label className="text-xs text-ink-muted mb-1 block font-medium">Bis *</label>
                 <input
                   type="time"
                   required
                   value={form.bis}
                   onChange={(e) => setForm({ ...form, bis: e.target.value })}
-                  className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-4 py-2.5 text-sm text-[#2D2A26] focus:border-[#3D8B7A]/40 focus:outline-none focus:ring-1 focus:ring-[#3D8B7A]/20 transition-colors"
+                  className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm text-ink focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20 transition-colors"
                 />
               </div>
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs text-[#8C857B] mb-1 block font-medium">Notizen (optional)</label>
+              <label className="text-xs text-ink-muted mb-1 block font-medium">Notizen (optional)</label>
               <textarea
                 value={form.notizen}
                 onChange={(e) => setForm({ ...form, notizen: e.target.value })}
                 placeholder="z.B. Nur Kleinreparaturen, max. 30km Umkreis..."
                 rows={2}
-                className="w-full bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl px-4 py-2.5 text-sm text-[#2D2A26] placeholder:text-[#8C857B]/60 focus:border-[#3D8B7A]/40 focus:outline-none focus:ring-1 focus:ring-[#3D8B7A]/20 transition-colors resize-none"
+                className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm text-ink placeholder:text-ink-muted/60 focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20 transition-colors resize-none"
               />
             </div>
           </div>
 
           {/* Preis-Preview */}
           {form.datum && form.von && (
-            <div className="mt-4 bg-[#FAF8F5] rounded-xl p-4 border border-[#EDE8E1]">
-              <div className="text-xs text-[#8C857B] mb-2 font-medium">Preis-Vorschau (dynamisch)</div>
+            <div className="mt-4 bg-surface rounded-xl p-4 border border-line">
+              <div className="text-xs text-ink-muted mb-2 font-medium">Preis-Vorschau (dynamisch)</div>
               {(() => {
                 const basisPreis = profile?.basis_preis || GEWERK_BASIS_PREISE[profile?.gewerk || "allgemein"] || 50
                 const preisInfo = berechneDynamischenPreis(basisPreis, form.datum, form.von, 0, slots.filter((s) => s.status === "verfuegbar").length, false)
@@ -395,7 +395,7 @@ export default function ZeitslotsPage() {
                       <div className="text-2xl font-bold" style={{ color: preisInfo.farbe }}>
                         {preisInfo.dynamischerPreis} €/h
                       </div>
-                      <div className="text-xs text-[#8C857B]">
+                      <div className="text-xs text-ink-muted">
                         Basis: {basisPreis} € × {preisInfo.gesamtFaktor}
                       </div>
                     </div>
@@ -406,7 +406,7 @@ export default function ZeitslotsPage() {
                       {preisInfo.label}
                     </div>
                     <div className="flex-1 text-right">
-                      <div className="text-xs text-[#8C857B] space-y-0.5">
+                      <div className="text-xs text-ink-muted space-y-0.5">
                         <div>Tageszeit: ×{preisInfo.faktoren.tageszeit}</div>
                         <div>Wochentag: ×{preisInfo.faktoren.wochentag}</div>
                         <div>Knappheit: ×{preisInfo.faktoren.knappheit}</div>
@@ -422,14 +422,14 @@ export default function ZeitslotsPage() {
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 text-sm font-bold bg-[#3D8B7A] text-white py-3 rounded-xl hover:bg-[#2D7A6A] transition-colors disabled:opacity-50"
+              className="flex-1 text-sm font-bold bg-accent text-white py-3 rounded-xl hover:bg-accent-hover transition-colors disabled:opacity-50"
             >
               {saving ? "Wird erstellt..." : "Zeitslot veröffentlichen"}
             </button>
             <button
               type="button"
               onClick={() => setTab("aktiv")}
-              className="text-sm text-[#6B665E] border border-[#EDE8E1] px-6 py-3 rounded-xl hover:bg-[#F5F0EB] transition-colors"
+              className="text-sm text-ink-secondary border border-line px-6 py-3 rounded-xl hover:bg-surface-muted transition-colors"
             >
               Abbrechen
             </button>
@@ -441,13 +441,13 @@ export default function ZeitslotsPage() {
       {tab === "aktiv" && (
         <div>
           {aktiveSlots.length === 0 ? (
-            <div className="bg-white border border-[#EDE8E1] rounded-2xl p-12 text-center">
+            <div className="bg-white border border-line rounded-2xl p-12 text-center">
               <div className="text-4xl mb-3">&#128197;</div>
-              <div className="text-lg font-semibold text-[#2D2A26] mb-1">Noch keine Zeitslots</div>
-              <div className="text-sm text-[#8C857B] mb-4">Erstelle deinen ersten Slot und werde im Marktplatz sichtbar</div>
+              <div className="text-lg font-semibold text-ink mb-1">Noch keine Zeitslots</div>
+              <div className="text-sm text-ink-muted mb-4">Erstelle deinen ersten Slot und werde im Marktplatz sichtbar</div>
               <button
                 onClick={() => setTab("erstellen")}
-                className="text-sm font-bold bg-[#3D8B7A] text-white px-6 py-3 rounded-xl hover:bg-[#2D7A6A] transition-colors"
+                className="text-sm font-bold bg-accent text-white px-6 py-3 rounded-xl hover:bg-accent-hover transition-colors"
               >
                 + Ersten Zeitslot erstellen
               </button>
@@ -462,50 +462,50 @@ export default function ZeitslotsPage() {
                   <div key={s.id}>
                     {showDateHeader && (
                       <div className={`flex items-center gap-3 ${idx>> 0 ? "mt-4" : ""} mb-2`}>
-                        <div className="text-xs font-semibold text-[#6B665E]">
+                        <div className="text-xs font-semibold text-ink-secondary">
                           {new Date(s.datum).toLocaleDateString("de", { weekday: "long", day: "numeric", month: "long" })}
                         </div>
-                        <div className="flex-1 h-px bg-[#EDE8E1]" />
-                        <div className="text-xs text-[#8C857B]">
+                        <div className="flex-1 h-px bg-line" />
+                        <div className="text-xs text-ink-muted">
                           {aktiveSlots.filter(sl => sl.datum === s.datum).length} Slots
                         </div>
                       </div>
                     )}
-                    <div className="bg-white border border-[#EDE8E1] rounded-xl p-4 hover:border-[#3D8B7A]/20 hover:shadow-sm transition-all">
+                    <div className="bg-white border border-line rounded-xl p-4 hover:border-accent/20 hover:shadow-sm transition-all">
                       <div className="flex items-center justify-between flex-wrap gap-3">
                         <div className="flex items-center gap-3">
                           <div className="text-center min-w-[50px]">
-                            <div className="text-xs text-[#8C857B]">
+                            <div className="text-xs text-ink-muted">
                               {new Date(s.datum).toLocaleDateString("de", { weekday: "short" })}
                             </div>
-                            <div className="text-lg font-bold text-[#2D2A26]">
+                            <div className="text-lg font-bold text-ink">
                               {new Date(s.datum).getDate()}.{new Date(s.datum).getMonth() + 1}
                             </div>
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-[#2D2A26] flex items-center gap-2">
+                            <div className="text-sm font-medium text-ink flex items-center gap-2">
                               {s.titel}
                               {s.ist_luecke && (
-                                <span className="text-[9px] bg-[#C4956A]/10 text-[#C4956A] px-1.5 py-0.5 rounded-full font-medium">
+                                <span className="text-[9px] bg-warm/10 text-warm px-1.5 py-0.5 rounded-full font-medium">
                                   Lücke
                                 </span>
                               )}
                             </div>
-                            <div className="text-xs text-[#8C857B]">
+                            <div className="text-xs text-ink-muted">
                               {formatZeit(s.von)} – {formatZeit(s.bis)} ({s.stunden}h) · {GEWERK_LABELS[s.gewerk || "allgemein"]}
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
                           {gebotsCount > 0 && (
-                            <span className="text-xs bg-[#C4956A]/10 text-[#C4956A] px-2 py-0.5 rounded-full font-medium animate-pulse">
+                            <span className="text-xs bg-warm/10 text-warm px-2 py-0.5 rounded-full font-medium animate-pulse">
                               {gebotsCount} {gebotsCount === 1 ? "Anfrage" : "Anfragen"}
                             </span>
                           )}
                           <div className="text-right">
-                            <div className="text-lg font-bold text-[#3D8B7A]">{preis} €/h</div>
+                            <div className="text-lg font-bold text-accent">{preis} €/h</div>
                             {s.preisfaktor > 1.0 && (
-                              <div className="text-xs text-[#C4956A]">×{s.preisfaktor} Surge</div>
+                              <div className="text-xs text-warm">×{s.preisfaktor} Surge</div>
                             )}
                           </div>
                           <span className={`text-xs px-2 py-1 rounded-full font-medium border ${statusColors[s.status]}`}>
@@ -514,7 +514,7 @@ export default function ZeitslotsPage() {
                           {s.status === "verfuegbar" && (
                             <button
                               onClick={() => deleteSlot(s.id)}
-                              className="text-xs text-[#8C857B] hover:text-[#C4574B] transition-colors ml-1"
+                              className="text-xs text-ink-muted hover:text-danger transition-colors ml-1"
                               title="Slot löschen"
                               aria-label="Slot löschen"
                             >
@@ -536,34 +536,34 @@ export default function ZeitslotsPage() {
       {tab === "vergangen" && (
         <div>
           {vergangeneSlots.length === 0 ? (
-            <div className="bg-white border border-[#EDE8E1] rounded-2xl p-8 text-center">
-              <div className="text-sm text-[#8C857B]">Keine vergangenen Slots vorhanden</div>
+            <div className="bg-white border border-line rounded-2xl p-8 text-center">
+              <div className="text-sm text-ink-muted">Keine vergangenen Slots vorhanden</div>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
               {vergangeneSlots.map((s) => {
                 const preis = s.dynamischer_preis || s.basis_preis_stunde
                 return (
-                  <div key={s.id} className="bg-white border border-[#EDE8E1] rounded-xl p-4 opacity-60">
+                  <div key={s.id} className="bg-white border border-line rounded-xl p-4 opacity-60">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                       <div className="flex items-center gap-3">
                         <div className="text-center min-w-[50px]">
-                          <div className="text-xs text-[#8C857B]">
+                          <div className="text-xs text-ink-muted">
                             {new Date(s.datum).toLocaleDateString("de", { weekday: "short" })}
                           </div>
-                          <div className="text-lg font-bold text-[#2D2A26]">
+                          <div className="text-lg font-bold text-ink">
                             {new Date(s.datum).getDate()}.{new Date(s.datum).getMonth() + 1}
                           </div>
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-[#2D2A26]">{s.titel}</div>
-                          <div className="text-xs text-[#8C857B]">
+                          <div className="text-sm font-medium text-ink">{s.titel}</div>
+                          <div className="text-xs text-ink-muted">
                             {formatZeit(s.von)} – {formatZeit(s.bis)} ({s.stunden}h)
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="text-lg font-bold text-[#8C857B]">{preis} €/h</div>
+                        <div className="text-lg font-bold text-ink-muted">{preis} €/h</div>
                         <span className={`text-xs px-2 py-1 rounded-full font-medium border ${statusColors[s.status]}`}>
                           {statusLabels[s.status]}
                         </span>
@@ -582,9 +582,9 @@ export default function ZeitslotsPage() {
 
 function SichtbarkeitsCard({ info }: { info: SichtbarkeitsInfo }) {
   const config = {
-    gold:   { bg: "from-[#C4956A]/15 to-[#C4956A]/5", border: "border-[#C4956A]/40", badge: "bg-[#C4956A] text-white", emoji: "🏆", label: "Gold" },
+    gold:   { bg: "from-[#C4956A]/15 to-[#C4956A]/5", border: "border-warm/40", badge: "bg-warm text-white", emoji: "🏆", label: "Gold" },
     silber: { bg: "from-[#94A3B8]/15 to-[#94A3B8]/5", border: "border-[#94A3B8]/40", badge: "bg-[#94A3B8] text-white", emoji: "🥈", label: "Silber" },
-    bronze: { bg: "from-[#78716C]/10 to-[#78716C]/5", border: "border-[#EDE8E1]",     badge: "bg-[#78716C] text-white", emoji: "🥉", label: "Bronze" },
+    bronze: { bg: "from-[#78716C]/10 to-[#78716C]/5", border: "border-line",     badge: "bg-[#78716C] text-white", emoji: "🥉", label: "Bronze" },
   }[info.stufe]
 
   const motivationsText: Record<typeof info.stufe, string> = {
@@ -604,20 +604,20 @@ function SichtbarkeitsCard({ info }: { info: SichtbarkeitsInfo }) {
                 {config.label}-Sichtbarkeit
               </span>
               {info.streak >= 2 && (
-                <span className="text-[11px] font-semibold text-[#C4574B]">🔥 {info.streak} Wochen Streak</span>
+                <span className="text-[11px] font-semibold text-danger">🔥 {info.streak} Wochen Streak</span>
               )}
             </div>
-            <div className="text-sm text-[#2D2A26]">
+            <div className="text-sm text-ink">
               Diese Woche <strong>{info.freieSlots}</strong> freie Slots eingetragen
             </div>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-[10px] uppercase tracking-wider text-[#8C857B]">Score</div>
-          <div className="text-3xl font-bold text-[#2D2A26] tabular-nums">{info.score}<span className="text-sm text-[#8C857B] font-normal">/100</span></div>
+          <div className="text-[10px] uppercase tracking-wider text-ink-muted">Score</div>
+          <div className="text-3xl font-bold text-ink tabular-nums">{info.score}<span className="text-sm text-ink-muted font-normal">/100</span></div>
         </div>
       </div>
-      <p className="text-xs text-[#6B665E] mt-3 leading-relaxed">
+      <p className="text-xs text-ink-secondary mt-3 leading-relaxed">
         {motivationsText[info.stufe]}
       </p>
     </div>

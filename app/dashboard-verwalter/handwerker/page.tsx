@@ -29,7 +29,7 @@ interface Handwerker {
 }
 
 const STUFEN_BADGE: Record<string, { label: string; cls: string }> = {
-  gold:   { label: "Gold",   cls: "bg-[#C4956A] text-white" },
+  gold:   { label: "Gold",   cls: "bg-warm text-white" },
   silber: { label: "Silber", cls: "bg-[#94A3B8] text-white" },
   bronze: { label: "Bronze", cls: "bg-[#78716C] text-white" },
 }
@@ -112,8 +112,8 @@ export default function HandwerkerUebersicht() {
     <div className="p-6 max-w-5xl mx-auto space-y-6 pt-16 md:pt-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#2D2A26]">Handwerker-Verzeichnis</h1>
-        <p className="text-sm text-[#8C857B] mt-1">
+        <h1 className="text-2xl font-bold text-ink">Handwerker-Verzeichnis</h1>
+        <p className="text-sm text-ink-muted mt-1">
           {handwerker.length} registrierte Profile · gefiltert: {gefiltert.length}
         </p>
       </div>
@@ -131,16 +131,16 @@ export default function HandwerkerUebersicht() {
       </div>
 
       {/* Filter */}
-      <div className="bg-white border border-[#EDE8E1] rounded-2xl p-4 shadow-sm">
+      <div className="bg-white border border-line rounded-2xl p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[200px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8C857B] pointer-events-none" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
             <input
               type="text"
               placeholder="Name, Firma, Gewerk oder PLZ…"
               value={suche}
               onChange={e => setSuche(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm bg-[#FAF8F5] border border-[#EDE8E1] rounded-xl focus:outline-none focus:border-[#3D8B7A]/40 transition-colors"
+              className="w-full pl-9 pr-3 py-2 text-sm bg-surface border border-line rounded-xl focus:outline-none focus:border-accent/40 transition-colors"
               aria-label="Handwerker suchen"
             />
           </div>
@@ -163,14 +163,14 @@ export default function HandwerkerUebersicht() {
 
       {/* Liste */}
       {gefiltert.length === 0 ? (
-        <div className="bg-white border border-[#EDE8E1] rounded-2xl p-12 text-center shadow-sm">
-          <div className="w-12 h-12 rounded-2xl bg-[#FAF8F5] mx-auto mb-3 flex items-center justify-center">
-            <Briefcase size={22} className="text-[#8C857B]" />
+        <div className="bg-white border border-line rounded-2xl p-12 text-center shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-surface mx-auto mb-3 flex items-center justify-center">
+            <Briefcase size={22} className="text-ink-muted" />
           </div>
-          <div className="text-sm font-semibold text-[#2D2A26] mb-1">
+          <div className="text-sm font-semibold text-ink mb-1">
             {handwerker.length === 0 ? "Noch keine Handwerker registriert" : "Keine Treffer"}
           </div>
-          <div className="text-xs text-[#8C857B]">
+          <div className="text-xs text-ink-muted">
             {handwerker.length === 0
               ? "Sobald sich Handwerker auf Reparo registrieren, erscheinen sie hier."
               : "Filter oder Suche anpassen."}
@@ -198,12 +198,12 @@ export default function HandwerkerUebersicht() {
 
 function Kpi({ label, value, farbe }: { label: string; value: string; farbe: string }) {
   return (
-    <div className="bg-white border border-[#EDE8E1] rounded-2xl p-4 shadow-sm">
+    <div className="bg-white border border-line rounded-2xl p-4 shadow-sm">
       <div className="w-8 h-8 rounded-lg mb-3 flex items-center justify-center" style={{ background: farbe + "15" }}>
         <div className="w-2.5 h-2.5 rounded-full" style={{ background: farbe }} />
       </div>
-      <div className="text-2xl font-bold text-[#2D2A26] tabular-nums">{value}</div>
-      <div className="text-[10px] text-[#8C857B] mt-1 font-medium uppercase tracking-wider">{label}</div>
+      <div className="text-2xl font-bold text-ink tabular-nums">{value}</div>
+      <div className="text-[10px] text-ink-muted mt-1 font-medium uppercase tracking-wider">{label}</div>
     </div>
   )
 }
@@ -219,8 +219,8 @@ function FilterPill({ aktiv, onClick, children }: {
       onClick={onClick}
       className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
         aktiv
-          ? "bg-[#3D8B7A] text-white"
-          : "bg-[#FAF8F5] text-[#6B665E] hover:bg-[#EDE8E1]"
+          ? "bg-accent text-white"
+          : "bg-surface text-ink-secondary hover:bg-line"
       }`}
     >
       {children}
@@ -239,7 +239,7 @@ function HandwerkerCard({ h, onContact, onAuftragNeu }: {
   const stufe = h.sichtbarkeit_stufe ? STUFEN_BADGE[h.sichtbarkeit_stufe] : null
 
   return (
-    <div className="bg-white border border-[#EDE8E1] rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white border border-line rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
       {/* Kopfzeile: Avatar + Name + Stufe */}
       <div className="flex items-start gap-3 mb-3">
         <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#C4956A] to-[#854F0B] flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
@@ -247,7 +247,7 @@ function HandwerkerCard({ h, onContact, onAuftragNeu }: {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="text-sm font-semibold text-[#2D2A26] truncate">{h.firma || h.name || "Unbenannt"}</div>
+            <div className="text-sm font-semibold text-ink truncate">{h.firma || h.name || "Unbenannt"}</div>
             {stufe && (
               <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${stufe.cls}`}>
                 {stufe.label}
@@ -255,7 +255,7 @@ function HandwerkerCard({ h, onContact, onAuftragNeu }: {
             )}
           </div>
           {h.firma && h.name && (
-            <div className="text-xs text-[#8C857B] truncate">{h.name}</div>
+            <div className="text-xs text-ink-muted truncate">{h.name}</div>
           )}
         </div>
       </div>
@@ -263,64 +263,64 @@ function HandwerkerCard({ h, onContact, onAuftragNeu }: {
       {/* Bewertung + Aufträge */}
       <div className="flex items-center gap-3 text-xs mb-3">
         {h.bewertung_avg != null && h.bewertung_avg > 0 ? (
-          <span className="inline-flex items-center gap-1 text-[#C4956A] font-semibold">
+          <span className="inline-flex items-center gap-1 text-warm font-semibold">
             <Star size={12} fill="currentColor" /> {h.bewertung_avg.toFixed(1)}
           </span>
         ) : (
-          <span className="text-[#8C857B]">Noch keine Bewertung</span>
+          <span className="text-ink-muted">Noch keine Bewertung</span>
         )}
         {h.auftraege_anzahl != null && h.auftraege_anzahl > 0 && (
-          <span className="text-[#8C857B]">· {h.auftraege_anzahl} {h.auftraege_anzahl === 1 ? "Auftrag" : "Aufträge"}</span>
+          <span className="text-ink-muted">· {h.auftraege_anzahl} {h.auftraege_anzahl === 1 ? "Auftrag" : "Aufträge"}</span>
         )}
         {stundensatz != null && (
-          <span className="text-[#8C857B] ml-auto">· {stundensatz} €/h</span>
+          <span className="text-ink-muted ml-auto">· {stundensatz} €/h</span>
         )}
       </div>
 
       {/* Meta-Tabelle */}
-      <div className="space-y-1.5 text-xs text-[#6B665E] mb-4">
+      <div className="space-y-1.5 text-xs text-ink-secondary mb-4">
         {gewerkLabel && (
           <div className="flex items-center gap-2">
-            <Briefcase size={12} className="text-[#8C857B] flex-shrink-0" />
+            <Briefcase size={12} className="text-ink-muted flex-shrink-0" />
             <span>{gewerkLabel}</span>
             {h.radius_km != null && (
-              <span className="text-[#8C857B]">· Radius {h.radius_km} km</span>
+              <span className="text-ink-muted">· Radius {h.radius_km} km</span>
             )}
           </div>
         )}
         {ort && (
           <div className="flex items-center gap-2">
-            <MapPin size={12} className="text-[#8C857B] flex-shrink-0" />
+            <MapPin size={12} className="text-ink-muted flex-shrink-0" />
             <span className="truncate">{ort}</span>
           </div>
         )}
         {h.email && (
           <div className="flex items-center gap-2">
-            <Mail size={12} className="text-[#8C857B] flex-shrink-0" />
+            <Mail size={12} className="text-ink-muted flex-shrink-0" />
             <span className="truncate">{h.email}</span>
           </div>
         )}
         {h.telefon && (
           <div className="flex items-center gap-2">
-            <Phone size={12} className="text-[#8C857B] flex-shrink-0" />
+            <Phone size={12} className="text-ink-muted flex-shrink-0" />
             <span>{h.telefon}</span>
           </div>
         )}
       </div>
 
       {/* Aktionen */}
-      <div className="flex gap-2 pt-3 border-t border-[#EDE8E1]">
+      <div className="flex gap-2 pt-3 border-t border-line">
         {h.email && (
           <button
             onClick={onContact}
-            className="flex-1 text-xs font-medium px-3 py-2 rounded-lg border border-[#EDE8E1] text-[#6B665E] hover:bg-[#FAF8F5] hover:text-[#2D2A26] transition-colors"
+            className="flex-1 text-xs font-medium px-3 py-2 rounded-lg border border-line text-ink-secondary hover:bg-surface hover:text-ink transition-colors"
           >
             Kontakt
           </button>
         )}
         <button
           onClick={onAuftragNeu}
-          className="flex-1 text-xs font-medium px-3 py-2 rounded-lg bg-[#3D8B7A] text-white hover:bg-[#2D6B5A] transition-colors"
+          className="flex-1 text-xs font-medium px-3 py-2 rounded-lg bg-accent text-white hover:bg-accent-hover transition-colors"
         >
           Auftrag ausschreiben
         </button>

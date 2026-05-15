@@ -3,7 +3,7 @@ import Faq from "@/components/landing/Faq"
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-[#2D2A26]">
+    <div className="min-h-screen bg-surface text-ink">
       <Nav />
       <Hero />
       <Auktion4Schritte />
@@ -25,10 +25,10 @@ export default function LandingPage() {
 
 function Nav() {
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#FAF8F5]/95 backdrop-blur-sm border-b border-[#EDE8E1]">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-sm border-b border-line">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#3D8B7A] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
@@ -37,10 +37,10 @@ function Nav() {
           <span className="text-xl font-semibold tracking-tight">Reparo</span>
         </div>
         <div className="flex items-center gap-4">
-          <Link href="/login" className="text-sm py-3 px-3 text-[#6B665E] hover:text-[#2D2A26] transition-colors">
+          <Link href="/login" className="text-sm py-3 px-3 text-ink-secondary hover:text-ink transition-colors">
             Anmelden
           </Link>
-          <Link href="/registrierung" className="text-sm px-4 py-3 bg-[#3D8B7A] text-white rounded-lg hover:bg-[#2D6B5A] transition-colors font-medium">
+          <Link href="/registrierung" className="text-sm px-4 py-3 bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors font-medium">
             Kostenlos starten
           </Link>
         </div>
@@ -55,32 +55,32 @@ function Hero() {
   return (
     <section className="pt-32 pb-20 px-6">
       <div className="max-w-4xl mx-auto text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#3D8B7A]/10 text-[#3D8B7A] rounded-full text-sm font-medium mb-8">
-          <span className="w-1.5 h-1.5 bg-[#3D8B7A] rounded-full" />
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-accent/10 text-accent rounded-full text-sm font-medium mb-8">
+          <span className="w-1.5 h-1.5 bg-accent rounded-full" />
           Die erste Stundenauktion für Immobilien
         </div>
 
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight tracking-tight mb-6">
           Mehr verdienen.
           <br />
-          <span className="text-[#3D8B7A]">Weniger suchen.</span>
+          <span className="text-accent">Weniger suchen.</span>
         </h1>
 
-        <p className="text-lg sm:text-xl text-[#6B665E] max-w-2xl mx-auto mb-10 leading-relaxed">
+        <p className="text-lg sm:text-xl text-ink-secondary max-w-2xl mx-auto mb-10 leading-relaxed">
           Reparo füllt deinen Kalender automatisch mit Aufträgen in deiner Nähe — zu fairen Marktpreisen.
           Verwalter bieten auf deine Stunden. Du arbeitest, wir organisieren.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/registrierung" className="w-full sm:w-auto px-8 py-3.5 bg-[#3D8B7A] text-white rounded-xl hover:bg-[#2D6B5A] transition-colors font-semibold text-base shadow-sm">
+          <Link href="/registrierung" className="w-full sm:w-auto px-8 py-3.5 bg-accent text-white rounded-xl hover:bg-accent-hover transition-colors font-semibold text-base shadow-sm">
             Kostenlos als Handwerker starten
           </Link>
-          <Link href="/registrierung" className="w-full sm:w-auto px-8 py-3.5 border border-[#EDE8E1] text-[#2D2A26] rounded-xl hover:bg-white transition-colors font-medium text-base">
+          <Link href="/registrierung" className="w-full sm:w-auto px-8 py-3.5 border border-line text-ink rounded-xl hover:bg-white transition-colors font-medium text-base">
             Ich bin Verwalter
           </Link>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-[#8C857B] text-sm mt-10">
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-ink-muted text-sm mt-10">
           <div className="flex items-center gap-2">
             <Check />
             Keine Einrichtungsgebühr
@@ -138,14 +138,14 @@ function Auktion4Schritte() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">So funktioniert die Stundenauktion</h2>
-          <p className="text-[#6B665E] text-lg max-w-2xl mx-auto">
+          <p className="text-ink-secondary text-lg max-w-2xl mx-auto">
             Vier Schritte vom Schaden zum erledigten Auftrag — automatisch, fair, schnell.
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 relative">
           {/* Connecting line — nur auf lg */}
-          <div className="hidden lg:block absolute top-6 left-[12.5%] right-[12.5%] h-0.5 bg-[#EDE8E1]" />
+          <div className="hidden lg:block absolute top-6 left-[12.5%] right-[12.5%] h-0.5 bg-line" />
 
           {schritte.map(s => (
             <div key={s.nr} className="text-center">
@@ -162,7 +162,7 @@ function Auktion4Schritte() {
                 <span style={{ color: s.farbe }}>{s.icon}</span>
               </div>
               <h3 className="text-lg font-semibold mb-2">{s.titel}</h3>
-              <p className="text-sm text-[#6B665E] leading-relaxed">{s.text}</p>
+              <p className="text-sm text-ink-secondary leading-relaxed">{s.text}</p>
             </div>
           ))}
         </div>
@@ -197,16 +197,16 @@ function MechanikVorteile() {
     },
   ]
   return (
-    <section className="py-16 px-6 bg-white border-t border-[#EDE8E1]">
+    <section className="py-16 px-6 bg-white border-t border-line">
       <div className="max-w-5xl mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {vorteile.map(v => (
             <div key={v.titel} className="text-center">
-              <div className="w-12 h-12 rounded-xl bg-[#3D8B7A]/10 text-[#3D8B7A] flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 rounded-xl bg-accent/10 text-accent flex items-center justify-center mx-auto mb-4">
                 {v.icon}
               </div>
               <h3 className="text-base font-semibold mb-1.5">{v.titel}</h3>
-              <p className="text-sm text-[#6B665E] leading-relaxed">{v.text}</p>
+              <p className="text-sm text-ink-secondary leading-relaxed">{v.text}</p>
             </div>
           ))}
         </div>
@@ -241,26 +241,26 @@ function HandwerkerSection() {
       <div className="max-w-6xl mx-auto">
         <div className="grid md:grid-cols-2 gap-16 items-center">
           <div>
-            <span className="inline-block px-3 py-1 bg-[#C4956A]/10 text-[#C4956A] text-sm font-medium rounded-full mb-4">
+            <span className="inline-block px-3 py-1 bg-warm/10 text-warm text-sm font-medium rounded-full mb-4">
               Für Handwerker
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold mb-6">
               Dein Kalender, immer voll.<br />
-              <span className="text-[#3D8B7A]">Deine Preise, immer fair.</span>
+              <span className="text-accent">Deine Preise, immer fair.</span>
             </h2>
-            <p className="text-[#6B665E] text-lg leading-relaxed mb-8">
+            <p className="text-ink-secondary text-lg leading-relaxed mb-8">
               Schluss mit Akquise, Angebotsschreiben und leeren Tagen. Reparo bringt die Aufträge zu dir —
               automatisch in deinen Kalender, priorisiert nach Nähe. Du konzentrierst dich auf das, was du am besten kannst.
             </p>
             <ul className="space-y-4">
               {punkte.map(p => (
                 <li key={p.titel} className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-[#3D8B7A]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3D8B7A" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                   </div>
                   <div>
-                    <span className="font-semibold text-[#2D2A26]">{p.titel}</span>
-                    <p className="text-sm text-[#6B665E] mt-0.5">{p.text}</p>
+                    <span className="font-semibold text-ink">{p.titel}</span>
+                    <p className="text-sm text-ink-secondary mt-0.5">{p.text}</p>
                   </div>
                 </li>
               ))}
@@ -268,10 +268,10 @@ function HandwerkerSection() {
           </div>
 
           {/* Kalender-Mockup */}
-          <div className="bg-white rounded-2xl border border-[#EDE8E1] shadow-lg p-6">
+          <div className="bg-white rounded-2xl border border-line shadow-lg p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-semibold text-lg">Mein Kalender</h3>
-              <span className="text-sm text-[#3D8B7A] font-medium">Heute</span>
+              <span className="text-sm text-accent font-medium">Heute</span>
             </div>
             <div className="space-y-3">
               {[
@@ -280,11 +280,11 @@ function HandwerkerSection() {
                 { time: "13:00 – 14:30", task: "Türschloss defekt", loc: "Schwabing · 0,3 km", status: "Neu via Auktion", color: "#C4956A" },
                 { time: "15:00 – 16:30", task: "Balkon-Abdichtung", loc: "Lehel · 2,1 km", status: "Auktion läuft", color: "#8C857B" },
               ].map((slot, i) => (
-                <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-[#FAF8F5] border border-[#EDE8E1]">
-                  <div className="text-xs text-[#8C857B] w-24 flex-shrink-0 font-mono tabular-nums">{slot.time}</div>
+                <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-surface border border-line">
+                  <div className="text-xs text-ink-muted w-24 flex-shrink-0 font-mono tabular-nums">{slot.time}</div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[#2D2A26] truncate">{slot.task}</p>
-                    <p className="text-xs text-[#8C857B]">{slot.loc}</p>
+                    <p className="text-sm font-medium text-ink truncate">{slot.task}</p>
+                    <p className="text-xs text-ink-muted">{slot.loc}</p>
                   </div>
                   <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{ backgroundColor: `${slot.color}15`, color: slot.color }}>
                     {slot.status}
@@ -292,9 +292,9 @@ function HandwerkerSection() {
                 </div>
               ))}
             </div>
-            <div className="mt-4 pt-4 border-t border-[#EDE8E1] flex items-center justify-between text-sm">
-              <span className="text-[#8C857B]">So sieht ein voller Tag aus</span>
-              <span className="text-xs text-[#8C857B] italic">Beispiel-Ansicht</span>
+            <div className="mt-4 pt-4 border-t border-line flex items-center justify-between text-sm">
+              <span className="text-ink-muted">So sieht ein voller Tag aus</span>
+              <span className="text-xs text-ink-muted italic">Beispiel-Ansicht</span>
             </div>
           </div>
         </div>
@@ -329,71 +329,71 @@ function VerwalterSection() {
       <div className="max-w-6xl mx-auto">
         <div className="grid md:grid-cols-2 gap-16 items-center">
           {/* Auktions-Mockup */}
-          <div className="bg-[#FAF8F5] rounded-2xl border border-[#EDE8E1] shadow-lg p-6 order-2 md:order-1">
+          <div className="bg-surface rounded-2xl border border-line shadow-lg p-6 order-2 md:order-1">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-semibold text-lg">Auftrag vergeben</h3>
-              <span className="text-xs px-2 py-1 bg-[#C4956A]/10 text-[#C4956A] rounded-full font-medium">Auktion aktiv</span>
+              <span className="text-xs px-2 py-1 bg-warm/10 text-warm rounded-full font-medium">Auktion aktiv</span>
             </div>
-            <div className="bg-white rounded-lg p-4 mb-4 border border-[#EDE8E1]">
+            <div className="bg-white rounded-lg p-4 mb-4 border border-line">
               <p className="text-sm font-medium mb-1">Wasserhahn tropft — Küche</p>
-              <p className="text-xs text-[#8C857B]">Wohnung 3.OG links · gemeldet vor 23 Min.</p>
+              <p className="text-xs text-ink-muted">Wohnung 3.OG links · gemeldet vor 23 Min.</p>
               <div className="flex items-center gap-2 mt-2">
-                <span className="text-xs px-2 py-0.5 bg-[#C4956A]/10 text-[#C4956A] rounded">Sanitär</span>
-                <span className="text-xs px-2 py-0.5 bg-[#3D8B7A]/10 text-[#3D8B7A] rounded">~1,5 Std.</span>
+                <span className="text-xs px-2 py-0.5 bg-warm/10 text-warm rounded">Sanitär</span>
+                <span className="text-xs px-2 py-0.5 bg-accent/10 text-accent rounded">~1,5 Std.</span>
               </div>
             </div>
-            <p className="text-xs text-[#8C857B] font-medium mb-3 uppercase tracking-wider">Verfügbare Handwerker</p>
+            <p className="text-xs text-ink-muted font-medium mb-3 uppercase tracking-wider">Verfügbare Handwerker</p>
             <div className="space-y-2">
               {[
                 { name: "M. Weber", rating: "4.9", dist: "0,8 km", price: "85", avail: "Heute 14:00", favorit: true },
                 { name: "K. Schmidt", rating: "4.7", dist: "2,3 km", price: "92", avail: "Heute 16:00" },
                 { name: "R. Fischer", rating: "4.8", dist: "4,1 km", price: "98", avail: "Morgen 09:00" },
               ].map((hw, i) => (
-                <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border ${i === 0 ? "border-[#3D8B7A] bg-[#3D8B7A]/5" : "border-[#EDE8E1] bg-white"}`}>
-                  <div className="w-8 h-8 rounded-full bg-[#3D8B7A]/10 flex items-center justify-center text-[#3D8B7A] text-xs font-semibold flex-shrink-0">
+                <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border ${i === 0 ? "border-[#3D8B7A] bg-accent/5" : "border-line bg-white"}`}>
+                  <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent text-xs font-semibold flex-shrink-0">
                     {hw.name.split(" ").map(n => n[0]).join("")}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium">{hw.name}</p>
-                      <span className="text-xs text-[#C4956A]">★ {hw.rating}</span>
+                      <span className="text-xs text-warm">★ {hw.rating}</span>
                       {hw.favorit && (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-[#D4A24E]/15 text-[#854F0B] rounded font-medium">Favorit</span>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-[#D4A24E]/15 text-warm-dark rounded font-medium">Favorit</span>
                       )}
                     </div>
-                    <p className="text-xs text-[#8C857B]">{hw.dist} entfernt · {hw.avail}</p>
+                    <p className="text-xs text-ink-muted">{hw.dist} entfernt · {hw.avail}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-bold text-[#3D8B7A]">€{hw.price}/h</p>
-                    {i === 0 && <p className="text-xs text-[#3D8B7A]">Empfohlen</p>}
+                    <p className="text-sm font-bold text-accent">€{hw.price}/h</p>
+                    {i === 0 && <p className="text-xs text-accent">Empfohlen</p>}
                   </div>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-[#8C857B] mt-4 italic text-center">Beispiel-Ansicht</p>
+            <p className="text-xs text-ink-muted mt-4 italic text-center">Beispiel-Ansicht</p>
           </div>
 
           <div className="order-1 md:order-2">
-            <span className="inline-block px-3 py-1 bg-[#3D8B7A]/10 text-[#3D8B7A] text-sm font-medium rounded-full mb-4">
+            <span className="inline-block px-3 py-1 bg-accent/10 text-accent text-sm font-medium rounded-full mb-4">
               Für Verwalter
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold mb-6">
               Schaden gemeldet.<br />
-              <span className="text-[#3D8B7A]">Handwerker beauftragt.</span>
+              <span className="text-accent">Handwerker beauftragt.</span>
             </h2>
-            <p className="text-[#6B665E] text-lg leading-relaxed mb-8">
+            <p className="text-ink-secondary text-lg leading-relaxed mb-8">
               Keine Telefonrunden mehr. Die Stundenauktion zeigt Ihnen sofort verfügbare Handwerker mit transparenten
               Preisen, Bewertungen und Entfernung. In Minuten statt Tagen — und Ihre Stamm-Handwerker bleiben zuerst dran.
             </p>
             <ul className="space-y-4">
               {punkte.map(p => (
                 <li key={p.titel} className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-[#3D8B7A]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3D8B7A" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                   </div>
                   <div>
-                    <span className="font-semibold text-[#2D2A26]">{p.titel}</span>
-                    <p className="text-sm text-[#6B665E] mt-0.5">{p.text}</p>
+                    <span className="font-semibold text-ink">{p.titel}</span>
+                    <p className="text-sm text-ink-secondary mt-0.5">{p.text}</p>
                   </div>
                 </li>
               ))}
@@ -414,7 +414,7 @@ function MieterSection() {
       titel: "Foto, Beschreibung, fertig",
       text: "Schaden fotografieren, kurz beschreiben, absenden — in unter 30 Sekunden. Keine App nötig, alles im Browser.",
       mockup: (
-        <div className="bg-white rounded-xl border border-[#EDE8E1] p-4 shadow-sm">
+        <div className="bg-white rounded-xl border border-line p-4 shadow-sm">
           <div className="aspect-video rounded-lg bg-gradient-to-br from-[#FAF8F5] to-[#EDE8E1] mb-3 flex items-center justify-center">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#8C857B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -422,10 +422,10 @@ function MieterSection() {
             </svg>
           </div>
           <div className="space-y-2">
-            <div className="h-2 bg-[#EDE8E1] rounded w-3/4" />
-            <div className="h-2 bg-[#EDE8E1] rounded w-1/2" />
+            <div className="h-2 bg-line rounded w-3/4" />
+            <div className="h-2 bg-line rounded w-1/2" />
           </div>
-          <button className="w-full mt-3 py-2 bg-[#3D8B7A] text-white text-xs rounded-lg font-medium">Schaden absenden</button>
+          <button className="w-full mt-3 py-2 bg-accent text-white text-xs rounded-lg font-medium">Schaden absenden</button>
         </div>
       ),
     },
@@ -434,19 +434,19 @@ function MieterSection() {
       titel: "Push: Handwerker beauftragt",
       text: "Sie sehen sofort, wer kommt und wann — konkretes Zeitfenster, keine Warteschleife zwischen 8 und 17 Uhr.",
       mockup: (
-        <div className="bg-white rounded-xl border border-[#EDE8E1] p-4 shadow-sm">
+        <div className="bg-white rounded-xl border border-line p-4 shadow-sm">
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#3D8B7A] flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center flex-shrink-0">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-[#2D2A26]">Reparo</span>
-                <span className="text-[10px] text-[#8C857B]">jetzt</span>
+                <span className="text-xs font-semibold text-ink">Reparo</span>
+                <span className="text-[10px] text-ink-muted">jetzt</span>
               </div>
-              <p className="text-sm text-[#2D2A26] mt-0.5">
+              <p className="text-sm text-ink mt-0.5">
                 <strong>Handwerker beauftragt:</strong> M. Weber kommt am Freitag, 14:00–16:00 Uhr.
               </p>
             </div>
@@ -459,14 +459,14 @@ function MieterSection() {
       titel: "Push: Bitte bewerten",
       text: "Eine kurze Bewertung hilft anderen Mietern und sorgt für Qualität. Keine versteckten Folgekosten, keine offene Frage „Hat es geklappt?“.",
       mockup: (
-        <div className="bg-white rounded-xl border border-[#EDE8E1] p-4 shadow-sm">
+        <div className="bg-white rounded-xl border border-line p-4 shadow-sm">
           <div className="flex items-start gap-3 mb-3">
             <div className="w-8 h-8 rounded-lg bg-[#D4A24E] flex items-center justify-center flex-shrink-0">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
             </div>
             <div className="flex-1">
-              <span className="text-xs font-semibold text-[#2D2A26]">Reparatur abgeschlossen</span>
-              <p className="text-sm text-[#2D2A26] mt-0.5">Wie zufrieden waren Sie?</p>
+              <span className="text-xs font-semibold text-ink">Reparatur abgeschlossen</span>
+              <p className="text-sm text-ink mt-0.5">Wie zufrieden waren Sie?</p>
             </div>
           </div>
           <div className="flex gap-1 justify-center">
@@ -489,17 +489,17 @@ function MieterSection() {
   ]
 
   return (
-    <section className="py-20 px-6 bg-[#FAF8F5]">
+    <section className="py-20 px-6 bg-surface">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
-          <span className="inline-block px-3 py-1 bg-[#D4A24E]/15 text-[#854F0B] text-sm font-medium rounded-full mb-4">
+          <span className="inline-block px-3 py-1 bg-[#D4A24E]/15 text-warm-dark text-sm font-medium rounded-full mb-4">
             Für Mieter
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
             Schaden melden.<br />
-            <span className="text-[#3D8B7A]">Wissen, was passiert.</span>
+            <span className="text-accent">Wissen, was passiert.</span>
           </h2>
-          <p className="text-[#6B665E] text-lg max-w-2xl mx-auto">
+          <p className="text-ink-secondary text-lg max-w-2xl mx-auto">
             Kein Anruf, keine E-Mail, kein „wir melden uns“. Sie sehen in Echtzeit, wann der Handwerker kommt und was er macht.
           </p>
         </div>
@@ -507,7 +507,7 @@ function MieterSection() {
         {/* Vertikale Timeline */}
         <div className="relative max-w-3xl mx-auto">
           {/* Connecting line */}
-          <div className="absolute left-6 sm:left-1/2 sm:-ml-px top-12 bottom-12 w-0.5 bg-[#EDE8E1]" />
+          <div className="absolute left-6 sm:left-1/2 sm:-ml-px top-12 bottom-12 w-0.5 bg-line" />
 
           {phasen.map((p, i) => (
             <div key={i} className="relative grid sm:grid-cols-2 gap-6 sm:gap-12 mb-12 last:mb-0">
@@ -516,9 +516,9 @@ function MieterSection() {
 
               {/* Content */}
               <div className={`pl-16 sm:pl-0 ${i % 2 === 0 ? "sm:pr-12 sm:text-right" : "sm:order-2 sm:pl-12"}`}>
-                <span className="text-xs font-semibold text-[#3D8B7A] uppercase tracking-wider">{p.tag}</span>
+                <span className="text-xs font-semibold text-accent uppercase tracking-wider">{p.tag}</span>
                 <h3 className="text-lg font-semibold mt-1 mb-2">{p.titel}</h3>
-                <p className="text-sm text-[#6B665E] leading-relaxed">{p.text}</p>
+                <p className="text-sm text-ink-secondary leading-relaxed">{p.text}</p>
               </div>
 
               {/* Mockup */}
@@ -530,11 +530,11 @@ function MieterSection() {
         </div>
 
         {/* Vorteile-Liste */}
-        <div className="mt-16 bg-white rounded-2xl border border-[#EDE8E1] p-6 max-w-2xl mx-auto">
+        <div className="mt-16 bg-white rounded-2xl border border-line p-6 max-w-2xl mx-auto">
           <h3 className="font-semibold text-base mb-4 text-center">Was Sie konkret davon haben</h3>
           <ul className="grid sm:grid-cols-2 gap-3">
             {vorteile.map(v => (
-              <li key={v} className="flex items-start gap-2 text-sm text-[#6B665E]">
+              <li key={v} className="flex items-start gap-2 text-sm text-ink-secondary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3D8B7A" strokeWidth="2.5" className="flex-shrink-0 mt-0.5"><polyline points="20 6 9 17 4 12"/></svg>
                 {v}
               </li>
@@ -581,20 +581,20 @@ function KIAutomation() {
     <section className="py-20 bg-gradient-to-b from-[#FAF8F5] to-white">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-12">
-          <span className="inline-block px-3 py-1 bg-[#3D8B7A]/10 text-[#3D8B7A] text-sm font-medium rounded-full mb-4">
+          <span className="inline-block px-3 py-1 bg-accent/10 text-accent text-sm font-medium rounded-full mb-4">
             KI-gestützt
           </span>
           <h2 className="text-3xl font-bold mb-4">Intelligente Automatisierung</h2>
-          <p className="text-[#6B665E] max-w-2xl mx-auto">
+          <p className="text-ink-secondary max-w-2xl mx-auto">
             Die KI arbeitet im Hintergrund, damit alle Beteiligten weniger Zeit mit Organisation und mehr mit dem eigentlichen Job verbringen.
           </p>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {cards.map(c => (
-            <div key={c.titel} className="bg-white rounded-xl p-6 border border-[#EDE8E1] shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+            <div key={c.titel} className="bg-white rounded-xl p-6 border border-line shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
               {c.kuenftig && (
-                <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 bg-[#3D8B7A]/10 text-[#3D8B7A] rounded-full font-medium uppercase tracking-wide">
+                <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium uppercase tracking-wide">
                   Coming soon
                 </div>
               )}
@@ -605,7 +605,7 @@ function KIAutomation() {
                 {c.icon}
               </div>
               <h3 className="font-semibold text-base mb-2">{c.titel}</h3>
-              <p className="text-[#6B665E] text-sm">{c.text}</p>
+              <p className="text-ink-secondary text-sm">{c.text}</p>
             </div>
           ))}
         </div>
@@ -642,26 +642,26 @@ function BeispielSzenarien() {
   ]
 
   return (
-    <section className="py-20 px-6 bg-[#FAF8F5]">
+    <section className="py-20 px-6 bg-surface">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">So sieht ein Tag mit Reparo aus</h2>
-          <p className="text-[#6B665E] text-lg max-w-2xl mx-auto">
+          <p className="text-ink-secondary text-lg max-w-2xl mx-auto">
             Konkrete Abläufe für die drei Rollen — illustrative Beispiele, basierend auf den realen Plattform-Mechaniken.
           </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
           {szenarien.map((s, i) => (
-            <div key={i} className="bg-white p-6 rounded-2xl border border-[#EDE8E1] shadow-sm">
+            <div key={i} className="bg-white p-6 rounded-2xl border border-line shadow-sm">
               <span
                 className="inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded mb-3"
                 style={{ color: s.farbe, background: `${s.farbe}15` }}
               >
                 {s.kontext}
               </span>
-              <p className="text-[#2D2A26] text-sm leading-relaxed mb-4">„{s.zitat}“</p>
-              <p className="text-xs text-[#8C857B] font-medium">— {s.rolle}</p>
+              <p className="text-ink text-sm leading-relaxed mb-4">„{s.zitat}“</p>
+              <p className="text-xs text-ink-muted font-medium">— {s.rolle}</p>
             </div>
           ))}
         </div>
@@ -674,22 +674,22 @@ function BeispielSzenarien() {
 
 function VertrauensSiegel() {
   return (
-    <section className="py-12 px-6 bg-white border-y border-[#EDE8E1]">
+    <section className="py-12 px-6 bg-white border-y border-line">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
-          <div className="flex items-center gap-2 text-[#6B665E]">
+          <div className="flex items-center gap-2 text-ink-secondary">
             <Lock />
             <span className="text-sm font-medium">SSL-verschlüsselt</span>
           </div>
-          <div className="flex items-center gap-2 text-[#6B665E]">
+          <div className="flex items-center gap-2 text-ink-secondary">
             <Shield />
             <span className="text-sm font-medium">DSGVO-konform</span>
           </div>
-          <div className="flex items-center gap-2 text-[#6B665E]">
+          <div className="flex items-center gap-2 text-ink-secondary">
             <Globe />
             <span className="text-sm font-medium">Hosting in Deutschland</span>
           </div>
-          <div className="flex items-center gap-2 text-[#6B665E]">
+          <div className="flex items-center gap-2 text-ink-secondary">
             <Check />
             <span className="text-sm font-medium">Made in Germany</span>
           </div>
@@ -707,7 +707,7 @@ function FaqSection() {
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">Häufige Fragen</h2>
-          <p className="text-[#6B665E] text-lg">
+          <p className="text-ink-secondary text-lg">
             Alles, was du wissen solltest, bevor du startest.
           </p>
         </div>
@@ -721,10 +721,10 @@ function FaqSection() {
 
 function DualCTA() {
   return (
-    <section className="py-20 px-6 bg-[#FAF8F5]">
+    <section className="py-20 px-6 bg-surface">
       <div className="max-w-5xl mx-auto">
         <div className="grid md:grid-cols-2 gap-6">
-          <div className="p-10 rounded-2xl bg-[#3D8B7A] text-white text-center">
+          <div className="p-10 rounded-2xl bg-accent text-white text-center">
             <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mx-auto mb-6">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
@@ -734,7 +734,7 @@ function DualCTA() {
             <p className="text-white/85 mb-6">
               Lass deinen Kalender für dich arbeiten. Mehr Aufträge, bessere Preise, null Akquise.
             </p>
-            <Link href="/registrierung" className="inline-block px-8 py-3.5 bg-white text-[#3D8B7A] rounded-xl hover:bg-[#FAF8F5] transition-colors font-semibold text-base">
+            <Link href="/registrierung" className="inline-block px-8 py-3.5 bg-white text-accent rounded-xl hover:bg-surface transition-colors font-semibold text-base">
               Jetzt kostenlos starten
             </Link>
           </div>
@@ -750,7 +750,7 @@ function DualCTA() {
             <p className="text-white/75 mb-6">
               Transparente Preise, schnelle Vergabe, zufriedene Mieter. Testen Sie die Stundenauktion.
             </p>
-            <Link href="/registrierung" className="inline-block px-8 py-3.5 bg-white text-[#2D2A26] rounded-xl hover:bg-[#FAF8F5] transition-colors font-semibold text-base">
+            <Link href="/registrierung" className="inline-block px-8 py-3.5 bg-white text-ink rounded-xl hover:bg-surface transition-colors font-semibold text-base">
               Kostenlos registrieren
             </Link>
           </div>
@@ -764,11 +764,11 @@ function DualCTA() {
 
 function Footer() {
   return (
-    <footer className="py-12 px-6 border-t border-[#EDE8E1] bg-white">
+    <footer className="py-12 px-6 border-t border-line bg-white">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md bg-[#3D8B7A] flex items-center justify-center">
+            <div className="w-7 h-7 rounded-md bg-accent flex items-center justify-center">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 <polyline points="9 22 9 12 15 12 15 22" />
@@ -776,12 +776,12 @@ function Footer() {
             </div>
             <span className="font-semibold">Reparo</span>
           </div>
-          <div className="flex items-center gap-6 text-sm text-[#6B665E]">
-            <Link href="/impressum" className="hover:text-[#2D2A26] transition-colors py-3 px-3 inline-block">Impressum</Link>
-            <Link href="/agb" className="hover:text-[#2D2A26] transition-colors py-3 px-3 inline-block">AGB</Link>
-            <Link href="/datenschutz" className="hover:text-[#2D2A26] transition-colors py-3 px-3 inline-block">Datenschutz</Link>
+          <div className="flex items-center gap-6 text-sm text-ink-secondary">
+            <Link href="/impressum" className="hover:text-ink transition-colors py-3 px-3 inline-block">Impressum</Link>
+            <Link href="/agb" className="hover:text-ink transition-colors py-3 px-3 inline-block">AGB</Link>
+            <Link href="/datenschutz" className="hover:text-ink transition-colors py-3 px-3 inline-block">Datenschutz</Link>
           </div>
-          <p className="text-sm text-[#8C857B]">
+          <p className="text-sm text-ink-muted">
             © 2026 Reparo. Alle Rechte vorbehalten.
           </p>
         </div>
