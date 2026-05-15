@@ -70,7 +70,9 @@ export async function POST(request: NextRequest) {
   }
 
   // Status-Update → bei 'genehmigt' feuert der DB-Trigger
-  await supabase
+  // FIX-11: error-Check, sonst läuft die nachfolgende Mail durch obwohl
+  // der Update fehlgeschlagen ist (RLS, Constraint, etc.).
+  const { error: nachtragErr } = await supabase
     .from("nachtraege")
     .update({
       status: entscheidung,
@@ -78,6 +80,12 @@ export async function POST(request: NextRequest) {
       genehmigt_am: new Date().toISOString(),
     })
     .eq("id", nachtragId)
+  if (nachtragErr) {
+    return NextResponse.json(
+      { error: "Nachtrag-Update fehlgeschlagen: " + nachtragErr.message },
+      { status: 500 },
+    )
+  }
 
   // Neuen Auftragswert für die Mail nachladen (Trigger hat geschrieben)
   let neuerAuftragswert: number | null = null

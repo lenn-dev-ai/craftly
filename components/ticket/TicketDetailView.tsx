@@ -157,10 +157,17 @@ export default function TicketDetailView() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
+    // FIX-7: profiles(*)-Joins exposed Email/Telefon/Adresse fremder
+    // User. Eigenes Profil bleibt select("*") — der User darf sich
+    // selbst alles sehen. Joined HW + Chat-Absender nur Public-Felder.
     const [{ data: profile }, { data: t }, { data: msgs }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
-      supabase.from("tickets").select("*, objekte(*), angebote(*, handwerker:profiles(*))").eq("id", id).single(),
-      supabase.from("nachrichten").select("*, absender:profiles(*)").eq("ticket_id", id).order("created_at"),
+      supabase.from("tickets")
+        .select("*, objekte(*), angebote(*, handwerker:profiles(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl))")
+        .eq("id", id).single(),
+      supabase.from("nachrichten")
+        .select("*, absender:profiles(id, name, firma, rolle)")
+        .eq("ticket_id", id).order("created_at"),
     ])
     setCurrentUser(profile)
     setTicket(t)
@@ -188,7 +195,16 @@ export default function TicketDetailView() {
     if (!chatText.trim() || !currentUser) return
     setSending(true)
     const supabase = createClient()
-    await supabase.from("nachrichten").insert({ ticket_id: id, absender_id: currentUser.id, text: chatText.trim() })
+    // FIX-11: error-Check, sonst verschwindet die Nachricht stillos im
+    // Nichts (z.B. RLS-Block, Foreign-Key-Fail, Netzwerk-Drop).
+    const { error } = await supabase.from("nachrichten").insert({
+      ticket_id: id, absender_id: currentUser.id, text: chatText.trim(),
+    })
+    if (error) {
+      show("Nachricht konnte nicht gesendet werden: " + error.message, "error")
+      setSending(false)
+      return
+    }
     setChatText("")
     await load()
     setSending(false)

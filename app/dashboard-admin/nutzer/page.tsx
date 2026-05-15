@@ -4,17 +4,22 @@ import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { useToast } from "@/components/Toast"
 
-/* KI: Aktivitaets-Score pro Nutzer */
+/* KI: Aktivitaets-Score pro Nutzer.
+   FIX-10: Spalten heißen `erstellt_von` (für sowohl Verwalter- als auch
+   Mieter-erstellte Tickets) — vorher gegrept gegen ersteller_id /
+   melder_id, die es nicht gibt → Score immer 0. */
 function kiAktivitaetsScore(user: any, tickets: any[], angebote: any[]): number {
   let score = 0
   if (user.rolle === "verwalter") {
-    const created = tickets.filter(t => t.ersteller_id === user.id).length
-    score = Math.min(created * 20, 100)
+    // Verwalter: Tickets die er selbst angelegt hat ODER für die er
+    // verantwortlich ist (verwalter_id-Auto-Fill).
+    const owned = tickets.filter(t => t.erstellt_von === user.id || t.verwalter_id === user.id).length
+    score = Math.min(owned * 20, 100)
   } else if (user.rolle === "handwerker") {
     const bids = angebote.filter(a => a.handwerker_id === user.id).length
     score = Math.min(bids * 25, 100)
   } else if (user.rolle === "mieter") {
-    const reports = tickets.filter(t => t.melder_id === user.id).length
+    const reports = tickets.filter(t => t.erstellt_von === user.id).length
     score = Math.min(reports * 30, 100)
   } else {
     score = 80

@@ -50,8 +50,14 @@ export default function DiagnosenPage() {
     setUserId(user.id)
 
     // Diagnose-Tickets:
-    //  - Offene in der Nähe (RLS erlaubt status='auktion' für alle)
-    //  - Mir zugewiesene (egal welcher Status)
+    //  - Alle offenen Diagnose-Termine (status='auktion'), die noch nicht
+    //    übernommen sind. RLS erlaubt status='auktion' für jeden Handwerker.
+    //  - Mir zugewiesene (egal welcher Status).
+    // FIX-12 Hinweis: dies ist KEIN Radius-Filter. Diagnose-Tickets sind
+    // bewusst global sichtbar, weil Diagnose-Termine zeitkritisch sind und
+    // wer schnell ist gewinnt (atomares Claim, siehe FIX-5). Wenn künftig
+    // ein Radius-Filter gewünscht ist, braucht es eine Postgres-RPC mit
+    // PostGIS oder client-seitigen Filter über handwerker.startort_*.
     const { data } = await supabase
       .from("tickets")
       .select("id, titel, beschreibung, gewerk, dringlichkeit, status, einsatzort_adresse, einsatzort_lat, einsatzort_lng, zugewiesener_hw, befund_text, projekt_angebot, created_at")

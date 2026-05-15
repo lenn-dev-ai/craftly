@@ -44,8 +44,10 @@ export default function HandwerkerAuswahlPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push("/login"); return }
 
+      // FIX-7: handwerker:profiles(*) hätte email/telefon mit ausgeliefert.
+      // Nur Public-Felder selektieren (für die HW-Liste relevant).
       const { data: t } = await supabase.from("tickets")
-        .select("*, einladungen(*, handwerker:profiles(*))")
+        .select("*, einladungen(*, handwerker:profiles(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl))")
         .eq("id", ticketId).single()
       if (!t) { router.push("/dashboard-verwalter"); return }
       setTicket(t)
@@ -59,7 +61,13 @@ export default function HandwerkerAuswahlPage() {
         setDringlichkeit("zeitnah")
       }
 
-      let query = supabase.from("profiles").select("*").eq("rolle", "handwerker")
+      // FIX-7: nur Public-Profilfelder + die für Smart-Score nötigen Geo/
+      // Preis-Daten. Email/Telefon sind nicht im HW-Auswahl-UI sichtbar.
+      // (rolle/email/created_at brauchen wir nicht im UI, sind aber im
+      // UserProfile-Type drin → Type-Cast unten zu HandwerkerPlus.)
+      let query = supabase.from("profiles")
+        .select("id, name, firma, gewerk, bewertung_avg, auftraege_anzahl, basis_stundensatz, basis_preis, fahrtkosten_pro_km, startort_lat, startort_lng, lat, lng, radius_km, sichtbarkeit_stufe, verfuegbarkeit_score, plz_bereich")
+        .eq("rolle", "handwerker")
       if (t.gewerk && t.gewerk !== "allgemein") {
         query = query.ilike("gewerk", `%${t.gewerk}%`)
       }
@@ -111,7 +119,11 @@ export default function HandwerkerAuswahlPage() {
       const dauerStunden = 2 // Default-Annahme; spaeter aus Ticket
       const dauerMin = dauerStunden * 60
 
-      const erweitert: HandwerkerPlus[] = liste.map(hw => {
+      // FIX-7: Cast nötig weil select() jetzt nur Public-Felder holt,
+      // aber HandwerkerPlus extends UserProfile (mit email/rolle/created_at).
+      // Diese Felder werden im UI nicht gebraucht — Cast über unknown ist
+      // sicher.
+      const erweitert: HandwerkerPlus[] = (liste as unknown as UserProfile[]).map(hw => {
         let distanzKm: number | null = null
         let fahrzeitMin: number | null = null
         let routenScore: number | null = null

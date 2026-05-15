@@ -68,29 +68,9 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  // Rate-Limit: max 10 KI-Calls/Tag/User. Atomic check+increment in
-  // Postgres (siehe supabase/migrations/20260520100000_*).
-  // Schutz vor Anthropic-Kostenexplosion durch kompromittierte Accounts
-  // oder ungeduldige Mieter, die das Foto-Upload-Feature spammen.
-  const { data: quotaResult, error: quotaErr } = await supabase
-    .rpc("try_consume_ki_quota", { _max_per_day: 10 })
-    .single<{ allowed: boolean; remaining: number; reset_at: string }>()
-  if (quotaErr) {
-    return NextResponse.json(
-      { error: "Quota-Check fehlgeschlagen: " + quotaErr.message },
-      { status: 500 },
-    )
-  }
-  if (!quotaResult?.allowed) {
-    return NextResponse.json(
-      {
-        error: "Tageslimit erreicht (10 KI-Analysen/Tag). Versuch's morgen wieder oder beschreibe den Schaden manuell.",
-        resetAt: quotaResult?.reset_at,
-      },
-      { status: 429 },
-    )
-  }
-
+  // FIX-9: Erst Request validieren (formData/MIME/Size), DANN Quota
+  // verbrauchen. Sonst: kaputter Request (falscher MIME, zu groß,
+  // kein Foto-Feld) verbrennt trotzdem ein Tages-Credit beim User.
   let formData: FormData
   try {
     formData = await request.formData()
@@ -111,6 +91,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: `Datei zu groß (max ${MAX_BYTES / 1024 / 1024} MB)` },
       { status: 413 },
+    )
+  }
+
+  // Rate-Limit: max 10 KI-Calls/Tag/User. Atomic check+increment in
+  // Postgres (siehe supabase/migrations/20260520100000_*).
+  // Schutz vor Anthropic-Kostenexplosion durch kompromittierte Accounts
+  // oder ungeduldige Mieter, die das Foto-Upload-Feature spammen.
+  const { data: quotaResult, error: quotaErr } = await supabase
+    .rpc("try_consume_ki_quota", { _max_per_day: 10 })
+    .single<{ allowed: boolean; remaining: number; reset_at: string }>()
+  if (quotaErr) {
+    return NextResponse.json(
+      { error: "Quota-Check fehlgeschlagen: " + quotaErr.message },
+      { status: 500 },
+    )
+  }
+  if (!quotaResult?.allowed) {
+    return NextResponse.json(
+      {
+        error: "Tageslimit erreicht (10 KI-Analysen/Tag). Versuch's morgen wieder oder beschreibe den Schaden manuell.",
+        resetAt: quotaResult?.reset_at,
+      },
+      { status: 429 },
     )
   }
 
