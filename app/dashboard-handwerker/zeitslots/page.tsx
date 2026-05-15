@@ -65,7 +65,7 @@ export default function ZeitslotsPage() {
     if (!user) { router.push("/login"); return }
 
     const [{ data: prof }, { data: mySlots }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).single(),
+      supabase.from("profiles").select("id, email, name, rolle, gewerk, basis_preis, sichtbarkeit_stufe, verfuegbarkeit_score, kalender_streak, created_at").eq("id", user.id).single(),
       supabase.from("zeitslots").select("*, gebote:zeitslot_gebote(*)").eq("handwerker_id", user.id).order("datum", { ascending: false }),
     ])
 

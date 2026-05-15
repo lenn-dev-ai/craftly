@@ -30,7 +30,7 @@ export default function HandwerkerDashboard() {
     if (!user) { router.push("/login"); return }
 
     const [{ data: prof }, { data: offene }, { data: meine }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).single(),
+      supabase.from("profiles").select("id, email, name, rolle, firma, gewerk, lat, lng, radius_km, bewertung_avg, auftraege_anzahl, sichtbarkeit_stufe, verfuegbarkeit_score, angebotstreue, created_at").eq("id", user.id).single(),
       supabase.from("tickets").select("*, angebote(*)").eq("status", "auktion")
         .gt("auktion_ende", new Date().toISOString()).order("auktion_ende"),
       supabase.from("tickets").select("*").eq("zugewiesener_hw", user.id)

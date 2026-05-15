@@ -33,7 +33,7 @@ export default function ReportingPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push("/login"); return }
       const [{ data: prof }, { data: ts }, { data: provs }] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", user.id).single(),
+        supabase.from("profiles").select("id, email, name, rolle, early_adopter_bis, created_at").eq("id", user.id).single(),
         supabase.from("tickets").select("*, angebote(*)").eq("verwalter_id", user.id),
         supabase.from("provisionen").select("*").eq("verwalter_id", user.id),
       ])

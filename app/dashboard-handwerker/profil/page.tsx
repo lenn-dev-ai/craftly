@@ -42,7 +42,11 @@ export default function ProfilPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push("/login"); return }
-      const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, email, name, rolle, telefon, firma, gewerk, plz_bereich, adresse, lat, lng, radius_km, basis_stundensatz, mindest_stundensatz, fahrtkosten_pro_km, startort_adresse, startort_lat, startort_lng, bewertung_avg, auftraege_anzahl, created_at")
+        .eq("id", user.id)
+        .single()
       if (data) {
         setProfile(data)
         setForm({

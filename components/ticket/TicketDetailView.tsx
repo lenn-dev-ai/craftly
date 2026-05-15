@@ -153,10 +153,10 @@ export default function TicketDetailView() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
     // FIX-7: profiles(*)-Joins exposed Email/Telefon/Adresse fremder
-    // User. Eigenes Profil bleibt select("*") — der User darf sich
-    // selbst alles sehen. Joined HW + Chat-Absender nur Public-Felder.
+    // User. Joined HW + Chat-Absender nur Public-Felder; eigenes Profil
+    // wird ebenfalls auf die hier benötigten Spalten begrenzt.
     const [{ data: profile }, { data: t }, { data: msgs }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).single(),
+      supabase.from("profiles").select("id, email, name, rolle, firma, early_adopter_bis, created_at").eq("id", user.id).single(),
       supabase.from("tickets")
         .select("*, objekte(*), angebote(*, handwerker:profiles(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl))")
         .eq("id", id).single(),

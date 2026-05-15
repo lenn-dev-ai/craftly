@@ -81,7 +81,10 @@ export default function TerminePage() {
     if (!user) { router.push("/login"); return }
 
     const { data: prof } = await supabase
-      .from("profiles").select("*").eq("id", user.id).single()
+      .from("profiles")
+      .select("id, email, name, rolle, startort_adresse, startort_lat, startort_lng, created_at")
+      .eq("id", user.id)
+      .single()
     setProfile(prof)
 
     // Auftrags-Termine

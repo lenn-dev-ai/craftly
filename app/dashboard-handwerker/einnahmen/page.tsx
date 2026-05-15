@@ -47,7 +47,7 @@ export default function EinnahmenDashboard() {
       if (!user) { router.push("/login"); return }
 
       const [{ data: prof }, { data: mySlots }, { data: myGebote }] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", user.id).single(),
+        supabase.from("profiles").select("id, email, name, rolle, gewerk, basis_preis, created_at").eq("id", user.id).single(),
         supabase.from("zeitslots").select("*, gebote:zeitslot_gebote(*)").eq("handwerker_id", user.id).order("datum"),
         supabase.from("zeitslot_gebote").select("*, zeitslot:zeitslots(*)").eq("zeitslots.handwerker_id", user.id),
       ])

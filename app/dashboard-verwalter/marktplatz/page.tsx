@@ -29,7 +29,7 @@ export default function MarktplatzPage() {
     if (!user) { router.push("/login"); return }
 
     const [{ data: prof }, { data: verfuegbareSlots }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).single(),
+      supabase.from("profiles").select("id, email, name, rolle, created_at").eq("id", user.id).single(),
       supabase
         .from("zeitslots")
         .select("*, handwerker:profiles!handwerker_id(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl, plz_bereich), gebote:zeitslot_gebote(count)")
