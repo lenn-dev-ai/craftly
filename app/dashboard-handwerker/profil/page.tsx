@@ -322,6 +322,31 @@ export default function ProfilPage() {
           </div>
         </div>
       </div>
+
+      {/* KAL-3: Google Calendar Stub. DB-Spalten google_refresh_token +
+          google_calendar_connected existieren bereits. Voller OAuth-Flow
+          braucht Google-API-Credentials + Verifizierung — daher hier
+          nur "Coming soon"-Hinweis. */}
+      <div className="bg-white rounded-2xl border border-line p-6 mt-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="text-base font-semibold text-ink mb-1">
+              Google Kalender verbinden
+            </h2>
+            <p className="text-sm text-ink-muted">
+              Termine automatisch in deinen Google Kalender synchronisieren.
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled
+            className="text-xs font-semibold bg-surface-muted text-ink-muted border border-line px-4 py-2 rounded-xl cursor-not-allowed inline-flex items-center gap-2"
+            aria-disabled="true"
+          >
+            <span className="text-warm-dark">Demnächst</span>
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
