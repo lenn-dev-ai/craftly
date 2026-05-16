@@ -367,6 +367,30 @@ async function main() {
   }
 
   // ======================================================================
+  // Test 8: Feedback-Isolation
+  // ======================================================================
+  console.log("\n— Feedback-Isolation —")
+  {
+    // Mieter legt Feedback an, HW versucht es zu lesen
+    const { data: ownFb } = await sbMieter.from("feedback").insert({
+      user_id: seed.mieter.id,
+      rolle: "mieter",
+      message: "Pen-Test Feedback",
+    }).select("id").maybeSingle<{ id: string }>()
+
+    const { data: hwSees } = await sbHwOwn.from("feedback").select("id, message").limit(10)
+    const vulnerable = !!hwSees && hwSees.some(f => f.id === ownFb?.id)
+    record(
+      "HW liest fremdes Feedback",
+      "MEDIUM", vulnerable,
+      vulnerable
+        ? `🟠 HW sieht ${hwSees.length} Feedback-Zeilen (inkl. fremde) — Policy ignoriert!`
+        : `HW sieht nur eigene Feedbacks (${hwSees?.length ?? 0})`,
+    )
+    if (ownFb?.id) await admin.from("feedback").delete().eq("id", ownFb.id)
+  }
+
+  // ======================================================================
   // Cleanup
   // ======================================================================
   await admin.from("provisionen").delete().eq("ticket_id", ticket.id)

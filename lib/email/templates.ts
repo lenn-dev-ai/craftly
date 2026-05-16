@@ -492,3 +492,74 @@ export function absageEmail(params: {
   `)
   return { subject, html }
 }
+
+// =====================================================================
+// 6. Welcome-Mail nach Registrierung / OAuth-First-Login
+// =====================================================================
+export function welcomeEmail(params: {
+  name: string
+  rolle: "verwalter" | "handwerker" | "mieter" | "admin"
+}): { subject: string; html: string } {
+  const subject = "Willkommen bei Reparo"
+
+  const quickstartByRolle: Record<string, { title: string; bullets: string[]; cta: { label: string; href: string } }> = {
+    verwalter: {
+      title: "Erste Schritte als Verwaltung",
+      bullets: [
+        "Lege deine ersten Objekte und Wohnungen unter Verwaltung an.",
+        "Lade Mieter per E-Mail-Code ein — sie können dann Schäden melden.",
+        "Lade Handwerker zu Auktionen ein und vergleiche Angebote.",
+      ],
+      cta: { label: "Zur Verwaltung", href: `${SITE_URL}/dashboard-verwalter` },
+    },
+    handwerker: {
+      title: "Erste Schritte als Handwerker",
+      bullets: [
+        "Pflege Gewerk, Einzugsgebiet und Stundensatz im Profil — wir matchen damit Aufträge.",
+        "Lege Zeitslots an, damit der Kalender deine Verfügbarkeit kennt.",
+        "Verbinde Stripe (optional), damit künftige Auszahlungen und Penalty-Verrechnungen sauber laufen.",
+      ],
+      cta: { label: "Zum Handwerker-Dashboard", href: `${SITE_URL}/dashboard-handwerker` },
+    },
+    mieter: {
+      title: "Erste Schritte als Mieter",
+      bullets: [
+        "Trage in „Schaden melden“ Beschreibung und Foto ein — die KI hilft beim Einordnen.",
+        "Du siehst den Status jederzeit unter „Meine Tickets“.",
+        "Antworte direkt im Ticket, wenn der Handwerker Rückfragen hat.",
+      ],
+      cta: { label: "Schaden melden", href: `${SITE_URL}/dashboard-mieter/melden` },
+    },
+    admin: {
+      title: "Admin-Übersicht",
+      bullets: [
+        "Du hast Zugriff auf alle Dashboards via Rollenwechsel.",
+        "Feedback und Penalties laufen in deiner Admin-Sidebar auf.",
+      ],
+      cta: { label: "Admin-Dashboard", href: `${SITE_URL}/dashboard-admin` },
+    },
+  }
+
+  const qs = quickstartByRolle[params.rolle] ?? quickstartByRolle.mieter
+  const bullets = qs.bullets.map(b => `
+    <li style="margin:0 0 8px;color:${COLORS.text};font-size:14px;line-height:1.6;">${escapeHtml(b)}</li>
+  `).join("")
+
+  const html = emailLayout(`Hallo ${params.name.split(" ")[0] || ""} — willkommen bei Reparo`, `
+    <p style="margin:0 0 16px;color:${COLORS.text};font-size:16px;line-height:1.6;">
+      Schön, dass du dabei bist. Reparo verbindet Verwaltungen, Handwerker
+      und Mieter auf einer Plattform — alle Schadensmeldungen, Angebote
+      und Abrechnungen an einem Ort.
+    </p>
+    <h3 style="margin:0 0 12px;color:${COLORS.text};font-size:16px;font-weight:700;">${escapeHtml(qs.title)}</h3>
+    <ul style="margin:0 0 16px;padding-left:20px;">
+      ${bullets}
+    </ul>
+    ${ctaButton(qs.cta.label, qs.cta.href)}
+    <p style="margin:24px 0 0;color:${COLORS.textMuted};font-size:13px;line-height:1.6;">
+      Du bist Teil der Beta — der Feedback-Button unten rechts geht direkt
+      an uns. Hilf uns dabei, Reparo besser zu machen.
+    </p>
+  `)
+  return { subject, html }
+}

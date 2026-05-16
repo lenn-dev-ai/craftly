@@ -11,7 +11,7 @@ import {
   LayoutDashboard, Ticket, Zap, Wrench, BarChart3,
   Euro, Calendar, Briefcase, MapPin, CalendarCheck, UserCircle,
   Plus, FileText, ShieldCheck, LogOut, Map, CalendarRange, Stethoscope,
-  Calculator, AlertTriangle,
+  Calculator, AlertTriangle, MessageSquare,
   type LucideProps,
 } from "lucide-react"
 
@@ -45,6 +45,7 @@ const menus: Record<Rolle, { href: string; label: string; Icon: LucideIcon }[]> 
   ],
   admin: [
     { href: "/dashboard-admin", label: "Dashboard", Icon: LayoutDashboard },
+    { href: "/dashboard-admin/feedback", label: "Feedback", Icon: MessageSquare },
     { href: "/dashboard-admin/penalties", label: "Penalties", Icon: AlertTriangle },
     { href: "/dashboard-verwalter", label: "Verwaltung", Icon: ShieldCheck },
   ],

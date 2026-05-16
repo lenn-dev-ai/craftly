@@ -100,6 +100,7 @@ export default function OnboardingPage() {
         )
         return
       }
+      void fetch("/api/welcome-mail", { method: "POST" })
       router.push(dashMap[values.rolle] || "/dashboard-mieter")
     } catch {
       setServerError("Ein unerwarteter Fehler ist aufgetreten.")

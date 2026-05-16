@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import CookieBanner from '@/components/CookieBanner'
 import { ToastProvider } from '@/components/Toast'
+import { FeedbackWidget } from '@/components/FeedbackWidget'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -219,6 +220,7 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased bg-surface text-ink`}>
         <ToastProvider>
           {children}
+          <FeedbackWidget />
         </ToastProvider>
         <CookieBanner />
         {/* Service-Worker-Killswitch: lädt /sw.js (jetzt Self-Destruct) bei
