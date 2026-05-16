@@ -377,6 +377,43 @@ export default function TicketDetailView() {
           </div>
         )}
 
+        {/* === PENALTY-MARKER === */}
+        {ticket.penalty_status === "manual_pending" && (
+          <Card className="mb-6 border-warm/30 bg-warm-light">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-warm/20 flex items-center justify-center flex-shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-warm-dark">
+                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-warm-dark">
+                  Frist-Penalty offen
+                  {ticket.penalty_amount_cents && (
+                    <> · €{(ticket.penalty_amount_cents / 100).toFixed(2)}</>
+                  )}
+                </div>
+                <p className="text-xs text-warm-dark/80 mt-0.5">
+                  Der HW hat die 14-Tage-Frist überschritten. Reparo verrechnet die Penalty separat.
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+        {ticket.penalty_status === "paid" && (
+          <div className="mb-3 text-xs text-ink-muted flex items-center gap-2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-accent">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Frist-Penalty verrechnet
+            {ticket.penalty_amount_cents && (
+              <> (€{(ticket.penalty_amount_cents / 100).toFixed(2)})</>
+            )}
+          </div>
+        )}
+
         {/* === AUCTION HERO === */}
         {ticket.status === "auktion" && ticket.auktion_ende && (
           <div className="mb-6">

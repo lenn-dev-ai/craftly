@@ -87,6 +87,12 @@ export interface Ticket {
   preiskorridor_max?: number | null
   diagnosegebuehr_angerechnet?: boolean | null
   surge_faktor?: number | null
+  // Frist-Penalty (gesetzt vom abwicklungsfrist-Cron bei Stufe-2-
+  // Überschreitung). penalty_status: none|manual_pending|paid|failed.
+  penalty_status?: "none" | "manual_pending" | "paid" | "failed" | null
+  penalty_amount_cents?: number | null
+  penalty_charge_id?: string | null
+  penalty_buchung_versucht_am?: string | null
 }
 
 export interface Angebot {
