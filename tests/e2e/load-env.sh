@@ -12,7 +12,7 @@
 
 set -e
 
-ENV_OUTPUT=$(npx --yes supabase status -o env 2>&1)
+ENV_OUTPUT=$(npm exec -- supabase status -o env 2>&1)
 if echo "$ENV_OUTPUT" | grep -qiE "not running|cannot connect|error"; then
   echo "❌ Lokale Supabase läuft nicht. Erst: npm run db:start" >&2
   echo "$ENV_OUTPUT" >&2
@@ -38,6 +38,9 @@ fi
 export E2E_SUPABASE_URL="$URL"
 export E2E_SUPABASE_ANON_KEY="$ANON"
 export E2E_SUPABASE_SERVICE_ROLE_KEY="$SERVICE"
+export SUPABASE_SERVICE_ROLE_KEY="$SERVICE"
+export NEXT_PUBLIC_SUPABASE_URL="$URL"
+export NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON"
 
 echo "✓ E2E-Env geladen aus 'supabase status -o env':"
 echo "  URL:     $E2E_SUPABASE_URL"

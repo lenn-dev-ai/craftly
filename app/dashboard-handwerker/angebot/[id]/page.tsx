@@ -1,7 +1,7 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useId, useState } from "react"
 import { createClient } from "@/lib/supabase"
 import { formatGewerk, type Ticket, type Angebot } from "@/types"
 
@@ -15,6 +15,9 @@ export default function AngebotAbgeben() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const supabase = createClient()
+  const preisId = useId()
+  const terminId = useId()
+  const nachrichtId = useId()
 
   const [ticket, setTicket] = useState<Ticket | null>(null)
   const [loading, setLoading] = useState(true)
@@ -202,7 +205,7 @@ export default function AngebotAbgeben() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Price */}
           <div className="bg-white border border-line rounded-2xl p-5">
-            <label className="block text-sm font-medium text-ink mb-1">
+            <label htmlFor={preisId} className="block text-sm font-medium text-ink mb-1">
               Dein Festpreis-Angebot <span className="text-accent">*</span>
             </label>
             <p className="text-[11px] text-ink-muted mb-3">
@@ -210,9 +213,10 @@ export default function AngebotAbgeben() {
             </p>
             <div className="relative">
               <input
-                type="number"
-                step="0.01"
-                min="1"
+              type="number"
+              id={preisId}
+              step="0.01"
+              min="1"
                 required
                 value={preis}
                 onChange={(e) => setPreis(e.target.value)}
@@ -228,10 +232,11 @@ export default function AngebotAbgeben() {
 
           {/* Date */}
           <div className="bg-white border border-line rounded-2xl p-5">
-            <label className="block text-sm font-medium text-ink mb-3">
+            <label htmlFor={terminId} className="block text-sm font-medium text-ink mb-3">
               Frühester Termin
             </label>
             <input
+              id={terminId}
               type="date"
               min={today}
               value={fruehesterTermin}
@@ -243,10 +248,11 @@ export default function AngebotAbgeben() {
 
           {/* Message */}
           <div className="bg-white border border-line rounded-2xl p-5">
-            <label className="block text-sm font-medium text-ink mb-3">
+            <label htmlFor={nachrichtId} className="block text-sm font-medium text-ink mb-3">
               Nachricht an Verwalter
             </label>
             <textarea
+              id={nachrichtId}
               rows={3}
               value={nachricht}
               onChange={(e) => setNachricht(e.target.value)}

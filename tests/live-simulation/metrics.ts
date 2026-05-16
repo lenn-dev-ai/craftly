@@ -19,8 +19,10 @@ export interface LiveSimulationMeta {
   baseUrl: string
   users: number
   headless: boolean
+  concurrency: number
   allowWrites: boolean
   allowProdSimulation: boolean
+  seedAccounts: boolean
   runId: string
 }
 
@@ -112,8 +114,10 @@ function renderMarkdown(
   lines.push(`- Base URL: \`${meta.baseUrl}\``)
   lines.push(`- Users: \`${meta.users}\``)
   lines.push(`- Headless: \`${meta.headless}\``)
+  lines.push(`- Concurrency: \`${meta.concurrency}\``)
   lines.push(`- Allow writes: \`${meta.allowWrites}\``)
   lines.push(`- Allow prod simulation: \`${meta.allowProdSimulation}\``)
+  lines.push(`- Seed accounts: \`${meta.seedAccounts}\``)
   lines.push(`- Run ID: \`${meta.runId}\``, "")
   lines.push("## Summary", "")
   lines.push(`- Total runs: \`${summary.totalRuns}\``)

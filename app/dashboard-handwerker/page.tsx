@@ -30,7 +30,7 @@ export default function HandwerkerDashboard() {
     if (!user) { router.push("/login"); return }
 
     const [{ data: prof }, { data: offene }, { data: meine }] = await Promise.all([
-      supabase.from("profiles").select("id, email, name, rolle, firma, gewerk, lat, lng, radius_km, bewertung_avg, auftraege_anzahl, sichtbarkeit_stufe, verfuegbarkeit_score, angebotstreue, created_at").eq("id", user.id).single(),
+      supabase.from("profiles").select("id, email, name, rolle, firma, gewerk, startort_lat, startort_lng, radius_km, bewertung_avg, auftraege_anzahl, sichtbarkeit_stufe, verfuegbarkeit_score, angebotstreue, created_at").eq("id", user.id).single(),
       supabase.from("tickets").select("*, angebote(*)").eq("status", "auktion")
         .gt("auktion_ende", new Date().toISOString()).order("auktion_ende"),
       supabase.from("tickets").select("*").eq("zugewiesener_hw", user.id)
@@ -70,14 +70,14 @@ export default function HandwerkerDashboard() {
     </div>
   )
 
-  const standortGesetzt = profile?.lat != null && profile?.lng != null
+  const standortGesetzt = profile?.startort_lat != null && profile?.startort_lng != null
   const radiusKm = profile?.radius_km ?? 25
   const meinGewerk = profile?.gewerk?.toLowerCase()
 
   // Distanz-Map für effizientes Filtern + Sortieren
   const distanzVon = (t: Ticket): number => {
     if (!standortGesetzt || t.einsatzort_lat == null || t.einsatzort_lng == null) return Infinity
-    return haversineKm(profile!.lat!, profile!.lng!, t.einsatzort_lat, t.einsatzort_lng)
+    return haversineKm(profile!.startort_lat!, profile!.startort_lng!, t.einsatzort_lat, t.einsatzort_lng)
   }
 
   // Gewerk-Match: Ticket-Gewerk gleicht Handwerker-Gewerk oder ist
@@ -300,8 +300,8 @@ export default function HandwerkerDashboard() {
                       <div className="flex items-center gap-2 flex-wrap mb-3">
                         {standortGesetzt && t.einsatzort_lat && t.einsatzort_lng && (
                           <DistanceBadge
-                            vonLat={profile?.lat}
-                            vonLng={profile?.lng}
+                            vonLat={profile?.startort_lat}
+                            vonLng={profile?.startort_lng}
                             zuLat={t.einsatzort_lat}
                             zuLng={t.einsatzort_lng}
                             radiusKm={profile?.radius_km}

@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 
 // Photon (Komoot) — kein API-Key, kein Account, EU-Hosting (München)
 // Docs: https://photon.komoot.io/
@@ -61,6 +61,7 @@ export default function AddressAutocomplete({
   const [loading, setLoading] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const inputId = useId()
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -114,8 +115,9 @@ export default function AddressAutocomplete({
 
   return (
     <div className="flex flex-col gap-1 relative" ref={containerRef}>
-      {label && <label className="text-sm font-medium text-ink-secondary">{label}</label>}
+      {label && <label htmlFor={inputId} className="text-sm font-medium text-ink-secondary">{label}</label>}
       <input
+        id={inputId}
         type="text"
         value={text}
         placeholder={placeholder}

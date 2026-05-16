@@ -20,4 +20,8 @@ export async function login(page: Page, { email, password, expectedPath }: Login
   // Default: wartet auf irgendein Dashboard
   const target = expectedPath ?? /\/dashboard-(verwalter|handwerker|mieter|admin)/
   await page.waitForURL(target, { timeout: 15_000 })
+  await page.getByRole("link", { name: /Abmelden/i }).waitFor({ timeout: 10_000 }).catch(() => {})
+  await page.reload({ waitUntil: "domcontentloaded" })
+  await page.getByRole("link", { name: /Abmelden/i }).waitFor({ timeout: 10_000 }).catch(() => {})
+  await page.waitForTimeout(250)
 }

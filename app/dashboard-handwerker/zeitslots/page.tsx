@@ -58,6 +58,12 @@ export default function ZeitslotsPage() {
     gewerk: "" as string,
     notizen: "",
   })
+  const titelId = "zeitslot-titel"
+  const gewerkId = "zeitslot-gewerk"
+  const datumId = "zeitslot-datum"
+  const vonId = "zeitslot-von"
+  const bisId = "zeitslot-bis"
+  const notizenId = "zeitslot-notizen"
 
   const loadData = useCallback(async () => {
     const supabase = createClient()
@@ -315,8 +321,9 @@ export default function ZeitslotsPage() {
           <h2 className="text-lg font-semibold text-ink mb-4">Neuen Zeitslot erstellen</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-ink-muted mb-1 block font-medium">Titel (optional)</label>
+              <label htmlFor={titelId} className="text-xs text-ink-muted mb-1 block font-medium">Titel (optional)</label>
               <input
+                id={titelId}
                 type="text"
                 value={form.titel}
                 onChange={(e) => setForm({ ...form, titel: e.target.value })}
@@ -325,8 +332,9 @@ export default function ZeitslotsPage() {
               />
             </div>
             <div>
-              <label className="text-xs text-ink-muted mb-1 block font-medium">Gewerk</label>
+              <label htmlFor={gewerkId} className="text-xs text-ink-muted mb-1 block font-medium">Gewerk</label>
               <select
+                id={gewerkId}
                 value={form.gewerk}
                 onChange={(e) => setForm({ ...form, gewerk: e.target.value })}
                 className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm text-ink focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20 transition-colors"
@@ -338,8 +346,9 @@ export default function ZeitslotsPage() {
               </select>
             </div>
             <div>
-              <label className="text-xs text-ink-muted mb-1 block font-medium">Datum *</label>
+              <label htmlFor={datumId} className="text-xs text-ink-muted mb-1 block font-medium">Datum *</label>
               <input
+                id={datumId}
                 type="date"
                 required
                 value={form.datum}
@@ -350,8 +359,9 @@ export default function ZeitslotsPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-ink-muted mb-1 block font-medium">Von *</label>
+                <label htmlFor={vonId} className="text-xs text-ink-muted mb-1 block font-medium">Von *</label>
                 <input
+                  id={vonId}
                   type="time"
                   required
                   value={form.von}
@@ -360,8 +370,9 @@ export default function ZeitslotsPage() {
                 />
               </div>
               <div>
-                <label className="text-xs text-ink-muted mb-1 block font-medium">Bis *</label>
+                <label htmlFor={bisId} className="text-xs text-ink-muted mb-1 block font-medium">Bis *</label>
                 <input
+                  id={bisId}
                   type="time"
                   required
                   value={form.bis}
@@ -371,8 +382,9 @@ export default function ZeitslotsPage() {
               </div>
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs text-ink-muted mb-1 block font-medium">Notizen (optional)</label>
+              <label htmlFor={notizenId} className="text-xs text-ink-muted mb-1 block font-medium">Notizen (optional)</label>
               <textarea
+                id={notizenId}
                 value={form.notizen}
                 onChange={(e) => setForm({ ...form, notizen: e.target.value })}
                 placeholder="z.B. Nur Kleinreparaturen, max. 30km Umkreis..."

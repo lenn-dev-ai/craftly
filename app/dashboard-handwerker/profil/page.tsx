@@ -44,7 +44,7 @@ export default function ProfilPage() {
       if (!user) { router.push("/login"); return }
       const { data } = await supabase
         .from("profiles")
-        .select("id, email, name, rolle, telefon, firma, gewerk, plz_bereich, adresse, lat, lng, radius_km, basis_stundensatz, mindest_stundensatz, fahrtkosten_pro_km, startort_adresse, startort_lat, startort_lng, bewertung_avg, auftraege_anzahl, created_at")
+        .select("id, email, name, rolle, telefon, firma, gewerk, plz_bereich, radius_km, basis_stundensatz, mindest_stundensatz, fahrtkosten_pro_km, startort_adresse, startort_lat, startort_lng, bewertung_avg, auftraege_anzahl, created_at")
         .eq("id", user.id)
         .single()
       if (data) {
@@ -55,9 +55,9 @@ export default function ProfilPage() {
           gewerk: data.gewerk || "",
           plz_bereich: data.plz_bereich || "",
           telefon: data.telefon || "",
-          adresse: data.adresse || "",
-          lat: data.lat ?? null,
-          lng: data.lng ?? null,
+          adresse: "",
+          lat: null,
+          lng: null,
           radius_km: data.radius_km ?? 25,
           basis_stundensatz: data.basis_stundensatz ?? null,
           mindest_stundensatz: data.mindest_stundensatz ?? null,
@@ -78,7 +78,8 @@ export default function ProfilPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { error: updateErr } = await supabase.from("profiles").update(form).eq("id", user.id)
+      const { adresse: _adresse, lat: _lat, lng: _lng, ...persisted } = form
+      const { error: updateErr } = await supabase.from("profiles").update(persisted).eq("id", user.id)
       if (updateErr) {
         setError("Speichern fehlgeschlagen: " + updateErr.message)
         setSaving(false)
@@ -357,10 +358,12 @@ function Field({
   label: string; value: string; onChange: (v: string) => void
   type?: string; placeholder?: string
 }) {
+  const id = `profile-field-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
   return (
     <div>
-      <label className="text-xs text-ink-muted mb-1.5 block font-medium">{label}</label>
+      <label htmlFor={id} className="text-xs text-ink-muted mb-1.5 block font-medium">{label}</label>
       <input
+        id={id}
         type={type}
         value={value}
         placeholder={placeholder}
@@ -383,13 +386,15 @@ function NumField({
   step?: string
   required?: boolean
 }) {
+  const id = `profile-num-field-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
   return (
     <div>
-      <label className="text-xs text-ink-muted mb-1.5 block font-medium">
+      <label htmlFor={id} className="text-xs text-ink-muted mb-1.5 block font-medium">
         {label} {required && <span className="text-danger">*</span>}
       </label>
       <div className="relative">
         <input
+          id={id}
           type="number"
           inputMode="decimal"
           step={step}

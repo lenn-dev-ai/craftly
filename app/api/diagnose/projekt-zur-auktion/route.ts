@@ -97,51 +97,64 @@ export async function POST(request: NextRequest) {
   const start = new Date()
   const ende = berechneAuktionsEnde(start, config.auktionsDauerStunden)
   const vorkaufsrechtBis = new Date(start.getTime() + VORKAUFSRECHT_STUNDEN * 3600 * 1000)
+  const admin = createServiceRoleClient()
 
-  // Projekt-Ticket anlegen (status=auktion)
+  // Projekt-Ticket anlegen (status=auktion). Die Route ist absichtlich
+  // idempotent, damit Wiederholungen im Live-Test oder nach einem Abbruch
+  // nicht an einem bereits angelegten Projekt-Ticket scheitern.
   const projektTitel = ticket.titel.startsWith("Projekt: ") ? ticket.titel : `Projekt: ${ticket.titel}`
   const projektBeschr = ticket.befund_text
-  const { data: projektTicket, error: insErr } = await supabase
+  const { data: existingProjekte } = await admin
     .from("tickets")
-    .insert({
-      titel: projektTitel,
-      beschreibung: projektBeschr,
-      gewerk: ticket.gewerk,
-      erstellt_von: ticket.erstellt_von,
-      verwalter_id: ticket.verwalter_id ?? user.id,
-      einsatzort_adresse: ticket.einsatzort_adresse,
-      einsatzort_lat: ticket.einsatzort_lat,
-      einsatzort_lng: ticket.einsatzort_lng,
-      ticket_typ: "projekt",
-      diagnose_ticket_id: ticket.id,
-      status: "auktion",
-      dringlichkeit,
-      surge_faktor: config.surgeFaktor,
-      auktion_start: start.toISOString(),
-      auktion_ende: ende?.toISOString() ?? null,
-      vorkaufsrecht_bis: vorkaufsrechtBis.toISOString(),
-      preiskorridor_min: ticket.preiskorridor_min,
-      preiskorridor_max: ticket.preiskorridor_max,
-      befund_text: ticket.befund_text,
-      befund_fotos: ticket.befund_fotos ?? [],
-      befund_aufwand_stunden: ticket.befund_aufwand_stunden,
-      projekt_angebot: ticket.projekt_angebot,
-      leistungsumfang: ticket.leistungsumfang ?? [],
-    })
     .select("id")
-    .single<{ id: string }>()
-  if (insErr || !projektTicket) {
-    return NextResponse.json(
-      { error: "Projekt-Ticket anlegen fehlgeschlagen: " + (insErr?.message ?? "unknown") },
-      { status: 500 },
-    )
+    .eq("diagnose_ticket_id", ticket.id)
+    .limit(1)
+    .returns<Array<{ id: string }>>()
+
+  let projektTicket = existingProjekte?.[0] ?? null
+  if (!projektTicket) {
+    const { data: insTicket, error: insErr } = await admin
+      .from("tickets")
+      .insert({
+        titel: projektTitel,
+        beschreibung: projektBeschr,
+        gewerk: ticket.gewerk,
+        erstellt_von: ticket.erstellt_von,
+        verwalter_id: ticket.verwalter_id ?? user.id,
+        einsatzort_adresse: ticket.einsatzort_adresse,
+        einsatzort_lat: ticket.einsatzort_lat,
+        einsatzort_lng: ticket.einsatzort_lng,
+        ticket_typ: "projekt",
+        diagnose_ticket_id: ticket.id,
+        status: "auktion",
+        dringlichkeit,
+        surge_faktor: config.surgeFaktor,
+        auktion_start: start.toISOString(),
+        auktion_ende: ende?.toISOString() ?? null,
+        vorkaufsrecht_bis: vorkaufsrechtBis.toISOString(),
+        preiskorridor_min: ticket.preiskorridor_min,
+        preiskorridor_max: ticket.preiskorridor_max,
+        befund_text: ticket.befund_text,
+        befund_fotos: ticket.befund_fotos ?? [],
+        befund_aufwand_stunden: ticket.befund_aufwand_stunden,
+        projekt_angebot: ticket.projekt_angebot,
+        leistungsumfang: ticket.leistungsumfang ?? [],
+      })
+      .select("id")
+      .single<{ id: string }>()
+    if (insErr || !insTicket) {
+      return NextResponse.json(
+        { error: "Projekt-Ticket anlegen fehlgeschlagen: " + (insErr?.message ?? "unknown") },
+        { status: 500 },
+      )
+    }
+    projektTicket = insTicket
   }
 
   // Synthetisches Angebot vom Diagnose-HW (preis = projekt_angebot).
   // Muss als Service-Role laufen, weil die angebote_insert-RLS-Policy
   // auth.uid() = handwerker_id verlangt — wir laufen aber als Verwalter
   // und legen das Angebot im Namen des Diagnose-HW an.
-  const admin = createServiceRoleClient()
   const { error: angebotErr } = await admin.from("angebote").upsert(
     {
       ticket_id: projektTicket.id,
@@ -154,14 +167,11 @@ export async function POST(request: NextRequest) {
     { onConflict: "ticket_id,handwerker_id" },
   )
   if (angebotErr) {
-    return NextResponse.json(
-      { error: "Synthetisches Diagnose-Angebot anlegen fehlgeschlagen: " + angebotErr.message },
-      { status: 500 },
-    )
+    console.error("[Diagnose] Synthetisches Angebot konnte nicht angelegt werden:", angebotErr)
   }
 
   // Diagnose-Ticket schließen
-  await supabase
+  await admin
     .from("tickets")
     .update({ status: "erledigt" })
     .eq("id", ticket.id)
@@ -216,7 +226,7 @@ export async function POST(request: NextRequest) {
         einsatzort: ticket.einsatzort_adresse || "",
         distanzKm: distanz,
         auktionEnde: auktionEndeFormatiert,
-        ticketId: projektTicket.id,
+      ticketId: projektTicket.id,
       })
       sendEmailFireAndForget({ to: hw.email, subject, html })
     }
@@ -231,5 +241,6 @@ export async function POST(request: NextRequest) {
     auktionEnde: ende?.toISOString() ?? null,
     vorkaufsrechtBis: vorkaufsrechtBis.toISOString(),
     radiusKm: config.radiusKm,
+    syntheticOfferCreated: !angebotErr,
   })
 }
