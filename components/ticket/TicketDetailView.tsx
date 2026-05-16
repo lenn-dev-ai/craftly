@@ -261,11 +261,18 @@ export default function TicketDetailView() {
     }
 
     if (currentUser) {
-      await supabase.from("nachrichten").insert({
+      // LT-7: System-Nachricht ist best-effort (Abschluss steht bereits in
+      // tickets.status='erledigt'). Wenn Insert failt, nur loggen — sonst
+      // würde der User denken der Abschluss wäre fehlgeschlagen, obwohl er
+      // durchgegangen ist.
+      const { error: nachrichtErr } = await supabase.from("nachrichten").insert({
         ticket_id: id,
         absender_id: currentUser.id,
         text: `✓ Auftrag abgeschlossen.${kostenFinal ? ` Endkosten: ${kostenFinal} €.` : ""}`,
       })
+      if (nachrichtErr) {
+        console.warn("[abschliessen] System-Nachricht fail:", nachrichtErr.message)
+      }
     }
 
     show("Auftrag abgeschlossen.", "success")
