@@ -120,6 +120,28 @@ async function main() {
     )
   }
 
+  // HW fakt eigenen Stripe-Onboarding-Status
+  // (würde sonst Penalty-Buchung gegen nicht existentes Konto laufen lassen)
+  {
+    await sbHwOwn.from("profiles").update({
+      stripe_account_id: "acct_FAKE",
+      stripe_charges_enabled: true,
+      stripe_payouts_enabled: true,
+    }).eq("id", seed.hwDiagnose.id)
+    const { data: check } = await admin.from("profiles")
+      .select("stripe_account_id, stripe_charges_enabled")
+      .eq("id", seed.hwDiagnose.id)
+      .single<{ stripe_account_id: string | null; stripe_charges_enabled: boolean }>()
+    const vulnerable = check?.stripe_account_id === "acct_FAKE" || check?.stripe_charges_enabled === true
+    record(
+      "HW fakt eigenen Stripe-Connect-Status",
+      "HIGH", vulnerable,
+      vulnerable
+        ? `🔥 stripe_account_id='${check?.stripe_account_id}' charges=${check?.stripe_charges_enabled} — HW kann Penalty-Buchung umgehen!`
+        : `stripe_account_id=${check?.stripe_account_id ?? "null"} (protect-Trigger greift)`,
+    )
+  }
+
   // ======================================================================
   // Test 2: HW (zugewiesen) versucht kosten_final zu manipulieren
   // ======================================================================

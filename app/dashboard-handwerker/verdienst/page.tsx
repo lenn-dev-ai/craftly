@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase"
 import { Card, Input, Select } from "@/components/ui"
+import { StripeConnectCard } from "@/components/handwerker/StripeConnectCard"
 import { GEWERK_LABELS } from "@/types"
 import { Calculator } from "lucide-react"
 
@@ -144,6 +145,8 @@ export default function VerdienstPage() {
           Steuern und Versicherung sind nicht berücksichtigt.
         </div>
       </div>
+
+      <StripeConnectCard />
     </div>
   )
 }

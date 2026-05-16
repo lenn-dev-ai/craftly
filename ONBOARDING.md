@@ -87,6 +87,31 @@ Reparo unterstützt seit Mai 2026 Google-Login auf `/login` und `/registrierung`
 
 Wenn der Button bei einem User Fehler zeigt, kommt die Meldung als `?oauth_error=...`-Query zurück auf `/login` und wird oben in der roten Box angezeigt.
 
+### Stripe Connect aktivieren (optional, Foundation für Penalty-System)
+
+Reparo hat seit Mai 2026 ein Stripe-Connect-Onboarding für Handwerker auf `/dashboard-handwerker/verdienst`. Solange `STRIPE_SECRET_KEY` nicht gesetzt ist, zeigt die UI "Auszahlungen über Reparo werden vorbereitet" und alle `/api/stripe/*`-Endpoints returnen 503. Der Frist-Cron markiert Penalties trotzdem als `manual_pending` in `tickets.penalty_status` — du kannst manuell abrechnen oder später aktivieren.
+
+**Schritt 1 — Stripe-Account + Connect aktivieren:**
+1. https://dashboard.stripe.com → Account erstellen (Test-Mode reicht für Beta)
+2. Connect → Settings → Platform-Profile ausfüllen (Branding, Beschreibung)
+3. Connect → Settings → Type: Express aktivieren
+
+**Schritt 2 — API-Keys:**
+1. Developers → API Keys → Secret key (`sk_test_…`) kopieren
+2. In `.env.local` / Netlify-Env setzen: `STRIPE_SECRET_KEY=sk_test_…`
+
+**Schritt 3 — Webhook:**
+1. Developers → Webhooks → Add Endpoint
+   - URL: `https://reparo-app.netlify.app/api/stripe/webhook`
+   - Events: `account.updated`, `payment_intent.succeeded`, `payment_intent.payment_failed`
+2. Signing-Secret (`whsec_…`) kopieren → `STRIPE_WEBHOOK_SECRET=whsec_…`
+
+**Schritt 4 — Test:**
+- Als HW einloggen → `/dashboard-handwerker/verdienst` → "Mit Stripe verbinden" → Stripe-Hosted-Onboarding ausfüllen (Test-Mode: nutze Stripe's test-data) → zurück zur App, sollte "✓ Bankkonto verbunden" zeigen
+- Im Stripe-Dashboard sieht man den Express-Account unter Connect → Accounts
+
+**Phase 2 (offen):** echte Penalty-Charging-Logik. Aktuell läuft nur die DB-Markierung — die Architektur-Entscheidung (PaymentMethod via SetupIntent vs. Connect-Reversal) steht aus. Bis dahin manuelle Verrechnung via `SELECT id, titel, penalty_amount_cents FROM tickets WHERE penalty_status='manual_pending'`.
+
 ## 4. Supabase Zugriff
 
 ### Projekt-Dashboard

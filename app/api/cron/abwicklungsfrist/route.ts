@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
+import { PENALTY_AMOUNT_CENTS } from "@/lib/stripe"
 
 // POST /api/cron/abwicklungsfrist
 //
@@ -107,6 +108,24 @@ export async function POST(request: NextRequest) {
       const aktuellerScore = hw?.angebotstreue ?? 100
       const neuerScore = Math.max(0, aktuellerScore - PENALTY_PUNKTE)
       await admin.from("profiles").update({ angebotstreue: neuerScore }).eq("id", t.zugewiesener_hw)
+
+      // Geld-Penalty: aktuell nur Markierung in der DB. Die echte
+      // Stripe-Buchung läuft async über eine separate Iteration sobald
+      // PaymentMethod-Setup oder Connect-Reversal-Architektur steht.
+      // Bis dahin: penalty_status='manual_pending' — Reparo kann mit
+      // dem HW manuell abrechnen oder bei der nächsten Auszahlung
+      // verrechnen.
+      //
+      // best-effort: penalty-Spalten setzen. Failure wenn Migration
+      // 20260527 noch nicht angewendet ist — dann nur Score-Penalty.
+      const { error: penaltyErr } = await admin.from("tickets").update({
+        penalty_status: "manual_pending",
+        penalty_amount_cents: PENALTY_AMOUNT_CENTS,
+        penalty_buchung_versucht_am: new Date().toISOString(),
+      }).eq("id", t.id)
+      if (penaltyErr && !/penalty_/.test(penaltyErr.message)) {
+        console.warn("[abwicklungsfrist] penalty-mark fail:", penaltyErr.message)
+      }
 
       ergebnisse.push({
         ticketId: t.id,
