@@ -75,7 +75,7 @@ async function legeDiagnoseTicketAn(params: {
       beschreibung: params.beschreibung,
       erstellt_von: params.erstelltVon,
       gewerk: "sanitaer",
-      prioritaet: "normal",
+      prioritaet: "planbar",
       vergabemodus: "auktion",
       status: "auktion",
       ticket_typ: "diagnose",

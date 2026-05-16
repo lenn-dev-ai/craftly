@@ -26,9 +26,9 @@ function getStepIndex(status: string): number {
 function getEstimate(ticket: Ticket): string {
   const s = ticket.status
   const p = ticket.prioritaet
-  if (s === "in_bearbeitung") return p === "dringend" ? "Heute" : "1–3 Tage"
-  if (s === "auktion") return p === "dringend" ? "Wenige Stunden" : "1–2 Tage bis Vergabe"
-  if (s === "offen") return p === "dringend" ? "Innerhalb 24 Std" : "2–5 Tage"
+  if (s === "in_bearbeitung") return p === "notfall" ? "Heute" : "1–3 Tage"
+  if (s === "auktion") return p === "notfall" ? "Wenige Stunden" : "1–2 Tage bis Vergabe"
+  if (s === "offen") return p === "notfall" ? "Innerhalb 24 Std" : "2–5 Tage"
   return ""
 }
 
@@ -157,7 +157,7 @@ export default function MieterDashboard() {
                     <div className="flex items-center gap-3 mb-2">
                       <div
                         className="w-2 h-2 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: t.prioritaet === "dringend" ? "#C4574B" : "#3D8B7A" }}
+                        style={{ backgroundColor: t.prioritaet === "notfall" ? "#C4574B" : "#3D8B7A" }}
                       />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-ink font-medium truncate">{t.titel}</div>

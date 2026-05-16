@@ -75,7 +75,7 @@ export async function legeProjektTicketDirekt(params: {
       titel: params.titel,
       beschreibung: "E2E-Test Projekt-Ticket",
       gewerk: "sanitaer",
-      prioritaet: "normal",
+      prioritaet: "planbar",
       vergabemodus: "auktion",
       status: "in_bearbeitung",
       erstellt_von: params.erstelltVon,

@@ -7,12 +7,12 @@ export type PreisfaktorResult = {
 }
 
 export function berechnePreisfaktor(
-  prioritaet: "normal" | "hoch" | "dringend",
+  prioritaet: "planbar" | "zeitnah" | "notfall",
   verfuegbareHW: number
 ): PreisfaktorResult {
   const dringlichkeitsFaktor =
-    prioritaet === "dringend" ? 1.7 :
-    prioritaet === "hoch" ? 1.3 : 1.0
+    prioritaet === "notfall" ? 1.7 :
+    prioritaet === "zeitnah" ? 1.3 : 1.0
 
   const angebotsFaktor =
     verfuegbareHW <= 1 ? 1.5 :

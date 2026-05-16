@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "simulate:live": "npx --yes tsx tests/live-simulation/runner.ts",
     "test:auction": "npx --yes tsx tests/auction-scenarios.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

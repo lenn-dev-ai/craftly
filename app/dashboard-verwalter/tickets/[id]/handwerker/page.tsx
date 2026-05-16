@@ -51,13 +51,16 @@ export default function HandwerkerAuswahlPage() {
         .eq("id", ticketId).single()
       if (!t) { router.push("/dashboard-verwalter"); return }
       setTicket(t)
-      // Vorbelegung der Dringlichkeit: aus DB übernehmen, sonst aus prioritaet ableiten
+      // Vorbelegung der Dringlichkeit: aus DB übernehmen.
+      // Seit LT-2 ist prioritaet eh planbar/zeitnah/notfall — kein
+      // Mapping mehr nötig. Legacy-Werte (normal/hoch/dringend) werden
+      // hier defensiv noch akzeptiert (alte Bookmarks/Backups).
       const tt = t as { dringlichkeit?: Dringlichkeit; prioritaet?: string }
       if (tt.dringlichkeit) {
         setDringlichkeit(tt.dringlichkeit)
-      } else if (tt.prioritaet === "dringend") {
+      } else if (tt.prioritaet === "notfall" || tt.prioritaet === "dringend") {
         setDringlichkeit("notfall")
-      } else if (tt.prioritaet === "hoch") {
+      } else if (tt.prioritaet === "zeitnah" || tt.prioritaet === "hoch") {
         setDringlichkeit("zeitnah")
       }
 
@@ -216,8 +219,14 @@ export default function HandwerkerAuswahlPage() {
     if (selected.length === 0) { showToast("Bitte mindestens einen Handwerker auswählen."); return }
     setSending(true)
     const supabase = createClient()
+    // Legacy-Werte (normal/hoch/dringend) → neue mappen (defensive).
+    const rawPrio = (ticket?.prioritaet as string | undefined) ?? "planbar"
+    const legacyMap: Record<string, "planbar" | "zeitnah" | "notfall"> = {
+      normal: "planbar", hoch: "zeitnah", dringend: "notfall",
+      planbar: "planbar", zeitnah: "zeitnah", notfall: "notfall",
+    }
     const pf = berechnePreisfaktor(
-      (ticket?.prioritaet || "normal") as "normal" | "hoch" | "dringend",
+      legacyMap[rawPrio] ?? "planbar",
       handwerker.length
     )
     const einladungen = selected.map(hw => ({

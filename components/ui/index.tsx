@@ -61,10 +61,10 @@ export function TypBadge({ typ }: { typ: "standard" | "diagnose" | "projekt" }) 
 // Prio-Badge — nur sichtbar bei "dringend" oder "hoch"; "normal" implizit
 // ============================================================
 export function PrioBadge({ prio }: { prio: Prioritaet }) {
-  if (prio === "normal") return null
-  const map: Record<Exclude<Prioritaet, "normal">, { label: string; icon: string; cls: string }> = {
-    dringend: { label: "Dringend", icon: "!!", cls: "bg-danger/10 text-danger" },
-    hoch:     { label: "Hoch",     icon: "!",  cls: "bg-warm/10 text-warm-dark" },
+  if (prio === "planbar") return null
+  const map: Record<Exclude<Prioritaet, "planbar">, { label: string; icon: string; cls: string }> = {
+    notfall: { label: "Notfall", icon: "!!", cls: "bg-danger/10 text-danger" },
+    zeitnah: { label: "Zeitnah", icon: "!",  cls: "bg-warm/10 text-warm-dark" },
   }
   const { label, icon, cls } = map[prio]
   return (

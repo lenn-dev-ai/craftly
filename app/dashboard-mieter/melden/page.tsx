@@ -11,30 +11,29 @@ const MAX_FOTO_BYTES = 5 * 1024 * 1024 // 5 MB
 const MAX_FOTOS = 5
 const ERLAUBTE_FOTO_TYPEN = ["image/jpeg", "image/png", "image/webp", "image/heic"]
 
-// UX-3: Dringlichkeit-Labels einheitlich auf Audit-Empfehlung
-// (planbar/zeitnah/notfall). Die DB-Spalte `prioritaet` hat einen
-// CHECK-Constraint auf normal/hoch/dringend — Werte bleiben intern, nur
-// Labels werden umbenannt. Map nach außen.
+// LT-2: prioritaet ist jetzt überall planbar/zeitnah/notfall (DB-CHECK
+// erweitert via Migration 20260526000000). Die Compat-Map KI_PRIO_MAP
+// ist entfernt — KI-API liefert die neuen Werte direkt.
 const PRIO_LABELS: Record<string, string> = {
-  normal: "Planbar",
-  hoch: "Zeitnah",
-  dringend: "Notfall",
+  planbar: "Planbar",
+  zeitnah: "Zeitnah",
+  notfall: "Notfall",
 }
 const PRIO_SUB: Record<string, string> = {
-  normal: "Kann warten",
-  hoch: "Bald bitte",
-  dringend: "Sofort",
+  planbar: "Kann warten",
+  zeitnah: "Bald bitte",
+  notfall: "Sofort",
 }
-// KI-API gibt manchmal die NEUE Convention (planbar/zeitnah/notfall) zurück.
-// Auf interne Werte mappen, sonst kracht der DB-Insert am CHECK-Constraint.
-const KI_PRIO_MAP: Record<string, string> = {
-  notfall: "dringend",
-  zeitnah: "hoch",
-  planbar: "normal",
-  // Falls die KI schon das interne Format liefert: identity
-  dringend: "dringend",
-  hoch: "hoch",
-  normal: "normal",
+// Mapping nur noch defensive Fallback für alte Bookmarks / Drittsysteme,
+// die noch die alten Werte schicken könnten.
+const PRIO_LEGACY_MAP: Record<string, string> = {
+  normal: "planbar",
+  hoch: "zeitnah",
+  dringend: "notfall",
+}
+function normalisierePrio(v: string | undefined | null): string {
+  if (!v) return "planbar"
+  return PRIO_LEGACY_MAP[v] ?? v
 }
 
 type Step = "foto" | "analyse" | "details" | "ort" | "dringlichkeit" | "zusammenfassung" | "gesendet"
@@ -42,12 +41,12 @@ type Step = "foto" | "analyse" | "details" | "ort" | "dringlichkeit" | "zusammen
 // KI-1+2: Zeit als Spanne statt Punktschätzung. "sonstiges" hat keine
 // Schätzung — wird im UI nicht angezeigt.
 const KI_ANALYSEN: Record<string, { titel: string; gewerk: string; dringlichkeit: string; tipp: string; zeit: string | null }> = {
-  heizung:   { titel: "Heizung / Warmwasser ausgefallen", gewerk: "heizung_sanitaer", dringlichkeit: "hoch",     tipp: "Prüfen Sie ob der Thermostat auf mind. Stufe 3 steht und ob andere Heizkörper betroffen sind.", zeit: "ca. 12-48 Stunden" },
-  wasser:    { titel: "Wasserschaden / Feuchtigkeit",     gewerk: "heizung_sanitaer", dringlichkeit: "dringend", tipp: "Hauptwasserhahn zudrehen falls möglich! Handtücher unterlegen um Ausbreitung zu verhindern.",  zeit: "ca. 2-8 Stunden" },
-  elektro:   { titel: "Elektroproblem",                   gewerk: "elektro",          dringlichkeit: "hoch",     tipp: "Berühren Sie keine freiliegenden Kabel. Schalten Sie die betroffene Sicherung aus.",            zeit: "ca. 6-24 Stunden" },
-  tuer:      { titel: "Tür / Fenster defekt",             gewerk: "schreiner",        dringlichkeit: "normal",   tipp: "Sichern Sie die Stelle provisorisch ab, besonders bei Zugluft oder Einbruchgefahr.",            zeit: "ca. 1-5 Tage" },
-  schimmel:  { titel: "Schimmel entdeckt",                gewerk: "maler",            dringlichkeit: "hoch",     tipp: "Gut lüften! Nicht selbst mit Bleiche behandeln - das verschlimmert es oft.",                    zeit: "ca. 3-7 Tage" },
-  sonstiges: { titel: "Sonstiger Schaden",                gewerk: "allgemein",        dringlichkeit: "normal",   tipp: "Je genauer die Beschreibung, desto schneller die Lösung.",                                      zeit: null },
+  heizung:   { titel: "Heizung / Warmwasser ausgefallen", gewerk: "heizung_sanitaer", dringlichkeit: "zeitnah",  tipp: "Prüfen Sie ob der Thermostat auf mind. Stufe 3 steht und ob andere Heizkörper betroffen sind.", zeit: "ca. 12-48 Stunden" },
+  wasser:    { titel: "Wasserschaden / Feuchtigkeit",     gewerk: "heizung_sanitaer", dringlichkeit: "notfall", tipp: "Hauptwasserhahn zudrehen falls möglich! Handtücher unterlegen um Ausbreitung zu verhindern.",  zeit: "ca. 2-8 Stunden" },
+  elektro:   { titel: "Elektroproblem",                   gewerk: "elektro",          dringlichkeit: "zeitnah",     tipp: "Berühren Sie keine freiliegenden Kabel. Schalten Sie die betroffene Sicherung aus.",            zeit: "ca. 6-24 Stunden" },
+  tuer:      { titel: "Tür / Fenster defekt",             gewerk: "schreiner",        dringlichkeit: "planbar",   tipp: "Sichern Sie die Stelle provisorisch ab, besonders bei Zugluft oder Einbruchgefahr.",            zeit: "ca. 1-5 Tage" },
+  schimmel:  { titel: "Schimmel entdeckt",                gewerk: "maler",            dringlichkeit: "zeitnah",     tipp: "Gut lüften! Nicht selbst mit Bleiche behandeln - das verschlimmert es oft.",                    zeit: "ca. 3-7 Tage" },
+  sonstiges: { titel: "Sonstiger Schaden",                gewerk: "allgemein",        dringlichkeit: "planbar",   tipp: "Je genauer die Beschreibung, desto schneller die Lösung.",                                      zeit: null },
 }
 
 function analyseText(text: string): string {
@@ -73,7 +72,7 @@ export default function MeldenPage() {
     einsatzort_lng: number | null
   }>({
     titel: "", beschreibung: "", wohnung: "",
-    prioritaet: "normal", gewerk: "allgemein",
+    prioritaet: "planbar", gewerk: "allgemein",
     einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null,
   })
   const [loading, setLoading] = useState(false)
@@ -189,7 +188,7 @@ export default function MeldenPage() {
               beschreibung: data.beschreibung_vorschlag || beschreibung,
               // KI-API liefert manchmal notfall/zeitnah/planbar — auf den
               // DB-CHECK-konformen Wert mappen.
-              prioritaet: KI_PRIO_MAP[data.dringlichkeit] ?? "normal",
+              prioritaet: normalisierePrio(data.dringlichkeit),
               gewerk: data.gewerk,
             }))
             setTimeout(() => setStep("details"), 500)
@@ -488,8 +487,8 @@ export default function MeldenPage() {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-[10px] text-ink-muted uppercase tracking-wider mb-1">Dringlichkeit</div>
-                  <div className={"text-sm font-semibold " + (form.prioritaet === "dringend" ? "text-danger" : form.prioritaet === "hoch" ? "text-[#B07A3B]" : "text-accent")}>
-                    {form.prioritaet === "dringend" ? "DRINGEND" : form.prioritaet === "hoch" ? "HOCH" : "NORMAL"}
+                  <div className={"text-sm font-semibold " + (form.prioritaet === "notfall" ? "text-danger" : form.prioritaet === "zeitnah" ? "text-[#B07A3B]" : "text-accent")}>
+                    {(PRIO_LABELS[form.prioritaet] ?? "Planbar").toUpperCase()}
                   </div>
                 </div>
                 <div>
@@ -533,16 +532,15 @@ export default function MeldenPage() {
               />
             </div>
 
-            {/* UX-3: Labels jetzt Planbar / Zeitnah / Notfall (Default Planbar
-                = "normal" intern). Audit-Empfehlung: User soll bewusst
-                hochstufen statt aktiv "normal" wählen müssen. */}
+            {/* LT-2: Werte jetzt planbar/zeitnah/notfall — Default "planbar".
+                User stuft bewusst hoch wenn nötig. */}
             <div className="mb-6">
               <label className="block text-xs font-medium text-ink-muted mb-2">Dringlichkeit</label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { val: "normal", color: "border-accent/30 bg-accent/5 text-accent" },
-                  { val: "hoch", color: "border-warm/30 bg-[#FFF3E8] text-[#B07A3B]" },
-                  { val: "dringend", color: "border-danger/30 bg-danger-light text-danger" },
+                  { val: "planbar", color: "border-accent/30 bg-accent/5 text-accent" },
+                  { val: "zeitnah", color: "border-warm/30 bg-[#FFF3E8] text-[#B07A3B]" },
+                  { val: "notfall", color: "border-danger/30 bg-danger-light text-danger" },
                 ].map(d => (
                   <button
                     key={d.val}
@@ -676,7 +674,7 @@ export default function MeldenPage() {
                 <div className="border-t border-line" />
                 <div className="flex justify-between">
                   <span className="text-xs text-ink-muted">Dringlichkeit</span>
-                  <span className={"text-sm font-medium " + (form.prioritaet === "dringend" ? "text-danger" : form.prioritaet === "hoch" ? "text-[#B07A3B]" : "text-accent")}>
+                  <span className={"text-sm font-medium " + (form.prioritaet === "notfall" ? "text-danger" : form.prioritaet === "zeitnah" ? "text-[#B07A3B]" : "text-accent")}>
                     {PRIO_LABELS[form.prioritaet] ?? form.prioritaet}
                   </span>
                 </div>
@@ -744,7 +742,7 @@ export default function MeldenPage() {
                 setFotoFiles([])
                 fotoPreviewUrls.forEach(u => URL.revokeObjectURL(u))
                 setFotoPreviewUrls([])
-                setForm({ titel: "", beschreibung: "", wohnung: "", prioritaet: "normal", gewerk: "allgemein", einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null })
+                setForm({ titel: "", beschreibung: "", wohnung: "", prioritaet: "planbar", gewerk: "allgemein", einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null })
               }}>
                 Weiteren Schaden melden
               </Button>

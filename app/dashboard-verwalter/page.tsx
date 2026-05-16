@@ -127,7 +127,7 @@ export default function VerwalterDashboard() {
     .filter(t => t.kosten_final && new Date(t.created_at).getMonth() === new Date().getMonth())
     .reduce((s, t) => s + (t.kosten_final || 0), 0)
 
-  const dringendeOffene = offene.filter(t => t.prioritaet === "dringend").length
+  const dringendeOffene = offene.filter(t => t.prioritaet === "notfall").length
 
   // === Pipeline-Action-Items: Befunde / Nachträge / abgelaufene Auktionen ===
   // (siehe SIMULATION-REPORT.md M-K1 — ohne diese Sektion bleibt die
