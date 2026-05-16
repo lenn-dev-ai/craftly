@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { createClient } from "@/lib/supabase"
 import { Button, Input, Select, Card } from "@/components/ui"
+import { GoogleSignInButton, OrDivider } from "@/components/GoogleSignInButton"
 import { registrierungSchema, type RegistrierungInput } from "@/lib/schemas"
 
 const dashMap: Record<string, string> = {
@@ -95,6 +96,8 @@ export default function RegistrierungPage() {
         </div>
 
         <Card>
+          <GoogleSignInButton mode="register" />
+          <OrDivider />
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             <div className="flex flex-col gap-4">
               <div>

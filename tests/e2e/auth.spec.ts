@@ -35,9 +35,9 @@ test.describe("Auth-Routing & Validierung", () => {
     await page.goto("/login")
 
     // Warten bis Form sichtbar (verhindert Race nach Auth-Check)
-    await expect(page.getByRole("button", { name: /Anmelden/i })).toBeVisible()
+    await expect(page.getByRole("button", { name: "Anmelden", exact: true })).toBeVisible()
 
-    await page.getByRole("button", { name: /Anmelden/i }).click()
+    await page.getByRole("button", { name: "Anmelden", exact: true }).click()
 
     // zod-Schema sollte Fehler triggern (E-Mail Pflicht + Passwort Pflicht)
     await expect(page.getByText(/E-Mail-Adresse eingeben|gültige E-Mail/i).first()).toBeVisible()
@@ -50,7 +50,7 @@ test.describe("Auth-Routing & Validierung", () => {
 
     await page.getByLabel(/E-Mail-Adresse/i).fill("nicht-eine-email")
     await page.getByLabel(/Passwort/i).fill("irgendwas")
-    await page.getByRole("button", { name: /Anmelden/i }).click()
+    await page.getByRole("button", { name: "Anmelden", exact: true }).click()
 
     await expect(page.getByText(/gültige E-Mail-Adresse/i)).toBeVisible()
   })

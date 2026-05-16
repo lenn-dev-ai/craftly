@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { createClient } from "@/lib/supabase"
 import { Button, Input, Card } from "@/components/ui"
+import { GoogleSignInButton, OrDivider } from "@/components/GoogleSignInButton"
 import { loginSchema, type LoginInput } from "@/lib/schemas"
 
 const dashboardMap: Record<string, string> = {
@@ -41,6 +42,10 @@ export default function LoginPage() {
   })
 
   useEffect(() => {
+    // OAuth-Fehler aus Callback-Route durchreichen (z.B. Consent abgelehnt).
+    const oauthErr = new URLSearchParams(window.location.search).get("oauth_error")
+    if (oauthErr) setServerError(oauthErr)
+
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
@@ -48,9 +53,13 @@ export default function LoginPage() {
           .from("profiles")
           .select("rolle")
           .eq("id", user.id)
-          .single()
+          .maybeSingle()
           .then(({ data: profile }) => {
-            const rolle = profile?.rolle || "mieter"
+            const rolle = profile?.rolle
+            if (!rolle) {
+              window.location.href = "/onboarding"
+              return
+            }
             const redirectTo = new URLSearchParams(window.location.search).get("redirectTo")
             window.location.href = zielFuerRolle(rolle, redirectTo)
           })
@@ -77,10 +86,10 @@ export default function LoginPage() {
           .from("profiles")
           .select("rolle")
           .eq("id", data.user.id)
-          .single()
-        const rolle = profile?.rolle || "mieter"
+          .maybeSingle()
+        const rolle = profile?.rolle
         const redirectTo = new URLSearchParams(window.location.search).get("redirectTo")
-        const ziel = zielFuerRolle(rolle, redirectTo)
+        const ziel = rolle ? zielFuerRolle(rolle, redirectTo) : "/onboarding"
 
         // Cookie-Race-Mitigation: window.location.href triggert eine Hard-
         // Navigation, bei der die Middleware den frischen sb-*-auth-Cookie
@@ -253,6 +262,9 @@ export default function LoginPage() {
                 </p>
               </div>
             )}
+
+            <GoogleSignInButton mode="login" />
+            <OrDivider />
 
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
               <div className="space-y-4">

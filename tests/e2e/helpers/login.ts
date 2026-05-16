@@ -15,7 +15,7 @@ export async function login(page: Page, { email, password, expectedPath }: Login
   await page.goto("/login")
   await page.getByLabel(/E-Mail-Adresse/i).fill(email)
   await page.getByLabel(/Passwort/i).fill(password)
-  await page.getByRole("button", { name: /Anmelden/i }).click()
+  await page.getByRole("button", { name: "Anmelden", exact: true }).click()
 
   // Default: wartet auf irgendein Dashboard
   const target = expectedPath ?? /\/dashboard-(verwalter|handwerker|mieter|admin)/

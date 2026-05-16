@@ -44,7 +44,7 @@ export default function RoleGuard({
         .from("profiles")
         .select("rolle")
         .eq("id", user.id)
-        .single()
+        .maybeSingle()
       const rolle = (profile?.rolle as Rolle | undefined) ?? null
       if (!aktiv) return
       if (rolle === "admin") setIstAdmin(true)
@@ -52,7 +52,13 @@ export default function RoleGuard({
         setOk(true)
         return
       }
-      router.replace(rolle ? dashboardMap[rolle] : "/login")
+      // Session vorhanden aber kein Profil → OAuth-First-Login, der den
+      // Onboarding-Step noch nicht abgeschlossen hat. Sonst Rolle-Mismatch.
+      if (!rolle) {
+        router.replace("/onboarding")
+        return
+      }
+      router.replace(dashboardMap[rolle])
     }
     check()
     return () => { aktiv = false }

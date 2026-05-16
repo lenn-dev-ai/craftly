@@ -42,6 +42,28 @@ export const registrierungSchema = z
   )
 export type RegistrierungInput = z.infer<typeof registrierungSchema>
 
+// OAuth-Onboarding (nach Google-Login, Profil-Lückenfüller).
+// Kein Passwort — die Session steht schon. Email vom OAuth-Provider,
+// also nicht erneut erfragen.
+export const onboardingSchema = z
+  .object({
+    rolle: z.enum(["verwalter", "handwerker", "mieter"]),
+    name: z.string().trim().min(2, "Bitte den vollständigen Namen eingeben."),
+    telefon: z.string().optional(),
+    firma: z.string().optional(),
+    gewerk: z.string().optional(),
+    plz_bereich: z.string().optional(),
+  })
+  .refine(
+    d => d.rolle !== "handwerker" || (d.firma?.trim()?.length ?? 0) > 0,
+    { message: "Firmenname ist für Handwerker erforderlich.", path: ["firma"] }
+  )
+  .refine(
+    d => d.rolle !== "handwerker" || (d.gewerk?.trim()?.length ?? 0) > 0,
+    { message: "Gewerk ist für Handwerker erforderlich.", path: ["gewerk"] }
+  )
+export type OnboardingInput = z.infer<typeof onboardingSchema>
+
 // Passwort vergessen
 export const passwortVergessenSchema = z.object({
   email: emailFeld,
