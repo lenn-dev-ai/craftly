@@ -111,18 +111,53 @@ Snapshot direkt nach Block 3+4. Block 3+4 hat **keine neuen Findings** verursach
 
 Volle JSON-Reports liegen unter `~/.claude/projects/-Users-lennart-Desktop-Reparo/.../tool-results/mcp-supabase-get_advisors-*.txt` (zwei Files, Security + Performance).
 
-### ⏸ Netlify-ENV-Vars (Impressum) — WARTET auf Adresse
+### ⏸ Netlify-ENV-Vars (Impressum) — **verschoben bis Public-Beta**
 
-Folgende 6 Vars müssen unter https://app.netlify.com/projects/reparo-app/configuration/env gesetzt + Deploy getriggert werden. Vor Beta rechtlich Pflicht (Hard-Blocker):
+Closed Beta läuft nur unter Vertrauten (Entscheidung Lennart, 2026-05-17 Abend), daher rechtlich kein Impressum nötig. Die 6 Vars (`NEXT_PUBLIC_REPARO_BETREIBER_*`, `_KONTAKT_EMAIL`, `_LIVE_DATA`, `REPARO_FEEDBACK_EMAIL`) sind aus der Pre-Beta-Blocker-Liste **entfernt** und werden erst wieder relevant, sobald die Beta auf externe Tester geöffnet wird. Bis dahin nicht mehr daran erinnern.
 
-```
-NEXT_PUBLIC_REPARO_BETREIBER_NAME    = <Vor- und Nachname>          ← brauche ich noch
-NEXT_PUBLIC_REPARO_BETREIBER_STRASSE = <Straße + Hausnummer>        ← brauche ich noch
-NEXT_PUBLIC_REPARO_BETREIBER_PLZORT  = <PLZ Ort>                    ← brauche ich noch
-NEXT_PUBLIC_REPARO_KONTAKT_EMAIL     = lenn-dev@proton.me
-NEXT_PUBLIC_REPARO_LIVE_DATA         = true
-REPARO_FEEDBACK_EMAIL                = lenn-dev@proton.me
-```
+---
+
+## Beta-Fix-Sprint — 17.05.2026 Abend (durch)
+
+Alle 12 Items aus BETA-FEEDBACK.md (Iter 1 + 2) durch, Phase-0-Konzept-Entscheidungen
+von Claude selbst gefällt (Action-Bias-Modus per User-Mandat „selbst entscheiden").
+
+Reihenfolge der Commits (alle auf `main`):
+
+| # | Punkt | Commit |
+|---|---|---|
+| F3  | Wasserschaden→Heizungs-Tipps API↔UI-Mapping | `dffdca0` |
+| F8  | Effektivpreis × Dringlichkeit live im HW-Auswahl-View | `92c672b` |
+| F5  | `isVerwalter` an ActiveRolle koppeln (Admin in Mieter-Sicht-Bug) | `58023e0` |
+| F10 | „Verfügbare Slots" mit `?hw=<id>`-Filter im Marktplatz | `259bf59` |
+| F7  | Drei Kontext-Karten in Ticket-Detail (Objekt/Mieter/KI) | `4681006` |
+| F6  | Feedback-Widget Tooltip + Modal-Klartext | `11a4e94` |
+| F9  | Verwalter-Dashboard KPI-Kacheln click-through | `29626eb` |
+| F1+F2+F4 | Mieter-Wizard Schnellauswahl/Wording/Zeit-Label entkoppelt | `b964e9b` |
+| F11 | HW-Angebotspreis-UI → System-Preis-Annahme (Vollkalkulation) | `623ac7b` |
+| F12 | HW-Sidebar in 6 Top + 5 „Mein Bereich" gruppiert | `7fd9c4f` |
+
+Phase-0-Entscheidungen, getroffen von Claude im Action-Bias-Modus:
+
+- **#11 Pricing**: Vollkalkulation (System setzt Preis). HW-UI verliert das freie
+  Angebotspreis-Feld. Pricing-Engine bleibt im Sprint unangetastet.
+- **#12 HW-Sidebar**: Gruppierung statt Route-Löschung. 6 Top-Daily +
+  Sub-Section „Mein Bereich" mit 5 Items (Zeitplan/Zeitslots/Verfügbarkeit/
+  Verdienst-Rechner/Profil).
+
+Falls eine Entscheidung sich als falsch erweist (vor allem #11 Vollkalkulation
+oder das Sidebar-Mapping), sind die Routen weiter erreichbar — Rollback durch
+Wording-/Sidebar-Reverts möglich, kein DB-Eingriff nötig.
+
+Offen aus dem Sprint:
+
+- **D3 ki_analysen_cache Policy** — SQL-Block liegt in der Chat-Historie,
+  wartet auf Studio-Run. Defense-in-Depth (Tabelle wird ausschließlich via
+  Service-Role-Client genutzt, RLS ist enabled aber ohne Policy → Advisor-
+  INFO).
+
+Lint + tsc clean nach jedem Commit. E2E + Pen-Tests nicht im Sprint gelaufen —
+Cowork-Übergabe für QA und 390-px-Manual-Test.
 
 ---
 
@@ -130,12 +165,12 @@ REPARO_FEEDBACK_EMAIL                = lenn-dev@proton.me
 
 1. ✅ ~~Fehlende Migrationen Block 3+4 nachziehen~~ — **durch** (siehe Nachtrag Abend)
 
-2. **Netlify-ENV-Vars setzen** (sobald Adresse vom User da ist) und Deploy triggern. **Hard-Blocker vor Beta** (Impressum-Banner). Vars siehe oben.
+2. ⏸ ~~Netlify-ENV-Vars (Impressum)~~ — **verschoben bis Public-Beta** (Closed Beta unter Vertrauten, kein Impressum nötig)
 
 3. **Vor Beta-Usern (jetzt aktiv adressieren):**
-   - 🔴 `handwerker_bewertungen`-View ohne `SECURITY DEFINER` neu bauen
-   - 🟡 HIBP-Toggle im Supabase Auth-Dashboard aktivieren (1 Klick)
-   - 🟡 `ki_analysen_cache` Policies ergänzen ODER RLS aus (10 Min)
+   - ✅ ~~`handwerker_bewertungen`-View ohne `SECURITY DEFINER` neu bauen~~ — **durch** (Block 3a, 2026-05-17 Abend, Advisor `security_definer_view` ERROR ist weg)
+   - ⏸ ~~HIBP-Toggle im Supabase Auth-Dashboard aktivieren~~ — **gestrichen für Closed Beta**: „Leaked password protection" ist nur auf Supabase **Pro** verfügbar, Craftly-Org ist Free (Hinweis Cowork, 2026-05-17). Vor Public-Beta entweder Pro-Upgrade oder Custom-Frontend-Validierung (z.B. zxcvbn + HIBP-API-Call) nachziehen
+   - 🟡 `ki_analysen_cache` Policies ergänzen ODER RLS aus (10 Min) — Code-Befund: Tabelle wird ausschließlich via Service-Role-Client genutzt (bypasst RLS), reine Defense-in-Depth
    - Resend-Domain `reparo-app.de` verifizieren (DNS), sonst keine Mails
    - Google-OAuth-Client anlegen (siehe `ONBOARDING.md` § 3)
    - Stripe-Account + Connect aktivieren (Penalty läuft sonst als `manual_pending`)
@@ -158,6 +193,11 @@ REPARO_FEEDBACK_EMAIL                = lenn-dev@proton.me
 - **Glaubwürdigkeit**: keine Fake-Stats/Testimonials in Reparo-Marketing
 - **Security-Trigger-Invariante**: column-level Whitelist via BEFORE-UPDATE-Trigger; `tests/security/pen-tests.ts` vor jedem RLS-Change laufen lassen
 - **KI-Quota**: `try_consume_ki_quota` begrenzt `/api/ki/schadenserkennung` auf 10/Tag/User
+
+## Phase-0-Entscheidungen Beta-Fix-Sprint (Claude, mit „selbst entscheiden"-Mandat)
+
+- **#11 Pricing-Modell**: **(a) Vollkalkulation** — System setzt Preis, HW akzeptiert/lehnt nur. Konsequenz für Closed Beta: HW-UI verliert das freie Angebotspreis-Feld. Pricing-Engine bleibt im Sprint unangetastet, nur Inkonsistenz beseitigt. Wenn Engine zu starr → später Schritt Richtung (b) Korridor.
+- **#12 HW-Sidebar**: Mapping aus Phase-0-Vorschlag (Top-Daily: Dashboard, Aufträge, Termine&Route, Karte; Wöchentlich: Diagnosen, Einnahmen; Sub-Menü „Mein Bereich": Kalender-Tabs, Verdienst-Rechner unter Einnahmen, Profil). **Nur Sidebar-Gruppierung**, keine Routen gelöscht. „Mein Kalender"-Route mit Tabs konsolidiert Zeitplan/Zeitslots/Verfügbarkeit.
 
 ---
 
