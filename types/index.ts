@@ -93,6 +93,12 @@ export interface Ticket {
   penalty_amount_cents?: number | null
   penalty_charge_id?: string | null
   penalty_buchung_versucht_am?: string | null
+  // KI-Vision-Analyse (geschrieben beim Mieter-Insert in
+  // app/dashboard-mieter/melden/page.tsx, optional). Wird im Verwalter-
+  // Detail eingeblendet, damit der Sachbearbeiter die Einschätzung sieht
+  // ohne das Foto erneut zu öffnen.
+  ki_confidence?: number | null
+  ki_schadensart?: string | null
 }
 
 export interface Angebot {

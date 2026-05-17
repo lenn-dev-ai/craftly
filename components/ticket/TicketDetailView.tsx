@@ -168,7 +168,7 @@ export default function TicketDetailView() {
       const [profileRes, ticketRes, msgsRes] = await Promise.all([
         supabase.from("profiles").select("id, email, name, rolle, firma, early_adopter_bis, created_at").eq("id", user.id).single(),
         supabase.from("tickets")
-          .select("*, objekte(*), angebote(*, handwerker:profiles(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl))")
+          .select("*, objekte(*), ersteller:profiles!erstellt_von(id, name, email, telefon, rolle), angebote(*, handwerker:profiles(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl))")
           .eq("id", id).single(),
         supabase.from("nachrichten")
           .select("*, absender:profiles(id, name, firma, rolle)")
@@ -437,6 +437,80 @@ export default function TicketDetailView() {
             {ticket.vergabemodus && <span>Modus: {ticket.vergabemodus === "auktion" ? "Auktion" : ticket.vergabemodus === "direkt" ? "Sofort-Vergabe" : "Planauftrag"}</span>}
           </div>
         </div>
+
+        {/* F7: Kontext-Karten für Verwalter — Objekt, Mieter, KI-Einschätzung.
+            Nur in Verwalter-Sicht sichtbar; Mieter/HW-Sicht kriegt das nicht. */}
+        {isVerwalter && (ticket.objekte || ticket.ersteller || ticket.ki_schadensart) && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+            {ticket.objekte && (
+              <Card className="bg-white border border-line">
+                <div className="text-[10px] text-ink-muted uppercase tracking-wider font-medium mb-2">Objekt</div>
+                <div className="text-sm font-semibold text-ink mb-1">{ticket.objekte.name}</div>
+                <div className="text-xs text-ink-secondary leading-relaxed">
+                  {ticket.objekte.adresse}
+                  {ticket.objekte.plz && <><br />{ticket.objekte.plz}</>}
+                </div>
+                {(ticket.wohnung || typeof ticket.objekte.einheiten_anzahl === "number") && (
+                  <div className="text-[11px] text-ink-faint mt-2 pt-2 border-t border-line space-y-0.5">
+                    {ticket.wohnung && <div>Wohnung: <span className="text-ink-secondary">{ticket.wohnung}</span></div>}
+                    {typeof ticket.objekte.einheiten_anzahl === "number" && (
+                      <div>{ticket.objekte.einheiten_anzahl} Einheiten gesamt</div>
+                    )}
+                  </div>
+                )}
+              </Card>
+            )}
+            {ticket.ersteller && (
+              <Card className="bg-white border border-line">
+                <div className="text-[10px] text-ink-muted uppercase tracking-wider font-medium mb-2">Mieter</div>
+                <div className="text-sm font-semibold text-ink mb-1">{ticket.ersteller.name || "—"}</div>
+                <div className="text-xs text-ink-secondary leading-relaxed space-y-0.5">
+                  {ticket.ersteller.email && (
+                    <div>
+                      <a href={`mailto:${ticket.ersteller.email}`} className="hover:text-accent break-all">
+                        {ticket.ersteller.email}
+                      </a>
+                    </div>
+                  )}
+                  {ticket.ersteller.telefon && (
+                    <div>
+                      <a href={`tel:${ticket.ersteller.telefon}`} className="hover:text-accent">
+                        {ticket.ersteller.telefon}
+                      </a>
+                    </div>
+                  )}
+                  {!ticket.ersteller.email && !ticket.ersteller.telefon && (
+                    <div className="text-ink-faint">Keine Kontaktdaten hinterlegt</div>
+                  )}
+                </div>
+              </Card>
+            )}
+            {(ticket.ki_schadensart || typeof ticket.ki_confidence === "number") && (
+              <Card className="bg-white border border-line">
+                <div className="text-[10px] text-ink-muted uppercase tracking-wider font-medium mb-2">KI-Einschätzung</div>
+                {ticket.ki_schadensart && (
+                  <div className="text-sm font-semibold text-ink mb-1 capitalize">
+                    {ticket.ki_schadensart.replace(/_/g, " ")}
+                  </div>
+                )}
+                {ticket.gewerk && (
+                  <div className="text-xs text-ink-secondary">
+                    Vorhergesagtes Gewerk: <span className="text-ink">{formatGewerk(ticket.gewerk)}</span>
+                  </div>
+                )}
+                {typeof ticket.ki_confidence === "number" && (
+                  <div className="text-[11px] text-ink-faint mt-2 pt-2 border-t border-line">
+                    Confidence: <span className={
+                      ticket.ki_confidence >= 0.8 ? "text-accent font-semibold" :
+                      ticket.ki_confidence >= 0.5 ? "text-warm font-semibold" :
+                      "text-danger font-semibold"
+                    }>{Math.round(ticket.ki_confidence * 100)} %</span>
+                  </div>
+                )}
+              </Card>
+            )}
+          </div>
+        )}
 
         {/* Diagnose/Projekt-Pipeline */}
         {(ticket.ticket_typ === "diagnose" || ticket.ticket_typ === "projekt") && (
