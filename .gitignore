@@ -15,6 +15,7 @@ supabase/.temp/
 tsconfig.tsbuildinfo
 craftly-backup-*/
 .claude/
+.mcp.json
 # Playwright
 test-results/
 playwright-report/
