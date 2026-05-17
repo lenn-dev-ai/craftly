@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { UserProfile, Zeitslot, formatGewerk } from "@/types"
 import { GEWERK_BASIS_PREISE } from "@/lib/yield-management"
@@ -12,6 +12,10 @@ type Filter = "alle" | "sanitaer" | "elektro" | "heizung" | "maler" | "schreiner
 
 export default function MarktplatzPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  // F10: HW-Filter via Query-Param. "Slots ansehen" auf der HW-Liste setzt
+  // ?hw=<id>, der Marktplatz zeigt dann nur Slots dieses Handwerkers.
+  const hwParam = searchParams.get("hw")
   const { confirm } = useToast()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [slots, setSlots] = useState<Zeitslot[]>([])
@@ -22,6 +26,13 @@ export default function MarktplatzPage() {
   const [gebotPreise, setGebotPreise] = useState<Record<string, number>>({})
   const [gebotNachrichten, setGebotNachrichten] = useState<Record<string, string>>({})
   const [expandedSlot, setExpandedSlot] = useState<string | null>(null)
+
+  const hwFilterName = useMemo(() => {
+    if (!hwParam) return null
+    const slot = slots.find(s => s.handwerker_id === hwParam)
+    const hw = slot?.handwerker as { name?: string; firma?: string } | undefined
+    return hw?.firma || hw?.name || null
+  }, [hwParam, slots])
 
   const loadData = useCallback(async () => {
     const supabase = createClient()
@@ -89,11 +100,18 @@ export default function MarktplatzPage() {
     </div>
   )
 
+  const slotsNachHW = hwParam ? slots.filter(s => s.handwerker_id === hwParam) : slots
   const filteredSlots = filter === "alle"
-    ? slots
-    : slots.filter(s => s.gewerk === filter)
+    ? slotsNachHW
+    : slotsNachHW.filter(s => s.gewerk === filter)
 
-  const gewerke = Array.from(new Set(slots.map(s => s.gewerk).filter(Boolean))) as string[]
+  const gewerke = Array.from(new Set(slotsNachHW.map(s => s.gewerk).filter(Boolean))) as string[]
+
+  function hwFilterEntfernen() {
+    const url = new URL(window.location.href)
+    url.searchParams.delete("hw")
+    router.replace(url.pathname + (url.searchParams.toString() ? "?" + url.searchParams.toString() : ""))
+  }
 
   return (
     <div className="min-h-screen bg-surface text-ink">
@@ -112,6 +130,27 @@ export default function MarktplatzPage() {
             Verfügbare Zeitslots — Biete auf Handwerker deiner Wahl
           </p>
         </div>
+
+        {/* F10: HW-Filter-Banner, falls über ?hw=<id> aus der HW-Liste gekommen */}
+        {hwParam && (
+          <div className="mb-5 flex items-center justify-between gap-3 bg-accent/5 border border-accent/20 rounded-xl px-4 py-3">
+            <div className="text-xs text-ink-secondary">
+              Slots gefiltert auf{" "}
+              <span className="font-semibold text-ink">
+                {hwFilterName ?? "diesen Handwerker"}
+              </span>
+              {!hwFilterName && slots.length > 0 && (
+                <span className="text-ink-muted"> — keine verfügbaren Slots.</span>
+              )}
+            </div>
+            <button
+              onClick={hwFilterEntfernen}
+              className="text-xs font-medium text-accent hover:text-[#2D6B5A]"
+            >
+              Filter entfernen
+            </button>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">

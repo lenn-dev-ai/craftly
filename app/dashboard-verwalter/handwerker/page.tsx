@@ -185,7 +185,7 @@ export default function HandwerkerUebersicht() {
               key={h.id}
               h={h}
               onContact={() => h.email && window.open(`mailto:${h.email}`, "_self")}
-              onAuftragNeu={() => router.push("/dashboard-verwalter/marktplatz")}
+              onAuftragNeu={() => router.push("/dashboard-verwalter/marktplatz?hw=" + h.id)}
             />
           ))}
         </div>
@@ -334,7 +334,7 @@ function HandwerkerCard({ h, onContact, onAuftragNeu }: {
           onClick={onAuftragNeu}
           className="flex-1 text-xs font-medium px-3 py-2 rounded-lg bg-accent text-white hover:bg-accent-hover transition-colors"
         >
-          Termin buchen
+          Verfügbare Slots
         </button>
       </div>
     </div>
