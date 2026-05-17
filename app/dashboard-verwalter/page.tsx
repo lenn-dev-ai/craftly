@@ -322,12 +322,35 @@ export default function VerwalterDashboard() {
         <ErsparnisWidget data={ersparnis} />
       )}
 
-      {/* KPI Grid */}
+      {/* KPI Grid — F9: Status-Kacheln click-through auf gefilterte Ticket-Liste */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
-        <Kpi label="Eingegangen" value={offene.length} accent={offene.length > 0 ? "warn" : "muted"} sub={offene.length === 0 ? "alles bearbeitet" : "warten auf dich"} />
-        <Kpi label="Laufende Auktionen" value={marktplatz.length} accent="primary" sub="warten auf Angebote" />
-        <Kpi label="In Arbeit" value={inArbeit.length} accent="info" sub="bei Handwerker" />
-        <Kpi label="Kosten Monat" value={`${monatsKosten.toLocaleString("de")} €`} accent="muted" sub="diesen Monat" />
+        <Kpi
+          label="Eingegangen"
+          value={offene.length}
+          accent={offene.length > 0 ? "warn" : "muted"}
+          sub={offene.length === 0 ? "alles bearbeitet" : "warten auf dich"}
+          href="/dashboard-verwalter/tickets?status=offen"
+        />
+        <Kpi
+          label="Laufende Auktionen"
+          value={marktplatz.length}
+          accent="primary"
+          sub="warten auf Angebote"
+          href="/dashboard-verwalter/tickets?status=auktion"
+        />
+        <Kpi
+          label="In Arbeit"
+          value={inArbeit.length}
+          accent="info"
+          sub="bei Handwerker"
+          href="/dashboard-verwalter/tickets?status=in_bearbeitung"
+        />
+        <Kpi
+          label="Kosten Monat"
+          value={`${monatsKosten.toLocaleString("de")} €`}
+          accent="muted"
+          sub="diesen Monat"
+        />
       </div>
 
       {/* Eingehende Meldungen — wichtigster Block */}
@@ -671,11 +694,12 @@ function ErsparnisWidget({ data }: { data: ErsparnisAggregat }) {
   )
 }
 
-function Kpi({ label, value, sub, accent }: {
+function Kpi({ label, value, sub, accent, href }: {
   label: string
   value: string | number
   sub?: string
   accent?: "primary" | "warn" | "info" | "muted"
+  href?: string
 }) {
   const farben = {
     primary: "text-accent",
@@ -683,11 +707,18 @@ function Kpi({ label, value, sub, accent }: {
     info: "text-rolle-mieter",
     muted: "text-ink",
   }
-  return (
-    <div className="bg-white rounded-2xl border border-line p-4">
+  const innerCls = `bg-white rounded-2xl border border-line p-4 block ${
+    href ? "hover:border-accent/30 hover:shadow-sm transition-all cursor-pointer" : ""
+  }`
+  const content = (
+    <>
       <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-1">{label}</div>
       <div className={`text-2xl font-bold tabular-nums ${farben[accent || "muted"]}`}>{value}</div>
       {sub && <div className="text-xs text-ink-faint mt-1">{sub}</div>}
-    </div>
+    </>
   )
+  if (href) {
+    return <Link href={href} className={innerCls}>{content}</Link>
+  }
+  return <div className={innerCls}>{content}</div>
 }
