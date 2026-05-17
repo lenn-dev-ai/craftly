@@ -8,6 +8,7 @@ import PreisAufschluesselung from "@/components/pricing/PreisAufschluesselung"
 import DiagnosePipeline from "@/components/ticket/DiagnosePipeline"
 import NachtragsBox from "@/components/ticket/NachtragsBox"
 import { useToast } from "@/components/Toast"
+import { useActiveRole } from "@/lib/context/ActiveRoleContext"
 
 function berechneValueScore(angebot: Angebot, alleAngebote: Angebot[]): number {
   if (alleAngebote.length === 0) return 0
@@ -148,6 +149,9 @@ export default function TicketDetailView() {
   const [vergebenConfirm, setVergebenConfirm] = useState<string | null>(null)
   const [fotoUrl, setFotoUrl] = useState<string | null>(null)
   const chatRef = useRef<HTMLDivElement>(null)
+  // F5: ActiveRole muss hier oben mitgezogen werden (Rules of Hooks),
+  // damit isVerwalter/isHandwerker weiter unten den Layout-Kontext kennen.
+  const { rolle: aktiveRolle } = useActiveRole()
 
   const load = useCallback(async () => {
     // Agent-Review BUG-1: ohne try-catch propagierte jeder Fehler aus den
@@ -372,8 +376,20 @@ export default function TicketDetailView() {
   )
   if (!ticket) return <div className="p-6 text-sm text-gray-500">Ticket nicht gefunden.</div>
 
-  const isVerwalter = currentUser?.rolle === "verwalter" || currentUser?.rolle === "admin"
-  const isHandwerker = currentUser?.rolle === "handwerker"
+  // F5: Admin-Accounts dürfen alle Layouts betreten (siehe RoleGuard), aber
+  // wenn der Admin gerade in der Mieter- oder Handwerker-Sicht ist, sollen
+  // Verwalter-Aktionen (z.B. "Handwerker auswählen") NICHT erscheinen —
+  // sonst rutscht der User unfreiwillig in einen anderen Layout-Stack.
+  // Der ActiveRoleContext-Default ist "verwaltung", d.h. in /dashboard-admin
+  // ohne Provider gilt weiter "Verwalter-Sicht".
+  const istInVerwalterSicht = aktiveRolle === "verwaltung"
+  const istInHandwerkerSicht = aktiveRolle === "handwerker"
+  const isVerwalter =
+    currentUser?.rolle === "verwalter" ||
+    (currentUser?.rolle === "admin" && istInVerwalterSicht)
+  const isHandwerker =
+    currentUser?.rolle === "handwerker" ||
+    (currentUser?.rolle === "admin" && istInHandwerkerSicht)
   const hatBereitsAngebot = ticket.angebote?.some(a => a.handwerker_id === currentUser?.id)
   const alleAngebote = ticket.angebote || []
   const sortiertAngebote = [...alleAngebote]
