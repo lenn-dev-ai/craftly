@@ -183,11 +183,20 @@ export default function HandwerkerAuswahlPage() {
     load()
   }, [ticketId, router])
 
-  const sortiert = useMemo(() => {
-    const liste = [...handwerker]
+  // F8: Effektivpreis multipliziert sich mit dem aktuellen surge_faktor
+  // der gewählten Dringlichkeit. Damit ändert sich die Anzeige live,
+  // wenn der Verwalter die Dringlichkeitsstufe umschaltet.
+  const sortiert = useMemo<(HandwerkerPlus & { effektivPreisFinal: number | null })[]>(() => {
+    const surge = AUKTIONS_CONFIGS[dringlichkeit].surgeFaktor
+    const liste = handwerker.map(hw => ({
+      ...hw,
+      effektivPreisFinal: hw.effektivPreis != null
+        ? Math.round(hw.effektivPreis * surge * 100) / 100
+        : null,
+    }))
     liste.sort((a, b) => {
       if (sortKey === "effektiv") {
-        return (a.effektivPreis ?? Infinity) - (b.effektivPreis ?? Infinity)
+        return (a.effektivPreisFinal ?? Infinity) - (b.effektivPreisFinal ?? Infinity)
       }
       if (sortKey === "stundensatz") {
         return (a.basis_stundensatz ?? a.basis_preis ?? Infinity) - (b.basis_stundensatz ?? b.basis_preis ?? Infinity)
@@ -204,7 +213,7 @@ export default function HandwerkerAuswahlPage() {
       return 0
     })
     return liste
-  }, [handwerker, sortKey])
+  }, [handwerker, sortKey, dringlichkeit])
 
   function toggleHW(id: string) {
     setHandwerker(prev => prev.map(hw => hw.id === id ? { ...hw, selected: !hw.selected } : hw))
@@ -435,8 +444,8 @@ export default function HandwerkerAuswahlPage() {
                       />
                       <Cell
                         label="Effektivpreis"
-                        value={hw.effektivPreis != null ? `€${hw.effektivPreis.toFixed(2)}` : "—"}
-                        muted={hw.effektivPreis == null}
+                        value={hw.effektivPreisFinal != null ? `€${hw.effektivPreisFinal.toFixed(2)}` : "—"}
+                        muted={hw.effektivPreisFinal == null}
                         highlight={hw.effektivPreis != null && stundensatz != null && hw.effektivPreis - stundensatz < 2}
                       />
                     </div>
