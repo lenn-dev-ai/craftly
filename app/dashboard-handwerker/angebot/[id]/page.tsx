@@ -25,8 +25,11 @@ export default function AngebotAbgeben() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
 
-  // Form state
-  const [preis, setPreis] = useState("")
+  // F11: Vollkalkulation — kein freier Festpreis mehr. Der HW bekommt den
+  // vom System berechneten empfohlener_preis aus seiner einladungen-Zeile
+  // angezeigt und nimmt an oder lehnt ab. Bis die echte Reject-API gebaut
+  // ist, ist "Annehmen" der einzige Aktions-Pfad.
+  const [systemPreis, setSystemPreis] = useState<number | null>(null)
   const [fruehesterTermin, setFruehesterTermin] = useState("")
   const [nachricht, setNachricht] = useState("")
 
@@ -35,12 +38,16 @@ export default function AngebotAbgeben() {
 
   const loadTicket = useCallback(async () => {
     setLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push("/login"); return }
+
     const { data, error } = await supabase
       .from("tickets")
       .select(`
         *,
         objekte:objekt_id(*),
-        angebote(id)
+        angebote(id),
+        einladungen(empfohlener_preis, status, handwerker_id)
       `)
       .eq("id", id)
       .single()
@@ -52,8 +59,14 @@ export default function AngebotAbgeben() {
     }
     setTicket(data as Ticket)
     setBidCount(data.angebote?.length || 0)
+
+    // Eigene Einladung suchen, um den System-Vorschlag-Preis zu zeigen.
+    type EinladungMini = { handwerker_id: string; empfohlener_preis: number | null; status: string | null }
+    const meine = ((data.einladungen as EinladungMini[] | null) || []).find(e => e.handwerker_id === user.id)
+    setSystemPreis(meine?.empfohlener_preis ?? null)
+
     setLoading(false)
-  }, [id, supabase])
+  }, [id, supabase, router])
 
   useEffect(() => {
     if (id) loadTicket()
@@ -64,9 +77,9 @@ export default function AngebotAbgeben() {
     setSubmitting(true)
     setError("")
 
-    const preisNum = parseFloat(preis)
-    if (isNaN(preisNum) || preisNum <= 0) {
-      setError("Bitte einen gültigen Preis eingeben")
+    // F11: Preis kommt aus dem System-Vorschlag, nicht aus User-Input.
+    if (systemPreis == null || systemPreis <= 0) {
+      setError("Für diesen Auftrag liegt noch kein System-Preis vor — bitte beim Verwalter melden.")
       setSubmitting(false)
       return
     }
@@ -78,7 +91,7 @@ export default function AngebotAbgeben() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ticket_id: id,
-        preis: preisNum,
+        preis: systemPreis,
         fruehester_termin: fruehesterTermin || null,
         nachricht: nachricht || null,
       }),
@@ -127,8 +140,10 @@ export default function AngebotAbgeben() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-ink mb-2">Angebot gesendet!</h2>
-          <p className="text-gray-400 text-sm">Dein Angebot über {preis}€ wurde erfolgreich eingereicht. Du wirst weitergeleitet...</p>
+          <h2 className="text-xl font-bold text-ink mb-2">Auftrag angenommen!</h2>
+          <p className="text-gray-400 text-sm">
+            Du hast den Auftrag über {systemPreis ?? "—"} € angenommen. Du wirst weitergeleitet…
+          </p>
         </div>
       </div>
     )
@@ -154,7 +169,7 @@ export default function AngebotAbgeben() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h1 className="text-lg font-bold">Angebot abgeben</h1>
+          <h1 className="text-lg font-bold">Auftrag annehmen</h1>
         </div>
       </div>
 
@@ -203,28 +218,30 @@ export default function AngebotAbgeben() {
 
         {/* Bid Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Price */}
+          {/* F11: System-Preis (read-only). Reparo arbeitet im Vollkalkulations-
+              Modus — kein freies Angebot mehr, der HW akzeptiert oder lehnt ab. */}
           <div className="bg-white border border-line rounded-2xl p-5">
             <label htmlFor={preisId} className="block text-sm font-medium text-ink mb-1">
-              Dein Festpreis-Angebot <span className="text-accent">*</span>
+              Festpreis (vom System bestimmt)
             </label>
             <p className="text-[11px] text-ink-muted mb-3">
-              Festpreis (netto) für den gesamten Auftrag inkl. Anfahrt &amp; Material — kein Stundensatz.
+              Reparo kalkuliert den Festpreis aus Gewerk, Aufwand, Anfahrt und Dringlichkeit.
+              Inkl. Material, kein Stundensatz.
             </p>
-            <div className="relative">
-              <input
-              type="number"
-              id={preisId}
-              step="0.01"
-              min="1"
-                required
-                value={preis}
-                onChange={(e) => setPreis(e.target.value)}
-                placeholder="z.B. 350"
-                className="w-full bg-surface border border-line rounded-xl px-4 py-3 pr-12 text-ink text-lg font-semibold placeholder:text-ink-muted focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/30 transition-all"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-muted font-medium">€</span>
+            <div className="flex items-center gap-3">
+              <div
+                id={preisId}
+                className="flex-1 bg-surface border border-line rounded-xl px-4 py-3 text-ink text-2xl font-bold tabular-nums"
+                aria-label="System-Festpreis in Euro"
+              >
+                {systemPreis != null ? systemPreis.toLocaleString("de") : "—"} €
+              </div>
             </div>
+            {systemPreis == null && (
+              <p className="text-[11px] text-danger mt-2">
+                Für diesen Auftrag liegt noch kein System-Preis vor — bitte beim Verwalter melden.
+              </p>
+            )}
             <p className="text-[11px] text-ink-muted mt-2">
               Reparo zieht 5 % Plattformgebühr ab. Du bekommst den Rest 1:1 ausgezahlt.
             </p>
@@ -271,7 +288,7 @@ export default function AngebotAbgeben() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={submitting || !preis}
+            disabled={submitting || systemPreis == null}
             className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-[#3D8B7A] to-[#5B6ABF] text-black hover:shadow-lg hover:shadow-[#00D4AA]/20 active:scale-[0.98]"
           >
             {submitting ? (
@@ -280,18 +297,20 @@ export default function AngebotAbgeben() {
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-20" />
                   <path d="M12 2a10 10 0 019.95 9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
                 </svg>
-                Wird gesendet...
+                Wird gesendet…
               </span>
             ) : (
-              `Angebot über ${preis ? preis + "€" : "..."} absenden`
+              systemPreis != null
+                ? `Auftrag über ${systemPreis.toLocaleString("de")} € annehmen`
+                : "Kein System-Preis verfügbar"
             )}
           </button>
         </form>
 
         {/* Footer note */}
         <p className="text-center text-[11px] text-gray-600 pb-6">
-          Mit dem Absenden stimmst du den Nutzungsbedingungen zu.
-          <br />Dein Angebot ist verbindlich bis zum Ablauf der Auktion.
+          Mit der Annahme stimmst du den Nutzungsbedingungen zu.
+          <br />Die Annahme ist verbindlich bis zum Ablauf der Auktion.
         </p>
       </div>
     </div>
