@@ -164,17 +164,33 @@ export default function NutzerPage() {
           <h1 className="text-2xl font-extrabold text-ink tracking-tight">Nutzer-Verwaltung</h1>
           <p className="text-sm text-gray-500 mt-1">{users.length} registrierte Accounts</p>
         </div>
+        {/* Audit-Befund: die Count-Pills sahen wie Filter aus, waren aber
+            statisch. Jetzt sind sie echte Toggle-Filter — Klick auf die
+            ganze Pill (inkl. Zahl) setzt den Rollen-Filter. */}
         <div className="flex gap-2">
           {[
-            { label: "Verwalter", count: users.filter(u => u.rolle === "verwalter").length, color: "#3D8B7A" },
-            { label: "Handwerker", count: users.filter(u => u.rolle === "handwerker").length, color: "#00B4D8" },
-            { label: "Mieter", count: users.filter(u => u.rolle === "mieter").length, color: "#F59E0B" },
-          ].map((r, i) => (
-            <div key={i} className="px-3 py-1.5 bg-white border border-white/[0.06] rounded-xl flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full" style={{ background: r.color }} />
-              <span className="text-[11px] text-gray-400">{r.count}</span>
-            </div>
-          ))}
+            { rolle: "verwalter", label: "Verwalter", count: users.filter(u => u.rolle === "verwalter").length, color: "#3D8B7A" },
+            { rolle: "handwerker", label: "Handwerker", count: users.filter(u => u.rolle === "handwerker").length, color: "#00B4D8" },
+            { rolle: "mieter", label: "Mieter", count: users.filter(u => u.rolle === "mieter").length, color: "#F59E0B" },
+          ].map(r => {
+            const aktiv = filter === r.rolle
+            return (
+              <button
+                key={r.rolle}
+                type="button"
+                onClick={() => setFilter(aktiv ? "alle" : r.rolle)}
+                aria-pressed={aktiv}
+                title={aktiv ? `Filter '${r.label}' deaktivieren` : `Nur ${r.label} anzeigen`}
+                className={"px-3 py-1.5 rounded-xl flex items-center gap-2 transition-all border " + (aktiv
+                  ? "bg-accent/10 border-accent/40"
+                  : "bg-white border-white/[0.06] hover:border-white/[0.15]")}
+              >
+                <div className="w-2 h-2 rounded-full" style={{ background: r.color }} />
+                <span className="text-[11px] text-ink-secondary">{r.label}</span>
+                <span className="text-[11px] text-gray-400 tabular-nums">{r.count}</span>
+              </button>
+            )
+          })}
         </div>
       </div>
 

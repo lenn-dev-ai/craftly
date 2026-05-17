@@ -243,7 +243,8 @@ export default function DiagnosePreisePage() {
                           onClick={() => void speichere(row)}
                           disabled={saving === row.id}
                           className="text-accent hover:bg-accent/10 p-1.5 rounded-lg transition-colors disabled:opacity-50"
-                          aria-label="Speichern"
+                          aria-label="Preis speichern"
+                          title="Preis speichern"
                         >
                           <Check size={14} />
                         </button>
@@ -251,7 +252,8 @@ export default function DiagnosePreisePage() {
                       <button
                         onClick={() => void loesche(row)}
                         className="text-ink-muted hover:text-danger hover:bg-danger/5 p-1.5 rounded-lg transition-colors"
-                        aria-label="Löschen"
+                        aria-label="Diagnose-Preis löschen"
+                        title="Diagnose-Preis löschen"
                       >
                         <Trash2 size={14} />
                       </button>

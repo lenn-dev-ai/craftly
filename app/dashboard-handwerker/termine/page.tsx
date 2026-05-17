@@ -55,7 +55,7 @@ interface OptimierteRoute {
 }
 
 export default function TerminePage() {
-  const { confirm } = useToast()
+  const { confirm, show } = useToast()
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [datum, setDatum] = useState(isoHeute())
@@ -209,11 +209,12 @@ export default function TerminePage() {
       setTermine(vorherigerStand)
       setPrivatForm(formBackup)
       setShowPrivatForm(true)
-      setError("Speichern fehlgeschlagen: " + insertErr.message)
+      show("Speichern fehlgeschlagen: " + insertErr.message, "error")
       setPrivatSaving(false)
       return
     }
     setPrivatSaving(false)
+    show("Privattermin gespeichert", "success")
     // Real-Data nachladen, ersetzt den Optimistic
     await load()
   }
@@ -227,6 +228,7 @@ export default function TerminePage() {
     const { error: deleteErr } = await supabase.from("private_termine").delete().eq("id", id)
     if (deleteErr) {
       setTermine(vorher) // Rollback
+      show("Löschen fehlgeschlagen: " + deleteErr.message, "error")
       setError("Löschen fehlgeschlagen: " + deleteErr.message)
       return
     }

@@ -240,7 +240,14 @@ export default function TimetableView() {
               <ChevronLeft size={14} />
             </button>
             <button
-              onClick={() => setDatum(isoHeute())}
+              onClick={() => {
+                // Audit-Befund: Heute-Klick fühlte sich unzuverlässig an,
+                // wenn man in der Wochenansicht stand und 'heute' bereits
+                // in der sichtbaren Woche war — visuell tat sich nichts.
+                // Fix: explizit auf Tagesansicht von heute springen.
+                setDatum(isoHeute())
+                setView("tag")
+              }}
               className="text-xs px-3 py-1 rounded-full text-accent hover:bg-accent/5 font-medium"
             >
               Heute

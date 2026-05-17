@@ -334,7 +334,7 @@ function HandwerkerCard({ h, onContact, onAuftragNeu }: {
           onClick={onAuftragNeu}
           className="flex-1 text-xs font-medium px-3 py-2 rounded-lg bg-accent text-white hover:bg-accent-hover transition-colors"
         >
-          Auftrag ausschreiben
+          Termin buchen
         </button>
       </div>
     </div>

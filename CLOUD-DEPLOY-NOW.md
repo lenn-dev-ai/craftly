@@ -211,3 +211,81 @@ Danach: **Deploys → Trigger deploy → Deploy site** (sonst greifen die neuen 
 - `lenn-dev@proton.me` ist Admin
 
 Optional als nächstes: Resend-Domain verifizieren (sonst kein Mail-Versand), Google-OAuth-Client anlegen (sonst nur E-Mail-Login).
+
+---
+
+## Nachtrag (17. Mai 2026) — 3 weitere Migrationen aus Agent-Review
+
+### Block 5 — Einladungen RLS für Verwalter (BUG-2)
+
+```sql
+DROP POLICY IF EXISTS "einladungen_select_hw" ON public.einladungen;
+DROP POLICY IF EXISTS "einladungen_select_alle_beteiligten" ON public.einladungen;
+
+CREATE POLICY "einladungen_select_alle_beteiligten" ON public.einladungen
+  FOR SELECT
+  USING (
+    auth.uid() = handwerker_id
+    OR EXISTS (
+      SELECT 1 FROM public.tickets t
+       WHERE t.id = einladungen.ticket_id
+         AND (t.erstellt_von = auth.uid() OR t.verwalter_id = auth.uid())
+    )
+    OR public.is_admin()
+  );
+```
+
+### Block 6 — Nachträge RLS für Verwalter (BUG-3)
+
+```sql
+DROP POLICY IF EXISTS "nachtraege_select_beteiligte" ON public.nachtraege;
+
+CREATE POLICY "nachtraege_select_beteiligte" ON public.nachtraege
+  FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.tickets t
+       WHERE t.id = nachtraege.ticket_id
+         AND (
+              t.erstellt_von = auth.uid()
+           OR t.verwalter_id = auth.uid()
+           OR t.zugewiesener_hw = auth.uid()
+         )
+    )
+    OR public.is_admin()
+  );
+```
+
+### Block 7 — Diagnose-Preise Encoding-Cleanup (BUG-5)
+
+```sql
+UPDATE public.diagnose_preise
+   SET gewerk = CASE
+     WHEN gewerk ILIKE 'sanit%'        THEN 'sanitaer'
+     WHEN gewerk ILIKE 'elektr%'       THEN 'elektro'
+     WHEN gewerk ILIKE 'heiz%'         THEN 'heizung'
+     WHEN gewerk ILIKE 'mal%'          THEN 'maler'
+     WHEN gewerk ILIKE 'schloss%'      THEN 'schlosser'
+     WHEN gewerk ILIKE 'schrein%'      THEN 'schreiner'
+     WHEN gewerk ILIKE 'dachdeck%'     THEN 'dachdecker'
+     WHEN gewerk ILIKE 'allgemein%'    THEN 'allgemein'
+     WHEN gewerk ILIKE 'fliesen%'      THEN 'fliesenleger'
+     ELSE LOWER(gewerk)
+   END
+ WHERE gewerk IS NOT NULL
+   AND gewerk NOT IN ('sanitaer','elektro','heizung','maler','schlosser','schreiner','dachdecker','allgemein','fliesenleger');
+```
+
+### Smoke-Check nach Block 5-7
+```sql
+-- erwartet: nur ASCII-Keys
+SELECT DISTINCT gewerk FROM diagnose_preise ORDER BY gewerk;
+
+-- erwartet: einladungen_select_alle_beteiligten
+SELECT polname FROM pg_policy WHERE polrelid='public.einladungen'::regclass;
+
+-- erwartet: nachtraege_select_beteiligte
+SELECT polname FROM pg_policy WHERE polrelid='public.nachtraege'::regclass;
+```
+
+> Diese 3 Blöcke fixen die zwei großen Verwalter-Workflow-Blocker (Einladungen + Nachträge sichtbar) sowie das „SanitÃ¤r"-Mojibake. Lokal sind sie schon getestet.

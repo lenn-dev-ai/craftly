@@ -295,14 +295,25 @@ export default function MeldenPage() {
   })()
   const analyse = (reverseGewerkKey && KI_ANALYSEN[reverseGewerkKey])
     || (kiResult ? KI_ANALYSEN[kiResult] : null)
-  const stepIndex = ["foto", "analyse", "details", "ort", "dringlichkeit", "zusammenfassung", "gesendet"].indexOf(step)
+  const wizardSteps = ["foto", "analyse", "details", "ort", "dringlichkeit", "zusammenfassung", "gesendet"] as const
+  const stepIndex = wizardSteps.indexOf(step)
+  // Audit-Befund: Zurück sprang via router.back() aus dem Wizard raus und
+  // verwarf alle bisherigen Eingaben. Stattdessen: einen Step zurück, und
+  // nur wenn schon auf Schritt 1 (oder bereits gesendet), dann zur App.
+  const goBack = () => {
+    if (stepIndex <= 0 || step === "gesendet") {
+      router.push("/dashboard-mieter")
+      return
+    }
+    setStep(wizardSteps[stepIndex - 1])
+  }
 
   return (
     <div className="min-h-screen bg-surface text-ink">
       {/* Header */}
       <div className="px-6 py-4 border-b border-line">
         <div className="flex items-center justify-between max-w-xl mx-auto">
-          <button onClick={() => router.back()} className="text-sm text-ink-muted hover:text-ink">&larr; Zurueck</button>
+          <button onClick={goBack} className="text-sm text-ink-muted hover:text-ink">&larr; Zurück</button>
           <h1 className="text-sm font-medium text-ink">Schaden melden</h1>
           <span className="text-xs text-ink-faint">{Math.min(stepIndex + 1, 5)}/5</span>
         </div>

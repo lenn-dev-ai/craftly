@@ -142,6 +142,7 @@ export default function TicketDetailView() {
   const [einladungen, setEinladungen] = useState<Einladung[]>([])
   const [bewertungen, setBewertungen] = useState<Bewertung[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [kostenFinal, setKostenFinal] = useState("")
   const [showKosten, setShowKosten] = useState(false)
   const [vergebenConfirm, setVergebenConfirm] = useState<string | null>(null)
@@ -149,39 +150,82 @@ export default function TicketDetailView() {
   const chatRef = useRef<HTMLDivElement>(null)
 
   const load = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push("/login"); return }
-    // FIX-7: profiles(*)-Joins exposed Email/Telefon/Adresse fremder
-    // User. Joined HW + Chat-Absender nur Public-Felder; eigenes Profil
-    // wird ebenfalls auf die hier benötigten Spalten begrenzt.
-    const [{ data: profile }, { data: t }, { data: msgs }] = await Promise.all([
-      supabase.from("profiles").select("id, email, name, rolle, firma, early_adopter_bis, created_at").eq("id", user.id).single(),
-      supabase.from("tickets")
-        .select("*, objekte(*), angebote(*, handwerker:profiles(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl))")
-        .eq("id", id).single(),
-      supabase.from("nachrichten")
-        .select("*, absender:profiles(id, name, firma, rolle)")
-        .eq("ticket_id", id).order("created_at"),
-    ])
-    setCurrentUser(profile)
-    setTicket(t)
-    setNachrichten(msgs || [])
+    // Agent-Review BUG-1: ohne try-catch propagierte jeder Fehler aus den
+    // Supabase-Queries (RLS-Block, fehlende FK-Joins, Network) zur globalen
+    // error.tsx-Boundary → User sah "Ein Fehler ist aufgetreten" ohne
+    // Diagnose-Möglichkeit. Jetzt: lokaler Error-State + Retry, nichts
+    // crasht den ganzen Tree.
+    setLoadError(null)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push("/login"); return }
 
-    // Schadens-Foto via Signed URL (wenn vorhanden)
-    if (t?.foto_url) {
-      const { getSchadensFotoUrl } = await import("@/lib/storage/schadens-foto")
-      const url = await getSchadensFotoUrl(supabase, t.foto_url)
-      setFotoUrl(url)
-    } else {
-      setFotoUrl(null)
+      const [profileRes, ticketRes, msgsRes] = await Promise.all([
+        supabase.from("profiles").select("id, email, name, rolle, firma, early_adopter_bis, created_at").eq("id", user.id).single(),
+        supabase.from("tickets")
+          .select("*, objekte(*), angebote(*, handwerker:profiles(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl))")
+          .eq("id", id).single(),
+        supabase.from("nachrichten")
+          .select("*, absender:profiles(id, name, firma, rolle)")
+          .eq("ticket_id", id).order("created_at"),
+      ])
+
+      if (ticketRes.error) {
+        console.error("[TicketDetailView] tickets load:", ticketRes.error)
+        // PGRST116 = no rows = ticket existiert nicht oder RLS blockt
+        if (ticketRes.error.code === "PGRST116") {
+          setLoadError("Dieses Ticket existiert nicht oder du hast keinen Zugriff.")
+        } else {
+          setLoadError("Ticket konnte nicht geladen werden: " + ticketRes.error.message)
+        }
+        setLoading(false)
+        return
+      }
+      if (!ticketRes.data) {
+        setLoadError("Ticket nicht gefunden.")
+        setLoading(false)
+        return
+      }
+
+      setCurrentUser(profileRes.data ?? null)
+      setTicket(ticketRes.data)
+      setNachrichten(msgsRes.data || [])
+
+      // Schadens-Foto via Signed URL (wenn vorhanden)
+      if (ticketRes.data.foto_url) {
+        const { getSchadensFotoUrl } = await import("@/lib/storage/schadens-foto")
+        const url = await getSchadensFotoUrl(supabase, ticketRes.data.foto_url)
+        setFotoUrl(url)
+      } else {
+        setFotoUrl(null)
+      }
+
+      // Best-effort: Einladungen/Bewertungen — wenn sie failen, ist das
+      // kein Blocker (z. B. RLS gibt einer Rolle keinen Lese-Zugriff).
+      const { data: einl, error: einlErr } = await supabase
+        .from("einladungen")
+        .select("*, handwerker:handwerker_id(id,name,firma,gewerk,bewertung_avg)")
+        .eq("ticket_id", id)
+      if (einlErr) console.warn("[TicketDetailView] einladungen:", einlErr.message)
+      setEinladungen(einl || [])
+
+      const { data: bew, error: bewErr } = await supabase
+        .from("bewertungen").select("*").eq("ticket_id", id)
+      if (bewErr) console.warn("[TicketDetailView] bewertungen:", bewErr.message)
+      setBewertungen(bew || [])
+
+      setLoading(false)
+      if (chatRef.current) {
+        setTimeout(() => {
+          if (chatRef.current) chatRef.current.scrollTo(0, chatRef.current.scrollHeight)
+        }, 100)
+      }
+    } catch (err) {
+      console.error("[TicketDetailView] unerwarteter Fehler:", err)
+      setLoadError(err instanceof Error ? err.message : "Unerwarteter Fehler beim Laden des Tickets.")
+      setLoading(false)
     }
-    const { data: einl } = await supabase.from("einladungen").select("*, handwerker:handwerker_id(id,name,firma,gewerk,bewertung_avg)").eq("ticket_id", id)
-    setEinladungen(einl || [])
-    const { data: bew } = await supabase.from("bewertungen").select("*").eq("ticket_id", id)
-    setBewertungen(bew || [])
-    setLoading(false)
-    setTimeout(() => chatRef.current?.scrollTo(0, chatRef.current.scrollHeight), 100)
   }, [id, router])
 
   useEffect(() => { load() }, [load])
@@ -308,6 +352,24 @@ export default function TicketDetailView() {
   }
 
   if (loading) return <LoadingSpinner />
+  if (loadError) return (
+    <div className="p-6 max-w-md mx-auto">
+      <Card className="bg-white border border-danger/20">
+        <div className="text-center space-y-3">
+          <div className="text-base font-semibold text-ink">Ticket konnte nicht geladen werden</div>
+          <p className="text-sm text-ink-secondary">{loadError}</p>
+          <div className="flex gap-2 justify-center">
+            <Button onClick={() => { setLoading(true); load() }} variant="secondary" size="sm">
+              Erneut versuchen
+            </Button>
+            <Button onClick={() => router.back()} variant="ghost" size="sm">
+              Zurück
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
   if (!ticket) return <div className="p-6 text-sm text-gray-500">Ticket nicht gefunden.</div>
 
   const isVerwalter = currentUser?.rolle === "verwalter" || currentUser?.rolle === "admin"

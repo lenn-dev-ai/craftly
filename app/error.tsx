@@ -28,10 +28,11 @@ export default function Error({ error, reset }: ErrorPageProps) {
           Ein Fehler ist aufgetreten
         </h1>
 
-        {/* Error Info — only digest for support, no raw messages */}
-        <div className="bg-danger-light border border-danger/20 rounded-lg p-4">
-          <p className="text-danger text-sm">
-            Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.
+        {/* Error Info — message zeigen wenn vorhanden (hilft Beta-Usern
+            beim Reporten). In Prod kapseln wir Stack-Traces nicht hier. */}
+        <div className="bg-danger-light border border-danger/20 rounded-lg p-4 text-left">
+          <p className="text-danger text-sm font-medium">
+            {error.message || "Ein unerwarteter Fehler ist aufgetreten."}
           </p>
           {error.digest && (
             <p className="text-danger/60 text-xs mt-2 font-mono">
