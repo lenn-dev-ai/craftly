@@ -84,7 +84,10 @@ export default function OnboardingPage() {
     setServerError("")
     try {
       const supabase = createClient()
-      const { error } = await supabase.from("profiles").insert({
+      // upsert statt insert: wenn der Login-Redirect uns hierher schickt
+      // weil rolle=null aber Zeile schon existiert (z. B. halbangelegt
+      // bei früherem Versuch), würde insert mit duplicate-key crashen.
+      const { error } = await supabase.from("profiles").upsert({
         id: userId,
         email,
         name: values.name,
@@ -93,17 +96,19 @@ export default function OnboardingPage() {
         firma: values.firma || null,
         gewerk: values.gewerk || null,
         plz_bereich: values.plz_bereich || null,
-      })
+      }, { onConflict: "id" })
       if (error) {
-        setServerError(
-          "Profil konnte nicht erstellt werden. Bitte erneut versuchen oder Support kontaktieren.",
-        )
+        // echte Fehlermeldung zeigen — sonst rät der User
+        console.error("[onboarding] upsert failed:", error)
+        setServerError("Profil konnte nicht erstellt werden: " + error.message)
         return
       }
       void fetch("/api/welcome-mail", { method: "POST" })
       router.push(dashMap[values.rolle] || "/dashboard-mieter")
-    } catch {
-      setServerError("Ein unerwarteter Fehler ist aufgetreten.")
+    } catch (err) {
+      console.error("[onboarding] exception:", err)
+      const msg = err instanceof Error ? err.message : "Unbekannt"
+      setServerError("Unerwarteter Fehler: " + msg)
     }
   }
 
