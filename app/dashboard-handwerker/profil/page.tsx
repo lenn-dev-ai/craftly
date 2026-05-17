@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { UserProfile } from "@/types"
 import AddressAutocomplete from "@/components/AddressAutocomplete"
+import { useToast } from "@/components/Toast"
 
 type FormState = {
   name: string
@@ -26,6 +27,7 @@ type FormState = {
 
 export default function ProfilPage() {
   const router = useRouter()
+  const { show } = useToast()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [form, setForm] = useState<FormState>({
     name: "", firma: "", gewerk: "", plz_bereich: "", telefon: "",
@@ -81,14 +83,15 @@ export default function ProfilPage() {
       const { adresse: _adresse, lat: _lat, lng: _lng, ...persisted } = form
       const { error: updateErr } = await supabase.from("profiles").update(persisted).eq("id", user.id)
       if (updateErr) {
-        setError("Speichern fehlgeschlagen: " + updateErr.message)
+        show("Speichern fehlgeschlagen: " + updateErr.message, "error")
         setSaving(false)
         return
       }
+      show("Profil gespeichert", "success")
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
     } catch {
-      setError("Ein unerwarteter Fehler ist aufgetreten.")
+      show("Ein unerwarteter Fehler ist aufgetreten.", "error")
     } finally {
       setSaving(false)
     }

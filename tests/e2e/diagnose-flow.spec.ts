@@ -90,6 +90,10 @@ async function legeDiagnoseTicketAn(params: {
 }
 
 test.describe.serial("Diagnose-Pipeline End-to-End", () => {
+  // Login-Helper macht jetzt 2× waitFor Abmelden + reload + warm-up wait —
+  // 30s Default reicht für 2 Logins + Befund-Flow nicht mehr aus.
+  test.slow()
+
   test("Annehmen-Pfad: HW Befund-UI → Verwalter Annehmen-UI → DB konsistent", async ({ browser }) => {
     // === Setup ===
     const seed = await seedTestUsers()

@@ -554,8 +554,19 @@ function Tagesansicht({ datum, eintraege, onAuftragKlick, onFreierSlotKlick, onP
     return slots
   }, [belegtMinSet])
 
+  // UX-Audit: "ist komplett frei"-Empty-Hint früher als absolute-overlay
+  // über dem Grid, das verdeckte die Slot-Buttons. Jetzt als Banner über
+  // dem Grid + grid bleibt unberührt.
+  const istKomplettFrei = eintraege.length === 0 && freieSlots.length === 1
+
   return (
     <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
+      {istKomplettFrei && (
+        <div className="mb-4 bg-accent/5 border border-accent/20 rounded-xl px-4 py-3 text-center">
+          <div className="text-sm font-semibold text-accent">{deutschesDatum(datum)} ist komplett frei</div>
+          <div className="text-xs text-ink-muted mt-0.5">Tippe in den freien Bereich oder lege Zeitslots an, damit Verwalter dich buchen können.</div>
+        </div>
+      )}
       <div className="relative" style={{ height: GESAMT_HOEHE, marginLeft: 48 }}>
         {/* Stunden-Linien + Labels */}
         {Array.from({ length: STUNDEN_PRO_TAG + 1 }, (_, i) => {
@@ -631,15 +642,6 @@ function Tagesansicht({ datum, eintraege, onAuftragKlick, onFreierSlotKlick, onP
           )
         })}
 
-        {/* Empty-Hint wenn Tag komplett frei */}
-        {eintraege.length === 0 && freieSlots.length === 1 && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-sm font-semibold text-accent mb-1">{deutschesDatum(datum)} ist komplett frei</div>
-              <div className="text-xs text-ink-muted">Trage Zeitslots ein, damit Verwalter dich buchen können.</div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

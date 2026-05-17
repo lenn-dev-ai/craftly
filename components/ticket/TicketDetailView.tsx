@@ -95,7 +95,7 @@ function AuktionCountdown({ end }: { end: string }) {
           </div>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-semibold text-accent">KI-Optimierte Smart-Auktion</span>
+              <span className="text-sm font-semibold text-accent">Auktion läuft</span>
               {!expired && <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />}
             </div>
             <div className="text-xs text-ink-muted">Handwerker bieten in Echtzeit — bestes Preis-Leistungs-Verhältnis gewinnt</div>
@@ -185,6 +185,14 @@ export default function TicketDetailView() {
   }, [id, router])
 
   useEffect(() => { load() }, [load])
+
+  // Auto-Scroll bei neuen Nachrichten — reagiert auf jeden length-Wechsel
+  // (initial load, eigenes send, künftige Realtime-Inserts). Robuster als
+  // setTimeout in load(), weil auch Mid-Session-Updates erfasst werden.
+  useEffect(() => {
+    if (!chatRef.current) return
+    chatRef.current.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" })
+  }, [nachrichten.length])
 
   async function sendChat() {
     if (!chatText.trim() || !currentUser) return
@@ -326,8 +334,8 @@ export default function TicketDetailView() {
         {/* Ticket Header */}
         <div className="bg-white border border-line rounded-2xl p-6 mb-6">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h1 className="text-xl font-semibold text-ink mb-2">{ticket.titel}</h1>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl font-semibold text-ink mb-2 break-words">{ticket.titel}</h1>
               <div className="flex items-center gap-2 flex-wrap mb-3">
                 {/* Reihenfolge: Status (primär gefüllt) → Prio (nur wenn !=normal) →
                     Typ (subtil) → Meta. Audit Punkt 4: nur EIN gefüllter Chip. */}
@@ -338,7 +346,7 @@ export default function TicketDetailView() {
                 )}
                 {ticket.wohnung && <span className="text-xs text-ink-faint bg-surface px-2 py-1 rounded-lg">{ticket.wohnung}</span>}
               </div>
-              {ticket.beschreibung && <p className="text-sm text-ink-secondary leading-relaxed">{ticket.beschreibung}</p>}
+              {ticket.beschreibung && <p className="text-sm text-ink-secondary leading-relaxed break-words whitespace-pre-wrap">{ticket.beschreibung}</p>}
             </div>
             {isVerwalter && ticket.status === "in_bearbeitung" && !showKosten && (
               <Button size="sm" onClick={() => setShowKosten(true)}>Abschließen</Button>
@@ -348,7 +356,7 @@ export default function TicketDetailView() {
           <div className="flex items-center gap-4 mt-4 pt-4 border-t border-line text-xs text-ink-faint">
             <span>Erstellt: {new Date(ticket.created_at).toLocaleDateString("de", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
             {ticket.gewerk && <span>Gewerk: {formatGewerk(ticket.gewerk)}</span>}
-            {ticket.vergabemodus && <span>Modus: {ticket.vergabemodus === "auktion" ? "Smart-Auktion" : ticket.vergabemodus === "direkt" ? "Sofort-Vergabe" : "Planauftrag"}</span>}
+            {ticket.vergabemodus && <span>Modus: {ticket.vergabemodus === "auktion" ? "Auktion" : ticket.vergabemodus === "direkt" ? "Sofort-Vergabe" : "Planauftrag"}</span>}
           </div>
         </div>
 
