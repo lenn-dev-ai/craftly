@@ -46,7 +46,26 @@ const KI_ANALYSEN: Record<string, { titel: string; gewerk: string; dringlichkeit
   elektro:   { titel: "Elektroproblem",                   gewerk: "elektro",          dringlichkeit: "zeitnah",     tipp: "Berühren Sie keine freiliegenden Kabel. Schalten Sie die betroffene Sicherung aus.",            zeit: "ca. 6-24 Stunden" },
   tuer:      { titel: "Tür / Fenster defekt",             gewerk: "schreiner",        dringlichkeit: "planbar",   tipp: "Sichern Sie die Stelle provisorisch ab, besonders bei Zugluft oder Einbruchgefahr.",            zeit: "ca. 1-5 Tage" },
   schimmel:  { titel: "Schimmel entdeckt",                gewerk: "maler",            dringlichkeit: "zeitnah",     tipp: "Gut lüften! Nicht selbst mit Bleiche behandeln - das verschlimmert es oft.",                    zeit: "ca. 3-7 Tage" },
+  dach:      { titel: "Dachschaden",                       gewerk: "dachdecker",       dringlichkeit: "zeitnah",   tipp: "Bei akuter Undichtigkeit Eimer/Plane unter die Leckstelle. Dach selbst nicht betreten.",        zeit: "ca. 1-5 Tage" },
+  fassade:   { titel: "Fassaden-/Außenwandschaden",        gewerk: "maler",            dringlichkeit: "planbar",   tipp: "Lose Putzstücke sichern (Absperrung), damit nichts auf Passanten fällt.",                      zeit: "ca. 3-14 Tage" },
+  boden:     { titel: "Bodenschaden",                      gewerk: "bodenleger",       dringlichkeit: "planbar",   tipp: "Schadstelle freihalten und Wasser/Feuchtigkeit fernhalten bis zur Begutachtung.",              zeit: "ca. 2-7 Tage" },
   sonstiges: { titel: "Sonstiger Schaden",                gewerk: "allgemein",        dringlichkeit: "planbar",   tipp: "Je genauer die Beschreibung, desto schneller die Lösung.",                                      zeit: null },
+}
+
+// Mapping API-`schadensart` (siehe app/api/ki/schadenserkennung/route.ts
+// SYSTEM_PROMPT) → UI-Key in KI_ANALYSEN. Ohne dieses Mapping fiel z.B.
+// "sanitaer" (Wasserschaden laut KI) mangels Key auf "sonstiges" zurück
+// und der KI-Soforttipp passte nicht zum Schaden.
+const SCHADENSART_API_TO_UI: Record<string, keyof typeof KI_ANALYSEN> = {
+  sanitaer: "wasser",
+  elektrik: "elektro",
+  heizung: "heizung",
+  fenster_tuer: "tuer",
+  dach: "dach",
+  fassade: "fassade",
+  boden: "boden",
+  schimmel: "schimmel",
+  sonstiges: "sonstiges",
 }
 
 function analyseText(text: string): string {
@@ -56,6 +75,9 @@ function analyseText(text: string): string {
   if (lower.match(/strom|elektr|sicher|steck|licht|flacker|kurz.?schluss/)) return "elektro"
   if (lower.match(/tuer|fenster|schloss|klinke|scharnier|glas|zerbroch/)) return "tuer"
   if (lower.match(/schimmel|schwarz.*fleck|pilz|feucht.*wand|stock.?fleck/)) return "schimmel"
+  if (lower.match(/dach|ziegel|regen.*decke|tropf.*decke/)) return "dach"
+  if (lower.match(/fassade|putz|außen.?wand|aussen.?wand/)) return "fassade"
+  if (lower.match(/boden|parkett|laminat|fliesen|teppich/)) return "boden"
   return "sonstiges"
 }
 
@@ -181,7 +203,7 @@ export default function MeldenPage() {
             setKiConfidence(data.confidence)
             setKiSchadensart(data.schadensart)
             setKiHinweis(data.hinweis ?? null)
-            setKiResult(data.schadensart in KI_ANALYSEN ? data.schadensart : "sonstiges")
+            setKiResult(SCHADENSART_API_TO_UI[data.schadensart] ?? "sonstiges")
             setForm(f => ({
               ...f,
               titel: data.titel_vorschlag,
