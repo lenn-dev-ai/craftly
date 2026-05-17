@@ -148,12 +148,12 @@ Aktiviert auf allen Tabellen. Wichtige Pattern:
 ### Seed-/Demo-Daten (Cloud)
 | Rolle | Anzahl | Login-Pattern |
 |-------|--------|---------------|
-| Admin | 1 | Max Mustermann (lenn.test.2@gmail.com) |
+| Admin | 1 | Max Mustermann (lenn-dev@proton.me) |
 | Verwalter | 1 | über Rollen-Wechsel im Admin-Dashboard |
 | Handwerker | 1 | Mustermann Sanitär GmbH (gleicher Account) |
 | Mieter | 1 | Test Mieter |
 
-**Admin-Login:** lenn.test.2@gmail.com (Passwort kennt KI)
+**Admin-Login:** lenn-dev@proton.me (Passwort kennt KI)
 
 ### Migrationen schreiben
 Ja, du darfst Migrationen schreiben. Konvention:
