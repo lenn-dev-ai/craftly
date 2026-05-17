@@ -227,3 +227,36 @@ supabase/
 2. **Kein Designsystem** — Farben/Spacing sind als Hex-Werte in jeder Komponente hartcodiert. `design-tokens.ts` existiert seit kurzem, ist aber noch nicht überall verwendet.
 3. **Monolithische Page-Komponenten** — Manche Dashboard-Pages sind 300+ Zeilen. Refactoring in kleinere Komponenten wäre gut.
 4. **Keine Unit-Tests** — Nur E2E-Tests (Playwright). Unit-Tests für Business-Logik (Auction-Engine, Smart-Score) fehlen.
+
+## 9. Übergabe an zweiten Maintainer
+
+Damit eine zweite Person das Projekt von ihrem Rechner / Account aus weiterführen kann, brauchen sie Zugriff auf alle Stellen wo Reparo Daten/Config hält:
+
+| Service | Rolle | Wie einladen |
+|---|---|---|
+| **GitHub** `lenn-dev-ai/craftly` | Code-Schreibzugriff | Repo → Settings → Collaborators → Add people |
+| **Supabase** Projekt `gkojaogdzzyuboajwyom` | DB / Auth / Storage | Dashboard → Organization Settings → Team → Invite (Owner) |
+| **Netlify** Site `reparo-app` | Deploy + ENV-Vars | Team Settings → Members → Add (Developer reicht) |
+| **Anthropic Console** | API-Key für KI-Schadenserkennung | Eigenen Workspace einladen oder neuen Key generieren, dann in Netlify-ENV austauschen |
+| **Resend** (wenn aktiv) | Mail-Versand + DNS-Records | Team → Invite |
+| **Stripe** (wenn aktiv) | Connect + Webhooks | Account Settings → Team → Add |
+| **Domain-Registrar** für `reparo-app.de` | DNS-Kontrolle | abhängig vom Anbieter, Account-Sharing oder Transfer |
+| **Email-Provider** für `kontakt@reparo-app.de` / `noreply@reparo-app.de` | Mailboxen + Aliases | abhängig vom Anbieter |
+
+**Wichtig:** alle ENV-Vars (Stripe-Keys, Anthropic-Key, REPARO_FEEDBACK_EMAIL etc.) liegen in Netlify und sind damit Teil des Site-Zugriffs. Es muss keine geheime Datei extern übergeben werden. `.env.local` ist nur für lokale Entwicklung und liegt nicht im Repo.
+
+**Quick-Start für die zweite Person:**
+```bash
+git clone git@github.com:lenn-dev-ai/craftly.git && cd craftly
+npm install
+cp .env.example .env.local   # Supabase-URL + anon-Key eintragen
+npm run db:start             # lokales Supabase
+npm run dev                  # http://localhost:3000
+```
+
+Test-Daten landen automatisch via Seed-Skripten. Admin-Login lokal: identisch zur Cloud (siehe oben).
+
+**Was NICHT übergeben werden muss:**
+- Test-Daten (lokale Supabase wird per `db:start` aufgesetzt)
+- Memory/Notizen aus Claude-Sessions (pro Account)
+- Lokale `.env.local` (jeder hat seine eigene)
