@@ -75,14 +75,26 @@ export function FeedbackWidget() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Feedback geben"
-        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-40 w-12 h-12 rounded-full bg-accent text-white shadow-lg hover:shadow-xl hover:bg-accent-hover transition-all flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-      >
-        <MessageSquare size={20} />
-      </button>
+      {/* F6: Tooltip auf Hover/Focus, damit klar wird, was der Button tut.
+          Vorher gab es nur ein aria-label — User mussten erst klicken um
+          den Zweck zu verstehen. */}
+      <div className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-40 group">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Feedback ans Reparo-Team"
+          title="Feedback ans Reparo-Team"
+          className="w-12 h-12 rounded-full bg-accent text-white shadow-lg hover:shadow-xl hover:bg-accent-hover transition-all flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+        >
+          <MessageSquare size={20} />
+        </button>
+        <span
+          className="pointer-events-none absolute right-full mr-3 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-lg bg-ink/90 text-white text-xs px-3 py-1.5 opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 group-focus-within:opacity-100 group-focus-within:translate-x-0 transition-all"
+          role="tooltip"
+        >
+          Feedback ans Reparo-Team
+        </span>
+      </div>
 
       {open && (
         <div
@@ -109,7 +121,8 @@ export function FeedbackWidget() {
             </div>
             <div className="p-5 space-y-3">
               <p className="text-xs text-ink-muted">
-                Was nervt, was fehlt, was ist verwirrend? Geht direkt an uns.
+                Dein Feedback geht direkt an das Reparo-Team — wir lesen jede Nachricht.
+                Was nervt, was fehlt, was ist verwirrend?
               </p>
               <textarea
                 value={text}
