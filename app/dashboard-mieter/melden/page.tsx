@@ -19,8 +19,10 @@ const PRIO_LABELS: Record<string, string> = {
   zeitnah: "Zeitnah",
   notfall: "Notfall",
 }
+// F2: "Kann warten" klang resignativ und niemand klickte es. "Diese Woche OK"
+// gibt einen konkreten Zeitrahmen, ohne den User in Notfall-Drift zu treiben.
 const PRIO_SUB: Record<string, string> = {
-  planbar: "Kann warten",
+  planbar: "Diese Woche OK",
   zeitnah: "Bald bitte",
   notfall: "Sofort",
 }
@@ -441,9 +443,17 @@ export default function MeldenPage() {
               />
             </div>
 
-            {/* Quick-Select Buttons */}
+            {/* F1: Quick-Select Buttons als optionale Inspiration deklarieren.
+                Vorher wirkten sie wie eine Pflicht-Auswahl mit fixen Kategorien
+                und der Klick überschrieb stillschweigend die Beschreibung.
+                Jetzt klar gelabelt: nur Starttext, der Mieter ergänzt selbst. */}
             <div className="mb-6">
-              <p className="text-xs text-ink-muted mb-2">Oder schnell auswählen:</p>
+              <p className="text-xs text-ink-muted mb-1">
+                Hilfe für den Anfang <span className="text-ink-faint font-normal">(optional)</span>
+              </p>
+              <p className="text-[11px] text-ink-faint mb-2">
+                Setzt einen Beispieltext ein, den du danach noch anpasst.
+              </p>
               <div className="flex flex-wrap gap-2">
                 {[
                   { label: "Heizung aus", icon: "!", val: "Heizung funktioniert nicht mehr, Wohnung wird kalt" },
@@ -525,7 +535,11 @@ export default function MeldenPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-ink-muted uppercase tracking-wider mb-1">Geschätzte Zeit</div>
+                  {/* F4: vorher "Geschätzte Zeit" — suggerierte fälschlich,
+                      dass die Dringlichkeitsstufe die Dauer ändert. Jetzt
+                      klar als typische Reparaturdauer gelabelt, unabhängig
+                      von "Notfall/Zeitnah/Planbar". */}
+                  <div className="text-[10px] text-ink-muted uppercase tracking-wider mb-1">Typische Dauer</div>
                   <div className="text-sm font-semibold text-ink">
                     {analyse.zeit ?? "Nach Besichtigung"}
                   </div>
@@ -713,7 +727,7 @@ export default function MeldenPage() {
                 </div>
                 <div className="border-t border-line" />
                 <div className="flex justify-between">
-                  <span className="text-xs text-ink-muted">Geschätzte Bearbeitung</span>
+                  <span className="text-xs text-ink-muted">Typische Reparaturdauer</span>
                   <span className="text-sm text-ink">{analyse.zeit ?? "Nach Besichtigung"}</span>
                 </div>
               </div>
