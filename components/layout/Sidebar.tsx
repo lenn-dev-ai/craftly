@@ -17,7 +17,11 @@ import {
 
 type LucideIcon = ComponentType<LucideProps>
 
-const menus: Record<Rolle, { href: string; label: string; Icon: LucideIcon }[]> = {
+// F12: gruppe="selten" rutscht in eine eigene Untersektion "Mein Bereich"
+// in der Sidebar. Hält die Hauptnavigation kurz, ohne Routen zu löschen.
+type MenuItem = { href: string; label: string; Icon: LucideIcon; gruppe?: "selten" }
+
+const menus: Record<Rolle, MenuItem[]> = {
   verwalter: [
     { href: "/dashboard-verwalter", label: "Dashboard", Icon: LayoutDashboard },
     { href: "/dashboard-verwalter/tickets", label: "Tickets", Icon: Ticket },
@@ -26,17 +30,19 @@ const menus: Record<Rolle, { href: string; label: string; Icon: LucideIcon }[]> 
     { href: "/dashboard-verwalter/reporting", label: "Reporting", Icon: BarChart3 },
   ],
   handwerker: [
+    // Top-Daily (6) — was der HW täglich anfasst
     { href: "/dashboard-handwerker", label: "Dashboard", Icon: LayoutDashboard },
     { href: "/dashboard-handwerker/auftraege", label: "Aufträge", Icon: Briefcase },
-    { href: "/dashboard-handwerker/diagnosen", label: "Diagnosen", Icon: Stethoscope },
-    { href: "/dashboard-handwerker/karte", label: "Karte", Icon: Map },
-    { href: "/dashboard-handwerker/zeitplan", label: "Zeitplan", Icon: CalendarRange },
     { href: "/dashboard-handwerker/termine", label: "Termine & Route", Icon: MapPin },
-    { href: "/dashboard-handwerker/zeitslots", label: "Zeitslots", Icon: Calendar },
+    { href: "/dashboard-handwerker/karte", label: "Karte", Icon: Map },
+    { href: "/dashboard-handwerker/diagnosen", label: "Diagnosen", Icon: Stethoscope },
     { href: "/dashboard-handwerker/einnahmen", label: "Einnahmen", Icon: Euro },
-    { href: "/dashboard-handwerker/verdienst", label: "Verdienst-Rechner", Icon: Calculator },
-    { href: "/dashboard-handwerker/kalender", label: "Verfügbarkeit", Icon: CalendarCheck },
-    { href: "/dashboard-handwerker/profil", label: "Mein Profil", Icon: UserCircle },
+    // Mein Bereich (5) — Settings/seltener
+    { href: "/dashboard-handwerker/zeitplan", label: "Zeitplan", Icon: CalendarRange, gruppe: "selten" },
+    { href: "/dashboard-handwerker/zeitslots", label: "Zeitslots", Icon: Calendar, gruppe: "selten" },
+    { href: "/dashboard-handwerker/kalender", label: "Verfügbarkeit", Icon: CalendarCheck, gruppe: "selten" },
+    { href: "/dashboard-handwerker/verdienst", label: "Verdienst-Rechner", Icon: Calculator, gruppe: "selten" },
+    { href: "/dashboard-handwerker/profil", label: "Mein Profil", Icon: UserCircle, gruppe: "selten" },
   ],
   mieter: [
     { href: "/dashboard-mieter", label: "Übersicht", Icon: LayoutDashboard },
@@ -86,6 +92,31 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
     window.location.href = "/login"
   }
 
+  // Hilfs-Renderer für eine Item-Liste (F12: für getrennte Top- und
+  // "Mein Bereich"-Sektion). Active-Logik bleibt unverändert.
+  function renderItems(list: MenuItem[]) {
+    return list.map(item => {
+      const active =
+        pathname === item.href ||
+        (item.href !== "/dashboard-" + rolle && pathname.startsWith(item.href))
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          onClick={() => setMobileOpen(false)}
+          className={`flex items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium rounded-xl mb-0.5 transition-all ${
+            active
+              ? `${aktivBg[rolle]} text-white shadow-sm`
+              : "text-ink-secondary hover:text-ink hover:bg-surface-muted"
+          }`}
+        >
+          <item.Icon size={16} className={active ? "text-white" : "text-ink-muted"} />
+          <span>{item.label}</span>
+        </Link>
+      )
+    })
+  }
+
   const sidebarContent = (
     <>
       <Link
@@ -113,27 +144,16 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
         <div className="h-px bg-line" />
       </div>
 
-      <nav className="flex-1 px-2 py-1">
-        {items.map(item => {
-          const active =
-            pathname === item.href ||
-            (item.href !== "/dashboard-" + rolle && pathname.startsWith(item.href))
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium rounded-xl mb-0.5 transition-all ${
-                active
-                  ? `${aktivBg[rolle]} text-white shadow-sm`
-                  : "text-ink-secondary hover:text-ink hover:bg-surface-muted"
-              }`}
-            >
-              <item.Icon size={16} className={active ? "text-white" : "text-ink-muted"} />
-              <span>{item.label}</span>
-            </Link>
-          )
-        })}
+      <nav className="flex-1 px-2 py-1 overflow-y-auto">
+        {renderItems(items.filter(i => i.gruppe !== "selten"))}
+        {items.some(i => i.gruppe === "selten") && (
+          <>
+            <div className="mt-4 mb-1 px-3.5 text-[9px] font-bold uppercase tracking-wider text-ink-muted">
+              Mein Bereich
+            </div>
+            {renderItems(items.filter(i => i.gruppe === "selten"))}
+          </>
+        )}
       </nav>
 
       <div className="px-3 mb-2">
