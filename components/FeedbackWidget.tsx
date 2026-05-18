@@ -52,9 +52,24 @@ export function FeedbackWidget() {
     if (!message) return
     setPending(true)
     try {
+      // B1: Vorheriges Submit lieferte 401 — die SSR-Cookies vom
+      // @supabase/ssr v0.3 wurden in /api/feedback nicht zuverlässig
+      // gelesen (gleiches Pattern, andere POST-Routes funktionieren).
+      // Workaround: Access-Token explizit aus der Client-Session ziehen
+      // und als Bearer-Header mitgeben — der createServerSupabaseClient
+      // bevorzugt Authorization-Header vor Cookies (siehe lib/supabase-server.ts).
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        toast.show("Bitte neu anmelden — Session abgelaufen.", "error")
+        return
+      }
       const res = await fetch("/api/feedback", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           message,
           kontext_url: typeof window !== "undefined" ? window.location.href : null,
