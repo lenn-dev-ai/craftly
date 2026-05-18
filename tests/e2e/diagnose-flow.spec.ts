@@ -284,7 +284,7 @@ test.describe.serial("Diagnose-Pipeline End-to-End", () => {
     const hw2Token = await userAccessToken(
       TEST_USERS.hw_konkurrent.email, TEST_USERS.hw_konkurrent.password,
     )
-    const bidRes = await request.post("/api/auction/bid", {
+    const bidRes = await request.post("/api/auftraege/annehmen", {
       headers: { Authorization: `Bearer ${hw2Token}` },
       data: {
         ticket_id: projekt!.id,

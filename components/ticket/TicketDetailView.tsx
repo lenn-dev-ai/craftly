@@ -298,7 +298,7 @@ export default function TicketDetailView() {
     if (!angebotForm.preis || !currentUser) return
     setSubmittingBid(true)
     // API-Route: schreibt Bid, markiert Einladung, triggert Smart-Score-Recompute
-    const res = await authFetch("/api/auction/bid", {
+    const res = await authFetch("/api/auftraege/annehmen", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

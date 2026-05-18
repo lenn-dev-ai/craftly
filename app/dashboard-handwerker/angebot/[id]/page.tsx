@@ -34,9 +34,6 @@ export default function AngebotAbgeben() {
   const [fruehesterTermin, setFruehesterTermin] = useState("")
   const [nachricht, setNachricht] = useState("")
 
-  // Existing bids count for market info
-  const [bidCount, setBidCount] = useState(0)
-
   // K1.1: Nach erfolgreichem Auftrag-Annehmen wechselt die Seite auf den
   // Slot-Vorschlag-Step. HW pickt 2-3 Termine, der Mieter wählt einen
   // davon im Ticket-Detail (K1.2). Drei Slots, mindestens 2 müssen
@@ -72,7 +69,6 @@ export default function AngebotAbgeben() {
       return
     }
     setTicket(data as Ticket)
-    setBidCount(data.angebote?.length || 0)
 
     // Eigene Einladung suchen, um den System-Vorschlag-Preis zu zeigen.
     type EinladungMini = { handwerker_id: string; empfohlener_preis: number | null; status: string | null }
@@ -100,7 +96,7 @@ export default function AngebotAbgeben() {
 
     // API-Route nutzen: schreibt Bid, markiert Einladung, triggert
     // Smart-Score-Recompute. Direct-Insert würde den Score überspringen.
-    const res = await authFetch("/api/auction/bid", {
+    const res = await authFetch("/api/auftraege/annehmen", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -357,18 +353,10 @@ export default function AngebotAbgeben() {
           </div>
         </div>
 
-        {/* Market Info */}
-        <div className="bg-white border border-line rounded-2xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-ink">{bidCount} Angebot{bidCount !== 1 ? "e" : ""} bisher</p>
-            <p className="text-xs text-gray-500">Gib ein wettbewerbsfähiges Angebot ab</p>
-          </div>
-        </div>
+        {/* H4: vorheriges "Markt-Info"-Banner ("Gib ein wettbewerbsfähiges
+            Angebot ab") atmete noch Auktionsluft — im Vollkalkulations-
+            Modell (Phase-0 #11) ist der Preis fix, „wettbewerbsfähig" macht
+            keinen Sinn mehr. Block ersatzlos entfernt. */}
 
         {/* Bid Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -461,10 +449,11 @@ export default function AngebotAbgeben() {
           </button>
         </form>
 
-        {/* Footer note */}
+        {/* H3: vorheriges Disclaimer "bis zum Ablauf der Auktion" passt nicht
+            mehr — Vollkalkulations-Modell, kein Auktionsfenster. */}
         <p className="text-center text-[11px] text-gray-600 pb-6">
           Mit der Annahme stimmst du den Nutzungsbedingungen zu.
-          <br />Die Annahme ist verbindlich bis zum Ablauf der Auktion.
+          <br />Mit der Annahme bist du an den vereinbarten Termin gebunden.
         </p>
       </div>
     </div>

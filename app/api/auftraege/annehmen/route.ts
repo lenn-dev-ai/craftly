@@ -4,10 +4,12 @@ import { reScoreTicket } from "@/lib/auction/scoring-pipeline"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 import { neuesAngebotEmail } from "@/lib/email/templates"
 
-// POST /api/auction/bid
+// POST /api/auftraege/annehmen (H2: vorher /api/auction/bid)
 // Body: { ticket_id, preis, fruehester_termin?, geschaetzte_dauer?, nachricht? }
-// Auth: Handwerker. Schreibt Angebot, triggert Smart-Score-Recompute für
-//       alle Bids des Tickets.
+// Auth: Handwerker. Im Vollkalkulations-Modell (Phase-0 #11) ist der "Bid"
+//       eigentlich eine Annahme zum System-Preis — Route entsprechend benannt.
+//       Schreibt Angebot, triggert Smart-Score-Recompute für alle Bids des
+//       Tickets.
 export async function POST(request: NextRequest) {
   let body: {
     ticket_id?: string
