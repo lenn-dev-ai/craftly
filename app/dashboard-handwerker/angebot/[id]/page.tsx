@@ -147,35 +147,20 @@ export default function AngebotAbgeben() {
       }
     }
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push("/login"); return }
-
-    const gruppeId = typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`
-
-    const titel = `Termin-Vorschlag: ${ticket?.titel ?? "Reparatur"}`.slice(0, 200)
-    const ticketLat = (ticket as { einsatzort_lat?: number | null } | null)?.einsatzort_lat ?? null
-    const ticketLng = (ticket as { einsatzort_lng?: number | null } | null)?.einsatzort_lng ?? null
-    const ticketAdr = (ticket as { einsatzort_adresse?: string | null } | null)?.einsatzort_adresse ?? null
-
-    const rows = filled.map(s => ({
-      handwerker_id: user.id,
-      ticket_id: id,
-      titel,
-      datum: s.datum,
-      von: s.von,
-      bis: s.bis,
-      status: "vorgeschlagen",
-      vorschlag_gruppe_id: gruppeId,
-      einsatzort_adresse: ticketAdr,
-      einsatzort_lat: ticketLat,
-      einsatzort_lng: ticketLng,
-    }))
-
-    const { error: insErr } = await supabase.from("termine").insert(rows)
-    if (insErr) {
-      setSlotsError("Konnte Termine nicht speichern: " + insErr.message)
+    // K1.3a: Insert läuft jetzt über die API-Route, die zusätzlich
+    // den Mieter per Email benachrichtigt.
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch("/api/termine/vorschlagen", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...(session?.access_token ? { authorization: `Bearer ${session.access_token}` } : {}),
+      },
+      body: JSON.stringify({ ticket_id: id, slots: filled }),
+    })
+    const respBody = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      setSlotsError(respBody.error || "Konnte Termine nicht speichern")
       setSlotsSaving(false)
       return
     }

@@ -1,5 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
+import { sendEmailFireAndForget } from "@/lib/email/send"
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://reparo-app.netlify.app"
+
+function escape(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+}
 
 // K1.2: Mieter wählt einen vorgeschlagenen Termin-Slot (oder lehnt alle ab).
 //
@@ -77,6 +84,11 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  // HW-Daten für die Email-Benachrichtigung
+  const hwId = gruppe[0]
+    ? (await admin.from("termine").select("handwerker_id, datum, von, bis").eq("id", gruppe[0].id).single<{ handwerker_id: string; datum: string; von: string; bis: string }>()).data
+    : null
+
   if (action === "select") {
     const treffer = gruppe.find(t => t.id === terminId)
     if (!treffer) {
@@ -93,16 +105,76 @@ export async function POST(request: NextRequest) {
       .eq("vorschlag_gruppe_id", gruppeId)
       .neq("id", terminId!)
     if (e2) return NextResponse.json({ error: e2.message }, { status: 500 })
+
+    // K1.3b: HW-Email — "Mieter hat einen Termin bestätigt"
+    if (hwId?.handwerker_id) {
+      const { data: gewaehlter } = await admin
+        .from("termine")
+        .select("datum, von, bis")
+        .eq("id", terminId!)
+        .maybeSingle<{ datum: string; von: string; bis: string }>()
+      const { data: hwProfile } = await admin
+        .from("profiles")
+        .select("email, name")
+        .eq("id", hwId.handwerker_id)
+        .maybeSingle<{ email: string | null; name: string | null }>()
+      const { data: ticketRow } = await admin
+        .from("tickets")
+        .select("titel")
+        .eq("id", ticketId)
+        .maybeSingle<{ titel: string }>()
+      if (hwProfile?.email && gewaehlter) {
+        const wt = new Date(gewaehlter.datum).toLocaleDateString("de", { weekday: "long", day: "2-digit", month: "short", year: "numeric" })
+        const ticketUrl = `${SITE_URL}/dashboard-handwerker/ticket/${ticketId}`
+        sendEmailFireAndForget({
+          to: hwProfile.email,
+          subject: `Termin bestätigt: ${ticketRow?.titel ?? "Auftrag"}`,
+          html: `
+            <p>Hallo${hwProfile.name ? " " + escape(hwProfile.name) : ""},</p>
+            <p>Der Mieter hat einen deiner Termine für &bdquo;${escape(ticketRow?.titel ?? "")}&ldquo; bestätigt:</p>
+            <p style="background:#F0FAF7;border:1px solid #BCDDD2;border-radius:8px;padding:12px 16px;font-family:sans-serif;font-size:14px;">
+              <strong>${escape(wt)}</strong><br>
+              ${escape(gewaehlter.von.slice(0, 5))} – ${escape(gewaehlter.bis.slice(0, 5))} Uhr
+            </p>
+            <p><a href="${ticketUrl}" style="background:#3D8B7A;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px;display:inline-block;">Auftrag öffnen</a></p>
+          `,
+        })
+      }
+    }
     return NextResponse.json({ ok: true, status: "bestaetigt" })
   } else {
-    // reject — alle der Gruppe auf 'abgelehnt'. Der HW kriegt im
-    // Folgeschritt (K1.3 Notification) Bescheid und kann neue Slots
-    // vorschlagen.
+    // reject — alle der Gruppe auf 'abgelehnt'. Der HW wird per Email
+    // informiert und kann im Auftrag neue Slots vorschlagen.
     const { error } = await admin
       .from("termine")
       .update({ status: "abgelehnt" })
       .eq("vorschlag_gruppe_id", gruppeId)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    if (hwId?.handwerker_id) {
+      const { data: hwProfile } = await admin
+        .from("profiles")
+        .select("email, name")
+        .eq("id", hwId.handwerker_id)
+        .maybeSingle<{ email: string | null; name: string | null }>()
+      const { data: ticketRow } = await admin
+        .from("tickets")
+        .select("titel")
+        .eq("id", ticketId)
+        .maybeSingle<{ titel: string }>()
+      if (hwProfile?.email) {
+        const ticketUrl = `${SITE_URL}/dashboard-handwerker/ticket/${ticketId}`
+        sendEmailFireAndForget({
+          to: hwProfile.email,
+          subject: `Termine abgelehnt: bitte neu vorschlagen — ${ticketRow?.titel ?? ""}`.slice(0, 200),
+          html: `
+            <p>Hallo${hwProfile.name ? " " + escape(hwProfile.name) : ""},</p>
+            <p>Der Mieter hat deine Termin-Vorschläge für &bdquo;${escape(ticketRow?.titel ?? "")}&ldquo; abgelehnt. Bitte schlag im Auftrag neue Slots vor.</p>
+            <p><a href="${ticketUrl}" style="background:#3D8B7A;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px;display:inline-block;">Neue Termine vorschlagen</a></p>
+          `,
+        })
+      }
+    }
     return NextResponse.json({ ok: true, status: "abgelehnt" })
   }
 }
