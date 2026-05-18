@@ -19,10 +19,13 @@ const PRIO_LABELS: Record<string, string> = {
   zeitnah: "Zeitnah",
   notfall: "Notfall",
 }
-// F2: "Kann warten" klang resignativ und niemand klickte es. "Diese Woche OK"
+// F2: "Kann warten" klang resignativ und niemand klickte es. "Diese Woche"
 // gibt einen konkreten Zeitrahmen, ohne den User in Notfall-Drift zu treiben.
+// F2.1 (390-px-Smoke-Befund): vorheriges "Diese Woche OK" brach im 3-cols-
+// Grid bei iPhone-Breite um — auf "Diese Woche" gekürzt, Sub-Label bleibt
+// jetzt einzeilig.
 const PRIO_SUB: Record<string, string> = {
-  planbar: "Diese Woche OK",
+  planbar: "Diese Woche",
   zeitnah: "Bald bitte",
   notfall: "Sofort",
 }
@@ -600,10 +603,10 @@ export default function MeldenPage() {
                   <button
                     key={d.val}
                     onClick={() => setForm(f => ({ ...f, prioritaet: d.val }))}
-                    className={"rounded-xl p-3 border text-center transition-all " + (form.prioritaet === d.val ? d.color : "border-line bg-surface-muted text-ink-muted")}
+                    className={"rounded-xl px-2 py-3 border text-center transition-all " + (form.prioritaet === d.val ? d.color : "border-line bg-surface-muted text-ink-muted")}
                   >
-                    <div className="text-sm font-medium">{PRIO_LABELS[d.val]}</div>
-                    <div className="text-[10px] mt-0.5 opacity-70">{PRIO_SUB[d.val]}</div>
+                    <div className="text-sm font-medium whitespace-nowrap">{PRIO_LABELS[d.val]}</div>
+                    <div className="text-[10px] mt-0.5 opacity-70 whitespace-nowrap">{PRIO_SUB[d.val]}</div>
                   </button>
                 ))}
               </div>
