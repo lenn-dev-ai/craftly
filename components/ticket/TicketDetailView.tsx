@@ -142,6 +142,17 @@ export default function TicketDetailView() {
   const [submittingBid, setSubmittingBid] = useState(false)
   const [einladungen, setEinladungen] = useState<Einladung[]>([])
   const [bewertungen, setBewertungen] = useState<Bewertung[]>([])
+  // K1.2: Vorgeschlagene Termin-Slots des Mieters (Doodle-Style).
+  // Genau so wie der HW sie via K1.1 abgeschickt hat — alle 2-3 teilen
+  // sich eine vorschlag_gruppe_id.
+  const [terminVorschlaege, setTerminVorschlaege] = useState<
+    Array<{ id: string; datum: string; von: string; bis: string; titel: string; status: string; vorschlag_gruppe_id: string | null; handwerker_id: string }>
+  >([])
+  const [bestaetigterTermin, setBestaetigterTermin] = useState<
+    { id: string; datum: string; von: string; bis: string } | null
+  >(null)
+  const [slotChoiceLoading, setSlotChoiceLoading] = useState(false)
+  const [slotChoiceError, setSlotChoiceError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [kostenFinal, setKostenFinal] = useState("")
@@ -218,6 +229,27 @@ export default function TicketDetailView() {
         .from("bewertungen").select("*").eq("ticket_id", id)
       if (bewErr) console.warn("[TicketDetailView] bewertungen:", bewErr.message)
       setBewertungen(bew || [])
+
+      // K1.2: Termine zum Ticket — Vorschläge (status='vorgeschlagen')
+      // und ggf. der bereits bestätigte Slot. abgelehnt/abgelaufen werden
+      // gefiltert, weil sie für den Mieter nicht mehr handlungsrelevant
+      // sind. Defensiv: status-Spalte könnte in alten DBs noch fehlen
+      // (K1-Schema-Migration), darum die Catch-Ebene.
+      try {
+        const { data: ter, error: terErr } = await supabase
+          .from("termine")
+          .select("id, datum, von, bis, titel, status, vorschlag_gruppe_id, handwerker_id")
+          .eq("ticket_id", id)
+        if (terErr) {
+          console.warn("[TicketDetailView] termine:", terErr.message)
+        } else if (ter) {
+          setTerminVorschlaege(ter.filter(t => t.status === "vorgeschlagen"))
+          const best = ter.find(t => t.status === "bestaetigt")
+          setBestaetigterTermin(best ? { id: best.id, datum: best.datum, von: best.von, bis: best.bis } : null)
+        }
+      } catch (err) {
+        console.warn("[TicketDetailView] termine load:", err)
+      }
 
       setLoading(false)
       if (chatRef.current) {
@@ -390,6 +422,42 @@ export default function TicketDetailView() {
   const isHandwerker =
     currentUser?.rolle === "handwerker" ||
     (currentUser?.rolle === "admin" && istInHandwerkerSicht)
+  const istMieter = currentUser?.id === ticket.erstellt_von
+
+  // K1.2: Slot-Choice-Aktionen. Auth via Bearer-Token (B1.1-Pattern),
+  // damit der API-Endpunkt den User auch in App-Router-Route-Handlern
+  // sauber resolved.
+  async function chooseSlot(action: "select" | "reject", terminId?: string) {
+    const gruppeId = terminVorschlaege[0]?.vorschlag_gruppe_id
+    if (!gruppeId) return
+    setSlotChoiceError(null)
+    setSlotChoiceLoading(true)
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch("/api/termine/select-slot", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...(session?.access_token ? { authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({
+          gruppe_id: gruppeId,
+          action,
+          termin_id: terminId,
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setSlotChoiceError(body.error || "Aktion fehlgeschlagen.")
+      } else {
+        show(action === "select" ? "Termin bestätigt." : "Vorschläge abgelehnt — HW wird informiert.", "success")
+        await load()
+      }
+    } finally {
+      setSlotChoiceLoading(false)
+    }
+  }
   const hatBereitsAngebot = ticket.angebote?.some(a => a.handwerker_id === currentUser?.id)
   const alleAngebote = ticket.angebote || []
   const sortiertAngebote = [...alleAngebote]
@@ -511,6 +579,65 @@ export default function TicketDetailView() {
             )}
           </div>
         )}
+
+        {/* K1.2: Termin-Vorschläge (Doodle-Style) */}
+        {bestaetigterTermin ? (
+          <div className="bg-accent/5 border border-accent/30 rounded-2xl p-5 mb-6">
+            <div className="text-[10px] uppercase tracking-wider text-accent font-bold mb-1">Termin bestätigt</div>
+            <div className="text-base font-semibold text-ink">
+              {new Date(bestaetigterTermin.datum).toLocaleDateString("de", { weekday: "long", day: "2-digit", month: "short", year: "numeric" })}
+            </div>
+            <div className="text-sm text-ink-secondary">
+              {bestaetigterTermin.von.slice(0, 5)} – {bestaetigterTermin.bis.slice(0, 5)} Uhr
+            </div>
+          </div>
+        ) : terminVorschlaege.length > 0 && istMieter ? (
+          <div className="bg-white border border-line rounded-2xl p-5 mb-6">
+            <div className="text-[10px] uppercase tracking-wider text-ink-muted font-bold mb-1">Termin wählen</div>
+            <h3 className="text-base font-semibold text-ink mb-3">Der Handwerker hat {terminVorschlaege.length} Termine vorgeschlagen</h3>
+            <p className="text-xs text-ink-muted mb-4">
+              Wähle einen Termin aus. Die anderen verfallen automatisch.
+            </p>
+            <div className="space-y-2 mb-3">
+              {terminVorschlaege
+                .sort((a, b) => (a.datum + a.von).localeCompare(b.datum + b.von))
+                .map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => chooseSlot("select", t.id)}
+                  disabled={slotChoiceLoading}
+                  className="w-full text-left border border-line rounded-xl p-3 hover:border-accent/40 hover:bg-accent/5 transition-all disabled:opacity-50"
+                >
+                  <div className="text-sm font-semibold text-ink">
+                    {new Date(t.datum).toLocaleDateString("de", { weekday: "short", day: "2-digit", month: "short" })}
+                  </div>
+                  <div className="text-xs text-ink-secondary">
+                    {t.von.slice(0, 5)} – {t.bis.slice(0, 5)} Uhr
+                  </div>
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => chooseSlot("reject")}
+              disabled={slotChoiceLoading}
+              className="w-full text-xs text-ink-muted hover:text-danger py-2 disabled:opacity-50"
+            >
+              Keiner passt — neue Slots vorschlagen lassen
+            </button>
+            {slotChoiceError && (
+              <div className="mt-3 text-xs text-danger bg-danger/10 border border-danger/20 rounded-lg px-3 py-2">
+                {slotChoiceError}
+              </div>
+            )}
+          </div>
+        ) : terminVorschlaege.length > 0 && (isHandwerker || isVerwalter) ? (
+          <div className="bg-warm-light border border-warm/30 rounded-2xl p-4 mb-6">
+            <div className="text-[10px] uppercase tracking-wider text-warm-dark font-bold mb-1">Wartet auf Mieter</div>
+            <p className="text-xs text-warm-dark/90">
+              {terminVorschlaege.length} Termin{terminVorschlaege.length === 1 ? "" : "e"} vorgeschlagen — der Mieter wählt einen aus.
+            </p>
+          </div>
+        ) : null}
 
         {/* Diagnose/Projekt-Pipeline */}
         {(ticket.ticket_typ === "diagnose" || ticket.ticket_typ === "projekt") && (
