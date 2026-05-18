@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase"
 import { useToast } from "@/components/Toast"
 import { MessageSquare, RefreshCw } from "lucide-react"
@@ -49,6 +49,11 @@ export default function FeedbackPage() {
   const [rolleFilter, setRolleFilter] = useState<RolleFilter>("alle")
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
+  // H10: bei wiederholtem Error den Toast-Spam vermeiden + Auto-Refresh
+  // pausieren. lastErrorMessage merkt sich die letzte gesehene Meldung,
+  // sodass derselbe Fehler in der 60-s-Polling-Schleife nicht wieder und
+  // wieder als Toast aufpoppt.
+  const lastErrorMessage = useRef<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -57,15 +62,27 @@ export default function FeedbackPage() {
       .from("feedback")
       .select(`
         id, user_id, rolle, kontext_url, message, viewed, created_at,
-        user:profiles!feedback_user_id_fkey ( name, email )
+        user:profiles!feedback_user_id_profiles_fkey ( name, email )
       `)
       .order("created_at", { ascending: false })
       .limit(200)
     if (error) {
-      toast.show("Laden fehlgeschlagen: " + error.message, "error")
+      // H10: nur ersten Fehler toasten, dann Auto-Refresh stoppen.
+      // Identische Folge-Fehler werden geschluckt; unterschiedliche
+      // Fehlertexte kommen weiter durch.
+      if (lastErrorMessage.current !== error.message) {
+        toast.show(
+          "Laden fehlgeschlagen: " + error.message +
+          " — Auto-Refresh pausiert, manuell aktualisieren.",
+          "error",
+        )
+        lastErrorMessage.current = error.message
+      }
+      setAutoRefresh(false)
       setLoading(false)
       return
     }
+    lastErrorMessage.current = null
     setRows(
       (data ?? []).map((f: Record<string, unknown>) => {
         const u = f.user as { name?: string | null; email?: string | null } | null
