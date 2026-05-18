@@ -6,7 +6,7 @@ import { type ComponentType } from "react"
 import { Rolle } from "@/types"
 import {
   LayoutDashboard, Briefcase, Stethoscope, Map, UserCircle, CalendarCheck, Euro,
-  Plus, FileText, Ticket, Zap, Wrench, BarChart3, Settings, Activity, Users,
+  Plus, FileText, Ticket, Zap, Wrench, BarChart3, Settings, Activity, Users, MessageSquare,
   type LucideProps,
 } from "lucide-react"
 
@@ -36,9 +36,12 @@ const items: Record<Rolle, { href: string; label: string; Icon: LucideIcon }[]> 
     { href: "/dashboard-mieter/tickets", label: "Tickets",   Icon: FileText },
   ],
   admin: [
+    // P3.4: "Feedback" als zweites Top-Item, weil Admin das aktuell am
+    // häufigsten anfasst. "Aktivität" rutscht raus (per Hamburger-Drawer
+    // weiter erreichbar; in der Sidebar bleibt es).
     { href: "/dashboard-admin",                 label: "Start",      Icon: LayoutDashboard },
+    { href: "/dashboard-admin/feedback",        label: "Feedback",   Icon: MessageSquare },
     { href: "/dashboard-admin/nutzer",          label: "Nutzer",     Icon: Users },
-    { href: "/dashboard-admin/aktivitaet",      label: "Aktivität",  Icon: Activity },
     { href: "/dashboard-admin/system",          label: "System",     Icon: Settings },
   ],
 }
