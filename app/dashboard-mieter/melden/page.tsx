@@ -346,11 +346,17 @@ export default function MeldenPage() {
   return (
     <div className="min-h-screen bg-surface text-ink">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-line">
-        <div className="flex items-center justify-between max-w-xl mx-auto">
-          <button onClick={goBack} className="text-sm text-ink-muted hover:text-ink">&larr; Zurück</button>
-          <h1 className="text-sm font-medium text-ink">Schaden melden</h1>
-          <span className="text-xs text-ink-faint">{Math.min(stepIndex + 1, 5)}/5</span>
+      {/* M1: Auf Mobile braucht der Header links Platz für den fixen
+          Sidebar-Hamburger (top-4 left-4, 40 × 40 px). Vorher schob die
+          Hamburger-Klick-Fläche den "← Zurück"-Text + die Step-Zahl unter
+          sich — "urück" / "ist das Problem?" / fehlende "2/5".
+          pl-14 (= 56 px) lässt den Hamburger frei, md:px-6 stellt das
+          Desktop-Layout wieder her. */}
+      <div className="pl-14 pr-6 md:px-6 py-4 border-b border-line">
+        <div className="flex items-center justify-between gap-3 max-w-xl mx-auto">
+          <button onClick={goBack} className="text-sm text-ink-muted hover:text-ink whitespace-nowrap">&larr; Zurück</button>
+          <h1 className="text-sm font-medium text-ink truncate">Schaden melden</h1>
+          <span className="text-xs text-ink-faint whitespace-nowrap">{Math.min(stepIndex + 1, 5)}/5</span>
         </div>
       </div>
 
@@ -617,7 +623,7 @@ export default function MeldenPage() {
                 ins Mieter-UI. */}
 
             <Button onClick={() => setStep("ort")} className="w-full justify-center">
-              Weiter -- Ort angeben
+              Weiter — Ort angeben
             </Button>
           </div>
         )}
