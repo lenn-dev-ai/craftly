@@ -30,17 +30,16 @@ const menus: Record<Rolle, MenuItem[]> = {
     { href: "/dashboard-verwalter/reporting", label: "Reporting", Icon: BarChart3 },
   ],
   handwerker: [
-    // Top-Daily (6) — was der HW täglich anfasst
+    // K2: Top-4 — was der HW täglich anfasst.
+    // Kalender ersetzt Termine/Zeitplan/Zeitslots/Verfügbarkeit als
+    // 3-Layer-Sicht. Auftrags-Routen bleiben erhalten, sind aber via
+    // Klick im Kalender-Termin erreichbar — kein Top-Item mehr.
     { href: "/dashboard-handwerker", label: "Dashboard", Icon: LayoutDashboard },
-    { href: "/dashboard-handwerker/auftraege", label: "Aufträge", Icon: Briefcase },
-    { href: "/dashboard-handwerker/termine", label: "Termine & Route", Icon: MapPin },
-    { href: "/dashboard-handwerker/karte", label: "Karte", Icon: Map },
-    { href: "/dashboard-handwerker/diagnosen", label: "Diagnosen", Icon: Stethoscope },
+    { href: "/dashboard-handwerker/kalender", label: "Kalender", Icon: CalendarCheck },
+    { href: "/dashboard-handwerker/karte", label: "Karte & Route", Icon: Map },
     { href: "/dashboard-handwerker/einnahmen", label: "Einnahmen", Icon: Euro },
-    // Mein Bereich (5) — Settings/seltener
-    { href: "/dashboard-handwerker/zeitplan", label: "Zeitplan", Icon: CalendarRange, gruppe: "selten" },
-    { href: "/dashboard-handwerker/zeitslots", label: "Zeitslots", Icon: Calendar, gruppe: "selten" },
-    { href: "/dashboard-handwerker/kalender", label: "Verfügbarkeit", Icon: CalendarCheck, gruppe: "selten" },
+    // Mein Bereich — Settings/seltener
+    { href: "/dashboard-handwerker/diagnosen", label: "Diagnosen", Icon: Stethoscope, gruppe: "selten" },
     { href: "/dashboard-handwerker/verdienst", label: "Verdienst-Rechner", Icon: Calculator, gruppe: "selten" },
     { href: "/dashboard-handwerker/profil", label: "Mein Profil", Icon: UserCircle, gruppe: "selten" },
   ],

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { type ComponentType } from "react"
 import { Rolle } from "@/types"
 import {
-  LayoutDashboard, Briefcase, Stethoscope, Map, UserCircle,
+  LayoutDashboard, Briefcase, Stethoscope, Map, UserCircle, CalendarCheck, Euro,
   Plus, FileText, Ticket, Zap, Wrench, BarChart3, Settings, Activity, Users,
   type LucideProps,
 } from "lucide-react"
@@ -24,10 +24,11 @@ const items: Record<Rolle, { href: string; label: string; Icon: LucideIcon }[]> 
     { href: "/dashboard-verwalter/handwerker", label: "Handwerker",  Icon: Wrench },
   ],
   handwerker: [
+    // K2: Synchron zur Sidebar — Top-4 Dashboard/Kalender/Karte/Einnahmen.
     { href: "/dashboard-handwerker",           label: "Start",     Icon: LayoutDashboard },
-    { href: "/dashboard-handwerker/auftraege", label: "Aufträge",  Icon: Briefcase },
-    { href: "/dashboard-handwerker/diagnosen", label: "Diagnose",  Icon: Stethoscope },
+    { href: "/dashboard-handwerker/kalender",  label: "Kalender",  Icon: CalendarCheck },
     { href: "/dashboard-handwerker/karte",     label: "Karte",     Icon: Map },
+    { href: "/dashboard-handwerker/einnahmen", label: "Einnahmen", Icon: Euro },
   ],
   mieter: [
     { href: "/dashboard-mieter",         label: "Start",     Icon: LayoutDashboard },
