@@ -369,12 +369,14 @@ export default function MeldenPage() {
         <div className="h-full bg-gradient-to-r from-[#3D8B7A] to-[#4A9E8C] transition-all duration-700" style={{ width: Math.min((stepIndex + 1) / 5 * 100, 100) + "%" }} />
       </div>
 
-      {/* M1.1: Auch der Content-Container braucht auf Mobile links Platz
-          für den fixen Hamburger — sonst kollidieren linksbündige
-          Section-Headers (z.B. <h2>"Wo ist das Problem?") mit dem ☰.
-          Die text-center-Steps profitieren ebenfalls, ohne sichtbaren
-          Layout-Nachteil. */}
-      <div className="max-w-xl mx-auto pl-14 pr-6 md:px-6 py-8">
+      {/* M5: Content-Container ist wieder symmetrisch zentriert.
+          Vorheriges pl-14 (M1.1) hat den Wizard auf Desktop und Mobile
+          asymmetrisch nach rechts verschoben (Cowork-Befund). Der
+          Hamburger sitzt im Top-Header (fixed y=16–56 px), den der
+          Content-Container y-mäßig nicht mehr berührt — pl-14 hier ist
+          unnötig. Falls ein <h2> doch mal unter den Hamburger rutscht,
+          gehört der Fix auf das h2, nicht auf den ganzen Wizard. */}
+      <div className="max-w-xl mx-auto px-6 py-8">
 
         {/* STEP 1: Foto + Beschreibung */}
         {step === "foto" && (
