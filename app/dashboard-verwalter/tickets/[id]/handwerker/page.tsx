@@ -227,43 +227,64 @@ export default function HandwerkerAuswahlPage() {
     const selected = handwerker.filter(hw => hw.selected)
     if (selected.length === 0) { showToast("Bitte mindestens einen Handwerker auswählen."); return }
     setSending(true)
-    const supabase = createClient()
-    // Legacy-Werte (normal/hoch/dringend) → neue mappen (defensive).
-    const rawPrio = (ticket?.prioritaet as string | undefined) ?? "planbar"
-    const legacyMap: Record<string, "planbar" | "zeitnah" | "notfall"> = {
-      normal: "planbar", hoch: "zeitnah", dringend: "notfall",
-      planbar: "planbar", zeitnah: "zeitnah", notfall: "notfall",
+    // H11: vorher gab es im Erfolgs-Pfad kein setSending(false) und keinen
+    // Error-Check für tickets.update — wenn dort etwas RLS-mäßig oder
+    // sonst schiefging, blieb der Button stumm im "Wird gesendet…"-State
+    // und der User sah nichts. Jetzt: try/catch/finally + Error-Check.
+    try {
+      const supabase = createClient()
+      // Legacy-Werte (normal/hoch/dringend) → neue mappen (defensive).
+      const rawPrio = (ticket?.prioritaet as string | undefined) ?? "planbar"
+      const legacyMap: Record<string, "planbar" | "zeitnah" | "notfall"> = {
+        normal: "planbar", hoch: "zeitnah", dringend: "notfall",
+        planbar: "planbar", zeitnah: "zeitnah", notfall: "notfall",
+      }
+      const pf = berechnePreisfaktor(
+        legacyMap[rawPrio] ?? "planbar",
+        handwerker.length
+      )
+      const einladungen = selected.map(hw => ({
+        ticket_id: ticketId,
+        handwerker_id: hw.id,
+        status: "offen",
+        empfohlener_preis: berechneRichtpreis(hw.basis_stundensatz ?? hw.basis_preis ?? 50, pf.faktor),
+      }))
+      const { error: einlErr } = await supabase
+        .from("einladungen")
+        .upsert(einladungen, { onConflict: "ticket_id,handwerker_id" })
+      if (einlErr) {
+        showToast("Einladungen konnten nicht gespeichert werden: " + einlErr.message)
+        return
+      }
+
+      // Auktions-Konfig aus gewählter Dringlichkeit
+      const config = AUKTIONS_CONFIGS[dringlichkeit]
+      const startIso = new Date().toISOString()
+      const endeIso = config.auktionsDauerStunden > 0
+        ? new Date(Date.now() + config.auktionsDauerStunden * 3600 * 1000).toISOString()
+        : null
+
+      const { error: tErr } = await supabase.from("tickets").update({
+        status: "auktion",
+        dringlichkeit,
+        surge_faktor: config.surgeFaktor,
+        auktion_start: startIso,
+        auktion_ende: endeIso,
+      }).eq("id", ticketId)
+      if (tErr) {
+        showToast("Einladungen gespeichert, aber Ticket-Status konnte nicht gesetzt werden: " + tErr.message)
+        return
+      }
+
+      showToast(selected.length + " Einladung(en) gesendet!")
+      setTimeout(() => router.push("/dashboard-verwalter/ticket/" + ticketId), 1500)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unbekannter Fehler"
+      console.error("[sendeEinladungen]", err)
+      showToast("Fehler beim Senden: " + msg)
+    } finally {
+      setSending(false)
     }
-    const pf = berechnePreisfaktor(
-      legacyMap[rawPrio] ?? "planbar",
-      handwerker.length
-    )
-    const einladungen = selected.map(hw => ({
-      ticket_id: ticketId,
-      handwerker_id: hw.id,
-      status: "offen",
-      empfohlener_preis: berechneRichtpreis(hw.basis_stundensatz ?? hw.basis_preis ?? 50, pf.faktor),
-    }))
-    const { error } = await supabase.from("einladungen").upsert(einladungen, { onConflict: "ticket_id,handwerker_id" })
-    if (error) { showToast("Fehler beim Senden: " + error.message); setSending(false); return }
-
-    // Auktions-Konfig aus gewählter Dringlichkeit
-    const config = AUKTIONS_CONFIGS[dringlichkeit]
-    const startIso = new Date().toISOString()
-    const endeIso = config.auktionsDauerStunden > 0
-      ? new Date(Date.now() + config.auktionsDauerStunden * 3600 * 1000).toISOString()
-      : null
-
-    await supabase.from("tickets").update({
-      status: "auktion",
-      dringlichkeit,
-      surge_faktor: config.surgeFaktor,
-      auktion_start: startIso,
-      auktion_ende: endeIso,
-    }).eq("id", ticketId)
-
-    showToast(selected.length + " Einladung(en) gesendet!")
-    setTimeout(() => router.push("/dashboard-verwalter/ticket/" + ticketId), 1500)
   }
 
   if (loading) return <LoadingSpinner />
