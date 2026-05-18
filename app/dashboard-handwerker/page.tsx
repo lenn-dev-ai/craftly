@@ -178,7 +178,15 @@ export default function HandwerkerDashboard() {
 
       {/* Hero Metric: Verdienst-Potenzial */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="bg-gradient-to-br from-[#3D8B7A] to-[#2D6B5A] rounded-2xl p-5 text-white sm:col-span-1">
+        {/* H5: KPI-Kachel "Verfügbar im Radius" jetzt klickbar →
+            scrollt zur Ausschreibungs-Liste weiter unten (gleicher
+            Page-Anchor). Pattern wie Verwalter-F9 (29626eb), aber
+            statt Route-Filter ein In-Page-Anchor, weil die Liste
+            ohnehin direkt darunter steht. */}
+        <a
+          href="#ausschreibungen"
+          className="block bg-gradient-to-br from-[#3D8B7A] to-[#2D6B5A] rounded-2xl p-5 text-white sm:col-span-1 hover:shadow-md hover:brightness-105 transition-all cursor-pointer"
+        >
           <div className="text-xs font-medium text-white/80 mb-1 uppercase tracking-wide">
             Verfügbar im Radius
           </div>
@@ -189,7 +197,7 @@ export default function HandwerkerDashboard() {
               <span className="block mt-0.5">+{auktionen.length - imRadius} außerhalb</span>
             )}
           </div>
-        </div>
+        </a>
         <div className="bg-white rounded-2xl border border-line p-5">
           <div className="text-xs text-ink-muted font-medium mb-1 uppercase tracking-wide">
             Meine Aufträge
@@ -219,7 +227,7 @@ export default function HandwerkerDashboard() {
       </div>
 
       {/* Auktionen — der Hauptcontent */}
-      <div className="mb-10">
+      <div id="ausschreibungen" className="mb-10 scroll-mt-6">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h2 className="text-lg font-semibold text-ink">Aktuelle Ausschreibungen</h2>
           <div className="flex items-center gap-3 text-xs">
