@@ -1,397 +1,594 @@
 "use client"
-import { useEffect, useState } from "react"
+
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
+import { ChevronLeft, ChevronRight, Plus, X, Briefcase, Tag, Sun } from "lucide-react"
+import { GEWERK_BASIS_PREISE, berechneDynamischenPreis } from "@/lib/yield-management"
+import { useToast } from "@/components/Toast"
 
-const TAGE = [
-  { key: 1, label: "Mo" },
-  { key: 2, label: "Di" },
-  { key: 3, label: "Mi" },
-  { key: 4, label: "Do" },
-  { key: 5, label: "Fr" },
-  { key: 6, label: "Sa" },
-  { key: 0, label: "So" },
-]
+// K2.2: Wochen-Kalender mit drei Layer-Toggles. Eine Page für alles,
+// was die HW-Zeitplanung umfasst — Termine (bestätigte Aufträge),
+// Slots (Marktplatz-Angebote) und Verfügbarkeit (Wochenrhythmus).
+// Klick auf leere Stunde öffnet das Slot-Anbieten-Modal direkt im
+// Kontext des angeklickten Tages/Zeit-Slots.
 
-const SLOTS = [
-  { label: "Morgens", sub: "08:00 - 12:00", von: "08:00", bis: "12:00" },
-  { label: "Nachmittags", sub: "12:00 - 17:00", von: "12:00", bis: "17:00" },
-  { label: "Abends", sub: "17:00 - 20:00", von: "17:00", bis: "20:00" },
-]
+const TAGE_LABEL = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+// Wochentag-Index in JS Date: 0=Sonntag … 6=Samstag.
+// Wir mappen auf unseren Mo-So-Index 0..6.
+function jsWochentagToIdx(jsTag: number): number {
+  return (jsTag + 6) % 7
+}
+// Umgekehrt: für `verfuegbarkeiten.wochentag` (DB-Konvention 0=So..6=Sa
+// wie in Sidebar.tsx beobachtet) → unseren Mo-So-Index.
+function dbWochentagToIdx(dbTag: number): number {
+  return (dbTag + 6) % 7
+}
 
-type SlotState = Record<string, boolean>
+const STUNDE_VON = 7
+const STUNDE_BIS = 20
+const STUNDE_HOEHE_PX = 56
 
-function slotKey(tag: number, von: string): string {
-  return tag + "_" + von
+interface KalenderTermin {
+  id: string
+  datum: string
+  von: string
+  bis: string
+  titel: string
+  ticket_id: string | null
+  status: string
+}
+
+interface KalenderSlot {
+  id: string
+  datum: string
+  von: string
+  bis: string
+  basis_preis_stunde: number | null
+  dynamischer_preis: number | null
+  status: string
+}
+
+interface KalenderVerf {
+  wochentag: number
+  von: string
+  bis: string
+  aktiv: boolean
+}
+
+function fmtTime(t: string): string {
+  return t.slice(0, 5)
+}
+
+function timeToMinutes(t: string): number {
+  const [h, m] = t.split(":").map(Number)
+  return h * 60 + m
+}
+
+function eventOffsetTop(von: string): number {
+  const mins = timeToMinutes(von) - STUNDE_VON * 60
+  return (mins / 60) * STUNDE_HOEHE_PX
+}
+
+function eventHeight(von: string, bis: string): number {
+  const dauer = timeToMinutes(bis) - timeToMinutes(von)
+  return Math.max(20, (dauer / 60) * STUNDE_HOEHE_PX)
+}
+
+function getMontag(d: Date): Date {
+  const m = new Date(d)
+  m.setHours(0, 0, 0, 0)
+  const tag = m.getDay()
+  const diff = tag === 0 ? -6 : 1 - tag
+  m.setDate(m.getDate() + diff)
+  return m
+}
+
+function isoDatum(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const dd = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${dd}`
+}
+
+function formatWochenLabel(montag: Date): string {
+  const sonntag = new Date(montag)
+  sonntag.setDate(montag.getDate() + 6)
+  const opts: Intl.DateTimeFormatOptions = { day: "2-digit", month: "short" }
+  return `${montag.toLocaleDateString("de", opts)} – ${sonntag.toLocaleDateString("de", opts)}`
+}
+
+interface SlotModalState {
+  datum: string
+  von: string
+  bis: string
 }
 
 export default function KalenderPage() {
   const router = useRouter()
-  const [slots, setSlots] = useState<SlotState>({})
-  const [initialSlots, setInitialSlots] = useState<SlotState>({})
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const { confirm } = useToast()
+
+  const [montag, setMontag] = useState<Date>(() => getMontag(new Date()))
+  const [layers, setLayers] = useState({ termine: true, slots: true, verfuegbarkeit: true })
   const [userId, setUserId] = useState<string | null>(null)
+  const [profileGewerk, setProfileGewerk] = useState<string>("allgemein")
+  const [profileBasisPreis, setProfileBasisPreis] = useState<number>(50)
+  const [termine, setTermine] = useState<KalenderTermin[]>([])
+  const [slots, setSlots] = useState<KalenderSlot[]>([])
+  const [verf, setVerf] = useState<KalenderVerf[]>([])
+  const [loading, setLoading] = useState(true)
+  const [slotModal, setSlotModal] = useState<SlotModalState | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState("")
 
-  useEffect(() => {
-    async function load() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push("/login"); return }
-      setUserId(user.id)
+  const tageDerWoche = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(montag)
+      d.setDate(montag.getDate() + i)
+      return d
+    })
+  }, [montag])
 
-      const { data: verf } = await supabase.from("verfuegbarkeiten")
-        .select("*").eq("handwerker_id", user.id).eq("aktiv", true)
+  const wochenStartIso = isoDatum(tageDerWoche[0])
+  const wochenEndeIso = isoDatum(tageDerWoche[6])
 
-      const initial: SlotState = {}
-      ;(verf || []).forEach((v: any) => {
-        const key = slotKey(v.wochentag, v.von)
-        initial[key] = true
-      })
-      setSlots(initial)
-      setInitialSlots(initial)
-      setLoading(false)
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push("/login"); return }
+    setUserId(user.id)
+
+    const [{ data: prof }, { data: t }, { data: s }, { data: v }] = await Promise.all([
+      supabase.from("profiles").select("id, gewerk, basis_preis").eq("id", user.id).single(),
+      supabase
+        .from("termine")
+        .select("id, datum, von, bis, titel, ticket_id, status")
+        .eq("handwerker_id", user.id)
+        .gte("datum", wochenStartIso)
+        .lte("datum", wochenEndeIso),
+      supabase
+        .from("zeitslots")
+        .select("id, datum, von, bis, basis_preis_stunde, dynamischer_preis, status")
+        .eq("handwerker_id", user.id)
+        .gte("datum", wochenStartIso)
+        .lte("datum", wochenEndeIso),
+      supabase
+        .from("verfuegbarkeiten")
+        .select("wochentag, von, bis, aktiv")
+        .eq("handwerker_id", user.id)
+        .eq("aktiv", true),
+    ])
+
+    if (prof) {
+      setProfileGewerk(prof.gewerk || "allgemein")
+      setProfileBasisPreis(prof.basis_preis ?? GEWERK_BASIS_PREISE[prof.gewerk || "allgemein"] ?? 50)
     }
-    load()
-  }, [router])
+    setTermine((t ?? []).filter((x: KalenderTermin) => x.status !== "abgelaufen" && x.status !== "abgelehnt"))
+    setSlots(s ?? [])
+    setVerf(v ?? [])
+    setLoading(false)
+  }, [router, wochenStartIso, wochenEndeIso])
 
-  function toggle(tag: number, von: string) {
-    const key = slotKey(tag, von)
-    setSlots(prev => ({ ...prev, [key]: !prev[key] }))
-    setSaved(false)
+  useEffect(() => { loadData() }, [loadData])
+
+  function shiftWoche(deltaTage: number) {
+    const next = new Date(montag)
+    next.setDate(montag.getDate() + deltaTage)
+    setMontag(getMontag(next))
+  }
+  function gotoHeute() {
+    setMontag(getMontag(new Date()))
   }
 
-  function quickSelect(filter: string) {
-    const newSlots = { ...slots }
-
-    if (filter === "all") {
-      TAGE.forEach(tag => {
-        SLOTS.forEach(slot => {
-          newSlots[slotKey(tag.key, slot.von)] = true
-        })
-      })
-    } else if (filter === "reset") {
-      TAGE.forEach(tag => {
-        SLOTS.forEach(slot => {
-          newSlots[slotKey(tag.key, slot.von)] = false
-        })
-      })
-    } else if (filter === "weekday-mornings") {
-      [1, 2, 3, 4, 5].forEach(tag => {
-        newSlots[slotKey(tag, "08:00")] = true
-      })
-    } else if (filter === "weekday-full") {
-      [1, 2, 3, 4, 5].forEach(tag => {
-        SLOTS.forEach(slot => {
-          newSlots[slotKey(tag, slot.von)] = true
-        })
-      })
-    } else if (filter === "weekend") {
-      [6, 0].forEach(tag => {
-        SLOTS.forEach(slot => {
-          newSlots[slotKey(tag, slot.von)] = true
-        })
-      })
-    }
-
-    setSlots(newSlots)
-    setSaved(false)
+  function leereStundeKlick(tagIdx: number, stunde: number) {
+    const tag = tageDerWoche[tagIdx]
+    const datum = isoDatum(tag)
+    const von = String(stunde).padStart(2, "0") + ":00"
+    const bis = String(Math.min(stunde + 2, STUNDE_BIS)).padStart(2, "0") + ":00"
+    setSlotModal({ datum, von, bis })
   }
 
-  async function save() {
-    if (!userId) return
+  function terminKlick(t: KalenderTermin) {
+    if (t.ticket_id) {
+      router.push(`/dashboard-handwerker/ticket/${t.ticket_id}`)
+    }
+  }
+
+  async function saveSlot() {
+    if (!slotModal || !userId) return
+    if (timeToMinutes(slotModal.bis) <= timeToMinutes(slotModal.von)) {
+      setToast("Endzeit muss nach Startzeit liegen.")
+      setTimeout(() => setToast(""), 2500)
+      return
+    }
     setSaving(true)
     const supabase = createClient()
-
-    await supabase.from("verfuegbarkeiten").delete().eq("handwerker_id", userId)
-
-    const rows: any[] = []
-    TAGE.forEach(tag => {
-      SLOTS.forEach(slot => {
-        if (slots[slotKey(tag.key, slot.von)]) {
-          rows.push({
-            handwerker_id: userId,
-            wochentag: tag.key,
-            von: slot.von,
-            bis: slot.bis,
-            aktiv: true,
-          })
-        }
-      })
+    const basisPreis = profileBasisPreis || GEWERK_BASIS_PREISE[profileGewerk] || 50
+    const preisInfo = berechneDynamischenPreis(
+      basisPreis,
+      slotModal.datum,
+      slotModal.von,
+      0,
+      slots.filter(s => s.status === "verfuegbar").length,
+      false,
+    )
+    const { error } = await supabase.from("zeitslots").insert({
+      handwerker_id: userId,
+      titel: `Slot ${slotModal.datum}`,
+      gewerk: profileGewerk,
+      datum: slotModal.datum,
+      von: slotModal.von,
+      bis: slotModal.bis,
+      basis_preis_stunde: basisPreis,
+      dynamischer_preis: preisInfo.dynamischerPreis,
+      preisfaktor: preisInfo.gesamtFaktor,
+      status: "verfuegbar",
+      ist_luecke: false,
     })
-
-    if (rows.length > 0) {
-      await supabase.from("verfuegbarkeiten").insert(rows)
+    if (error) {
+      setToast("Fehler: " + error.message)
+    } else {
+      setToast("Slot eingestellt.")
+      setSlotModal(null)
+      await loadData()
     }
-
-    setInitialSlots(slots)
     setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setTimeout(() => setToast(""), 2500)
   }
 
-  const activeCount = Object.values(slots).filter(Boolean).length
-  const changedCount = Object.keys(slots).filter(key => slots[key] !== initialSlots[key]).length
-  const estimatedEarnings = activeCount * 1.5 * 350
-  const earningsMin = Math.round(activeCount * 1 * 200)
-  const earningsMax = Math.round(activeCount * 2 * 500)
+  async function slotLoeschen(slot: KalenderSlot) {
+    if (!await confirm(`Slot am ${slot.datum} ${fmtTime(slot.von)}-${fmtTime(slot.bis)} entfernen?`)) return
+    const supabase = createClient()
+    const { error } = await supabase.from("zeitslots").delete().eq("id", slot.id)
+    if (error) {
+      setToast("Fehler: " + error.message)
+    } else {
+      await loadData()
+    }
+    setTimeout(() => setToast(""), 2500)
+  }
 
-  const earningsColor = activeCount === 0
-    ? "text-danger"
-    : activeCount < 5
-    ? "text-yellow-500"
-    : "text-accent"
-
-  const slotPercentage = Math.round((activeCount / 21) * 100)
-
-  if (loading) return (
-    <div className="flex items-center justify-center h-screen bg-surface">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-2 border-accent/30 border-t-[#3D8B7A] rounded-full animate-spin" />
-        <span className="text-sm text-ink/40">Kalender laden...</span>
-      </div>
-    </div>
-  )
+  const stunden = Array.from({ length: STUNDE_BIS - STUNDE_VON }, (_, i) => STUNDE_VON + i)
+  const heuteIso = isoDatum(new Date())
 
   return (
-    <div className="min-h-screen bg-surface text-ink pb-24">
-      <div className="max-w-4xl mx-auto p-4 sm:p-6">
-        {/* Profit-Focused Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Dein Verdienstkalender</h1>
-          <p className="text-ink/60 text-sm">
-            {activeCount} Zeitfenster aktiv — mehr Slots = mehr Verdienst
-          </p>
-        </div>
-
-        {/* Earnings Forecast */}
-        <div className="bg-gradient-to-r from-[#3D8B7A]/10 to-[#C4956A]/10 border border-accent/30 rounded-xl p-6 mb-8">
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-6">
-            <div className="flex-1">
-              <div className="text-sm text-ink/60 mb-2">Geschätzter Monatsverdienst</div>
-              <div className={`text-2xl sm:text-4xl font-bold mb-2 ${earningsColor}`}>
-                EUR {Math.round(estimatedEarnings).toLocaleString('de-DE')}
-              </div>
-              <div className="text-xs text-ink/50">
-                Bereich: EUR {earningsMin.toLocaleString('de-DE')} - EUR {earningsMax.toLocaleString('de-DE')}
-              </div>
-              <div className="text-xs text-ink/40 mt-2">
-                Basierend auf {activeCount} Zeitfenstern × Ø 1-2 Aufträge/Slot × EUR 200-500
-              </div>
-            </div>
-            {activeCount === 0 && (
-              <div className="text-right text-xs text-danger/80 bg-red-500/5 px-3 py-2 rounded-lg border border-red-500/20">
-                Keine aktiven Slots<br/>→ Starten!
-              </div>
-            )}
-            {activeCount >= 5 && (
-              <div className="text-right text-xs text-accent/80 bg-accent/5 px-3 py-2 rounded-lg border border-accent/20">
-                Maximale<br/>Sichtbarkeit!
-              </div>
-            )}
+    <div className="min-h-screen bg-surface">
+      {/* Header */}
+      <div className="bg-white border-b border-line">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-lg font-semibold text-ink">Kalender</h1>
+            <p className="text-xs text-ink-muted">{formatWochenLabel(tageDerWoche[0])}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => shiftWoche(-7)}
+              className="w-9 h-9 rounded-lg border border-line hover:bg-surface-muted flex items-center justify-center text-ink-secondary"
+              aria-label="Vorherige Woche"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              onClick={gotoHeute}
+              className="text-xs font-medium px-3 py-2 rounded-lg border border-line hover:bg-surface-muted"
+            >
+              Heute
+            </button>
+            <button
+              onClick={() => shiftWoche(7)}
+              className="w-9 h-9 rounded-lg border border-line hover:bg-surface-muted flex items-center justify-center text-ink-secondary"
+              aria-label="Nächste Woche"
+            >
+              <ChevronRight size={18} />
+            </button>
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-ink/60">{activeCount}/21 Slots aktiv</span>
-            <span className="text-xs text-ink/40">{slotPercentage}%</span>
-          </div>
-          <div className="w-full h-2 bg-surface-muted rounded-full overflow-hidden">
+        {/* Layer-Toggles */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-3 flex items-center gap-2 flex-wrap">
+          <LayerChip
+            label="Termine"
+            icon={<Briefcase size={13} />}
+            active={layers.termine}
+            tone="termine"
+            onClick={() => setLayers(l => ({ ...l, termine: !l.termine }))}
+          />
+          <LayerChip
+            label="Slots"
+            icon={<Tag size={13} />}
+            active={layers.slots}
+            tone="slots"
+            onClick={() => setLayers(l => ({ ...l, slots: !l.slots }))}
+          />
+          <LayerChip
+            label="Verfügbarkeit"
+            icon={<Sun size={13} />}
+            active={layers.verfuegbarkeit}
+            tone="verf"
+            onClick={() => setLayers(l => ({ ...l, verfuegbarkeit: !l.verfuegbarkeit }))}
+          />
+          <span className="text-[11px] text-ink-faint ml-auto hidden sm:inline">
+            Klick auf eine leere Stunde → Slot anbieten
+          </span>
+        </div>
+      </div>
+
+      {/* Grid */}
+      <div className="max-w-6xl mx-auto px-2 sm:px-6 py-4">
+        {loading ? (
+          <div className="text-center text-sm text-ink-muted py-16">Lädt …</div>
+        ) : (
+          <div className="bg-white border border-line rounded-2xl overflow-hidden">
+            {/* Tagesspalten-Header */}
             <div
-              className="h-full bg-gradient-to-r from-[#3D8B7A] to-[#C4956A] transition-all duration-300"
-              style={{ width: `${slotPercentage}%` }}
-            />
-          </div>
-          {activeCount < 10 && (
-            <p className="text-[10px] text-ink/40 mt-2">
-              💡 Tipp: {10 - activeCount} weitere Slots für maximale Sichtbarkeit
-            </p>
-          )}
-        </div>
-
-        {/* Quick Select Buttons */}
-        <div className="mb-8">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => quickSelect("weekday-mornings")}
-              className="px-3 py-1.5 text-xs font-medium rounded-full bg-surface-muted border border-line hover:bg-surface-muted hover:border-accent/20 transition-all text-ink/70 hover:text-ink"
+              className="grid border-b border-line bg-surface-muted/40"
+              style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}
             >
-              Mo-Fr Morgens
-            </button>
-            <button
-              onClick={() => quickSelect("weekday-full")}
-              className="px-3 py-1.5 text-xs font-medium rounded-full bg-surface-muted border border-line hover:bg-surface-muted hover:border-accent/20 transition-all text-ink/70 hover:text-ink"
-            >
-              Mo-Fr Komplett
-            </button>
-            <button
-              onClick={() => quickSelect("weekend")}
-              className="px-3 py-1.5 text-xs font-medium rounded-full bg-surface-muted border border-line hover:bg-surface-muted hover:border-accent/20 transition-all text-ink/70 hover:text-ink"
-            >
-              Wochenende
-            </button>
-            <button
-              onClick={() => quickSelect("all")}
-              className="px-3 py-1.5 text-xs font-medium rounded-full bg-accent/15 border border-accent/30 hover:bg-accent/25 transition-all text-accent"
-            >
-              Alles
-            </button>
-            <button
-              onClick={() => quickSelect("reset")}
-              className="px-3 py-1.5 text-xs font-medium rounded-full bg-surface-muted border border-line hover:bg-red-500/10 hover:border-red-500/30 transition-all text-ink/70 hover:text-danger"
-            >
-              Reset
-            </button>
-          </div>
-        </div>
-
-        {/* Desktop-Grid (≥sm) — Wochenübersicht in Matrixform */}
-        <div className="hidden sm:block bg-white border border-line rounded-xl overflow-hidden mb-8">
-          {/* Header Row */}
-          <div className="grid grid-cols-8 border-b border-line">
-            <div className="p-3" />
-            {TAGE.map(tag => (
-              <div key={tag.key} className="p-3 text-center">
-                <div className="text-xs font-medium text-ink/60">{tag.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Slot Rows */}
-          {SLOTS.map(slot => (
-            <div key={slot.von} className="grid grid-cols-8 border-b border-line last:border-0">
-              <div className="p-3 flex flex-col justify-center">
-                <div className="text-xs font-medium text-ink/50">{slot.label}</div>
-                <div className="text-[10px] text-ink/25">{slot.sub}</div>
-              </div>
-              {TAGE.map(tag => {
-                const key = slotKey(tag.key, slot.von)
-                const active = !!slots[key]
-                const isWeekend = tag.key === 0 || tag.key === 6
-                const slotEarnings = isWeekend
-                  ? Math.round(1.5 * 350 * 0.8)
-                  : Math.round(1.5 * 350)
-
+              <div />
+              {tageDerWoche.map((d, i) => {
+                const isHeute = isoDatum(d) === heuteIso
                 return (
-                  <div key={key} className="p-2 flex items-center justify-center">
-                    <button
-                      onClick={() => toggle(tag.key, slot.von)}
-                      className={"w-full h-14 rounded-lg border-2 transition-all flex flex-col items-center justify-center gap-1 " + (
-                        active
-                          ? "bg-accent/20 border-accent/40 hover:bg-accent/30"
-                          : "bg-white/[0.02] border-line hover:border-line hover:bg-white/[0.04]"
-                      )}
-                    >
-                      {active && (
-                        <>
-                          <span className="text-accent text-xs font-bold">✓</span>
-                          <span className="text-[10px] text-accent/70">~EUR {slotEarnings}/Mo</span>
-                        </>
-                      )}
-                    </button>
+                  <div key={i} className={`text-center py-2 text-[11px] font-medium ${isHeute ? "text-accent" : "text-ink-secondary"}`}>
+                    <div>{TAGE_LABEL[i]}</div>
+                    <div className={`text-xs ${isHeute ? "font-bold" : "font-normal"}`}>{d.getDate()}.</div>
                   </div>
                 )
               })}
             </div>
-          ))}
-        </div>
 
-        {/* Mobile-Layout (<sm) — Tagesliste statt Matrix.
-            Vorher: grid-cols-4 mit 8 Items → 2 Reihen, zweite Reihe ohne
-            Label-Spalte = visuell kaputt. Jetzt: ein Block pro Tag mit
-            3 großzügigen Slot-Buttons. */}
-        <div className="sm:hidden space-y-3 mb-8">
-          {TAGE.map(tag => {
-            const isWeekend = tag.key === 0 || tag.key === 6
-            const fullName = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"][tag.key]
-            const aktivTag = SLOTS.filter(s => slots[slotKey(tag.key, s.von)]).length
-            return (
-              <div key={tag.key} className="bg-white border border-line rounded-xl p-4">
-                <div className="flex items-baseline justify-between mb-3">
-                  <div className="text-sm font-semibold text-ink">{fullName}</div>
-                  <div className="text-[11px] text-ink-muted">
-                    {aktivTag === 0 ? "Frei" : `${aktivTag}/3 aktiv`}
-                  </div>
+            {/* Stunden-Grid */}
+            <div
+              className="grid relative"
+              style={{
+                gridTemplateColumns: "48px repeat(7, 1fr)",
+                gridTemplateRows: `repeat(${stunden.length}, ${STUNDE_HOEHE_PX}px)`,
+              }}
+            >
+              {/* Stunden-Achse */}
+              {stunden.map((s) => (
+                <div
+                  key={s}
+                  className="text-[10px] text-ink-faint border-r border-line px-1.5 pt-0.5"
+                  style={{ gridColumn: 1 }}
+                >
+                  {String(s).padStart(2, "0")}:00
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {SLOTS.map(slot => {
-                    const key = slotKey(tag.key, slot.von)
-                    const active = !!slots[key]
-                    const slotEarnings = isWeekend
-                      ? Math.round(1.5 * 350 * 0.8)
-                      : Math.round(1.5 * 350)
-                    return (
+              ))}
+
+              {/* Tag-Spalten (klickbar für Slot-Anbieten) */}
+              {tageDerWoche.map((tag, tagIdx) => {
+                const datumIso = isoDatum(tag)
+                const tagIdxMoSo = tagIdx
+                const tagTermine = termine.filter(t => t.datum === datumIso)
+                const tagSlots = slots.filter(s => s.datum === datumIso)
+                const tagVerf = verf.filter(v => dbWochentagToIdx(v.wochentag) === tagIdxMoSo)
+                return (
+                  <div
+                    key={tagIdx}
+                    className="relative border-r border-line last:border-r-0"
+                    style={{
+                      gridColumn: tagIdx + 2,
+                      gridRow: `1 / ${stunden.length + 1}`,
+                    }}
+                  >
+                    {/* Stunden-Trennlinien */}
+                    {stunden.slice(1).map((s) => (
+                      <div
+                        key={s}
+                        className="absolute left-0 right-0 border-t border-line/60"
+                        style={{ top: (s - STUNDE_VON) * STUNDE_HOEHE_PX }}
+                      />
+                    ))}
+
+                    {/* Verfügbarkeits-Layer (Hintergrund) */}
+                    {layers.verfuegbarkeit && tagVerf.map((v, vi) => (
+                      <div
+                        key={`v-${vi}`}
+                        className="absolute left-0 right-0 bg-accent/8 border-l-2 border-accent/30 pointer-events-none"
+                        style={{
+                          top: eventOffsetTop(v.von),
+                          height: eventHeight(v.von, v.bis),
+                        }}
+                      />
+                    ))}
+
+                    {/* Klick-Hotzone pro Stunde (für leere Slots) */}
+                    {stunden.map((s) => {
+                      const stundeStart = String(s).padStart(2, "0") + ":00"
+                      const stundeEnde = String(s + 1).padStart(2, "0") + ":00"
+                      const istBelegt =
+                        tagTermine.some(t => overlap(t.von, t.bis, stundeStart, stundeEnde)) ||
+                        tagSlots.some(sl => overlap(sl.von, sl.bis, stundeStart, stundeEnde))
+                      if (istBelegt) return null
+                      return (
+                        <button
+                          key={`hot-${s}`}
+                          onClick={() => leereStundeKlick(tagIdx, s)}
+                          className="absolute left-0 right-0 hover:bg-accent/5 group flex items-center justify-center"
+                          style={{
+                            top: (s - STUNDE_VON) * STUNDE_HOEHE_PX,
+                            height: STUNDE_HOEHE_PX,
+                          }}
+                          aria-label={`Slot anbieten ${datumIso} ${stundeStart}`}
+                        >
+                          <Plus size={14} className="opacity-0 group-hover:opacity-60 text-accent" />
+                        </button>
+                      )
+                    })}
+
+                    {/* Slot-Layer */}
+                    {layers.slots && tagSlots.map(s => (
                       <button
-                        key={key}
-                        onClick={() => toggle(tag.key, slot.von)}
-                        className={`px-2 py-3 rounded-lg border-2 transition-all flex flex-col items-center justify-center gap-0.5 min-h-[64px] ${
-                          active
-                            ? "bg-accent/15 border-accent/40 text-accent"
-                            : "bg-white border-line text-ink/60 hover:border-accent/30"
-                        }`}
+                        key={s.id}
+                        onClick={() => slotLoeschen(s)}
+                        className="absolute left-1 right-1 rounded-md bg-warm-light border border-warm/30 text-left px-2 py-1 hover:bg-warm/15 transition-colors"
+                        style={{
+                          top: eventOffsetTop(s.von) + 2,
+                          height: eventHeight(s.von, s.bis) - 4,
+                        }}
+                        title="Slot entfernen"
                       >
-                        <span className="text-xs font-bold leading-tight">
-                          {active && "✓ "}{slot.label}
-                        </span>
-                        <span className={`text-[10px] leading-tight ${active ? "text-accent/70" : "text-ink/40"}`}>
-                          {active ? `~${slotEarnings} €/Mo` : slot.sub}
-                        </span>
+                        <div className="text-[10px] font-semibold text-warm-dark uppercase tracking-wide">Slot</div>
+                        <div className="text-[10px] text-warm-dark/80 truncate">{fmtTime(s.von)}–{fmtTime(s.bis)}</div>
+                        {s.dynamischer_preis && (
+                          <div className="text-[10px] text-warm-dark/70 truncate">{s.dynamischer_preis} €/h</div>
+                        )}
                       </button>
-                    )
-                  })}
+                    ))}
+
+                    {/* Termin-Layer */}
+                    {layers.termine && tagTermine.map(t => {
+                      const istVorschlag = t.status === "vorgeschlagen"
+                      return (
+                        <button
+                          key={t.id}
+                          onClick={() => terminKlick(t)}
+                          className={`absolute left-1 right-1 rounded-md text-left px-2 py-1 border transition-colors ${
+                            istVorschlag
+                              ? "bg-rolle-mieter/15 border-rolle-mieter/40 hover:bg-rolle-mieter/25"
+                              : "bg-accent text-white border-accent hover:bg-accent-hover"
+                          }`}
+                          style={{
+                            top: eventOffsetTop(t.von) + 2,
+                            height: eventHeight(t.von, t.bis) - 4,
+                            opacity: istVorschlag ? 0.7 : 1,
+                          }}
+                          title={t.titel}
+                        >
+                          <div className={`text-[10px] font-semibold uppercase tracking-wide ${
+                            istVorschlag ? "text-rolle-mieter" : "text-white/90"
+                          }`}>
+                            {istVorschlag ? "Vorschlag" : "Auftrag"}
+                          </div>
+                          <div className={`text-[10px] truncate ${istVorschlag ? "text-rolle-mieter/80" : "text-white"}`}>
+                            {fmtTime(t.von)}–{fmtTime(t.bis)}
+                          </div>
+                          <div className={`text-[10px] truncate ${istVorschlag ? "text-rolle-mieter/70" : "text-white/80"}`}>
+                            {t.titel}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {toast && (
+        <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-ink text-white text-xs px-4 py-2 rounded-lg shadow-lg">
+          {toast}
+        </div>
+      )}
+
+      {slotModal && (
+        <div
+          className="fixed inset-0 z-50 bg-ink/40 flex items-end md:items-center justify-center p-4"
+          onClick={() => !saving && setSlotModal(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="w-full max-w-sm bg-white rounded-2xl shadow-xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-line">
+              <h2 className="text-base font-semibold text-ink">Slot anbieten</h2>
+              <button onClick={() => setSlotModal(null)} aria-label="Schließen" className="text-ink-muted hover:text-ink">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-3">
+              <p className="text-xs text-ink-muted">
+                Verwalter sehen diesen Slot im Marktplatz und können darauf bieten.
+              </p>
+              <div>
+                <label className="block text-[11px] font-medium text-ink-muted mb-1">Datum</label>
+                <input
+                  type="date"
+                  value={slotModal.datum}
+                  onChange={e => setSlotModal(s => s ? { ...s, datum: e.target.value } : null)}
+                  className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-medium text-ink-muted mb-1">Von</label>
+                  <input
+                    type="time"
+                    value={slotModal.von}
+                    onChange={e => setSlotModal(s => s ? { ...s, von: e.target.value } : null)}
+                    className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-ink-muted mb-1">Bis</label>
+                  <input
+                    type="time"
+                    value={slotModal.bis}
+                    onChange={e => setSlotModal(s => s ? { ...s, bis: e.target.value } : null)}
+                    className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-sm"
+                  />
                 </div>
               </div>
-            )
-          })}
-        </div>
-
-        {/* Legend */}
-        <div className="flex items-center gap-4 mb-20">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-accent/20 border border-accent/40" />
-            <span className="text-[10px] text-ink/40">Verfügbar</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-white/[0.02] border border-line" />
-            <span className="text-[10px] text-ink/40">Nicht verfügbar</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Sticky Save Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-[#FAF8F5] via-[#FAF8F5]/95 to-[#FAF8F5]/80 border-t border-line backdrop-blur-md">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {changedCount > 0 && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                <span className="text-xs font-medium text-yellow-500">{changedCount} Änderungen</span>
+              <p className="text-[11px] text-ink-faint">
+                Gewerk: {profileGewerk}. Preis wird vom System dynamisch berechnet.
+              </p>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={() => setSlotModal(null)}
+                  disabled={saving}
+                  className="px-4 py-2 rounded-lg text-sm text-ink-secondary hover:bg-surface-muted"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  onClick={saveSlot}
+                  disabled={saving}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-accent text-white hover:bg-accent-hover disabled:opacity-50"
+                >
+                  {saving ? "Speichert …" : "Slot einstellen"}
+                </button>
               </div>
-            )}
-            {saved && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/20">
-                <span className="text-xs font-medium text-accent">✓ Gespeichert!</span>
-              </div>
-            )}
+            </div>
           </div>
-          <button
-            onClick={save}
-            disabled={saving || changedCount === 0}
-            className={"px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 " + (
-              saving
-                ? "bg-accent/20 text-accent/60 cursor-wait"
-                : changedCount === 0
-                ? "bg-accent/10 text-accent/50 cursor-default"
-                : "bg-accent text-black hover:bg-accent/90"
-            )}
-          >
-            {saving && <span className="inline-block w-3 h-3 border-2 border-accent/60 border-t-[#3D8B7A] rounded-full animate-spin" />}
-            {saving ? "Speichert..." : saved ? "Gespeichert!" : "Speichern"}
-          </button>
         </div>
-      </div>
+      )}
     </div>
   )
+}
+
+function LayerChip({ label, icon, active, tone, onClick }: {
+  label: string
+  icon: React.ReactNode
+  active: boolean
+  tone: "termine" | "slots" | "verf"
+  onClick: () => void
+}) {
+  const toneActive: Record<string, string> = {
+    termine: "bg-accent text-white border-accent",
+    slots:   "bg-warm text-white border-warm",
+    verf:    "bg-rolle-handwerker text-white border-rolle-handwerker",
+  }
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-full border transition-colors ${
+        active
+          ? toneActive[tone]
+          : "bg-white text-ink-muted border-line hover:border-ink-muted/30"
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
+  )
+}
+
+function overlap(aVon: string, aBis: string, bVon: string, bBis: string): boolean {
+  return timeToMinutes(aVon) < timeToMinutes(bBis) && timeToMinutes(aBis) > timeToMinutes(bVon)
 }
