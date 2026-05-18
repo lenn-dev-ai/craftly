@@ -36,6 +36,19 @@ export default function AngebotAbgeben() {
   // Existing bids count for market info
   const [bidCount, setBidCount] = useState(0)
 
+  // K1.1: Nach erfolgreichem Auftrag-Annehmen wechselt die Seite auf den
+  // Slot-Vorschlag-Step. HW pickt 2-3 Termine, der Mieter wählt einen
+  // davon im Ticket-Detail (K1.2). Drei Slots, mindestens 2 müssen
+  // ausgefüllt sein, der dritte ist optional.
+  const [slotsStep, setSlotsStep] = useState(false)
+  const [slotEntries, setSlotEntries] = useState([
+    { datum: "", von: "08:00", bis: "10:00" },
+    { datum: "", von: "10:00", bis: "12:00" },
+    { datum: "", von: "13:00", bis: "15:00" },
+  ])
+  const [slotsSaving, setSlotsSaving] = useState(false)
+  const [slotsError, setSlotsError] = useState("")
+
   const loadTicket = useCallback(async () => {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -103,9 +116,77 @@ export default function AngebotAbgeben() {
       return
     }
 
-    setSuccess(true)
+    // K1.1: Statt direkt Success → in den Slot-Vorschlag-Step wechseln.
+    // fruehester_termin als Default-Datum für den ersten Slot übernehmen,
+    // damit der HW nicht doppelt klicken muss.
     setSubmitting(false)
-    setTimeout(() => router.push("/dashboard-handwerker"), 2000)
+    setSlotsStep(true)
+    if (fruehesterTermin) {
+      setSlotEntries(prev => prev.map((s, i) => i === 0 ? { ...s, datum: fruehesterTermin } : s))
+    }
+  }
+
+  async function handleSlotsSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSlotsError("")
+    setSlotsSaving(true)
+
+    const filled = slotEntries.filter(s => s.datum && s.von && s.bis)
+    if (filled.length < 2) {
+      setSlotsError("Bitte mindestens 2 Termine vorschlagen, damit der Mieter eine Wahl hat.")
+      setSlotsSaving(false)
+      return
+    }
+    for (const s of filled) {
+      const [vh, vm] = s.von.split(":").map(Number)
+      const [bh, bm] = s.bis.split(":").map(Number)
+      if (bh * 60 + bm <= vh * 60 + vm) {
+        setSlotsError("In jedem Slot muss die Endzeit nach der Startzeit liegen.")
+        setSlotsSaving(false)
+        return
+      }
+    }
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push("/login"); return }
+
+    const gruppeId = typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+    const titel = `Termin-Vorschlag: ${ticket?.titel ?? "Reparatur"}`.slice(0, 200)
+    const ticketLat = (ticket as { einsatzort_lat?: number | null } | null)?.einsatzort_lat ?? null
+    const ticketLng = (ticket as { einsatzort_lng?: number | null } | null)?.einsatzort_lng ?? null
+    const ticketAdr = (ticket as { einsatzort_adresse?: string | null } | null)?.einsatzort_adresse ?? null
+
+    const rows = filled.map(s => ({
+      handwerker_id: user.id,
+      ticket_id: id,
+      titel,
+      datum: s.datum,
+      von: s.von,
+      bis: s.bis,
+      status: "vorgeschlagen",
+      vorschlag_gruppe_id: gruppeId,
+      einsatzort_adresse: ticketAdr,
+      einsatzort_lat: ticketLat,
+      einsatzort_lng: ticketLng,
+    }))
+
+    const { error: insErr } = await supabase.from("termine").insert(rows)
+    if (insErr) {
+      setSlotsError("Konnte Termine nicht speichern: " + insErr.message)
+      setSlotsSaving(false)
+      return
+    }
+
+    setSlotsSaving(false)
+    setSuccess(true)
+    setTimeout(() => router.push("/dashboard-handwerker"), 2200)
+  }
+
+  function updateSlot(idx: number, field: "datum" | "von" | "bis", value: string) {
+    setSlotEntries(prev => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s))
   }
 
   // Calculate minimum date (today)
@@ -140,9 +221,10 @@ export default function AngebotAbgeben() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-ink mb-2">Auftrag angenommen!</h2>
-          <p className="text-gray-400 text-sm">
-            Du hast den Auftrag über {systemPreis ?? "—"} € angenommen. Du wirst weitergeleitet…
+          <h2 className="text-xl font-bold text-ink mb-2">Termine vorgeschlagen!</h2>
+          <p className="text-ink-muted text-sm">
+            Der Mieter sieht jetzt deine Vorschläge und wählt einen Slot.
+            Du wirst weitergeleitet…
           </p>
         </div>
       </div>
@@ -153,6 +235,92 @@ export default function AngebotAbgeben() {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
         <p className="text-gray-400">Ticket nicht gefunden</p>
+      </div>
+    )
+  }
+
+  // K1.1: Slot-Vorschlag-Step nach erfolgreichem Auftrag-Annehmen.
+  if (slotsStep) {
+    return (
+      <div className="min-h-screen bg-surface text-ink">
+        <div className="sticky top-0 z-10 bg-surface/95 backdrop-blur border-b border-line px-4 py-3">
+          <div className="max-w-lg mx-auto flex items-center gap-3">
+            <h1 className="text-lg font-bold">3 Termine vorschlagen</h1>
+          </div>
+        </div>
+        <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
+          <div className="bg-accent/5 border border-accent/20 rounded-2xl p-4">
+            <p className="text-sm text-ink">
+              ✓ Auftrag &bdquo;{ticket.titel}&ldquo; angenommen.
+            </p>
+            <p className="text-xs text-ink-muted mt-1">
+              Schlag dem Mieter 2-3 Termine vor (Doodle-Stil). Der Mieter wählt
+              einen aus, die anderen verfallen automatisch.
+            </p>
+          </div>
+
+          <form onSubmit={handleSlotsSubmit} className="space-y-3">
+            {slotEntries.map((slot, idx) => (
+              <div key={idx} className="bg-white border border-line rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm font-medium text-ink">Vorschlag {idx + 1}{idx === 2 ? " (optional)" : ""}</div>
+                  {slot.datum && (
+                    <button
+                      type="button"
+                      onClick={() => setSlotEntries(prev => prev.map((s, i) => i === idx ? { datum: "", von: "08:00", bis: "10:00" } : s))}
+                      className="text-[11px] text-ink-muted hover:text-danger"
+                    >
+                      Leeren
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <input
+                    type="date"
+                    min={today}
+                    value={slot.datum}
+                    onChange={e => updateSlot(idx, "datum", e.target.value)}
+                    className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-sm"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="time"
+                      value={slot.von}
+                      onChange={e => updateSlot(idx, "von", e.target.value)}
+                      className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-sm"
+                      aria-label="Von"
+                    />
+                    <input
+                      type="time"
+                      value={slot.bis}
+                      onChange={e => updateSlot(idx, "bis", e.target.value)}
+                      className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-sm"
+                      aria-label="Bis"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {slotsError && (
+              <div className="bg-danger/10 border border-danger/20 rounded-xl px-4 py-3 text-danger text-sm">
+                {slotsError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={slotsSaving}
+              className="w-full py-3.5 rounded-xl font-semibold text-sm bg-accent text-white hover:bg-accent-hover transition-all disabled:opacity-50"
+            >
+              {slotsSaving ? "Speichert…" : "Termine an Mieter senden"}
+            </button>
+            <p className="text-[11px] text-ink-muted text-center">
+              Falls der Mieter nicht innerhalb von 24h reagiert, bekommst du eine
+              Erinnerung — du kannst dann neue Slots vorschlagen.
+            </p>
+          </form>
+        </div>
       </div>
     )
   }
