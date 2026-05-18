@@ -93,7 +93,7 @@ export function FeedbackWidget() {
       {/* F6: Tooltip auf Hover/Focus, damit klar wird, was der Button tut.
           Vorher gab es nur ein aria-label — User mussten erst klicken um
           den Zweck zu verstehen. */}
-      <div className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-40 group">
+      <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 md:bottom-6 md:right-6 z-40 group">
         <button
           type="button"
           onClick={() => setOpen(true)}
