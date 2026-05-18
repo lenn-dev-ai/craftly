@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { UserProfile, Zeitslot, Gewerk, GEWERK_LABELS, formatGewerk } from "@/types"
+import { authFetch } from "@/lib/auth/clientFetch"
 import {
   berechneDynamischenPreis,
   GEWERK_BASIS_PREISE,
@@ -24,7 +25,7 @@ type SichtbarkeitsInfo = {
 
 async function triggerSichtbarkeitsUpdate(): Promise<SichtbarkeitsInfo | null> {
   try {
-    const res = await fetch("/api/verfuegbarkeit/update-score", { method: "POST" })
+    const res = await authFetch("/api/verfuegbarkeit/update-score", { method: "POST" })
     if (!res.ok) return null
     const data = await res.json()
     return {

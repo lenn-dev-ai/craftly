@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
+import { createServiceRoleClient } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 
 // POST /api/admin/penalties/[ticketId]/mark-paid
 //
@@ -11,11 +12,10 @@ import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supab
 // penalty_*-Felder normalerweise vor Mutation schützt.
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { ticketId: string } },
 ) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { data: profile } = await supabase

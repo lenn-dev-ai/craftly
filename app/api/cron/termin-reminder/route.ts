@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
+import { createServiceRoleClient } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 
 // K1.3c: 24h-Reminder an Handwerker, wenn der Mieter auf vorgeschlagene
@@ -28,9 +29,8 @@ export async function POST(request: NextRequest) {
   const authViaSecret =
     !!cronSecret && request.headers.get("x-cron-secret") === cronSecret
 
-  const supabase = createServerSupabaseClient()
   if (!authViaSecret) {
-    const { data: { user } } = await supabase.auth.getUser()
+    const { supabase, user } = await getUserFromRequest(request)
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const { data: profile } = await supabase.from("profiles").select("rolle").eq("id", user.id).single<{ rolle: string }>()
     if (profile?.rolle !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 })

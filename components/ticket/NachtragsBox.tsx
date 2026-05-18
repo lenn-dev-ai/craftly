@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase"
 import type { Ticket, UserProfile, Nachtrag, NachtragStufe } from "@/types"
 import { FileEdit, Check, X, AlertCircle, Plus } from "lucide-react"
+import { authFetch } from "@/lib/auth/clientFetch"
 
 // ============================================================
 // Nachtrags-Verwaltung in der Ticket-Detail-Ansicht.
@@ -185,7 +186,7 @@ function NachtragZeile({
   async function entscheide(entscheidung: "genehmigt" | "abgelehnt") {
     setError("")
     setBusy(entscheidung)
-    const res = await fetch("/api/nachtraege/genehmigen", {
+    const res = await authFetch("/api/nachtraege/genehmigen", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ nachtrag_id: nachtrag.id, entscheidung }),
@@ -294,7 +295,7 @@ function NachtragForm({
     if (begruendung.trim().length < 10) { setError("Begründung zu kurz (mind. 10 Zeichen)"); return }
 
     setSaving(true)
-    const res = await fetch("/api/nachtraege/einreichen", {
+    const res = await authFetch("/api/nachtraege/einreichen", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

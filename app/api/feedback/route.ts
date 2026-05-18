@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 
 // POST /api/feedback
@@ -20,18 +20,7 @@ import { sendEmailFireAndForget } from "@/lib/email/send"
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://reparo-app.netlify.app"
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-
-  // B1.1: supabase.auth.getUser() ohne Argument liest die SSR-Cookies —
-  // die im App-Router-Route-Handler-Kontext mit @supabase/ssr v0.3
-  // unzuverlässig gelesen werden (führte zu Dauer-401 bei /api/feedback).
-  // Der Client sendet zusätzlich Authorization: Bearer <jwt>; wenn der
-  // Header da ist, validieren wir explizit gegen GoTrue per JWT.
-  const authHeader = request.headers.get("authorization") || ""
-  const bearerToken = authHeader.replace(/^Bearer\s+/i, "")
-  const { data: { user } } = bearerToken
-    ? await supabase.auth.getUser(bearerToken)
-    : await supabase.auth.getUser()
+  const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   let body: { message?: unknown; kontext_url?: unknown }

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Stethoscope, Check, X, ArrowRight, Clock, AlertCircle } from "lucide-react"
 import type { Ticket, UserProfile } from "@/types"
+import { authFetch } from "@/lib/auth/clientFetch"
 
 // ============================================================
 // Pipeline-Anzeige für Diagnose- und Projekt-Tickets.
@@ -163,7 +164,7 @@ export default function DiagnosePipeline({ ticket, currentUser, onReload }: Prop
   async function annehmen() {
     setError("")
     setBusy("annehmen")
-    const res = await fetch("/api/diagnose/projekt-annehmen", {
+    const res = await authFetch("/api/diagnose/projekt-annehmen", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ diagnose_ticket_id: ticket.id }),
@@ -184,7 +185,7 @@ export default function DiagnosePipeline({ ticket, currentUser, onReload }: Prop
   async function inAuktion() {
     setError("")
     setBusy("auktion")
-    const res = await fetch("/api/diagnose/projekt-zur-auktion", {
+    const res = await authFetch("/api/diagnose/projekt-zur-auktion", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ diagnose_ticket_id: ticket.id, dringlichkeit: "zeitnah" }),

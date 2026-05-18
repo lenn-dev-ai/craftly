@@ -9,6 +9,7 @@ import DiagnosePipeline from "@/components/ticket/DiagnosePipeline"
 import NachtragsBox from "@/components/ticket/NachtragsBox"
 import { useToast } from "@/components/Toast"
 import { useActiveRole } from "@/lib/context/ActiveRoleContext"
+import { authFetch } from "@/lib/auth/clientFetch"
 
 function berechneValueScore(angebot: Angebot, alleAngebote: Angebot[]): number {
   if (alleAngebote.length === 0) return 0
@@ -297,7 +298,7 @@ export default function TicketDetailView() {
     if (!angebotForm.preis || !currentUser) return
     setSubmittingBid(true)
     // API-Route: schreibt Bid, markiert Einladung, triggert Smart-Score-Recompute
-    const res = await fetch("/api/auction/bid", {
+    const res = await authFetch("/api/auction/bid", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -322,7 +323,7 @@ export default function TicketDetailView() {
   async function vergeben(angebotId: string) {
     if (!currentUser) return
 
-    const res = await fetch("/api/auction/close", {
+    const res = await authFetch("/api/auction/close", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ticket_id: id, angebot_id: angebotId }),
@@ -435,7 +436,7 @@ export default function TicketDetailView() {
     try {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch("/api/termine/select-slot", {
+      const res = await authFetch("/api/termine/select-slot", {
         method: "POST",
         headers: {
           "content-type": "application/json",

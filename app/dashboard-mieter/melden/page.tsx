@@ -6,6 +6,7 @@ import { Button, Card } from "@/components/ui"
 import AddressAutocomplete from "@/components/AddressAutocomplete"
 import { uploadSchadensFoto } from "@/lib/storage/schadens-foto"
 import { formatGewerk } from "@/types"
+import { authFetch } from "@/lib/auth/clientFetch"
 
 const MAX_FOTO_BYTES = 5 * 1024 * 1024 // 5 MB
 const MAX_FOTOS = 5
@@ -192,7 +193,7 @@ export default function MeldenPage() {
         try {
           const fd = new FormData()
           fd.append("foto", ersteFoto)
-          const res = await fetch("/api/ki/schadenserkennung", { method: "POST", body: fd })
+          const res = await authFetch("/api/ki/schadenserkennung", { method: "POST", body: fd })
           if (res.ok) {
             const data = await res.json() as {
               schadensart: string

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
+import { createServiceRoleClient } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 
 // K1.3a: HW schickt 2-3 Termin-Vorschläge an den Mieter.
@@ -33,12 +34,7 @@ function escape(s: string): string {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const authHeader = request.headers.get("authorization") || ""
-  const bearerToken = authHeader.replace(/^Bearer\s+/i, "")
-  const { data: { user } } = bearerToken
-    ? await supabase.auth.getUser(bearerToken)
-    : await supabase.auth.getUser()
+  const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   let body: { ticket_id?: unknown; slots?: unknown }

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { calculateTotal, getEffectiveRate } from "@/lib/pricing/commission"
 
 // POST /api/pricing/calculate
@@ -23,8 +23,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "stundensatz muss > 0 sein" }, { status: 400 })
   }
 
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getUserFromRequest(request)
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }

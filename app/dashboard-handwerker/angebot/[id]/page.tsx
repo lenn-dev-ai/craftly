@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useCallback, useEffect, useId, useState } from "react"
 import { createClient } from "@/lib/supabase"
 import { formatGewerk, type Ticket, type Angebot } from "@/types"
+import { authFetch } from "@/lib/auth/clientFetch"
 
 const PRIO_COLORS: Record<string, string> = {
   normal: "bg-green-500/20 text-green-400",
@@ -99,7 +100,7 @@ export default function AngebotAbgeben() {
 
     // API-Route nutzen: schreibt Bid, markiert Einladung, triggert
     // Smart-Score-Recompute. Direct-Insert würde den Score überspringen.
-    const res = await fetch("/api/auction/bid", {
+    const res = await authFetch("/api/auction/bid", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -150,7 +151,7 @@ export default function AngebotAbgeben() {
     // K1.3a: Insert läuft jetzt über die API-Route, die zusätzlich
     // den Mieter per Email benachrichtigt.
     const { data: { session } } = await supabase.auth.getSession()
-    const res = await fetch("/api/termine/vorschlagen", {
+    const res = await authFetch("/api/termine/vorschlagen", {
       method: "POST",
       headers: {
         "content-type": "application/json",

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { reScoreTicket } from "@/lib/auction/scoring-pipeline"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 import { neuesAngebotEmail } from "@/lib/email/templates"
@@ -31,8 +31,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "preis muss > 0 sein" }, { status: 400 })
   }
 
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { data: profile } = await supabase

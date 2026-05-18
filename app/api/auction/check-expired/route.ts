@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
+import { createServiceRoleClient } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { reScoreTicket } from "@/lib/auction/scoring-pipeline"
 import { effektiveProvisionsRate } from "@/lib/auction/auction-manager"
 import { calculateCommission } from "@/lib/pricing/commission"
@@ -46,16 +47,18 @@ export async function POST(request: NextRequest) {
   // RLS und die tickets-Query unten findet 0 Rows (kein User-Kontext) →
   // Auktionen werden nie automatisch geschlossen.
   // Im Admin-Pfad bleibt der User-Client (RLS+Admin-Policy fängt das auf).
-  const supabase = authViaSecret
-    ? createServiceRoleClient()
-    : createServerSupabaseClient()
-  if (!authViaSecret) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  // H1: Admin-Pfad nutzt den getUserFromRequest-Helper (Bearer-Token).
+  let supabase
+  if (authViaSecret) {
+    supabase = createServiceRoleClient()
+  } else {
+    const r = await getUserFromRequest(request)
+    supabase = r.supabase
+    if (!r.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const { data: profile } = await supabase
       .from("profiles")
       .select("rolle")
-      .eq("id", user.id)
+      .eq("id", r.user.id)
       .single()
     if (profile?.rolle !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })

@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { createClient } from "@/lib/supabase"
 import { Button, Input, Select, Card } from "@/components/ui"
 import { onboardingSchema, type OnboardingInput } from "@/lib/schemas"
+import { authFetch } from "@/lib/auth/clientFetch"
 
 // Profil-Lückenfüller für OAuth-Erst-Logins.
 //
@@ -103,7 +104,7 @@ export default function OnboardingPage() {
         setServerError("Profil konnte nicht erstellt werden: " + error.message)
         return
       }
-      void fetch("/api/welcome-mail", { method: "POST" })
+      void authFetch("/api/welcome-mail", { method: "POST" })
       router.push(dashMap[values.rolle] || "/dashboard-mieter")
     } catch (err) {
       console.error("[onboarding] exception:", err)

@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createHash } from "crypto"
 import Anthropic from "@anthropic-ai/sdk"
-import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
+import { createServiceRoleClient } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 
 // POST /api/ki/schadenserkennung
 // Body: multipart/form-data mit 'foto' (Bild)
@@ -65,8 +66,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   // FIX-9: Erst Request validieren (formData/MIME/Size), DANN Quota

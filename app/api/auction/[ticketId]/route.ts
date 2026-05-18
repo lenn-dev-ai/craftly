@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 
 // GET /api/auction/[ticketId]
 // Liefert Auktions-Status + Angebote (RLS gefiltert).
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { ticketId: string } },
 ) {
   const ticketId = params.ticketId
@@ -12,8 +12,7 @@ export async function GET(
     return NextResponse.json({ error: "ticketId erforderlich" }, { status: 400 })
   }
 
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { data: ticket, error } = await supabase

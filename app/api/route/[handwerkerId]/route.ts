@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { optimiereRoute, type RoutenPunkt } from "@/lib/auction/route-bundling"
 import { haversineKm, schaetzeFahrzeitMin } from "@/lib/distance"
 
@@ -21,8 +21,7 @@ export async function GET(
     return NextResponse.json({ error: "datum muss YYYY-MM-DD sein" }, { status: 400 })
   }
 
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { data: profile } = await supabase

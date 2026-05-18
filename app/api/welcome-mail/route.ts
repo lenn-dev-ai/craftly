@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { sendEmail } from "@/lib/email/send"
 import { welcomeEmail } from "@/lib/email/templates"
 
@@ -14,9 +14,8 @@ import { welcomeEmail } from "@/lib/email/templates"
 // Auth-Pflicht: nur der eigene Profil wird beschickt — verhindert
 // Phishing-Versuche an fremde User.
 
-export async function POST(_request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export async function POST(request: NextRequest) {
+  const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { data: profile } = await supabase

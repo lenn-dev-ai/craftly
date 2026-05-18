@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { useToast } from "@/components/Toast"
 import { MessageSquare, X } from "lucide-react"
+import { authFetch } from "@/lib/auth/clientFetch"
 
 // Floating Feedback-Button für Beta-User-Loop.
 //
@@ -64,7 +65,7 @@ export function FeedbackWidget() {
         toast.show("Bitte neu anmelden — Session abgelaufen.", "error")
         return
       }
-      const res = await fetch("/api/feedback", {
+      const res = await authFetch("/api/feedback", {
         method: "POST",
         headers: {
           "content-type": "application/json",

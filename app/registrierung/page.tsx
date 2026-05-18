@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase"
 import { Button, Input, Select, Card } from "@/components/ui"
 import { GoogleSignInButton, OrDivider } from "@/components/GoogleSignInButton"
 import { registrierungSchema, type RegistrierungInput } from "@/lib/schemas"
+import { authFetch } from "@/lib/auth/clientFetch"
 
 const dashMap: Record<string, string> = {
   admin: "/dashboard-admin",
@@ -72,7 +73,7 @@ export default function RegistrierungPage() {
         return
       }
 
-      void fetch("/api/welcome-mail", { method: "POST" })
+      void authFetch("/api/welcome-mail", { method: "POST" })
       router.push(dashMap[values.rolle] || "/dashboard-mieter")
     } catch {
       setServerError("Ein unerwarteter Fehler ist aufgetreten.")

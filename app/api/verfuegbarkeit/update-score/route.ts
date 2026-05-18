@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
+import { createServiceRoleClient } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { berechneVerfuegbarkeitScore } from "@/lib/scoring/verfuegbarkeit"
 
 // POST /api/verfuegbarkeit/update-score
@@ -8,9 +9,8 @@ import { berechneVerfuegbarkeitScore } from "@/lib/scoring/verfuegbarkeit"
 // Pflegt zusätzlich kalender_streak: +1 wenn die letzte Pflege < 7 Tage
 // her ist, sonst Reset auf 1.
 
-export async function POST(_request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export async function POST(request: NextRequest) {
+  const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   const admin = createServiceRoleClient()
 

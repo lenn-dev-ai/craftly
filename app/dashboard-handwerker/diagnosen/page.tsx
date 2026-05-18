@@ -7,6 +7,7 @@ import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
 import { Stethoscope, MapPin, Clock, AlertCircle, X } from "lucide-react"
 import { formatGewerk } from "@/types"
 import { useToast } from "@/components/Toast"
+import { authFetch } from "@/lib/auth/clientFetch"
 
 // ============================================================
 // Typen
@@ -204,7 +205,7 @@ function TerminAnnehmenButton({ ticketId, onSuccess }: {
   async function annehmen() {
     setBusy(true)
     try {
-      const res = await fetch("/api/diagnose/termin-annehmen", {
+      const res = await authFetch("/api/diagnose/termin-annehmen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ticket_id: ticketId }),
@@ -334,7 +335,7 @@ function BefundForm({ ticket, onClose, onGespeichert }: {
       if ("pfad" in r) fotoPfade.push(r.pfad)
     }
 
-    const res = await fetch("/api/diagnose/befund-abgeben", {
+    const res = await authFetch("/api/diagnose/befund-abgeben", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

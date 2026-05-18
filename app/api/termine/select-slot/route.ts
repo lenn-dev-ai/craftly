@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
+import { createServiceRoleClient } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://reparo-app.netlify.app"
@@ -27,12 +28,7 @@ function escape(s: string): string {
 // der Gruppe noch 'vorgeschlagen' sind, wird gemacht.
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const authHeader = request.headers.get("authorization") || ""
-  const bearerToken = authHeader.replace(/^Bearer\s+/i, "")
-  const { data: { user } } = bearerToken
-    ? await supabase.auth.getUser(bearerToken)
-    : await supabase.auth.getUser()
+  const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   let body: { gruppe_id?: unknown; action?: unknown; termin_id?: unknown }
