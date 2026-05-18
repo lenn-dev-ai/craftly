@@ -21,7 +21,17 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://reparo-app.netlify
 
 export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+
+  // B1.1: supabase.auth.getUser() ohne Argument liest die SSR-Cookies —
+  // die im App-Router-Route-Handler-Kontext mit @supabase/ssr v0.3
+  // unzuverlässig gelesen werden (führte zu Dauer-401 bei /api/feedback).
+  // Der Client sendet zusätzlich Authorization: Bearer <jwt>; wenn der
+  // Header da ist, validieren wir explizit gegen GoTrue per JWT.
+  const authHeader = request.headers.get("authorization") || ""
+  const bearerToken = authHeader.replace(/^Bearer\s+/i, "")
+  const { data: { user } } = bearerToken
+    ? await supabase.auth.getUser(bearerToken)
+    : await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   let body: { message?: unknown; kontext_url?: unknown }
