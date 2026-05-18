@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServiceRoleClient } from "@/lib/supabase-server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 
@@ -9,13 +8,20 @@ import { sendEmailFireAndForget } from "@/lib/email/send"
 //
 // Effekte:
 //   1. Insert 2-3 termine-Rows mit gemeinsamer vorschlag_gruppe_id und
-//      status='vorgeschlagen'. Service-Role, weil der HW-Insert über
-//      die RLS-Policy zwar grundsätzlich klappt — aber wir wollen
-//      atomisch Insert + Email machen und können das hier zentral.
+//      status='vorgeschlagen'.
 //   2. Email an den Mieter (Ticket-Ersteller) fire-and-forget.
 //
-// Auth: Bearer-Token oder Cookie. Nur der eingeladene HW oder bereits
-// zugewiesener_hw des Tickets darf vorschlagen.
+// Auth: Bearer-Token oder Cookie (via getUserFromRequest). Nur der
+// eingeladene HW oder bereits zugewiesener_hw des Tickets darf vorschlagen.
+//
+// H8 (18.05.2026): vorher lief der Insert mit Service-Role, weil "atomisch
+// Insert + Email" — Cowork-QA hat dann reproduzierbar 500 gesehen, weil
+// SUPABASE_SERVICE_ROLE_KEY nach dem letzten Build gesetzt wurde und im
+// Function-Bundle nicht da war. Auch Force-Redeploy half nicht zuverlässig
+// (Function-Cold-Start-Caching). Jetzt: User-Client — termine_insert-RLS
+// `(auth.uid() = handwerker_id)` reicht, kein Bypass nötig. Profile-/
+// Ticket-/Einladungs-Reads laufen ebenfalls über User-Client; RLS auf
+// diesen Tabellen erlaubt dem eingeladenen HW genug Lese-Zugriff.
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://reparo-app.netlify.app"
 
@@ -72,8 +78,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const admin = createServiceRoleClient()
-  const { data: ticket, error: tErr } = await admin
+  const { data: ticket, error: tErr } = await supabase
     .from("tickets")
     .select("id, titel, erstellt_von, zugewiesener_hw, einsatzort_adresse, einsatzort_lat, einsatzort_lng")
     .eq("id", ticketId)
@@ -85,7 +90,7 @@ export async function POST(request: NextRequest) {
 
   // HW-Berechtigung: zugewiesener_hw oder eingeladen
   if (ticket.zugewiesener_hw !== user.id) {
-    const { data: einl } = await admin
+    const { data: einl } = await supabase
       .from("einladungen")
       .select("id")
       .eq("ticket_id", ticketId)
@@ -112,16 +117,16 @@ export async function POST(request: NextRequest) {
     einsatzort_lat: ticket.einsatzort_lat,
     einsatzort_lng: ticket.einsatzort_lng,
   }))
-  const { error: insErr } = await admin.from("termine").insert(rows)
+  const { error: insErr } = await supabase.from("termine").insert(rows)
   if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 })
 
   // Email an Mieter (fire-and-forget) — Ticket-Ersteller
-  const { data: mieter } = await admin
+  const { data: mieter } = await supabase
     .from("profiles")
     .select("email, name")
     .eq("id", ticket.erstellt_von)
     .maybeSingle<{ email: string | null; name: string | null }>()
-  const { data: hw } = await admin
+  const { data: hw } = await supabase
     .from("profiles")
     .select("firma, name")
     .eq("id", user.id)
