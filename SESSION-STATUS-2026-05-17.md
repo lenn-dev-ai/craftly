@@ -167,10 +167,16 @@ Cowork-Übergabe für QA und 390-px-Manual-Test.
 
 2. ⏸ ~~Netlify-ENV-Vars (Impressum)~~ — **verschoben bis Public-Beta** (Closed Beta unter Vertrauten, kein Impressum nötig)
 
-3. **Vor Beta-Usern (jetzt aktiv adressieren):**
+3. **Pre-Beta-Security — komplett grün (Stand 2026-05-18, bis auf HIBP=Pro-only):**
    - ✅ ~~`handwerker_bewertungen`-View ohne `SECURITY DEFINER` neu bauen~~ — **durch** (Block 3a, 2026-05-17 Abend, Advisor `security_definer_view` ERROR ist weg)
    - ⏸ ~~HIBP-Toggle im Supabase Auth-Dashboard aktivieren~~ — **gestrichen für Closed Beta**: „Leaked password protection" ist nur auf Supabase **Pro** verfügbar, Craftly-Org ist Free (Hinweis Cowork, 2026-05-17). Vor Public-Beta entweder Pro-Upgrade oder Custom-Frontend-Validierung (z.B. zxcvbn + HIBP-API-Call) nachziehen
-   - 🟡 `ki_analysen_cache` Policies ergänzen ODER RLS aus (10 Min) — Code-Befund: Tabelle wird ausschließlich via Service-Role-Client genutzt (bypasst RLS), reine Defense-in-Depth
+   - ✅ ~~`ki_analysen_cache` Policies ergänzen~~ — **durch** (Block 3b, 2026-05-18, restrictive DENY-Policy für anon+authenticated). Tabelle wird ausschließlich via Service-Role-Client genutzt; Policy ist Defense-in-Depth + schließt den `rls_enabled_no_policy`-Advisor.
+   - ✅ `ki_quota` analog gefixt (gleiches Pattern wie ki_analysen_cache, wird nur via SECURITY-DEFINER-RPC `try_consume_ki_quota` benutzt).
+   - **Advisor-Stand frisch:** 0 ERROR · 0 INFO · 91 WARN (alle WARN sind Post-Beta-Hygiene: function_search_path, security_definer_function_executable, GraphQL-Standard-Exposure unter RLS).
+
+   **Aus DB-Security-Sicht ist die Closed Beta für Vertraute aufmachbar.**
+
+   Weiterhin offen aus dem ursprünglichen Pre-Beta-Pool (nicht DB-Security):
    - Resend-Domain `reparo-app.de` verifizieren (DNS), sonst keine Mails
    - Google-OAuth-Client anlegen (siehe `ONBOARDING.md` § 3)
    - Stripe-Account + Connect aktivieren (Penalty läuft sonst als `manual_pending`)
