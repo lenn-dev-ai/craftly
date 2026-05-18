@@ -45,6 +45,25 @@
 
 ---
 
+## Iteration 3 — 17.05.2026 (Cowork Browser-Probe nach Sprint)
+
+### Regressions-Befund während QA
+
+- **[F3.1, ✅ 5dccc98] Wasserschaden-Tipp-Regression**: Root-Cause war nicht die Tipp-Datenbank, sondern die Lookup-Reihenfolge in `melden/page.tsx` — `reverseGewerkKey` schlug `kiResult`. Da `heizung` und `wasser` beide `gewerk="heizung_sanitaer"` haben, traf das Reverse-Lookup durch Iterationsreihenfolge zuerst `heizung`. Fix: `kiResult` (Schadensart-Klassifikation) jetzt authoritativ, `reverseGewerkKey` nur noch Fallback. Nebenwirkung: „Typische Dauer" bei Wasserschaden zeigt jetzt 2-8 h (vorher 12-48 h aus dem heizung-Eintrag). Cowork-Repro nach Deploy bestätigt grün.
+
+### Bestätigte Sprint-Fixes (gesichtet von Cowork)
+
+- ✅ F12, F5, F11, F10, F9, F6, F1, F2, F4 — alle visuell + funktional bestätigt
+- ⏸ F8 — wegen 1-HW-Datenlage nicht visuell testbar, Code in Build clean
+- ⚠️ F7 — Mieter-Karte da, Objekt-/KI-Karten fehlen visuell (vermutlich dünne Daten, sollte mit echtem Mieter-Profil + Objekt-Verknüpfung gegenprüfen)
+
+### Optional weitere Beobachtungen
+
+- **„TYPISCHE DAUER: ca. 12-48 Stunden" bei Dringlichkeit „Notfall"**: System-Schätzung passt nicht zur User-Wahl „Sofort". Nicht zwingend Bug, aber UX-Inkonsistenz. Erwägen ob Dauer sich an Dringlichkeit anpassen sollte oder ob der Disclaimer ausreicht.
+- **390 px Mobile-Test**: Aus Cowork heraus nicht durchführbar (macOS Chrome Mindest-Window-Breite ist 1026 px). Test muss Lennart selbst in Chrome DevTools Device Mode (`Cmd+Option+I` → Toolbar oben links → iPhone 13 Pro) durchführen.
+
+---
+
 ## Konvention für weitere Iterationen
 
 Lennart pinged „Feedback Iteration X" → ich ergänze hier eine neue Sektion mit Datum + getestetem Bereich (Verwalter, HW, Admin, Kalender, etc.). Am Ende der Beta wird das in saubere GitHub-Issues + Fix-Branches überführt (drüben in Claude Code).
