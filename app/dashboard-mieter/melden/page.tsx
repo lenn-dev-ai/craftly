@@ -356,7 +356,10 @@ export default function MeldenPage() {
         <div className="flex items-center justify-between gap-3 max-w-xl mx-auto">
           <button onClick={goBack} className="text-sm text-ink-muted hover:text-ink whitespace-nowrap">&larr; Zurück</button>
           <h1 className="text-sm font-medium text-ink truncate">Schaden melden</h1>
-          <span className="text-xs text-ink-faint whitespace-nowrap">{Math.min(stepIndex + 1, 5)}/5</span>
+          {/* M2: text-ink-faint war so blass, dass der Counter optisch
+              hinter Pills/Animationen in folgenden Steps verschwand.
+              Mehr Contrast + tabular-nums + monospace-Feel. */}
+          <span className="text-xs font-medium text-ink-muted tabular-nums whitespace-nowrap">{Math.min(stepIndex + 1, 5)}/5</span>
         </div>
       </div>
 
@@ -365,7 +368,12 @@ export default function MeldenPage() {
         <div className="h-full bg-gradient-to-r from-[#3D8B7A] to-[#4A9E8C] transition-all duration-700" style={{ width: Math.min((stepIndex + 1) / 5 * 100, 100) + "%" }} />
       </div>
 
-      <div className="max-w-xl mx-auto px-6 py-8">
+      {/* M1.1: Auch der Content-Container braucht auf Mobile links Platz
+          für den fixen Hamburger — sonst kollidieren linksbündige
+          Section-Headers (z.B. <h2>"Wo ist das Problem?") mit dem ☰.
+          Die text-center-Steps profitieren ebenfalls, ohne sichtbaren
+          Layout-Nachteil. */}
+      <div className="max-w-xl mx-auto pl-14 pr-6 md:px-6 py-8">
 
         {/* STEP 1: Foto + Beschreibung */}
         {step === "foto" && (
