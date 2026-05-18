@@ -305,10 +305,17 @@ export default function MeldenPage() {
     setLoading(false)
   }
 
-  // BUG-2: Wenn der User nachträglich Gewerk/Schadensart ändert, soll die
-  // angezeigte Zeit/Tipp passen. Versuche reverse-mapping vom Gewerk auf
-  // den Schadensart-Key in KI_ANALYSEN — sonst Fallback auf den initialen
-  // KI-Treffer aus dem Foto-Upload.
+  // F3.1 (Cowork-Regression-Befund): Vorher gewann reverseGewerkKey über
+  // kiResult — aber zwei UI-Keys (heizung + wasser) teilen sich denselben
+  // gewerk-Wert "heizung_sanitaer". Bei Wasserschaden lieferte die KI
+  // schadensart=sanitaer → kiResult=wasser, und in setForm wird gewerk=
+  // "heizung_sanitaer" geschrieben. Das reverse-Lookup traf dann durch
+  // Iterationsreihenfolge zuerst "heizung" — der Tipp wurde Thermostat-
+  // Heizung statt Hauptwasserhahn-Wasserschaden.
+  //
+  // Fix: kiResult (Schadensart-Klassifikation) ist authoritativer als die
+  // Gewerk-Rückleitung. reverseGewerkKey wirkt nur noch als Fallback,
+  // falls kein kiResult vorliegt (Edge-Case ohne KI-Analyse).
   const reverseGewerkKey = (() => {
     const g = form.gewerk?.toLowerCase()
     if (!g) return null
@@ -317,8 +324,9 @@ export default function MeldenPage() {
     }
     return null
   })()
-  const analyse = (reverseGewerkKey && KI_ANALYSEN[reverseGewerkKey])
-    || (kiResult ? KI_ANALYSEN[kiResult] : null)
+  const analyse = (kiResult && KI_ANALYSEN[kiResult])
+    || (reverseGewerkKey && KI_ANALYSEN[reverseGewerkKey])
+    || null
   const wizardSteps = ["foto", "analyse", "details", "ort", "dringlichkeit", "zusammenfassung", "gesendet"] as const
   const stepIndex = wizardSteps.indexOf(step)
   // Audit-Befund: Zurück sprang via router.back() aus dem Wizard raus und
