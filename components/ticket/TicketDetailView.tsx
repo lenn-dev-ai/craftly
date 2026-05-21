@@ -720,7 +720,9 @@ export default function TicketDetailView() {
               </div>
               <div className="bg-white border border-line rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold text-rolle-mieter">
-                  {minPreis > 0 ? `${minPreis}–${maxPreis}` : "—"}
+                  {minPreis > 0
+                    ? (minPreis === maxPreis ? `${minPreis}` : `${minPreis}–${maxPreis}`)
+                    : "—"}
                 </div>
                 <div className="text-[10px] text-ink-muted mt-1">Preisspanne EUR</div>
               </div>

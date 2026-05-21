@@ -99,7 +99,9 @@ export default function DiagnosePipeline({ ticket, currentUser, onReload }: Prop
           <div className="bg-surface rounded-xl p-3 mb-3">
             <div className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider mb-1">Fairer Preisbereich</div>
             <div className="text-sm font-mono tabular-nums text-ink">
-              {fmtEur(korridor.min)} – {fmtEur(korridor.max)}
+              {korridor.min === korridor.max
+                ? fmtEur(korridor.min)
+                : `${fmtEur(korridor.min)} – ${fmtEur(korridor.max)}`}
             </div>
           </div>
         )}
@@ -276,7 +278,11 @@ export default function DiagnosePipeline({ ticket, currentUser, onReload }: Prop
           {korridor && (
             <div className="text-xs text-ink-secondary">
               <span className="text-ink-muted">Fairer Bereich: </span>
-              <span className="font-mono tabular-nums text-ink">{fmtEur(korridor.min)} – {fmtEur(korridor.max)}</span>
+              <span className="font-mono tabular-nums text-ink">
+                {korridor.min === korridor.max
+                  ? fmtEur(korridor.min)
+                  : `${fmtEur(korridor.min)} – ${fmtEur(korridor.max)}`}
+              </span>
               {imKorridor
                 ? <span className="ml-2 text-accent font-semibold">✓ im Korridor</span>
                 : angebot != null && <span className="ml-2 text-warm-dark font-semibold">⚠ außerhalb</span>}
