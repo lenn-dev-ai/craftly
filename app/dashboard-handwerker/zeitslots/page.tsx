@@ -358,8 +358,11 @@ export default function ZeitslotsPage() {
                 className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm text-ink focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20 transition-colors"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
+            {/* Item 5: gap-3 (12 px) hat auf Mobile mit native-Time-Pickern
+                (Chrome-default-Min-Width) zum Überlappen geführt. gap-4 +
+                min-w-0 auf den Wrappern verhindert das. */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="min-w-0">
                 <label htmlFor={vonId} className="text-xs text-ink-muted mb-1 block font-medium">Von *</label>
                 <input
                   id={vonId}
@@ -370,7 +373,7 @@ export default function ZeitslotsPage() {
                   className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm text-ink focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20 transition-colors"
                 />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label htmlFor={bisId} className="text-xs text-ink-muted mb-1 block font-medium">Bis *</label>
                 <input
                   id={bisId}
