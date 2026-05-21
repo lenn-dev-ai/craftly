@@ -89,18 +89,21 @@ function AuktionCountdown({ end }: { end: string }) {
   const progress = Math.min(100, Math.max(0, ((totalDuration - secs) / totalDuration) * 100))
   const expired = secs === 0
   return (
-    <div className={`relative overflow-hidden rounded-2xl p-6 border ${expired ? "bg-danger/5 border-danger/20" : "bg-gradient-to-r from-[#3D8B7A]/5 via-[#5B6ABF]/5 to-[#3D8B7A]/5 border-accent/20"}`}>
-      <div className="flex items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-accent/15 flex items-center justify-center">
-            <span className="text-lg font-bold text-accent">AI</span>
+    <div className={`relative overflow-hidden rounded-2xl p-4 sm:p-6 border ${expired ? "bg-danger/5 border-danger/20" : "bg-gradient-to-r from-[#3D8B7A]/5 via-[#5B6ABF]/5 to-[#3D8B7A]/5 border-accent/20"}`}>
+      {/* Item 2: vorher gap-6 + große AI-Icon-Box hat die Komponente auf
+          Mobile (390 px) asymmetrisch wirken lassen — Icon links am Rand,
+          Countdown rechts. Engere Gaps + kleineres Icon zentriert das. */}
+      <div className="flex items-center justify-between gap-3 sm:gap-6">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-accent/15 flex items-center justify-center flex-shrink-0">
+            <span className="text-base sm:text-lg font-bold text-accent">AI</span>
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-sm font-semibold text-accent">Auktion läuft</span>
               {!expired && <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />}
             </div>
-            <div className="text-xs text-ink-muted">Handwerker bieten in Echtzeit — bestes Preis-Leistungs-Verhältnis gewinnt</div>
+            <div className="text-[11px] sm:text-xs text-ink-muted">Handwerker bieten in Echtzeit — bestes Preis-Leistungs-Verhältnis gewinnt</div>
           </div>
         </div>
         <div className="text-right flex-shrink-0">
@@ -108,7 +111,7 @@ function AuktionCountdown({ end }: { end: string }) {
             <div className="text-lg font-bold text-danger">Abgelaufen</div>
           ) : (
             <>
-              <div className="font-mono text-3xl font-bold tracking-wider">
+              <div className="font-mono text-2xl sm:text-3xl font-bold tracking-wider">
                 <span className="text-accent">{fmt(h)}</span>
                 <span className="text-line mx-0.5">:</span>
                 <span className="text-rolle-mieter">{fmt(m)}</span>
