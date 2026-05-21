@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
-import { ChevronLeft, ChevronRight, Plus, X, Briefcase, Tag, Sun } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus, X, Briefcase, Sun } from "lucide-react"
 import { GEWERK_BASIS_PREISE, berechneDynamischenPreis } from "@/lib/yield-management"
 import { useToast } from "@/components/Toast"
 
@@ -109,7 +109,10 @@ export default function KalenderPage() {
   const { confirm } = useToast()
 
   const [montag, setMontag] = useState<Date>(() => getMontag(new Date()))
-  const [layers, setLayers] = useState({ termine: true, slots: true, verfuegbarkeit: true })
+  // B1: "Slots" als separates User-Konzept ist weg. Der Verfügbarkeit-Toggle
+  // steuert jetzt sowohl die Wochenstruktur-Hintergründe als auch die
+  // konkreten Buchungsfenster aus public.zeitslots.
+  const [layers, setLayers] = useState({ termine: true, verfuegbarkeit: true })
   const [userId, setUserId] = useState<string | null>(null)
   const [profileGewerk, setProfileGewerk] = useState<string>("allgemein")
   const [profileBasisPreis, setProfileBasisPreis] = useState<number>(50)
@@ -229,7 +232,7 @@ export default function KalenderPage() {
     if (error) {
       setToast("Fehler: " + error.message)
     } else {
-      setToast("Slot eingestellt.")
+      setToast("Verfügbarkeit eingetragen.")
       setSlotModal(null)
       await loadData()
     }
@@ -295,13 +298,6 @@ export default function KalenderPage() {
             onClick={() => setLayers(l => ({ ...l, termine: !l.termine }))}
           />
           <LayerChip
-            label="Slots"
-            icon={<Tag size={13} />}
-            active={layers.slots}
-            tone="slots"
-            onClick={() => setLayers(l => ({ ...l, slots: !l.slots }))}
-          />
-          <LayerChip
             label="Verfügbarkeit"
             icon={<Sun size={13} />}
             active={layers.verfuegbarkeit}
@@ -309,7 +305,7 @@ export default function KalenderPage() {
             onClick={() => setLayers(l => ({ ...l, verfuegbarkeit: !l.verfuegbarkeit }))}
           />
           <span className="text-[11px] text-ink-faint ml-auto hidden sm:inline">
-            Klick auf eine leere Stunde → Slot anbieten
+            Klick auf eine leere Stunde → Verfügbarkeit anbieten
           </span>
         </div>
       </div>
@@ -410,7 +406,7 @@ export default function KalenderPage() {
                             top: (s - STUNDE_VON) * STUNDE_HOEHE_PX,
                             height: STUNDE_HOEHE_PX,
                           }}
-                          aria-label={`Slot anbieten ${datumIso} ${stundeStart}`}
+                          aria-label={`Verfügbarkeit anbieten ${datumIso} ${stundeStart}`}
                         >
                           <Plus size={14} className="opacity-0 group-hover:opacity-60 text-accent" />
                         </button>
@@ -418,7 +414,7 @@ export default function KalenderPage() {
                     })}
 
                     {/* Slot-Layer */}
-                    {layers.slots && tagSlots.map(s => (
+                    {layers.verfuegbarkeit && tagSlots.map(s => (
                       <button
                         key={s.id}
                         onClick={() => slotLoeschen(s)}
@@ -496,14 +492,14 @@ export default function KalenderPage() {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-line">
-              <h2 className="text-base font-semibold text-ink">Slot anbieten</h2>
+              <h2 className="text-base font-semibold text-ink">Verfügbarkeit anbieten</h2>
               <button onClick={() => setSlotModal(null)} aria-label="Schließen" className="text-ink-muted hover:text-ink">
                 <X size={18} />
               </button>
             </div>
             <div className="p-5 space-y-3">
               <p className="text-xs text-ink-muted">
-                Verwalter sehen diesen Slot im Marktplatz und können darauf bieten.
+                Diese Zeit zur Verfügung stellen — Verwalter sehen das im Marktplatz und können darauf zugreifen.
               </p>
               <div>
                 <label className="block text-[11px] font-medium text-ink-muted mb-1">Datum</label>
@@ -550,7 +546,7 @@ export default function KalenderPage() {
                   disabled={saving}
                   className="px-4 py-2 rounded-lg text-sm font-semibold bg-accent text-white hover:bg-accent-hover disabled:opacity-50"
                 >
-                  {saving ? "Speichert …" : "Slot einstellen"}
+                  {saving ? "Speichert …" : "Verfügbarkeit eintragen"}
                 </button>
               </div>
             </div>
