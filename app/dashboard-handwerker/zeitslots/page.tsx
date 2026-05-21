@@ -405,7 +405,7 @@ export default function ZeitslotsPage() {
                 return (
                   <div className="flex items-center gap-4">
                     <div>
-                      <div className="text-2xl font-bold" style={{ color: preisInfo.farbe }}>
+                      <div className="text-2xl font-bold whitespace-nowrap" style={{ color: preisInfo.farbe }}>
                         {preisInfo.dynamischerPreis} €/h
                       </div>
                       <div className="text-xs text-ink-muted">
@@ -516,7 +516,7 @@ export default function ZeitslotsPage() {
                             </span>
                           )}
                           <div className="text-right">
-                            <div className="text-lg font-bold text-accent">{preis} €/h</div>
+                            <div className="text-lg font-bold text-accent whitespace-nowrap">{preis} €/h</div>
                             {s.preisfaktor > 1.0 && (
                               <div className="text-xs text-warm">×{s.preisfaktor} Surge</div>
                             )}
@@ -576,7 +576,7 @@ export default function ZeitslotsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="text-lg font-bold text-ink-muted">{preis} €/h</div>
+                        <div className="text-lg font-bold text-ink-muted whitespace-nowrap">{preis} €/h</div>
                         <span className={`text-xs px-2 py-1 rounded-full font-medium border ${statusColors[s.status]}`}>
                           {statusLabels[s.status]}
                         </span>
