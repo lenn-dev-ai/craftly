@@ -472,7 +472,10 @@ export default function TicketDetailView() {
 
   return (
     <div className="min-h-screen bg-surface text-ink pb-12">
-      <div className="max-w-4xl mx-auto p-4 sm:p-6">
+      {/* M6: vorher p-4 auf allen Seiten → "← Zurück" bei x=16 hinter dem
+          fixen Sidebar-Hamburger (x=16-56). Auf Mobile pl-14 reservieren,
+          Desktop unverändert. */}
+      <div className="max-w-4xl mx-auto pl-14 pr-4 py-4 md:p-6">
         {/* Navigation */}
         <button onClick={() => router.back()} className="text-sm text-ink-muted hover:text-ink-secondary mb-6 flex items-center gap-2 transition-colors">
           ← Zurück
