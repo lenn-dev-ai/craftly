@@ -102,7 +102,12 @@ interface SlotModalState {
   datum: string
   von: string
   bis: string
+  // B2: "wiederkehrend" macht aus dem einmaligen zeitslots-Eintrag eine
+  // wöchentliche verfuegbarkeiten-Zeile (handwerker_id + wochentag).
+  wiederkehrend: boolean
 }
+
+const WOCHENTAG_NAME = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
 
 export default function KalenderPage() {
   const router = useRouter()
@@ -189,7 +194,7 @@ export default function KalenderPage() {
     const datum = isoDatum(tag)
     const von = String(stunde).padStart(2, "0") + ":00"
     const bis = String(Math.min(stunde + 2, STUNDE_BIS)).padStart(2, "0") + ":00"
-    setSlotModal({ datum, von, bis })
+    setSlotModal({ datum, von, bis, wiederkehrend: false })
   }
 
   function terminKlick(t: KalenderTermin) {
@@ -207,32 +212,55 @@ export default function KalenderPage() {
     }
     setSaving(true)
     const supabase = createClient()
-    const basisPreis = profileBasisPreis || GEWERK_BASIS_PREISE[profileGewerk] || 50
-    const preisInfo = berechneDynamischenPreis(
-      basisPreis,
-      slotModal.datum,
-      slotModal.von,
-      0,
-      slots.filter(s => s.status === "verfuegbar").length,
-      false,
-    )
-    const { error } = await supabase.from("zeitslots").insert({
-      handwerker_id: userId,
-      titel: `Slot ${slotModal.datum}`,
-      gewerk: profileGewerk,
-      datum: slotModal.datum,
-      von: slotModal.von,
-      bis: slotModal.bis,
-      basis_preis_stunde: basisPreis,
-      dynamischer_preis: preisInfo.dynamischerPreis,
-      preisfaktor: preisInfo.gesamtFaktor,
-      status: "verfuegbar",
-      ist_luecke: false,
-    })
-    if (error) {
-      setToast("Fehler: " + error.message)
+
+    let insErr: { message: string } | null = null
+    if (slotModal.wiederkehrend) {
+      // B2: Wochenstruktur — eine Zeile in verfuegbarkeiten pro Klick.
+      // wochentag = JS Date.getDay() (0=So..6=Sa, identisch mit DB-Konvention).
+      const wochentag = new Date(slotModal.datum).getDay()
+      const { error } = await supabase.from("verfuegbarkeiten").insert({
+        handwerker_id: userId,
+        wochentag,
+        von: slotModal.von,
+        bis: slotModal.bis,
+        aktiv: true,
+      })
+      insErr = error
     } else {
-      setToast("Verfügbarkeit eingetragen.")
+      // Einmaliger Slot — wie B1.
+      const basisPreis = profileBasisPreis || GEWERK_BASIS_PREISE[profileGewerk] || 50
+      const preisInfo = berechneDynamischenPreis(
+        basisPreis,
+        slotModal.datum,
+        slotModal.von,
+        0,
+        slots.filter(s => s.status === "verfuegbar").length,
+        false,
+      )
+      const { error } = await supabase.from("zeitslots").insert({
+        handwerker_id: userId,
+        titel: `Slot ${slotModal.datum}`,
+        gewerk: profileGewerk,
+        datum: slotModal.datum,
+        von: slotModal.von,
+        bis: slotModal.bis,
+        basis_preis_stunde: basisPreis,
+        dynamischer_preis: preisInfo.dynamischerPreis,
+        preisfaktor: preisInfo.gesamtFaktor,
+        status: "verfuegbar",
+        ist_luecke: false,
+      })
+      insErr = error
+    }
+
+    if (insErr) {
+      setToast("Fehler: " + insErr.message)
+    } else {
+      setToast(
+        slotModal.wiederkehrend
+          ? "Wochenstruktur ergänzt."
+          : "Verfügbarkeit eingetragen.",
+      )
       setSlotModal(null)
       await loadData()
     }
@@ -501,15 +529,55 @@ export default function KalenderPage() {
               <p className="text-xs text-ink-muted">
                 Diese Zeit zur Verfügung stellen — Verwalter sehen das im Marktplatz und können darauf zugreifen.
               </p>
-              <div>
-                <label className="block text-[11px] font-medium text-ink-muted mb-1">Datum</label>
-                <input
-                  type="date"
-                  value={slotModal.datum}
-                  onChange={e => setSlotModal(s => s ? { ...s, datum: e.target.value } : null)}
-                  className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-sm"
-                />
+
+              {/* B2: Einmalig vs Wiederkehrend. Default einmalig — Wochen-
+                  struktur ist die kräftigere Variante, die User bewusst
+                  wählen sollten. */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSlotModal(s => s ? { ...s, wiederkehrend: false } : null)}
+                  aria-pressed={!slotModal.wiederkehrend}
+                  className={`text-xs font-medium rounded-lg px-3 py-2 border transition-colors ${
+                    !slotModal.wiederkehrend
+                      ? "bg-accent text-white border-accent"
+                      : "bg-white text-ink-secondary border-line hover:bg-surface-muted"
+                  }`}
+                >
+                  Einmalig
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSlotModal(s => s ? { ...s, wiederkehrend: true } : null)}
+                  aria-pressed={slotModal.wiederkehrend}
+                  className={`text-xs font-medium rounded-lg px-3 py-2 border transition-colors ${
+                    slotModal.wiederkehrend
+                      ? "bg-accent text-white border-accent"
+                      : "bg-white text-ink-secondary border-line hover:bg-surface-muted"
+                  }`}
+                >
+                  Jede Woche
+                </button>
               </div>
+
+              {slotModal.wiederkehrend ? (
+                <div className="bg-accent/5 border border-accent/20 rounded-lg px-3 py-2">
+                  <div className="text-[11px] font-medium text-ink-muted">Wiederholt sich</div>
+                  <div className="text-sm text-ink mt-0.5">
+                    Jeden {WOCHENTAG_NAME[new Date(slotModal.datum).getDay()]}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-[11px] font-medium text-ink-muted mb-1">Datum</label>
+                  <input
+                    type="date"
+                    value={slotModal.datum}
+                    onChange={e => setSlotModal(s => s ? { ...s, datum: e.target.value } : null)}
+                    className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-medium text-ink-muted mb-1">Von</label>
@@ -531,7 +599,9 @@ export default function KalenderPage() {
                 </div>
               </div>
               <p className="text-[11px] text-ink-faint">
-                Gewerk: {profileGewerk}. Preis wird vom System dynamisch berechnet.
+                {slotModal.wiederkehrend
+                  ? "Wochenstruktur — gilt ab sofort jeden " + WOCHENTAG_NAME[new Date(slotModal.datum).getDay()] + "."
+                  : `Gewerk: ${profileGewerk}. Preis wird vom System dynamisch berechnet.`}
               </p>
               <div className="flex justify-end gap-2 pt-2">
                 <button
@@ -546,7 +616,11 @@ export default function KalenderPage() {
                   disabled={saving}
                   className="px-4 py-2 rounded-lg text-sm font-semibold bg-accent text-white hover:bg-accent-hover disabled:opacity-50"
                 >
-                  {saving ? "Speichert …" : "Verfügbarkeit eintragen"}
+                  {saving
+                    ? "Speichert …"
+                    : slotModal.wiederkehrend
+                      ? "Wochenstruktur speichern"
+                      : "Verfügbarkeit eintragen"}
                 </button>
               </div>
             </div>
