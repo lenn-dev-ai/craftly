@@ -73,7 +73,9 @@ export default function ZeitslotsPage() {
 
     const [{ data: prof }, { data: mySlots }] = await Promise.all([
       supabase.from("profiles").select("id, email, name, rolle, gewerk, basis_preis, sichtbarkeit_stufe, verfuegbarkeit_score, kalender_streak, created_at").eq("id", user.id).single(),
-      supabase.from("zeitslots").select("*, gebote:zeitslot_gebote(*)").eq("handwerker_id", user.id).order("datum", { ascending: false }),
+      // B4: nur konkrete (einmalige) Slots in der Listenansicht. Wochen-
+      // struktur-Einträge erscheinen jetzt im /kalender als Verfügbarkeit.
+      supabase.from("zeitslots").select("*, gebote:zeitslot_gebote(*)").eq("handwerker_id", user.id).eq("art", "einmalig").order("datum", { ascending: false }),
     ])
 
     setProfile(prof)
@@ -143,6 +145,7 @@ export default function ZeitslotsPage() {
       status: "verfuegbar",
       ist_luecke: false,
       notizen: form.notizen || null,
+      art: "einmalig",
     })
 
     if (error) {
@@ -182,6 +185,7 @@ export default function ZeitslotsPage() {
       status: "verfuegbar",
       ist_luecke: true,
       notizen: `Automatisch erkannte Lücke zwischen "${luecke.vorher}" und "${luecke.nachher}"`,
+      art: "einmalig",
     })
 
     if (error) {

@@ -57,19 +57,23 @@ export default function MarktplatzPage() {
     if (!user) { router.push("/login"); return }
 
     const heuteIso = new Date().toISOString().split("T")[0]
+    // B4: konsolidierte Tabelle — zwei art-gefilterte Queries gegen
+    // public.zeitslots. verfuegbarkeiten wird nicht mehr gelesen.
     const [{ data: prof }, { data: verfuegbareSlots }, { data: wochenstruktur }] = await Promise.all([
       supabase.from("profiles").select("id, email, name, rolle, created_at").eq("id", user.id).single(),
       supabase
         .from("zeitslots")
         .select("*, handwerker:profiles!handwerker_id(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl, plz_bereich), gebote:zeitslot_gebote(count)")
+        .eq("art", "einmalig")
         .eq("status", "verfuegbar")
         .gte("datum", heuteIso)
         .order("datum", { ascending: true }),
-      // B3: HW-Wochenstrukturen mit eingeklapptem Handwerker-Profil
+      // Wochenstruktur — wochentag-Felder, kein konkretes Datum.
       supabase
-        .from("verfuegbarkeiten")
-        .select("id, handwerker_id, wochentag, von, bis, aktiv, handwerker:profiles!handwerker_id(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl, plz_bereich, basis_preis)")
-        .eq("aktiv", true),
+        .from("zeitslots")
+        .select("id, handwerker_id, wochentag, von, bis, handwerker:profiles!handwerker_id(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl, plz_bereich, basis_preis)")
+        .eq("art", "wiederkehrend")
+        .eq("status", "verfuegbar"),
     ])
 
     // Virtuelle Slots aus Wochenstruktur für die nächsten 14 Tage erzeugen.
@@ -82,10 +86,11 @@ export default function MarktplatzPage() {
     heute.setHours(0, 0, 0, 0)
     const virtuelle: MarktSlot[] = []
     type WStruktur = {
-      id: string; handwerker_id: string; wochentag: number; von: string; bis: string; aktiv: boolean
+      id: string; handwerker_id: string; wochentag: number; von: string; bis: string
       handwerker: { id: string; name: string | null; firma: string | null; gewerk: string | null; bewertung_avg: number | null; auftraege_anzahl: number | null; plz_bereich: string | null; basis_preis: number | null } | null
     }
     for (const w of (wochenstruktur ?? []) as unknown as WStruktur[]) {
+      if (w.wochentag == null) continue
       for (let i = 0; i < VORSCHAU_TAGE; i++) {
         const d = new Date(heute)
         d.setDate(heute.getDate() + i)

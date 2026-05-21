@@ -50,10 +50,11 @@ interface KalenderSlot {
 }
 
 interface KalenderVerf {
+  // B4: aus zeitslots mit art='wiederkehrend' geladen — wochentag-basierte
+  // Wochenstruktur ohne konkretes Datum.
   wochentag: number
   von: string
   bis: string
-  aktiv: boolean
 }
 
 function fmtTime(t: string): string {
@@ -155,17 +156,22 @@ export default function KalenderPage() {
         .eq("handwerker_id", user.id)
         .gte("datum", wochenStartIso)
         .lte("datum", wochenEndeIso),
+      // B4: konkrete Slots — nur art='einmalig' mit datum-Filter.
       supabase
         .from("zeitslots")
         .select("id, datum, von, bis, basis_preis_stunde, dynamischer_preis, status")
         .eq("handwerker_id", user.id)
+        .eq("art", "einmalig")
         .gte("datum", wochenStartIso)
         .lte("datum", wochenEndeIso),
+      // B4: Wochenstruktur lebt jetzt in zeitslots (art='wiederkehrend'),
+      // status='verfuegbar' filtert deaktivierte Strukturen.
       supabase
-        .from("verfuegbarkeiten")
-        .select("wochentag, von, bis, aktiv")
+        .from("zeitslots")
+        .select("wochentag, von, bis, status")
         .eq("handwerker_id", user.id)
-        .eq("aktiv", true),
+        .eq("art", "wiederkehrend")
+        .eq("status", "verfuegbar"),
     ])
 
     if (prof) {
@@ -214,21 +220,27 @@ export default function KalenderPage() {
     const supabase = createClient()
 
     let insErr: { message: string } | null = null
+    const basisPreis = profileBasisPreis || GEWERK_BASIS_PREISE[profileGewerk] || 50
     if (slotModal.wiederkehrend) {
-      // B2: Wochenstruktur — eine Zeile in verfuegbarkeiten pro Klick.
-      // wochentag = JS Date.getDay() (0=So..6=Sa, identisch mit DB-Konvention).
+      // B4: Wochenstruktur — Zeile in zeitslots mit art='wiederkehrend',
+      // datum=null. wochentag aus dem geklickten Datum (JS getDay() ≡ DB).
       const wochentag = new Date(slotModal.datum).getDay()
-      const { error } = await supabase.from("verfuegbarkeiten").insert({
+      const { error } = await supabase.from("zeitslots").insert({
         handwerker_id: userId,
-        wochentag,
+        titel: "Wochenstruktur",
+        gewerk: profileGewerk,
+        datum: null,
         von: slotModal.von,
         bis: slotModal.bis,
-        aktiv: true,
+        basis_preis_stunde: basisPreis,
+        status: "verfuegbar",
+        ist_luecke: false,
+        art: "wiederkehrend",
+        wochentag,
       })
       insErr = error
     } else {
-      // Einmaliger Slot — wie B1.
-      const basisPreis = profileBasisPreis || GEWERK_BASIS_PREISE[profileGewerk] || 50
+      // Einmaliger Slot — art='einmalig' (Default, explizit für Klarheit).
       const preisInfo = berechneDynamischenPreis(
         basisPreis,
         slotModal.datum,
@@ -249,6 +261,7 @@ export default function KalenderPage() {
         preisfaktor: preisInfo.gesamtFaktor,
         status: "verfuegbar",
         ist_luecke: false,
+        art: "einmalig",
       })
       insErr = error
     }
