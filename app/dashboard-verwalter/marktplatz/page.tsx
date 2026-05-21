@@ -10,6 +10,23 @@ import { useToast } from "@/components/Toast"
 
 type Filter = "alle" | "sanitaer" | "elektro" | "heizung" | "maler" | "schreiner" | "dachdecker" | "schlosser"
 
+// B3: Marktplatz-Slot kann entweder ein konkreter zeitslots-Eintrag sein
+// (mit echter id, bewerbbar) oder aus einer HW-Wochenstruktur generiert
+// (virtual, nicht direkt bewerbbar — der HW muss den Slot erst konkret
+// freigeben, dann kann gebucht werden). Beide tauchen in der Liste auf,
+// werden visuell unterschieden.
+type MarktSlot = Zeitslot & {
+  ist_wochenstruktur?: boolean
+  wochenstruktur_id?: string
+}
+
+const VORSCHAU_TAGE = 14
+
+function timeToH(t: string): number {
+  const [h, m] = t.split(":").map(Number)
+  return h + (m ?? 0) / 60
+}
+
 export default function MarktplatzPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -18,7 +35,7 @@ export default function MarktplatzPage() {
   const hwParam = searchParams.get("hw")
   const { confirm } = useToast()
   const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [slots, setSlots] = useState<Zeitslot[]>([])
+  const [slots, setSlots] = useState<MarktSlot[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<Filter>("alle")
   const [sending, setSending] = useState<string | null>(null)
@@ -39,18 +56,77 @@ export default function MarktplatzPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
 
-    const [{ data: prof }, { data: verfuegbareSlots }] = await Promise.all([
+    const heuteIso = new Date().toISOString().split("T")[0]
+    const [{ data: prof }, { data: verfuegbareSlots }, { data: wochenstruktur }] = await Promise.all([
       supabase.from("profiles").select("id, email, name, rolle, created_at").eq("id", user.id).single(),
       supabase
         .from("zeitslots")
         .select("*, handwerker:profiles!handwerker_id(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl, plz_bereich), gebote:zeitslot_gebote(count)")
         .eq("status", "verfuegbar")
-        .gte("datum", new Date().toISOString().split("T")[0])
+        .gte("datum", heuteIso)
         .order("datum", { ascending: true }),
+      // B3: HW-Wochenstrukturen mit eingeklapptem Handwerker-Profil
+      supabase
+        .from("verfuegbarkeiten")
+        .select("id, handwerker_id, wochentag, von, bis, aktiv, handwerker:profiles!handwerker_id(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl, plz_bereich, basis_preis)")
+        .eq("aktiv", true),
     ])
 
+    // Virtuelle Slots aus Wochenstruktur für die nächsten 14 Tage erzeugen.
+    // Skip, wenn für denselben HW+Datum+Zeit bereits ein konkreter Slot
+    // existiert — der hat Vorrang, weil der HW den explizit freigegeben hat.
+    const konkretKeys = new Set(
+      (verfuegbareSlots ?? []).map(s => `${s.handwerker_id}|${s.datum}|${s.von}|${s.bis}`),
+    )
+    const heute = new Date()
+    heute.setHours(0, 0, 0, 0)
+    const virtuelle: MarktSlot[] = []
+    type WStruktur = {
+      id: string; handwerker_id: string; wochentag: number; von: string; bis: string; aktiv: boolean
+      handwerker: { id: string; name: string | null; firma: string | null; gewerk: string | null; bewertung_avg: number | null; auftraege_anzahl: number | null; plz_bereich: string | null; basis_preis: number | null } | null
+    }
+    for (const w of (wochenstruktur ?? []) as unknown as WStruktur[]) {
+      for (let i = 0; i < VORSCHAU_TAGE; i++) {
+        const d = new Date(heute)
+        d.setDate(heute.getDate() + i)
+        if (d.getDay() !== w.wochentag) continue
+        const datum = d.toISOString().slice(0, 10)
+        const key = `${w.handwerker_id}|${datum}|${w.von}|${w.bis}`
+        if (konkretKeys.has(key)) continue
+
+        const hwGewerk = w.handwerker?.gewerk ?? "allgemein"
+        const basisPreis = w.handwerker?.basis_preis ?? GEWERK_BASIS_PREISE[hwGewerk] ?? 50
+        const stunden = (timeToH(w.bis) - timeToH(w.von))
+        virtuelle.push({
+          id: `wstr-${w.id}-${datum}`,
+          handwerker_id: w.handwerker_id,
+          titel: `Wochenstruktur ${w.handwerker?.firma ?? w.handwerker?.name ?? ""}`.trim(),
+          gewerk: hwGewerk,
+          datum,
+          von: w.von,
+          bis: w.bis,
+          stunden,
+          basis_preis_stunde: basisPreis,
+          dynamischer_preis: basisPreis,
+          preisfaktor: 1,
+          status: "verfuegbar",
+          ist_luecke: false,
+          notizen: null,
+          created_at: new Date().toISOString(),
+          handwerker: w.handwerker,
+          ist_wochenstruktur: true,
+          wochenstruktur_id: w.id,
+        } as unknown as MarktSlot)
+      }
+    }
+
+    const merged: MarktSlot[] = [
+      ...((verfuegbareSlots ?? []) as MarktSlot[]),
+      ...virtuelle,
+    ].sort((a, b) => (a.datum + a.von).localeCompare(b.datum + b.von))
+
     setProfile(prof)
-    setSlots(verfuegbareSlots || [])
+    setSlots(merged)
     setLoading(false)
   }, [router])
 
@@ -60,6 +136,14 @@ export default function MarktplatzPage() {
     if (!profile) return
     const slot = slots.find(s => s.id === slotId)
     if (!slot) return
+    // B3: virtuelle Wochenstruktur-Slots können nicht direkt beboten werden —
+    // der HW muss sie erst konkret freigeben. Bis B4 (Materialize-API) ist
+    // das ein expliziter Hinweis statt einer stillen Failure.
+    if (slot.ist_wochenstruktur) {
+      setToast("Dieser Slot stammt aus der Wochenstruktur — der Handwerker gibt ihn frei, sobald er ihn konkret anbietet.")
+      setTimeout(() => setToast(""), 4000)
+      return
+    }
     const preis = gebotPreise[slotId] || slot.dynamischer_preis || slot.basis_preis_stunde
     if (!await confirm(`Gebot über ${preis} €/h für „${slot.titel}" wirklich absenden?`)) return
     setSending(slotId)
@@ -268,6 +352,11 @@ export default function MarktplatzPage() {
                               Lücken-Angebot (–15%)
                             </span>
                           )}
+                          {s.ist_wochenstruktur && (
+                            <span className="inline-block mt-1 ml-1 text-[9px] bg-accent/15 text-accent px-1.5 py-0.5 rounded-full">
+                              Wochenstruktur
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -289,14 +378,27 @@ export default function MarktplatzPage() {
                           </div>
                         )}
                         <button
-                          onClick={() => setExpandedSlot(isExpanded ? null : s.id)}
+                          onClick={() => {
+                            if (s.ist_wochenstruktur) {
+                              submitGebot(s.id) // löst den Wochenstruktur-Hinweis-Toast aus
+                              return
+                            }
+                            setExpandedSlot(isExpanded ? null : s.id)
+                          }}
                           className={`mt-2 text-xs font-bold px-4 py-2 rounded-lg transition-all ${
-                            isExpanded
-                              ? "bg-surface-muted text-ink-secondary"
-                              : "bg-gradient-to-r from-[#3D8B7A] to-[#C4956A] text-black hover:brightness-110"
+                            s.ist_wochenstruktur
+                              ? "bg-surface-muted text-ink-secondary cursor-help"
+                              : isExpanded
+                                ? "bg-surface-muted text-ink-secondary"
+                                : "bg-gradient-to-r from-[#3D8B7A] to-[#C4956A] text-black hover:brightness-110"
                           }`}
+                          title={s.ist_wochenstruktur ? "Aus Wochenstruktur generiert — HW gibt konkret frei" : undefined}
                         >
-                          {isExpanded ? "Schließen" : "Gebot abgeben"}
+                          {s.ist_wochenstruktur
+                            ? "Auf Anfrage"
+                            : isExpanded
+                              ? "Schließen"
+                              : "Gebot abgeben"}
                         </button>
                       </div>
                     </div>
