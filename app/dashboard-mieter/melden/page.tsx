@@ -119,6 +119,38 @@ export default function MeldenPage() {
   // Mieter entscheidet nicht ob Diagnose oder Direkt-Reparatur — das
   // ist eine Fachentscheidung des Verwalters nach Sichtung.
 
+  // F2: Default-Wohnung aus dem Mieter-Profil. Wenn vorhanden, kommt im
+  // ort-Step eine Pill ("📍 Meine Wohnung") statt des Adress-Felds; mit
+  // Toggle auf manuelle Eingabe für Sonderfälle (Schaden im Treppenhaus,
+  // Adresse eines Bekannten, etc.).
+  const [profilWohnung, setProfilWohnung] = useState<{ adresse: string; lat: number | null; lng: number | null } | null>(null)
+  const [nutzeProfilWohnung, setNutzeProfilWohnung] = useState(true)
+
+  // Profil-Adresse laden — beim Mount, damit beim Wechsel auf Step "ort"
+  // schon vorbefüllt ist.
+  useEffect(() => {
+    let aktiv = true
+    void (async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("adresse, lat, lng")
+        .eq("id", user.id)
+        .maybeSingle<{ adresse: string | null; lat: number | null; lng: number | null }>()
+      if (!aktiv || !prof?.adresse) return
+      setProfilWohnung({ adresse: prof.adresse, lat: prof.lat, lng: prof.lng })
+      setForm(f => f.einsatzort_adresse ? f : ({
+        ...f,
+        einsatzort_adresse: prof.adresse!,
+        einsatzort_lat: prof.lat,
+        einsatzort_lng: prof.lng,
+      }))
+    })()
+    return () => { aktiv = false }
+  }, [])
+
   function fotosHinzufuegen(neueFiles: FileList | File[] | null) {
     setFotoFehler(null)
     if (!neueFiles || neueFiles.length === 0) return
@@ -645,21 +677,65 @@ export default function MeldenPage() {
             <h2 className="text-lg font-semibold mb-2">Wo ist das Problem?</h2>
             <p className="text-sm text-ink-muted mb-6">Adresse und Raum angeben — damit der Handwerker dich findet.</p>
 
-            <div className="mb-5">
-              <AddressAutocomplete
-                label="Adresse des Gebäudes"
-                placeholder="Straße, Hausnummer, Ort"
-                initialAdresse={form.einsatzort_adresse}
-                onSelect={({ adresse, lat, lng }) =>
-                  setForm(f => ({
-                    ...f,
-                    einsatzort_adresse: adresse,
-                    einsatzort_lat: lat,
-                    einsatzort_lng: lng,
-                  }))
-                }
-              />
-            </div>
+            {/* F2: Default-Wohnung aus Profil, falls hinterlegt. */}
+            {profilWohnung && nutzeProfilWohnung ? (
+              <div className="mb-5">
+                <div className="bg-accent/5 border border-accent/30 rounded-xl p-4">
+                  <div className="text-[10px] uppercase tracking-wider text-accent font-bold mb-1">Meine Wohnung</div>
+                  <div className="text-sm text-ink leading-snug flex items-start gap-2">
+                    <span aria-hidden>📍</span>
+                    <span>{profilWohnung.adresse}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNutzeProfilWohnung(false)
+                      setForm(f => ({ ...f, einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null }))
+                    }}
+                    className="mt-3 text-xs text-ink-muted hover:text-ink underline underline-offset-2"
+                  >
+                    Andere Adresse eingeben
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-5">
+                <AddressAutocomplete
+                  label="Adresse des Gebäudes"
+                  placeholder="Straße, Hausnummer, Ort"
+                  initialAdresse={form.einsatzort_adresse}
+                  onSelect={({ adresse, lat, lng }) =>
+                    setForm(f => ({
+                      ...f,
+                      einsatzort_adresse: adresse,
+                      einsatzort_lat: lat,
+                      einsatzort_lng: lng,
+                    }))
+                  }
+                />
+                {profilWohnung ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNutzeProfilWohnung(true)
+                      setForm(f => ({
+                        ...f,
+                        einsatzort_adresse: profilWohnung.adresse,
+                        einsatzort_lat: profilWohnung.lat,
+                        einsatzort_lng: profilWohnung.lng,
+                      }))
+                    }}
+                    className="mt-2 text-xs text-accent hover:text-[#2D6B5A] underline underline-offset-2"
+                  >
+                    Doch meine Wohnung verwenden
+                  </button>
+                ) : (
+                  <p className="mt-2 text-[11px] text-ink-faint">
+                    Tipp: Hinterlege deine Wohnung im Profil, dann ist das beim nächsten Mal mit einem Klick erledigt.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="mb-4">
               <label className="text-xs text-ink-muted mb-1.5 block font-medium">
