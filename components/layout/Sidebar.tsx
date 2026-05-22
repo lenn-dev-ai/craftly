@@ -47,6 +47,7 @@ const menus: Record<Rolle, MenuItem[]> = {
     { href: "/dashboard-mieter", label: "Übersicht", Icon: LayoutDashboard },
     { href: "/dashboard-mieter/melden", label: "Schaden melden", Icon: Plus },
     { href: "/dashboard-mieter/tickets", label: "Meine Tickets", Icon: FileText },
+    { href: "/dashboard-mieter/profil", label: "Mein Profil", Icon: UserCircle },
   ],
   admin: [
     { href: "/dashboard-admin", label: "Dashboard", Icon: LayoutDashboard },

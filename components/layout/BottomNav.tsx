@@ -34,6 +34,7 @@ const items: Record<Rolle, { href: string; label: string; Icon: LucideIcon }[]> 
     { href: "/dashboard-mieter",         label: "Start",     Icon: LayoutDashboard },
     { href: "/dashboard-mieter/melden",  label: "Melden",    Icon: Plus },
     { href: "/dashboard-mieter/tickets", label: "Tickets",   Icon: FileText },
+    { href: "/dashboard-mieter/profil",  label: "Profil",    Icon: UserCircle },
   ],
   admin: [
     // P3.4: "Feedback" als zweites Top-Item, weil Admin das aktuell am

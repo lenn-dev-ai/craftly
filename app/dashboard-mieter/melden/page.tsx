@@ -731,7 +731,15 @@ export default function MeldenPage() {
                   </button>
                 ) : (
                   <p className="mt-2 text-[11px] text-ink-faint">
-                    Tipp: Hinterlege deine Wohnung im Profil, dann ist das beim nächsten Mal mit einem Klick erledigt.
+                    Tipp:{" "}
+                    <button
+                      type="button"
+                      onClick={() => router.push("/dashboard-mieter/profil")}
+                      className="text-accent underline underline-offset-2 hover:text-[#2D6B5A]"
+                    >
+                      Hinterlege deine Wohnung im Profil
+                    </button>
+                    , dann ist das beim nächsten Mal mit einem Klick erledigt.
                   </p>
                 )}
               </div>
