@@ -323,7 +323,7 @@ export default function HandwerkerDashboard() {
                           <span className="text-xs text-ink-muted">{t.wohnung}</span>
                         )}
                         <span className="text-xs text-ink-muted">
-                          · {angeboteCount} {angeboteCount === 1 ? "Angebot" : "Angebote"}
+                          · {angeboteCount} {angeboteCount === 1 ? "Annahme" : "Annahmen"}
                         </span>
                       </div>
 
@@ -333,7 +333,7 @@ export default function HandwerkerDashboard() {
 
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-accent group-hover:translate-x-0.5 transition-transform">
-                          Angebot abgeben →
+                          Auftrag annehmen →
                         </span>
                       </div>
                     </div>

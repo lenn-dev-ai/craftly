@@ -403,7 +403,7 @@ export default function MarktplatzPage() {
                             ? "Auf Anfrage"
                             : isExpanded
                               ? "Schließen"
-                              : "Gebot abgeben"}
+                              : "Slot buchen"}
                         </button>
                       </div>
                     </div>
