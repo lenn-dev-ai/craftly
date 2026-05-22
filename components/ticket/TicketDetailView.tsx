@@ -58,6 +58,39 @@ function ValueScoreRing({ score }: { score: number }) {
   )
 }
 
+// C4: Phasen-Indikator für Standard-Tickets. Synchron zu dem Mini-Pipeline-
+// Block in app/dashboard-mieter/page.tsx — beide nutzen Mieter-Mental-
+// Model "gemeldet → auktion → reparatur → erledigt".
+const PHASEN: { key: string; label: string }[] = [
+  { key: "offen",          label: "Gemeldet" },
+  { key: "auktion",        label: "Auktion" },
+  { key: "in_bearbeitung", label: "Reparatur" },
+  { key: "erledigt",       label: "Erledigt" },
+]
+function phasenIndex(status: string): number {
+  const idx = PHASEN.findIndex(p => p.key === status)
+  return idx < 0 ? 0 : idx
+}
+function PhasenIndikator({ status }: { status: string }) {
+  const aktiv = phasenIndex(status)
+  return (
+    <div className="mt-4 pt-4 border-t border-line">
+      <div className="flex items-center gap-1 mb-1.5">
+        {PHASEN.map((_, i) => (
+          <div key={i} className="flex-1">
+            <div className={`h-1.5 rounded-full ${i <= aktiv ? "bg-accent" : "bg-line"}`} />
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-between text-[10px]">
+        {PHASEN.map((p, i) => (
+          <span key={p.key} className={i <= aktiv ? "text-accent font-medium" : "text-ink-faint"}>{p.label}</span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) return <span className="text-xs font-bold bg-warm/20 text-warm px-2 py-0.5 rounded-full border border-warm/30">🥇 #1 Empfohlen</span>
   if (rank === 2) return <span className="text-xs font-bold bg-surface text-ink-secondary px-2 py-0.5 rounded-full border border-line">🥈 #2</span>
@@ -505,6 +538,13 @@ export default function TicketDetailView() {
               <Button size="sm" onClick={() => setShowKosten(true)}>Abschließen</Button>
             )}
           </div>
+          {/* C4: Phasen-Indikator für Standard-Aufträge — Diagnose-/
+              Projekt-Tickets bekommen die ausführlichere DiagnosePipeline
+              weiter unten. Phasen orientieren sich am Mieter-Dashboard. */}
+          {(!ticket.ticket_typ || ticket.ticket_typ === "standard") && (
+            <PhasenIndikator status={ticket.status} />
+          )}
+
           {/* Ticket meta */}
           <div className="flex items-center gap-4 mt-4 pt-4 border-t border-line text-xs text-ink-faint">
             <span>Erstellt: {new Date(ticket.created_at).toLocaleDateString("de", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>

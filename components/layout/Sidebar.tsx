@@ -10,7 +10,7 @@ import { RollenWechsel } from "@/components/RollenWechsel"
 import {
   LayoutDashboard, Ticket, Zap, Wrench, BarChart3,
   Euro, Calendar, Briefcase, MapPin, CalendarCheck, UserCircle,
-  Plus, FileText, ShieldCheck, LogOut, Map, CalendarRange, Stethoscope,
+  Plus, FileText, ShieldCheck, LogOut, Map, CalendarRange,
   Calculator, AlertTriangle, MessageSquare,
   type LucideProps,
 } from "lucide-react"
@@ -38,8 +38,11 @@ const menus: Record<Rolle, MenuItem[]> = {
     { href: "/dashboard-handwerker/kalender", label: "Kalender", Icon: CalendarCheck },
     { href: "/dashboard-handwerker/karte", label: "Karte & Route", Icon: Map },
     { href: "/dashboard-handwerker/einnahmen", label: "Einnahmen", Icon: Euro },
-    // Mein Bereich — Settings/seltener
-    { href: "/dashboard-handwerker/diagnosen", label: "Diagnosen", Icon: Stethoscope, gruppe: "selten" },
+    // Mein Bereich — Settings/seltener. C4: "Diagnosen"-Item raus —
+    // Diagnose-Tickets erscheinen als normale Aufträge (Status="auktion"
+    // + ticket_typ="diagnose"), die /dashboard-handwerker/diagnosen-Page
+    // bleibt als Direkt-Route erreichbar bis sie in eine gemeinsame
+    // Aufträge-Liste verschmolzen ist.
     { href: "/dashboard-handwerker/verdienst", label: "Verdienst-Rechner", Icon: Calculator, gruppe: "selten" },
     { href: "/dashboard-handwerker/profil", label: "Mein Profil", Icon: UserCircle, gruppe: "selten" },
   ],
