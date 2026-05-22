@@ -166,7 +166,7 @@ export default function DiagnosePipeline({ ticket, currentUser, onReload }: Prop
   async function annehmen() {
     setError("")
     setBusy("annehmen")
-    const res = await authFetch("/api/diagnose/projekt-annehmen", {
+    const res = await authFetch("/api/auftraege/projekt-annehmen", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ diagnose_ticket_id: ticket.id }),
@@ -187,7 +187,7 @@ export default function DiagnosePipeline({ ticket, currentUser, onReload }: Prop
   async function inAuktion() {
     setError("")
     setBusy("auktion")
-    const res = await authFetch("/api/diagnose/projekt-zur-auktion", {
+    const res = await authFetch("/api/auftraege/projekt-zur-auktion", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ diagnose_ticket_id: ticket.id, dringlichkeit: "zeitnah" }),

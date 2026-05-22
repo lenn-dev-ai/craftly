@@ -205,7 +205,7 @@ function TerminAnnehmenButton({ ticketId, onSuccess }: {
   async function annehmen() {
     setBusy(true)
     try {
-      const res = await authFetch("/api/diagnose/termin-annehmen", {
+      const res = await authFetch("/api/auftraege/diagnose-termin-annehmen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ticket_id: ticketId }),
@@ -335,7 +335,7 @@ function BefundForm({ ticket, onClose, onGespeichert }: {
       if ("pfad" in r) fotoPfade.push(r.pfad)
     }
 
-    const res = await authFetch("/api/diagnose/befund-abgeben", {
+    const res = await authFetch("/api/auftraege/befund-abgeben", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
