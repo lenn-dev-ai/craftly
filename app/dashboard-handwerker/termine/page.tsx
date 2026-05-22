@@ -80,26 +80,24 @@ export default function TerminePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
 
-    const { data: prof } = await supabase
-      .from("profiles")
-      .select("id, email, name, rolle, startort_adresse, startort_lat, startort_lng, created_at")
-      .eq("id", user.id)
-      .single()
+    const [{ data: prof }, { data: auftragsTermine }, { data: privateTermine }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, email, name, rolle, startort_adresse, startort_lat, startort_lng, created_at")
+        .eq("id", user.id)
+        .single(),
+      supabase
+        .from("termine")
+        .select("*, ticket:tickets(titel, einsatzort_adresse, einsatzort_lat, einsatzort_lng)")
+        .eq("handwerker_id", user.id)
+        .eq("datum", datum),
+      supabase
+        .from("private_termine")
+        .select("*")
+        .eq("handwerker_id", user.id)
+        .eq("datum", datum),
+    ])
     setProfile(prof)
-
-    // Auftrags-Termine
-    const { data: auftragsTermine } = await supabase
-      .from("termine")
-      .select("*, ticket:tickets(titel, einsatzort_adresse, einsatzort_lat, einsatzort_lng)")
-      .eq("handwerker_id", user.id)
-      .eq("datum", datum)
-
-    // Private Termine
-    const { data: privateTermine } = await supabase
-      .from("private_termine")
-      .select("*")
-      .eq("handwerker_id", user.id)
-      .eq("datum", datum)
 
     const liste: Termin[] = []
     for (const t of auftragsTermine || []) {

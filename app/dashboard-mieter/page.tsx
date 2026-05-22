@@ -69,10 +69,12 @@ export default function MieterDashboard() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
     setUserId(user.id)
-    const { data: profile } = await supabase.from("profiles").select("name").eq("id", user.id).single()
+    const [{ data: profile }, { data: ticketsData }] = await Promise.all([
+      supabase.from("profiles").select("name").eq("id", user.id).single(),
+      supabase.from("tickets").select("*")
+        .eq("erstellt_von", user.id).order("created_at", { ascending: false }),
+    ])
     if (profile) setUsername(profile.name?.split(" ")[0] || "")
-    const { data: ticketsData } = await supabase.from("tickets").select("*")
-      .eq("erstellt_von", user.id).order("created_at", { ascending: false })
     const list = ticketsData || []
     setTickets(list)
 
