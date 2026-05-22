@@ -35,6 +35,8 @@ Memory-Eintrag: `~/.claude/projects/.../memory/project_urlaub_2026_05.md`
 | Next.js Update | `0e7f8a3` | 14.2.3 → 14.2.35, schließt alle 14.x-CVEs (Cache Poisoning, Middleware-Bypass, Auth Bypass, SSRF, DoS-Varianten); restliche CVEs sind nur in 15.x+ gefixt → Major-Upgrade-Risiko, Post-Urlaub |
 | E2E-URL-Fix | `517e039` | `waitForResponse`-Patterns auf neue `/api/auftraege/*`-Pfade umgestellt; verhindert silent breakage wenn Wrapper später entfernt werden |
 | BETA-WELCOME | `b9bf675` | Sprint C/E/F-Updates in der Beta-Tester-Broschüre |
+| ws-CVE-Fix | `657dc39` | `npm audit fix` non-breaking: ws 8.20.0 → 8.21.0 (GHSA-58qx-3vcg-4xpx) via realtime-js |
+| Perf-Pass | `019a3a6` | Mieter-Dashboard + HW-Termine: serielle Queries → Promise.all; spart 1 bzw. 2 Roundtrips |
 
 ### Backlog-Hygiene-Migrationen — als Files vorbereitet (nicht angewandt)
 
@@ -63,6 +65,11 @@ Plus: `supabase/migrations/README-2026-06-vacation-prep.md` mit Reihenfolge + Ri
 | 5 — Quality / E2E (Sprint J) | warten auf Spec | Cowork schreibt Spec, CC implementiert |
 
 CC-seitig sind aktuell **keine offenen Specs**. Falls Cowork G/H/I/J reinpastet (z.B. via `PROMPTS/sprint-g-*.md`), kann ich direkt loslegen.
+
+**Audit-Findings nach `npm audit fix` (Stand 22.05.):** 7 verbleibend, alle breaking-change-blockiert:
+- `cookie <0.7.0` via `@supabase/ssr` — Bump auf 0.10.x wäre breaking und der `<=0.5.2-rc.7`-Pin ist genau unser B1/H1-Workaround-Grund (cookie-race). Nicht autonom bumpen.
+- `glob` via `@next/eslint-plugin-next` — dev-only CLI-Pfad nicht genutzt, low impact.
+- `next` (~14 CVEs) + `postcss` — nur per Major-Upgrade auf 15.5.16+/16.x fixbar; Breaking-Change-Risiko, Post-Urlaub-Entscheidung.
 
 ---
 
