@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase"
 import { Ticket } from "@/types"
 import { Badge, Button, Card } from "@/components/ui"
 import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
+import { User as UserIcon, Calendar as CalendarIcon, Loader2 } from "lucide-react"
 
 const PIPELINE_STEPS = [
   { label: "Gemeldet" },
@@ -41,9 +42,24 @@ function diagnoseSubStatus(t: Ticket): { label: string; color: string } | null {
   return { label: `Befund + Festpreis (${t.projekt_angebot ?? "—"} €) — Verwalter entscheidet`, color: "text-accent" }
 }
 
+// E: HW-Lookup + bestätigter Termin pro Ticket-ID für die Inline-Anzeige.
+interface HwMini {
+  id: string
+  name: string | null
+  firma: string | null
+}
+interface TerminMini {
+  ticket_id: string
+  datum: string
+  von: string
+  bis: string
+}
+
 export default function MieterDashboard() {
   const router = useRouter()
   const [tickets, setTickets] = useState<Ticket[]>([])
+  const [hwById, setHwById] = useState<Record<string, HwMini>>({})
+  const [bestaetigterTerminByTicket, setBestaetigterTerminByTicket] = useState<Record<string, TerminMini>>({})
   const [loading, setLoading] = useState(true)
   const [username, setUsername] = useState("")
   const [userId, setUserId] = useState<string | null>(null)
@@ -55,9 +71,36 @@ export default function MieterDashboard() {
     setUserId(user.id)
     const { data: profile } = await supabase.from("profiles").select("name").eq("id", user.id).single()
     if (profile) setUsername(profile.name?.split(" ")[0] || "")
-    const { data } = await supabase.from("tickets").select("*")
+    const { data: ticketsData } = await supabase.from("tickets").select("*")
       .eq("erstellt_von", user.id).order("created_at", { ascending: false })
-    setTickets(data || [])
+    const list = ticketsData || []
+    setTickets(list)
+
+    // E: HW-Profile + bestätigte Termine parallel nachladen (keine
+    // postgrest-Embeds — wir sind nicht sicher dass die FK-Hints in
+    // PostgREST sauber registriert sind). Bei 1–N Beta-Tickets günstig.
+    const hwIds = Array.from(new Set(list.map(t => t.zugewiesener_hw).filter(Boolean) as string[]))
+    const ticketIds = list.map(t => t.id)
+    const [hwRes, tRes] = await Promise.all([
+      hwIds.length
+        ? supabase.from("profiles").select("id, name, firma").in("id", hwIds)
+        : Promise.resolve({ data: [] as HwMini[] }),
+      ticketIds.length
+        ? supabase.from("termine")
+            .select("ticket_id, datum, von, bis, status")
+            .in("ticket_id", ticketIds)
+            .eq("status", "bestaetigt")
+        : Promise.resolve({ data: [] as Array<TerminMini & { status: string }> }),
+    ])
+    const hwMap: Record<string, HwMini> = {}
+    for (const h of (hwRes.data ?? []) as HwMini[]) hwMap[h.id] = h
+    setHwById(hwMap)
+    const terminMap: Record<string, TerminMini> = {}
+    for (const t of (tRes.data ?? []) as Array<TerminMini & { status: string }>) {
+      if (t.ticket_id && !terminMap[t.ticket_id]) terminMap[t.ticket_id] = t
+    }
+    setBestaetigterTerminByTicket(terminMap)
+
     setLoading(false)
   }, [router])
 
@@ -150,6 +193,9 @@ export default function MieterDashboard() {
               const estimate = getEstimate(t)
 
               const diag = diagnoseSubStatus(t)
+              const hw = t.zugewiesener_hw ? hwById[t.zugewiesener_hw] : null
+              const termin = bestaetigterTerminByTicket[t.id] ?? null
+              const inVergabe = !hw && (t.status === "offen" || t.status === "auktion")
               return (
                 <Card key={t.id} className="hover:bg-[#F7F4F0] cursor-pointer transition-all"
                   onClick={() => router.push("/dashboard-mieter/ticket/" + t.id)}>
@@ -169,6 +215,33 @@ export default function MieterDashboard() {
                       )}
                       <Badge status={t.status} />
                     </div>
+
+                    {/* E: HW + Termin inline, sobald zugewiesen. Spart einen
+                        Klick aufs Ticket-Detail. Bei Status offen/auktion
+                        zeigen wir "Wird vergeben…" statt Leerstelle. */}
+                    {(hw || termin) && (
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-secondary mb-2">
+                        {hw && (
+                          <span className="flex items-center gap-1.5 min-w-0">
+                            <UserIcon size={12} className="text-ink-muted flex-shrink-0" />
+                            <span className="truncate">{hw.firma || hw.name || "Handwerker"}</span>
+                          </span>
+                        )}
+                        {termin && (
+                          <span className="flex items-center gap-1.5 whitespace-nowrap">
+                            <CalendarIcon size={12} className="text-ink-muted flex-shrink-0" />
+                            {new Date(termin.datum).toLocaleDateString("de", { weekday: "short", day: "2-digit", month: "short" })}
+                            {" · "}{termin.von.slice(0, 5)}–{termin.bis.slice(0, 5)} Uhr
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {inVergabe && (
+                      <div className="flex items-center gap-1.5 text-xs text-ink-muted mb-2">
+                        <Loader2 size={12} className="text-ink-muted animate-spin" />
+                        Wird vergeben…
+                      </div>
+                    )}
 
                     {/* Diagnose-Substatus für die Mieter-Pipeline-Sicht */}
                     {diag && (
