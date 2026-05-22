@@ -424,7 +424,7 @@ async function runDiagnoseAnnehmen(page: Page, ticketTitle: string): Promise<boo
     return false
   }
   await Promise.all([
-    page.waitForResponse(r => r.url().includes("/api/diagnose/termin-annehmen") && r.request().method() === "POST", { timeout: 20_000 }),
+    page.waitForResponse(r => r.url().includes("/api/auftraege/diagnose-termin-annehmen") && r.request().method() === "POST", { timeout: 20_000 }),
     button.click(),
   ])
   await page.waitForTimeout(1000)
@@ -457,7 +457,7 @@ async function runDiagnoseBefund(page: Page, ticketTitle: string): Promise<boole
     buffer: png,
   })
   await Promise.all([
-    page.waitForResponse(r => r.url().includes("/api/diagnose/befund-abgeben") && r.request().method() === "POST", { timeout: 20_000 }),
+    page.waitForResponse(r => r.url().includes("/api/auftraege/befund-abgeben") && r.request().method() === "POST", { timeout: 20_000 }),
     page.getByRole("button", { name: /Befund \+ Angebot speichern/i }).click(),
   ])
   await page.getByText("Befund + Angebot").waitFor({ state: "detached", timeout: 15_000 }).catch(() => {})
@@ -469,7 +469,7 @@ async function runAuktionStarten(page: Page, ticketId: string | undefined): Prom
   await page.goto(`/dashboard-verwalter/ticket/${ticketId}`, { waitUntil: "domcontentloaded" })
   await page.getByRole("button", { name: /In Auktion mit Vorkaufsrecht/i }).click()
   await Promise.all([
-    page.waitForResponse(r => r.url().includes("/api/diagnose/projekt-zur-auktion") && r.request().method() === "POST", { timeout: 20_000 }),
+    page.waitForResponse(r => r.url().includes("/api/auftraege/projekt-zur-auktion") && r.request().method() === "POST", { timeout: 20_000 }),
     page.getByRole("button", { name: /Ja, in Auktion/i }).click(),
   ])
 }
@@ -507,7 +507,7 @@ async function runAngebotAbgeben(page: Page, ticketId: string | undefined): Prom
   await page.locator('input[type="date"]').first().fill(futureDate(10))
   await page.locator("textarea").first().fill("Eingereicht im Live-Test.")
   await Promise.all([
-    page.waitForResponse(r => r.url().includes("/api/auction/bid") && r.request().method() === "POST", { timeout: 45_000 }),
+    page.waitForResponse(r => r.url().includes("/api/auftraege/annehmen") && r.request().method() === "POST", { timeout: 45_000 }),
     page.getByRole("button", { name: /Angebot über .* absenden/i }).click(),
   ])
 }

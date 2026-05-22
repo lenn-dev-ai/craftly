@@ -115,16 +115,15 @@ test.describe.serial("Diagnose-Pipeline End-to-End", () => {
     // Ticket-Karte muss sichtbar sein
     await expect(hwPage.getByText(TICKET_TITEL_ANNEHMEN)).toBeVisible({ timeout: 15_000 })
 
-    // FIX-5: "Termin annehmen" → echte API /api/diagnose/termin-annehmen
-    // (atomares Claim, race-sicher). Vorher hat der Test admin-client
-    // genutzt um den HW manuell zu setzen — kaschierte den Bug, dass
-    // der Button gar keine API gerufen hat.
+    // FIX-5: "Termin annehmen" → echte API (atomares Claim, race-sicher).
+    // C3: Pfad ist seit 22.05.2026 /api/auftraege/diagnose-termin-annehmen
+    // — die alte URL /api/diagnose/* ist nur noch Wrapper.
     const annehmenBtn = hwPage
       .locator("article")
       .filter({ hasText: TICKET_TITEL_ANNEHMEN })
       .getByRole("button", { name: /Termin annehmen/i })
     const annehmenResPromise = hwPage.waitForResponse(
-      r => r.url().includes("/api/diagnose/termin-annehmen") && r.request().method() === "POST",
+      r => r.url().includes("/api/auftraege/diagnose-termin-annehmen") && r.request().method() === "POST",
       { timeout: 15_000 },
     )
     await annehmenBtn.click()
@@ -167,7 +166,7 @@ test.describe.serial("Diagnose-Pipeline End-to-End", () => {
 
     // Speichern + Response abwarten (statt auf UI-Text — DB-Check ist robuster)
     const responsePromise = hwPage.waitForResponse(
-      r => r.url().includes("/api/diagnose/befund-abgeben") && r.request().method() === "POST",
+      r => r.url().includes("/api/auftraege/befund-abgeben") && r.request().method() === "POST",
       { timeout: 20_000 },
     )
     await hwPage.getByRole("button", { name: /Befund.*speichern/i }).click()
@@ -201,7 +200,7 @@ test.describe.serial("Diagnose-Pipeline End-to-End", () => {
     const annehmenButton = verwalterPage.getByRole("button", { name: /Angebot annehmen/i })
     await expect(annehmenButton).toBeVisible()
     const annehmenResponsePromise = verwalterPage.waitForResponse(
-      r => r.url().includes("/api/diagnose/projekt-annehmen") && r.request().method() === "POST",
+      r => r.url().includes("/api/auftraege/projekt-annehmen") && r.request().method() === "POST",
       { timeout: 20_000 },
     )
     await annehmenButton.click()
@@ -264,7 +263,7 @@ test.describe.serial("Diagnose-Pipeline End-to-End", () => {
     await verwalterPage.getByRole("button", { name: /In Auktion mit Vorkaufsrecht/i }).click()
 
     const auktionResPromise = verwalterPage.waitForResponse(
-      r => r.url().includes("/api/diagnose/projekt-zur-auktion") && r.request().method() === "POST",
+      r => r.url().includes("/api/auftraege/projekt-zur-auktion") && r.request().method() === "POST",
       { timeout: 20_000 },
     )
     await verwalterPage.getByRole("button", { name: /Ja, in Auktion/i }).click()
