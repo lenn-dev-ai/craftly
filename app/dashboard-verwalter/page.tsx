@@ -178,13 +178,21 @@ export default function VerwalterDashboard() {
             {neueLive > 0 && ` · ${neueLive} Live-Update${neueLive === 1 ? "" : "s"}`}
           </p>
         </div>
-        <Link
-          href="/dashboard-verwalter/marktplatz"
-          className="inline-flex items-center gap-2 text-sm font-semibold bg-accent text-white px-5 py-2.5 rounded-xl hover:bg-accent-hover transition-colors"
-        >
-          Handwerker-Marktplatz
-          <span>→</span>
-        </Link>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link
+            href="/dashboard-verwalter/neues-ticket"
+            className="inline-flex items-center gap-2 text-sm font-semibold bg-rolle-verwalter text-white px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+          >
+            <span>+</span> Neues Ticket
+          </Link>
+          <Link
+            href="/dashboard-verwalter/marktplatz"
+            className="inline-flex items-center gap-2 text-sm font-semibold bg-accent text-white px-5 py-2.5 rounded-xl hover:bg-accent-hover transition-colors"
+          >
+            Handwerker-Marktplatz
+            <span>→</span>
+          </Link>
+        </div>
       </div>
 
       {/* Attention Banner — wenn dringende offene Meldungen */}
@@ -378,6 +386,14 @@ export default function VerwalterDashboard() {
                       </div>
 
                       <div className="text-xs text-ink-muted mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        {t.eingetragen_von_verwalter && (
+                          <span
+                            title="Vom Verwalter telefonisch aufgenommen"
+                            className="inline-flex items-center gap-1 text-rolle-verwalter font-medium"
+                          >
+                            📞 telefonisch
+                          </span>
+                        )}
                         {t.wohnung && <span>{t.wohnung}</span>}
                         {t.einsatzort_adresse && (
                           <span className="text-accent">📍 {t.einsatzort_adresse}</span>

@@ -99,6 +99,10 @@ export interface Ticket {
   // ohne das Foto erneut zu öffnen.
   ki_confidence?: number | null
   ki_schadensart?: string | null
+  // Sprint G: true wenn Verwalter das Ticket telefonisch via Wizard
+  // eingetragen hat (statt vom Mieter selbst gemeldet). Treibt das
+  // "📞 telefonisch"-Badge in der Verwalter-Ticket-Liste.
+  eingetragen_von_verwalter?: boolean | null
 }
 
 export interface Angebot {
