@@ -10,6 +10,8 @@ type FormState = {
   name: string
   firma: string
   gewerk: string
+  // Sprint L — Stamm-Gewerke (1-3 aus fester Liste)
+  handwerker_gewerke: string[]
   plz_bereich: string
   telefon: string
   adresse: string
@@ -25,12 +27,25 @@ type FormState = {
   startort_lng: number | null
 }
 
+const GEWERK_AUSWAHL = [
+  { key: "heizung_sanitaer", label: "Heizung / Sanitär" },
+  { key: "elektro", label: "Elektro" },
+  { key: "schreiner", label: "Schreiner / Tischler" },
+  { key: "maler", label: "Maler" },
+  { key: "dachdecker", label: "Dachdecker" },
+  { key: "bodenleger", label: "Bodenleger" },
+  { key: "schluessel", label: "Schlüsseldienst" },
+  { key: "allgemein", label: "Allgemein" },
+] as const
+const MAX_GEWERKE = 3
+
 export default function ProfilPage() {
   const router = useRouter()
   const { show } = useToast()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [form, setForm] = useState<FormState>({
-    name: "", firma: "", gewerk: "", plz_bereich: "", telefon: "",
+    name: "", firma: "", gewerk: "", handwerker_gewerke: [],
+    plz_bereich: "", telefon: "",
     adresse: "", lat: null, lng: null, radius_km: 25,
     basis_stundensatz: null, mindest_stundensatz: null, fahrtkosten_pro_km: 0.5,
     startort_adresse: "", startort_lat: null, startort_lng: null,
@@ -46,7 +61,7 @@ export default function ProfilPage() {
       if (!user) { router.push("/login"); return }
       const { data } = await supabase
         .from("profiles")
-        .select("id, email, name, rolle, telefon, firma, gewerk, plz_bereich, radius_km, basis_stundensatz, mindest_stundensatz, fahrtkosten_pro_km, startort_adresse, startort_lat, startort_lng, bewertung_avg, auftraege_anzahl, created_at")
+        .select("id, email, name, rolle, telefon, firma, gewerk, handwerker_gewerke, plz_bereich, radius_km, basis_stundensatz, mindest_stundensatz, fahrtkosten_pro_km, startort_adresse, startort_lat, startort_lng, bewertung_avg, auftraege_anzahl, created_at")
         .eq("id", user.id)
         .single()
       if (data) {
@@ -55,6 +70,9 @@ export default function ProfilPage() {
           name: data.name || "",
           firma: data.firma || "",
           gewerk: data.gewerk || "",
+          handwerker_gewerke: Array.isArray((data as { handwerker_gewerke?: string[] }).handwerker_gewerke)
+            ? ((data as { handwerker_gewerke?: string[] }).handwerker_gewerke ?? [])
+            : [],
           plz_bereich: data.plz_bereich || "",
           telefon: data.telefon || "",
           adresse: "",
@@ -81,7 +99,21 @@ export default function ProfilPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const { adresse: _adresse, lat: _lat, lng: _lng, ...persisted } = form
-      const { error: updateErr } = await supabase.from("profiles").update(persisted).eq("id", user.id)
+      // handwerker_gewerke leer → NULL persistieren (CHECK erlaubt NULL,
+      // aber kein leeres Array). Empty filter erlaubt graceful Spalten-
+      // Fehlen pre-migration: dann wird das Feld einfach ignoriert.
+      const payload: Record<string, unknown> = { ...persisted }
+      if (Array.isArray(payload.handwerker_gewerke) &&
+          (payload.handwerker_gewerke as string[]).length === 0) {
+        payload.handwerker_gewerke = null
+      }
+      let updateErr = (await supabase.from("profiles").update(payload).eq("id", user.id)).error
+      if (updateErr && /handwerker_gewerke|column.*does not exist/i.test(updateErr.message)) {
+        // Migration noch nicht angewandt — ohne das Feld retry
+        const { handwerker_gewerke: _ignored, ...ohneGewerke } = payload
+        void _ignored
+        updateErr = (await supabase.from("profiles").update(ohneGewerke).eq("id", user.id)).error
+      }
       if (updateErr) {
         show("Speichern fehlgeschlagen: " + updateErr.message, "error")
         setSaving(false)
@@ -134,6 +166,61 @@ export default function ProfilPage() {
               )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Sprint L — Meine Gewerke (max 3 Stamm-Gewerke) */}
+      <div className={`rounded-2xl border p-6 mb-4 transition-colors ${
+        form.handwerker_gewerke.length > 0 ? "bg-white border-line" : "bg-warm-light border-warm/40"
+      }`}>
+        <div className="mb-3">
+          <h2 className="text-base font-semibold text-ink">Meine Gewerke</h2>
+          <p className="text-xs text-ink-muted mt-1">
+            Max {MAX_GEWERKE} — wir wollen Spezialisten, keine Allrounder.
+            Tickets in anderen Gewerken siehst du nicht im Marktplatz.
+          </p>
+        </div>
+        {form.handwerker_gewerke.length === 0 && (
+          <div className="mb-3 text-xs text-warm-dark bg-warm/15 rounded-lg px-3 py-2">
+            Noch kein Gewerk gesetzt — du siehst keine Tickets bis du mindestens eins auswählst.
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          {GEWERK_AUSWAHL.map(g => {
+            const checked = form.handwerker_gewerke.includes(g.key)
+            const disabled = !checked && form.handwerker_gewerke.length >= MAX_GEWERKE
+            return (
+              <label
+                key={g.key}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer transition ${
+                  checked
+                    ? "border-accent bg-accent/5 text-ink"
+                    : disabled
+                      ? "border-line text-ink-faint cursor-not-allowed"
+                      : "border-line text-ink hover:border-accent/40"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={disabled}
+                  onChange={e => {
+                    setForm(f => ({
+                      ...f,
+                      handwerker_gewerke: e.target.checked
+                        ? [...f.handwerker_gewerke, g.key]
+                        : f.handwerker_gewerke.filter(k => k !== g.key),
+                    }))
+                  }}
+                  className="accent-accent"
+                />
+                {g.label}
+              </label>
+            )
+          })}
+        </div>
+        <div className="text-[11px] text-ink-muted mt-2 tabular-nums">
+          {form.handwerker_gewerke.length} / {MAX_GEWERKE} ausgewählt
         </div>
       </div>
 

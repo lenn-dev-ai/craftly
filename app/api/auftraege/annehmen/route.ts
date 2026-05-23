@@ -36,18 +36,19 @@ export async function POST(request: NextRequest) {
   const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+  // Sprint L: handwerker_gewerke[] mit-laden für Gewerk-Validation
   const { data: profile } = await supabase
     .from("profiles")
-    .select("rolle")
+    .select("rolle, gewerk, handwerker_gewerke")
     .eq("id", user.id)
-    .single()
+    .single<{ rolle: string; gewerk: string | null; handwerker_gewerke: string[] | null }>()
   if (!profile || profile.rolle !== "handwerker") {
     return NextResponse.json({ error: "Nur Handwerker dürfen bieten" }, { status: 403 })
   }
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, titel, status, auktion_ende, erstellt_von, verwalter_id")
+    .select("id, titel, status, auktion_ende, erstellt_von, verwalter_id, gewerk")
     .eq("id", ticketId)
     .single<{
       id: string
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
       auktion_ende: string | null
       erstellt_von: string
       verwalter_id: string | null
+      gewerk: string | null
     }>()
   if (!ticket) return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 })
   if (ticket.status !== "auktion") {
@@ -63,6 +65,27 @@ export async function POST(request: NextRequest) {
   }
   if (ticket.auktion_ende && new Date(ticket.auktion_ende).getTime() < Date.now()) {
     return NextResponse.json({ error: "Auktion bereits abgelaufen" }, { status: 422 })
+  }
+
+  // Sprint L: Stamm-Gewerke-Validation. Fallback auf altes single-Gewerk
+  // solange noch nicht alle HW migriert haben. 'allgemein' bleibt offen
+  // für alle. Wenn HW gar kein Gewerk hat: durchlassen (kein Lock-Out).
+  const stammGewerke: string[] = Array.isArray(profile.handwerker_gewerke) && profile.handwerker_gewerke.length > 0
+    ? profile.handwerker_gewerke
+    : (profile.gewerk ? [profile.gewerk] : [])
+  const ticketGewerk = ticket.gewerk?.toLowerCase()
+  if (
+    stammGewerke.length > 0
+    && ticketGewerk
+    && ticketGewerk !== "allgemein"
+    && !stammGewerke.includes(ticketGewerk)
+  ) {
+    return NextResponse.json(
+      {
+        error: `Dieses Ticket ist Gewerk "${ticketGewerk}". Du bietest nur ${stammGewerke.join(", ")} an.`,
+      },
+      { status: 403 },
+    )
   }
 
   const { error: insertErr } = await supabase.from("angebote").upsert(

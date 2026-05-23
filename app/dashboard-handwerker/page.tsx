@@ -30,7 +30,7 @@ export default function HandwerkerDashboard() {
     if (!user) { router.push("/login"); return }
 
     const [{ data: prof }, { data: offene }, { data: meine }] = await Promise.all([
-      supabase.from("profiles").select("id, email, name, rolle, firma, gewerk, startort_lat, startort_lng, radius_km, bewertung_avg, auftraege_anzahl, sichtbarkeit_stufe, verfuegbarkeit_score, angebotstreue, created_at").eq("id", user.id).single(),
+      supabase.from("profiles").select("id, email, name, rolle, firma, gewerk, handwerker_gewerke, startort_lat, startort_lng, radius_km, bewertung_avg, auftraege_anzahl, sichtbarkeit_stufe, verfuegbarkeit_score, angebotstreue, created_at").eq("id", user.id).single(),
       supabase.from("tickets").select("*, angebote(*)").eq("status", "auktion")
         .gt("auktion_ende", new Date().toISOString()).order("auktion_ende"),
       supabase.from("tickets").select("*").eq("zugewiesener_hw", user.id)
@@ -72,7 +72,15 @@ export default function HandwerkerDashboard() {
 
   const standortGesetzt = profile?.startort_lat != null && profile?.startort_lng != null
   const radiusKm = profile?.radius_km ?? 25
-  const meinGewerk = profile?.gewerk?.toLowerCase()
+  // Sprint L: Stamm-Gewerke aus handwerker_gewerke (Array). Fallback auf
+  // das alte single-gewerk-Feld, solange noch nicht migriert. Ohne
+  // gesetzte Stamm-Gewerke und ohne Fallback: leerer Marktplatz mit CTA.
+  const stammGewerke: string[] = (() => {
+    const arr = (profile as { handwerker_gewerke?: string[] | null } | null)?.handwerker_gewerke
+    if (Array.isArray(arr) && arr.length > 0) return arr
+    return profile?.gewerk ? [profile.gewerk] : []
+  })()
+  const hatStammGewerke = stammGewerke.length > 0
 
   // Distanz-Map für effizientes Filtern + Sortieren
   const distanzVon = (t: Ticket): number => {
@@ -80,14 +88,14 @@ export default function HandwerkerDashboard() {
     return haversineKm(profile!.startort_lat!, profile!.startort_lng!, t.einsatzort_lat, t.einsatzort_lng)
   }
 
-  // Gewerk-Match: Ticket-Gewerk gleicht Handwerker-Gewerk oder ist
-  // 'allgemein' (offen für alle Gewerke). Ohne gepflegtes Gewerk auf
-  // beiden Seiten zählt als Match.
+  // Sprint L: Ticket-Gewerk muss exakt in Stamm-Gewerken sein. Ausnahme
+  // 'allgemein' bleibt für alle sichtbar. Pre-Migration / leere Auswahl:
+  // gesamten Marktplatz blocken (User explizit zur Profil-Einrichtung).
   const passtZumGewerk = (t: Ticket): boolean => {
-    if (!meinGewerk) return true
+    if (!hatStammGewerke) return false
     const tg = t.gewerk?.toLowerCase()
     if (!tg || tg === "allgemein") return true
-    return tg.includes(meinGewerk) || meinGewerk.includes(tg)
+    return stammGewerke.includes(tg)
   }
 
   // Im-Radius-Filter: ohne Standort zeigen wir alles
@@ -253,7 +261,26 @@ export default function HandwerkerDashboard() {
           </div>
         </div>
 
-        {auktionenSortiert.length === 0 ? (
+        {!hatStammGewerke ? (
+          <div className="bg-warm-light rounded-2xl border border-warm/40 p-8 text-center">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-warm/15 flex items-center justify-center mb-3">
+              <span className="text-2xl">🔧</span>
+            </div>
+            <div className="text-base font-semibold text-ink mb-1">
+              Setze zuerst deine Gewerke
+            </div>
+            <div className="text-sm text-ink-secondary max-w-sm mx-auto mb-4">
+              Du siehst Tickets erst, wenn du 1-3 Stamm-Gewerke im Profil hinterlegst.
+              So zeigen wir dir nur Aufträge, die wirklich zu dir passen.
+            </div>
+            <Link
+              href="/dashboard-handwerker/profil"
+              className="inline-flex items-center gap-2 text-sm font-semibold bg-accent text-white px-5 py-2.5 rounded-xl hover:bg-accent-hover"
+            >
+              Gewerke einstellen →
+            </Link>
+          </div>
+        ) : auktionenSortiert.length === 0 ? (
           <div className="bg-white rounded-2xl border border-line p-12 text-center">
             <div className="w-14 h-14 mx-auto rounded-2xl bg-surface flex items-center justify-center mb-3">
               <span className="text-2xl opacity-60">📋</span>
@@ -264,10 +291,10 @@ export default function HandwerkerDashboard() {
             </div>
             {ausgeblendetWegenGewerk > 0 && (
               <div className="text-xs text-ink-muted mt-4">
-                {ausgeblendetWegenGewerk} weitere Auktion(en) passen nicht zu deinem Gewerk
-                {profile?.gewerk && <> ({formatGewerk(profile.gewerk)})</>}.
+                {ausgeblendetWegenGewerk} weitere Auktion(en) passen nicht zu deinen Gewerken
+                ({stammGewerke.map(g => formatGewerk(g)).join(", ")}).
                 <Link href="/dashboard-handwerker/profil" className="ml-1 text-accent hover:underline">
-                  Gewerk ändern
+                  Gewerke ändern
                 </Link>
               </div>
             )}

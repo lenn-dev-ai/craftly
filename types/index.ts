@@ -41,6 +41,8 @@ export function formatGewerk(gewerk: string | null | undefined): string {
 export interface UserProfile {
   id: string; email: string; name: string; rolle: Rolle
   telefon?: string; firma?: string; gewerk?: string; plz_bereich?: string
+  // Sprint L: 1-3 Stamm-Gewerke aus fester Liste — Marktplatz filtert darauf
+  handwerker_gewerke?: string[] | null
   basis_preis?: number; bewertung_avg?: number; auftraege_anzahl?: number
   adresse?: string; lat?: number; lng?: number; radius_km?: number
   // Route-Optimierung
