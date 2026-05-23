@@ -585,5 +585,48 @@ Cowork hat 7-Sprint-Block durchgereicht. **5 von 7 Sprints waren bereits aus fr�
 2. `20260605000010_add_indexes_for_unindexed_fks.sql` (gering)
 3. `20260605000020_drop_verfuegbarkeiten_table.sql` (gering)
 4. `20260605000050_ticket_eingetragen_von_verwalter.sql` (gering — aktiviert Sprint G)
-5. `20260605000030_unused_indexes_review.sql` (REVIEW pro Index)
-6. `20260605000040_auth_rls_initplan_refactor.sql` (REVIEW pro Tabelle)
+5. `20260605000060_sprint_i_wohnungen_table.sql` (gering — aktiviert Sprint I)
+6. `20260605000030_unused_indexes_review.sql` (REVIEW pro Index)
+7. `20260605000040_auth_rls_initplan_refactor.sql` (REVIEW pro Tabelle)
+
+---
+
+## Iteration 16 — 23.05.2026 (Tag 3: Sprint I + Sprint K)
+
+Lennart hat via Cowork explizit Greenlight für Sprint I gegeben — inklusive neuer Deps (papaparse, xlsx) und neuer Tabelle. Plus neuer Sprint K (B2B-Landing).
+
+### Sprint I — Bulk-Wohnungs-Import ✅
+
+- **Commit:** `2cd80f2` — `feat(verwalter): Bulk-Wohnungs-Import (Sprint I)`
+- **Deps installiert:** `papaparse@5.5.3` + `@types/papaparse@5.5.2` + `xlsx@0.18.5`
+- **Migration:** `20260605000060_sprint_i_wohnungen_table.sql` (idempotent mit `IF NOT EXISTS` + `DO $$` Policy-Guard)
+- ⚠️ **Apply-Status:** **NICHT** via MCP appliziert. `mcp__supabase__apply_migration` antwortet mit `Cannot apply migration in read-only mode` — die MCP-Verbindung in dieser CC-Session ist vom Lennart vermutlich bewusst auf read-only konfiguriert. Cowork hat write-access via deren Connection und kann das Apply ausführen, oder Lennart applied beim Rückkehr via Studio SQL-Editor (Migration liegt fertig in `supabase/migrations/`).
+- **Components:**
+  - `app/dashboard-verwalter/wohnungen/page.tsx` — Listen-View mit Such-Filter, Empty-State, graceful Fehler-Anzeige wenn Tabelle noch fehlt
+  - `app/dashboard-verwalter/wohnungen/import/page.tsx` — 4-Step-Wizard (upload → mapping → vorschau → import) mit Drag-Drop, Auto-Mapping (DE+EN-Hints), Pflichtfeld-Validierung, Batch-Progress
+  - `components/verwalter/wohnungen/parsers.ts` — Papa + XLSX-Adapter + auto-mapping + validation
+  - `app/api/wohnungen/bulk-import/route.ts` — Verwalter-only POST, UPSERT auf Unique-Constraint, 100 Wohnungen pro Call
+- **Sidebar:** `Home`-Icon-Eintrag "Wohnungen" für Verwalter
+- ⚠️ **Bekannte CVE:** `xlsx` hat GHSA-4r6h-8v6p-xvw6 (Prototype Pollution) — Lennart hat das mit Greenlight akzeptiert. Mitigation: das Parsen passiert client-side, die API empfängt nur das geprüfte JSON-Array — kein xlsx-Code läuft server-side.
+- **Limits:** 10 MB pro Datei, 5000 Zeilen pro Upload, 100 Wohnungen pro Batch (BATCH_SIZE=50 client-side).
+
+### Sprint K — B2B-Landing für Hausverwaltungen ✅
+
+- **Commit:** `482c5f2` — `feat(marketing): B2B-Landing für Hausverwaltungen (Sprint K)`
+- **Route:** `/hausverwaltungen` (separate Route statt Replace der HW-fokussierten `/`-Landing — beide Conversion-Pfade bleiben)
+- **7 Sektionen** entsprechend Spec: Hero / Problem-Cards / Solution-Flow / USP / Pricing / Security-Strip / Final-CTA. Plus Nav und Footer.
+- **Server-Komponente** (keine `"use client"`-Direktive): 194 B Page-JS, 97 KB First-Load (Tailwind+lucide vom shared Bundle, kein zusätzliches Hydration-JS).
+- **CTAs zeigen auf** `mailto:lenn-dev@proton.me?subject=Reparo-Demo` — Calendly-Link kann später ohne Code-Change reingehängt werden.
+- **Pricing:** Starter 49 € / Pro 149 € / Enterprise individuell — entspricht Sales-Deck Slide 8.
+- **Lighthouse:** lokal nicht meßbar im Urlaub, aber 97 KB First-Load + reine SSR sollte den >85-Mobile-Score locker erreichen.
+
+### Stand Ende Tag 3
+
+| Sprint | Status | Commit |
+|---|---|---|
+| I — Bulk-Import | ✅ Code live, Apply der wohnungen-Tabelle bleibt | `2cd80f2` |
+| K — B2B-Landing | ✅ live unter /hausverwaltungen | `482c5f2` |
+
+Beide Sprints sind beta-tauglich. Sprint I funktioniert erst wenn Migration angewandt — die Page selbst zeigt einen graceful Warn-Banner falls die Tabelle noch fehlt, sodass kein Beta-Tester einen Crash sieht.
+
+**npm-Audit nach Sprint I:** 8 Findings (2 low, 1 moderate, 5 high). Zusätzlich zu den 7 vom 22.5. ist jetzt `xlsx` als high-severity dazugekommen (Prototype Pollution) — von Lennart bewusst akzeptiert.
