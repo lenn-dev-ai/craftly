@@ -1,0 +1,15 @@
+{
+  "call_id": "call_test_001",
+  "duration_seconds": 187,
+  "caller_phone": "+491701234567",
+  "transcript_full": "Reparo: Hi, ich bin Reparo. Bevor wir loslegen — dieses Gespräch wird aufgezeichnet... Verwalter: Ja klar. Frau Schmidt hat angerufen, ihr Wasserhahn tropft. Reparo: Welche Adresse? Verwalter: Musterstraße 5 in 14055 Berlin, Wohnung 3B. Reparo: Wie dringend? Verwalter: Naja zeitnah, läuft halt seit gestern in den Schrank. Reparo: Hat sie Fotos? Verwalter: Ja, schickt sie per WhatsApp. Reparo: Ich lege das Ticket jetzt an.",
+  "extracted_data": {
+    "adresse": "Musterstraße 5, 14055 Berlin, Whg. 3B",
+    "gewerk": "heizung_sanitaer",
+    "beschreibung": "Wasserhahn tropft seit gestern, Wasser läuft in den Schrank",
+    "dringlichkeit": "zeitnah",
+    "mieter_telefon": "+4915201234567",
+    "fotos_verfuegbar": true
+  },
+  "recording_url": "https://vapi.ai/recordings/test_001.mp3"
+}

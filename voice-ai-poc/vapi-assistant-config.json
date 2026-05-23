@@ -1,0 +1,70 @@
+{
+  "name": "Reparo-DE",
+  "model": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "temperature": 0.4
+  },
+  "voice": {
+    "provider": "11labs",
+    "voiceId": "ErXwobaYiN019PkySvjV",
+    "comment": "Antoni — male, EN/DE bilingual. Alternativ: Vapi default deutsche Stimme"
+  },
+  "transcriber": {
+    "provider": "deepgram",
+    "model": "nova-3",
+    "language": "de"
+  },
+  "firstMessage": "Hi, ich bin Reparo. Bevor wir loslegen — dieses Gespräch wird aufgezeichnet und nach 90 Tagen gelöscht. Ist das okay?",
+  "endCallMessage": "Danke, das Ticket ist angelegt. Sie bekommen gleich eine SMS mit der Ticket-Nummer. Tschüss.",
+  "silenceTimeoutSeconds": 30,
+  "maxDurationSeconds": 480,
+  "responseDelaySeconds": 0.4,
+  "llmRequestDelaySeconds": 0.1,
+  "numWordsToInterruptAssistant": 3,
+  "backgroundDenoisingEnabled": true,
+  "modelOutputInMessagesEnabled": true,
+  "serverUrl": "https://reparo-app.netlify.app/api/voice-call/ingest",
+  "serverUrlSecret": "REPLACE_WITH_VAPI_WEBHOOK_SECRET",
+  "extractedDataSchema": {
+    "type": "object",
+    "properties": {
+      "adresse": {
+        "type": "string",
+        "description": "Volle Einsatzort-Adresse inkl. Wohnungs-Bezeichnung, z.B. 'Musterstr. 5, 14055 Berlin, Whg. 3B'"
+      },
+      "gewerk": {
+        "type": "string",
+        "enum": [
+          "heizung_sanitaer",
+          "elektro",
+          "schreiner",
+          "maler",
+          "dachdecker",
+          "bodenleger",
+          "schluessel",
+          "allgemein"
+        ],
+        "description": "Reparo-Gewerks-Kategorie. Synonyme im Prompt akzeptieren (Wasser → heizung_sanitaer, Strom → elektro, Schloss → schluessel)"
+      },
+      "beschreibung": {
+        "type": "string",
+        "description": "Was genau ist passiert. Mieter-Erzählung in 1-3 Sätzen zusammengefasst"
+      },
+      "dringlichkeit": {
+        "type": "string",
+        "enum": ["notfall", "zeitnah", "planbar"],
+        "description": "notfall = aktiver Schaden / Gefahr, zeitnah = innerhalb 24h, planbar = diese Woche"
+      },
+      "mieter_telefon": {
+        "type": "string",
+        "description": "Telefon-Nummer des Mieters für Termin-Abstimmung, E.164-Format wenn möglich"
+      },
+      "fotos_verfuegbar": {
+        "type": "boolean",
+        "description": "Hat der Mieter Fotos die er per SMS/E-Mail schicken kann"
+      }
+    },
+    "required": ["adresse", "gewerk", "beschreibung", "dringlichkeit"]
+  }
+}
