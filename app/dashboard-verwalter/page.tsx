@@ -6,7 +6,9 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase"
 import { Ticket } from "@/types"
 import { CardListSkeleton, KpiGridSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
-import { TrendingUp, TrendingDown, Minus, PiggyBank, Stethoscope, FileEdit, Clock, ArrowRight } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, PiggyBank, Stethoscope, FileEdit, Clock, ArrowRight, Inbox, Sparkles, Wrench, CheckCircle2 } from "lucide-react"
+import { ThroughputChart, type ThroughputBucket } from "@/components/verwalter/ThroughputChart"
+import { authFetch } from "@/lib/auth/clientFetch"
 
 function kostenSchaetzung(t: Ticket): string {
   const titel = (t.titel || "").toLowerCase()
@@ -45,6 +47,15 @@ export default function VerwalterDashboard() {
   const [offeneNachtraege, setOffeneNachtraege] = useState<OffeneNachtragRef[]>([])
   const [loading, setLoading] = useState(true)
   const [neueLive, setNeueLive] = useState(0)
+  // Sprint H — KPIs + Throughput aus /api/verwalter/kpis (server-side
+  // aggregiert, damit der Cache für die nächsten Lookups warm bleibt).
+  const [kpis, setKpis] = useState<{
+    offene_tickets: number
+    neu_diese_woche: number
+    in_bearbeitung: number
+    erledigt_diese_woche: number
+    throughput_4w: ThroughputBucket[]
+  } | null>(null)
 
   const load = useCallback(async () => {
     const supabase = createClient()
@@ -78,6 +89,15 @@ export default function VerwalterDashboard() {
       ticket_titel: n.tickets.titel,
     })))
     setLoading(false)
+
+    // KPIs parallel im Hintergrund nachladen — blockt das initiale
+    // Render nicht; bei Fehler einfach kein KPI-Block. fire-and-forget.
+    void (async () => {
+      try {
+        const res = await authFetch("/api/verwalter/kpis")
+        if (res.ok) setKpis(await res.json())
+      } catch { /* silent */ }
+    })()
   }, [router])
 
   useEffect(() => {
@@ -194,6 +214,45 @@ export default function VerwalterDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Sprint H — KPI-Cards + Throughput-Chart (wenn nicht leer) */}
+      {kpis && tickets.length > 0 && (
+        <section className="mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <KpiTile
+              icon={<Inbox size={16} />}
+              label="Offene Tickets"
+              value={kpis.offene_tickets}
+              accent="text-rolle-verwalter"
+            />
+            <KpiTile
+              icon={<Sparkles size={16} />}
+              label="Neu diese Woche"
+              value={kpis.neu_diese_woche}
+              accent="text-rolle-mieter"
+            />
+            <KpiTile
+              icon={<Wrench size={16} />}
+              label="In Bearbeitung"
+              value={kpis.in_bearbeitung}
+              accent="text-warm"
+            />
+            <KpiTile
+              icon={<CheckCircle2 size={16} />}
+              label="Erledigt diese Woche"
+              value={kpis.erledigt_diese_woche}
+              accent="text-accent"
+            />
+          </div>
+          <div className="bg-white border border-line rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-ink">Throughput · 4 Wochen</h3>
+              <span className="text-[10px] text-ink-muted uppercase tracking-wider">Neu / Erledigt</span>
+            </div>
+            <ThroughputChart data={kpis.throughput_4w} />
+          </div>
+        </section>
+      )}
 
       {/* Attention Banner — wenn dringende offene Meldungen */}
       {dringendeOffene > 0 && (
@@ -737,4 +796,23 @@ function Kpi({ label, value, sub, accent, href }: {
     return <Link href={href} className={innerCls}>{content}</Link>
   }
   return <div className={innerCls}>{content}</div>
+}
+
+// Sprint H — kompakte KPI-Kachel mit Icon. Anders als das ältere Kpi
+// (above): zeigt Icon + Label inline für ein dichteres 4-Tile-Grid.
+function KpiTile({ icon, label, value, accent }: {
+  icon: React.ReactNode
+  label: string
+  value: number
+  accent: string
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-line p-4">
+      <div className={`flex items-center gap-1.5 ${accent} mb-1.5`}>
+        {icon}
+        <span className="text-[10px] uppercase tracking-wider font-semibold">{label}</span>
+      </div>
+      <div className="text-2xl font-bold tabular-nums text-ink">{value}</div>
+    </div>
+  )
 }
