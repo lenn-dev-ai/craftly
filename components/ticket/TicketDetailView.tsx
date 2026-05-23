@@ -1043,9 +1043,9 @@ export default function TicketDetailView() {
                   <span className="text-sm font-bold text-accent">#</span>
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-ink">Dein Angebot abgeben</h2>
+                  <h2 className="text-base font-semibold text-ink">Auftrag annehmen</h2>
                   <div className="text-xs text-ink-muted">
-                    {alleAngebote.length} andere{alleAngebote.length === 1 ? "s Angebot" : " Angebote"} bereits eingegangen
+                    {alleAngebote.length} andere{alleAngebote.length === 1 ? " Annahme" : " Annahmen"} bereits eingegangen
                   </div>
                 </div>
               </div>
