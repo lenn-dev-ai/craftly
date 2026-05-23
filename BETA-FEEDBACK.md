@@ -630,3 +630,54 @@ Lennart hat via Cowork explizit Greenlight für Sprint I gegeben — inklusive n
 Beide Sprints sind beta-tauglich. Sprint I funktioniert erst wenn Migration angewandt — die Page selbst zeigt einen graceful Warn-Banner falls die Tabelle noch fehlt, sodass kein Beta-Tester einen Crash sieht.
 
 **npm-Audit nach Sprint I:** 8 Findings (2 low, 1 moderate, 5 high). Zusätzlich zu den 7 vom 22.5. ist jetzt `xlsx` als high-severity dazugekommen (Prototype Pollution) — von Lennart bewusst akzeptiert.
+
+---
+
+## Iteration 17 — 23.05.2026 (Voice-AI Backend ready)
+
+Cowork hat Voice-AI-PoC-Setup-Paket angekündigt. CC implementiert vorab den Reparo-Backend-Teil, sodass Lennart nach Urlaub nur Vapi+Twilio konfigurieren muss.
+
+### Commit: `55b0898` — `feat(voice-ai): Vapi-Webhook + Setup-Paket (PoC Backend ready)`
+
+**Backend deployed:**
+- `POST /api/voice-call/ingest` — HMAC-SHA256-Signatur-Check (constant-time), Service-Role-Insert (kein Bearer-Token, weil Webhook keine User-Session hat), Caller-Phone-Suffix-Match gegen `profiles.telefon`, Ticket-Create mit `eingetragen_via='voice-ai'` + Recording-URL + Transkript
+- `lib/sms/verify-vapi-signature.ts` — HMAC-Helper, akzeptiert `sha256=`-Prefix oder rohes Hex
+- `lib/sms/twilio.ts` — SMS-Helper, fällt auf no-op zurück wenn ENVs fehlen
+
+**Migration:**
+- `supabase/migrations/20260605000070_voice_ai_felder.sql` — `tickets.eingetragen_via` mit CHECK-Constraint, `voice_call_recording_url`, `voice_call_transcript`, Partial-Index. Idempotent.
+
+**Setup-Paket `voice-ai-poc/`:**
+- README + SETUP-CHECKLIST mit Schritt-für-Schritt-Anleitung für Lennart
+- `vapi-assistant-prompt.md` — finaler System-Prompt (DSGVO-Hinweis am Anfang, Sie-Form, max 1 Frage/Turn)
+- `vapi-assistant-config.json` — Model GPT-4o-mini, ElevenLabs Antoni, Deepgram Nova-3 DE, Structured-Output-Schema
+- `mock-webhook-payload.json` — Wasserhahn-Beispiel
+- `test-webhook.js` — Node-Skript mit HMAC-Sig-Build, läuft gegen lokalen Dev-Server
+- `api-route-skeleton.ts` — Read-only-Referenz (`@ts-nocheck`) für Audit
+
+**ENVs für Production** (Lennart setzt in Netlify):
+- `VAPI_WEBHOOK_SECRET` (Pflicht — sonst 503)
+- `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` (optional)
+- `NEXT_PUBLIC_APP_URL` (optional)
+
+**Lokal testbar OHNE Vapi:** `VAPI_WEBHOOK_SECRET=local-test-secret npm run dev` + `node voice-ai-poc/test-webhook.js` → Ticket im Verwalter-Dashboard prüfen.
+
+### Was nach Urlaub noch zu tun ist (~30 Min Lennart)
+
+1. Migration `20260605000050` (Sprint G) + `20260605000070` (Voice-AI) applyen
+2. Vapi-Account + Twilio-Nummer + Webhook-URL setzen — Klick-Schritte stehen in `voice-ai-poc/SETUP-CHECKLIST.md`
+3. `VAPI_WEBHOOK_SECRET` generieren + in beide Systeme
+4. Test-Anruf
+
+**Migration-Apply-Backlog jetzt komplett:**
+
+| # | Datei | Aktiviert |
+|---|---|---|
+| 1 | `…000000_function_search_path_fix.sql` | DB-Hygiene |
+| 2 | `…000010_add_indexes_for_unindexed_fks.sql` | Performance |
+| 3 | `…000020_drop_verfuegbarkeiten_table.sql` | B4-Cleanup |
+| 4 | `…000050_ticket_eingetragen_von_verwalter.sql` | Sprint G + Voice-AI |
+| 5 | `…000060_sprint_i_wohnungen_table.sql` | Sprint I |
+| 6 | `…000070_voice_ai_felder.sql` | Voice-AI Backend |
+| 7 | `…000030_unused_indexes_review.sql` | REVIEW pro Index |
+| 8 | `…000040_auth_rls_initplan_refactor.sql` | REVIEW tabellenweise |
