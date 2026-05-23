@@ -11,7 +11,7 @@ import {
   LayoutDashboard, Ticket, Zap, Wrench, BarChart3,
   Euro, Calendar, Briefcase, MapPin, CalendarCheck, UserCircle,
   Plus, FileText, ShieldCheck, LogOut, Map, CalendarRange,
-  Calculator, AlertTriangle, MessageSquare,
+  Calculator, AlertTriangle, MessageSquare, Home,
   type LucideProps,
 } from "lucide-react"
 
@@ -27,6 +27,7 @@ const menus: Record<Rolle, MenuItem[]> = {
     { href: "/dashboard-verwalter/tickets", label: "Tickets", Icon: Ticket },
     { href: "/dashboard-verwalter/marktplatz", label: "Marktplatz", Icon: Zap },
     { href: "/dashboard-verwalter/handwerker", label: "Handwerker", Icon: Wrench },
+    { href: "/dashboard-verwalter/wohnungen", label: "Wohnungen", Icon: Home },
     { href: "/dashboard-verwalter/reporting", label: "Reporting", Icon: BarChart3 },
   ],
   handwerker: [
