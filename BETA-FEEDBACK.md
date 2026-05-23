@@ -681,3 +681,49 @@ Cowork hat Voice-AI-PoC-Setup-Paket angekündigt. CC implementiert vorab den Rep
 | 6 | `…000070_voice_ai_felder.sql` | Voice-AI Backend |
 | 7 | `…000030_unused_indexes_review.sql` | REVIEW pro Index |
 | 8 | `…000040_auth_rls_initplan_refactor.sql` | REVIEW tabellenweise |
+
+---
+
+## Iteration 18 — 23.05.2026 (Tag 4: Sprint C/D/E/L)
+
+Cowork hat einen korrigierten Tag-4-Block geschickt. **C/D/E sind alle drei bereits aus früheren Iterationen abgeschlossen** (siehe Iteration 14). Neu in der Queue war **Sprint L** (HW-Stamm-Gewerke aus Profil) — den habe ich durchgezogen.
+
+### Sprint C — Diagnose+Auftrag-Merge ✅
+
+Schon dokumentiert in Iteration 14:
+- C3 `1e9acdd` (Route-Move `/api/diagnose/*` → `/api/auftraege/*`)
+- C4 `f3d9d8a` (Sidebar-Cleanup + Phasen-Indikator)
+- E2E-Anpassung `517e039`
+
+### Sprint D — Wording + RLS-Cleanup ✅
+
+Schon dokumentiert in Iteration 14:
+- D2 von Cowork autonom in Iteration 10 (Migration `cleanup_doppelte_rls_policies_angebote`)
+- D1 letzter Wording-Rest in `7e03007` (Tag 3)
+
+### Sprint E — Mieter-Vorgang-Card inline ✅
+
+Schon dokumentiert in Iteration 14: implementiert vor Urlaub, in dieser Session noch perf-parallelisiert (`019a3a6`).
+
+### Sprint L — HW-Stamm-Gewerke aus Profil ✅
+
+- **Commit:** `e28d316` — `fix(handwerker): Stamm-Gewerke aus Profil (Sprint L, Feedback 7de666f7)`
+- **Migration:** `supabase/migrations/20260605000080_sprint_l_handwerker_gewerke.sql` (Apply-Pending, MCP read-only)
+  - `profiles.handwerker_gewerke text[]` mit CHECK (1-3 Einträge aus 8-Gewerk-Liste)
+  - GIN-Index `WHERE rolle='handwerker'`
+  - Backfill-UPDATE: bestehende HW bekommen ihr `gewerk` als 1-Element-Array (präziser als die Spec-Default-Liste)
+- **Profil-UI:** neue Sektion „Meine Gewerke" oben, Checkbox-Liste mit Max-3-Limit, Warn-Banner wenn leer, graceful Retry ohne das Feld falls Migration noch nicht angewandt
+- **HW-Dashboard:** `passtZumGewerk()` prüft `stammGewerke[]` statt single-gewerk-Substring; `allgemein`-Tickets bleiben offen für alle; Empty-State mit Profil-CTA wenn keine Stamm-Gewerke gesetzt
+- **`/api/auftraege/annehmen`:** 403-Validation wenn `ticket.gewerk` nicht im `handwerker_gewerke[]` ist (mit Fallback auf altes single-gewerk-Feld solange noch nicht alle HW migriert sind)
+- **Reparo-Strings:** Migration nutzt die echten Reparo-Gewerk-Strings (`heizung_sanitaer` etc), nicht die Spec-Strings (`wasser`/`heizung`/…) — sonst hätte das Array nicht mit der bestehenden `tickets.gewerk`-Spalte gematcht.
+
+### Stand Ende Tag 4
+
+| Sprint | Status | Commit |
+|---|---|---|
+| C | ✅ war schon durch | `1e9acdd`/`f3d9d8a`/`517e039` |
+| D | ✅ war schon durch | D2 Cowork-Migration / D1 `7e03007` |
+| E | ✅ war schon durch | pre-Urlaub + `019a3a6` |
+| L | ✅ neu — Stamm-Gewerke | `e28d316` |
+
+**Migration-Apply-Backlog erweitert um `20260605000080`** (Sprint L). Ohne Apply funktioniert Sprint L nicht (Spalte fehlt → graceful Retry im Profil, Marktplatz fällt auf altes single-gewerk-Feld zurück).
