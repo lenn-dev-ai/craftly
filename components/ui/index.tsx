@@ -374,3 +374,6 @@ export function Toast({ message, onClose, type }: {
     </div>
   )
 }
+
+// Re-export Accordion damit Pages `import { Accordion } from "@/components/ui"` machen können.
+export { Accordion } from "./Accordion"

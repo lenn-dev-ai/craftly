@@ -6,6 +6,7 @@ import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend,
 } from "recharts"
 import { Search, TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { Accordion } from "@/components/ui/Accordion"
 
 // ============================================================
 // KI-Helfer (unverändert übernommen)
@@ -266,28 +267,39 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* KI-Anomalien */}
-      {anomalien.length > 0 && (
-        <div className="p-4 bg-danger/5 border border-danger/20 rounded-2xl shadow-sm">
-          <span className="text-[11px] font-bold text-danger uppercase tracking-wider">KI-Anomalie-Erkennung</span>
-          <ul className="space-y-1 mt-2">
-            {anomalien.map((a, i) => (
-              <li key={i} className="text-sm text-danger">• {a}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* KI-Empfehlungen */}
-      {empfehlungen.length > 0 && (
-        <div className="p-4 bg-rolle-admin/5 border border-[#7C6CAB]/20 rounded-2xl shadow-sm">
-          <span className="text-[11px] font-bold text-rolle-admin uppercase tracking-wider">KI-Empfehlungen</span>
-          <ul className="space-y-1 mt-2">
-            {empfehlungen.map((e, i) => (
-              <li key={i} className="text-sm text-rolle-admin">– {e}</li>
-            ))}
-          </ul>
-        </div>
+      {/* Sprint Q2 — KI-Anomalien + KI-Empfehlungen in Akkordeon
+          einklappbar. Standard-Verhalten: bei Anomalien default offen
+          (Aufmerksamkeit), sonst zu. User-Präferenz wird persistiert. */}
+      {(anomalien.length > 0 || empfehlungen.length > 0) && (
+        <Accordion
+          title="KI-Analyse"
+          meta={`${anomalien.length} Anomalien · ${empfehlungen.length} Empfehlungen`}
+          persistKey="admin-ki-analyse"
+          defaultOpen={anomalien.length > 0}
+        >
+          <div className="space-y-3">
+            {anomalien.length > 0 && (
+              <div className="p-3 bg-danger/5 border border-danger/20 rounded-xl">
+                <span className="text-[11px] font-bold text-danger uppercase tracking-wider">Anomalien</span>
+                <ul className="space-y-1 mt-2">
+                  {anomalien.map((a, i) => (
+                    <li key={i} className="text-sm text-danger">• {a}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {empfehlungen.length > 0 && (
+              <div className="p-3 bg-rolle-admin/5 border border-[#7C6CAB]/20 rounded-xl">
+                <span className="text-[11px] font-bold text-rolle-admin uppercase tracking-wider">Empfehlungen</span>
+                <ul className="space-y-1 mt-2">
+                  {empfehlungen.map((e, i) => (
+                    <li key={i} className="text-sm text-rolle-admin">– {e}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </Accordion>
       )}
 
       {/* KPI-Reihe 1: Nutzer (klickbar → Nutzer-Liste, gefiltert) */}
