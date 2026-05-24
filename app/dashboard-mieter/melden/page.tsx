@@ -42,7 +42,7 @@ function normalisierePrio(v: string | undefined | null): string {
   return PRIO_LEGACY_MAP[v] ?? v
 }
 
-type Step = "foto" | "analyse" | "details" | "ort" | "dringlichkeit" | "zusammenfassung" | "gesendet"
+type Step = "foto" | "analyse" | "details" | "ort" | "zusammenfassung" | "gesendet"
 
 // KI-1+2: Zeit als Spanne statt Punktschätzung. "sonstiges" hat keine
 // Schätzung — wird im UI nicht angezeigt.
@@ -363,7 +363,7 @@ export default function MeldenPage() {
   const analyse = (kiResult && KI_ANALYSEN[kiResult])
     || (reverseGewerkKey && KI_ANALYSEN[reverseGewerkKey])
     || null
-  const wizardSteps = ["foto", "analyse", "details", "ort", "dringlichkeit", "zusammenfassung", "gesendet"] as const
+  const wizardSteps = ["foto", "analyse", "details", "ort", "zusammenfassung", "gesendet"] as const
   const stepIndex = wizardSteps.indexOf(step)
   // Audit-Befund: Zurück sprang via router.back() aus dem Wizard raus und
   // verwarf alle bisherigen Eingaben. Stattdessen: einen Step zurück, und
