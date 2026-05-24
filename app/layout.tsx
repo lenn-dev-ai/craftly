@@ -218,6 +218,15 @@ export default function RootLayout({
         )}
       </head>
       <body className={`${inter.className} antialiased bg-surface text-ink`}>
+        {/* Sprint P — Skip-Link für Screenreader + Keyboard-Nutzer. Wird
+            erst beim Focus sichtbar; springt direkt zum Hauptinhalt
+            und überspringt Sidebar + Header. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:px-4 focus:py-2 focus:bg-accent focus:text-white focus:rounded-lg focus:font-semibold focus:shadow-lg"
+        >
+          Zum Hauptinhalt springen
+        </a>
         <ToastProvider>
           {children}
           <FeedbackWidget />

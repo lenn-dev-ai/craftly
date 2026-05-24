@@ -3,6 +3,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Sprint P — Global A11y-Defaults */
+@layer base {
+  /* Konsistenter Focus-Ring auf allen interaktiven Elementen für
+     Keyboard-User. focus-visible greift nur bei Tastatur-Navigation,
+     nicht bei Maus-Klicks — daher keine störende Outline für Maus. */
+  *:focus-visible {
+    outline: 2px solid #3D8B7A;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Container-Overflow-Fix (Beta-Feedback f443670f):
+     verhindert horizontal-Scroll der ganzen Page wenn z.B. eine
+     breite Tabelle/Modal-Karte intern overflowt. Innere Container
+     mit overflow-x-auto bleiben funktional. */
+  html, body {
+    overflow-x: hidden;
+  }
+}
+
 :root {
   --color-bg: #FAF8F5;
   --color-surface: #FFFFFF;
