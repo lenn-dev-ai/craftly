@@ -32,12 +32,28 @@ export default function MarktplatzPage() {
   const searchParams = useSearchParams()
   // F10: HW-Filter via Query-Param. "Slots ansehen" auf der HW-Liste setzt
   // ?hw=<id>, der Marktplatz zeigt dann nur Slots dieses Handwerkers.
+  // Sprint Q1: zusätzlich ?gewerk=… als persistierter Filter — shareable
+  // + überlebt Browser-Back vom HW-Verzeichnis.
   const hwParam = searchParams.get("hw")
+  const gewerkParam = searchParams.get("gewerk") as Filter | null
   const { confirm } = useToast()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [slots, setSlots] = useState<MarktSlot[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<Filter>("alle")
+  const [filter, setFilterState] = useState<Filter>(gewerkParam ?? "alle")
+
+  // Sprint Q1 — Filter-Setter synct in URL, damit Wechsel-Pfade den
+  // State mitnehmen. Strings die nicht in Filter-Union sind werden
+  // ignoriert (graceful gegen Drift zw. HW-Verzeichnis "heizung_sanitaer"
+  // vs. Marktplatz "sanitaer"/"heizung").
+  function setFilter(v: Filter) {
+    setFilterState(v)
+    const next = new URLSearchParams(searchParams.toString())
+    if (v === "alle") next.delete("gewerk")
+    else next.set("gewerk", v)
+    const qs = next.toString()
+    router.replace(`/dashboard-verwalter/marktplatz${qs ? `?${qs}` : ""}`, { scroll: false })
+  }
   const [sending, setSending] = useState<string | null>(null)
   const [toast, setToast] = useState("")
   const [gebotPreise, setGebotPreise] = useState<Record<string, number>>({})

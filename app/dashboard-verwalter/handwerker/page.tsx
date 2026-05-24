@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
 import { TrustBadge } from "@/components/ui"
@@ -38,10 +38,25 @@ const STUFEN_BADGE: Record<string, { label: string; cls: string }> = {
 
 export default function HandwerkerUebersicht() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [handwerker, setHandwerker] = useState<Handwerker[]>([])
   const [loading, setLoading] = useState(true)
-  const [suche, setSuche] = useState("")
-  const [gewerkFilter, setGewerkFilter] = useState<string>("alle")
+
+  // Sprint Q1 — Filter-State aus URL-Search-Params lesen + dort schreiben.
+  // Macht Filter-Zustand shareable + überlebt Wechsel zum Marktplatz und
+  // zurück via Browser-Back. Falls Params fehlen: Defaults.
+  const suche = searchParams.get("q") ?? ""
+  const gewerkFilter = searchParams.get("gewerk") ?? "alle"
+
+  function updateParam(key: string, value: string | null) {
+    const next = new URLSearchParams(searchParams.toString())
+    if (!value || value === "alle" || value === "") next.delete(key)
+    else next.set(key, value)
+    const qs = next.toString()
+    router.replace(`/dashboard-verwalter/handwerker${qs ? `?${qs}` : ""}`, { scroll: false })
+  }
+  const setSuche = (v: string) => updateParam("q", v)
+  const setGewerkFilter = (v: string) => updateParam("gewerk", v)
 
   useEffect(() => {
     async function load() {
@@ -196,7 +211,15 @@ export default function HandwerkerUebersicht() {
               key={h.id}
               h={h}
               onContact={() => h.email && window.open(`mailto:${h.email}`, "_self")}
-              onAuftragNeu={() => router.push("/dashboard-verwalter/marktplatz?hw=" + h.id)}
+              onAuftragNeu={() => {
+                // Sprint Q1 — Gewerk-Filter beim Wechsel ins Marktplatz
+                // mitnehmen, plus den ausgewählten HW
+                const params = new URLSearchParams()
+                params.set("hw", h.id)
+                if (gewerkFilter !== "alle") params.set("gewerk", gewerkFilter)
+                if (suche) params.set("q", suche)
+                router.push(`/dashboard-verwalter/marktplatz?${params.toString()}`)
+              }}
             />
           ))}
         </div>
