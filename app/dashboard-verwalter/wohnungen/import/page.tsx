@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Button, Card, Select } from "@/components/ui"
+import { Button, Card, Select, Tooltip } from "@/components/ui"
 import { authFetch } from "@/lib/auth/clientFetch"
 import { Upload, FileSpreadsheet, Check, ChevronRight, ChevronLeft, X, AlertCircle } from "lucide-react"
 import {
@@ -155,6 +155,7 @@ export default function WohnungenImportPage() {
             <p className="text-sm text-ink-muted">
               Erste Zeile sollte Spalten-Header enthalten (z.B. Straße, Hausnummer, PLZ, Ort, Wohnungs-Bezeichnung).
               Auto-Mapping schlägt deutsche und englische Namen vor.
+              <Tooltip text="Pflicht-Spalten: Straße, Hausnummer, PLZ, Ort, Wohnungs-Bezeichnung. Optional: Mieter-Name, Mieter-E-Mail, Mieter-Telefon, Baujahr, Quadratmeter. Andere Spalten kannst du im Mapping-Schritt ignorieren." />
             </p>
             <label
               className="block border-2 border-dashed border-line rounded-xl p-8 text-center cursor-pointer hover:border-rolle-verwalter/40 transition"

@@ -319,9 +319,9 @@ export default function MieterDashboard() {
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
           </div>
-          <h2 className="text-lg font-semibold text-ink mb-2">Noch keine Meldungen</h2>
-          <p className="text-sm text-ink-muted mb-6">Melde einen Schaden und deine Verwaltung wird sofort benachrichtigt.</p>
-          <Button onClick={() => router.push("/dashboard-mieter/melden")}>Ersten Schaden melden</Button>
+          <h2 className="text-lg font-semibold text-ink mb-2">Alles in Ordnung &mdash; keine offenen Schäden 🎉</h2>
+          <p className="text-sm text-ink-muted mb-6">Falls doch mal was kaputt geht: Schaden melden, und deine Verwaltung wird sofort benachrichtigt.</p>
+          <Button onClick={() => router.push("/dashboard-mieter/melden")}>Schaden melden</Button>
         </div>
       )}
     </div>

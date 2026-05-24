@@ -269,18 +269,70 @@ export function MetricCard({ label, value, sub, onClick }: {
 }
 
 // ============================================================
-// EmptyState — konsistenter "nichts da"-Block
+// EmptyState — konsistenter "nichts da"-Block (Sprint N)
+// Akzeptiert Emoji-String ODER Lucide-Icon-Component für icon.
+// Optionaler Action-Slot kann beliebiges JSX sein, action-Helper
+// {label, href|onClick} ist die häufigste Variante.
 // ============================================================
-export function EmptyState({ icon, title, desc, action }: {
-  icon: string; title: string; desc: string; action?: React.ReactNode
+type EmptyStateAction = { label: string; href?: string; onClick?: () => void }
+export function EmptyState({ icon, title, desc, action, variant = "default" }: {
+  icon: string | React.ComponentType<{ className?: string }>
+  title: string
+  desc: string
+  action?: React.ReactNode | EmptyStateAction
+  variant?: "default" | "warn"
 }) {
+  const wrap = variant === "warn"
+    ? "bg-warm-light border border-warm/40 rounded-2xl p-10 text-center"
+    : "bg-white border border-line rounded-2xl p-10 text-center"
+  const iconEl = typeof icon === "string"
+    ? <div className="text-4xl mb-3" aria-hidden="true">{icon}</div>
+    : (() => {
+        const Icon = icon
+        return (
+          <div className="w-12 h-12 rounded-2xl bg-surface-muted text-rolle-verwalter mx-auto mb-3 flex items-center justify-center" aria-hidden="true">
+            <Icon className="w-6 h-6" />
+          </div>
+        )
+      })()
+  const actionEl = action && typeof action === "object" && "label" in action
+    ? (action.href
+        ? <a href={action.href} className="inline-flex items-center gap-2 text-sm font-semibold bg-accent text-white px-5 py-2.5 rounded-xl hover:bg-accent-hover">{action.label}</a>
+        : <button onClick={action.onClick} className="inline-flex items-center gap-2 text-sm font-semibold bg-accent text-white px-5 py-2.5 rounded-xl hover:bg-accent-hover">{action.label}</button>)
+    : action
   return (
-    <div className="text-center py-20" role="status">
-      <div className="text-5xl mb-4" aria-hidden="true">{icon}</div>
+    <div className={wrap} role="status">
+      {iconEl}
       <div className="font-semibold text-ink text-lg mb-2">{title}</div>
-      <div className="text-sm text-ink-secondary mb-6 max-w-xs mx-auto">{desc}</div>
-      {action}
+      <div className="text-sm text-ink-secondary mb-5 max-w-md mx-auto">{desc}</div>
+      {actionEl}
     </div>
+  )
+}
+
+// ============================================================
+// Tooltip — kleines Info-Icon mit Hover/Focus-Tooltip (Sprint N)
+// Reines CSS-Tooltip via group + group-hover/focus, kein JS,
+// kein Portal. Position fest oberhalb. Inhalt ist nur Text.
+// ============================================================
+export function Tooltip({ text }: { text: string }) {
+  return (
+    <span className="relative inline-flex group align-middle">
+      <button
+        type="button"
+        tabIndex={0}
+        aria-label={`Hinweis: ${text}`}
+        className="ml-1 w-4 h-4 rounded-full bg-ink-faint/20 text-ink-muted text-[10px] font-bold flex items-center justify-center hover:bg-ink-faint/30 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:ring-offset-1"
+      >
+        ?
+      </button>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg bg-ink text-white text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50 shadow-md max-w-xs whitespace-normal"
+      >
+        {text}
+      </span>
+    </span>
   )
 }
 
