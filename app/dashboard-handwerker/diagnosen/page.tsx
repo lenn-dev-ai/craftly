@@ -357,7 +357,13 @@ function BefundForm({ ticket, onClose, onGespeichert }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="befund-modal-title"
+    >
       <div
         className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
@@ -365,7 +371,7 @@ function BefundForm({ ticket, onClose, onGespeichert }: {
         <div className="sticky top-0 bg-white border-b border-line p-5 flex items-start justify-between gap-4">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-wider text-accent mb-1">Befund + Angebot</div>
-            <h2 className="text-base font-semibold text-ink">{ticket.titel}</h2>
+            <h2 id="befund-modal-title" className="text-base font-semibold text-ink">{ticket.titel}</h2>
           </div>
           <button onClick={onClose} aria-label="Schließen" className="text-ink-muted hover:text-ink">
             <X size={20} />

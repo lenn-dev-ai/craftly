@@ -294,15 +294,32 @@ export default function MarktplatzPage() {
 
         {/* Slots Grid */}
         {filteredSlots.length === 0 ? (
-          <div className="bg-white border border-line rounded-2xl p-12 text-center">
-            <div className="text-4xl mb-3">🔍</div>
-            <div className="text-lg font-semibold mb-1">Keine Slots gefunden</div>
-            <div className="text-sm text-ink-muted">
+          <div className="bg-white border border-line rounded-2xl p-12 text-center" role="status">
+            <div className="text-4xl mb-3" aria-hidden="true">🔍</div>
+            <div className="text-lg font-semibold mb-1">
+              {filter !== "alle" ? "Keine passenden Slots" : "Aktuell keine Slots im Marktplatz"}
+            </div>
+            <div className="text-sm text-ink-muted mb-4 max-w-md mx-auto">
               {filter !== "alle"
-                ? `Keine verfügbaren Slots für ${formatGewerk(filter)}. Probiere einen anderen Filter.`
-                : "Aktuell sind keine Handwerker-Slots verfügbar. Schau später nochmal vorbei!"
+                ? `Für ${formatGewerk(filter)} sind aktuell keine Slots offen. Handwerker geben ihre Slots typischerweise wochenweise frei — andere Gewerke prüfen oder später nochmal schauen.`
+                : "Sobald Handwerker freie Stunden eintragen, erscheinen sie hier. Du kannst auch direkt im Handwerker-Verzeichnis nach passenden Anbietern suchen."
               }
             </div>
+            {filter !== "alle" ? (
+              <button
+                onClick={() => setFilter("alle")}
+                className="text-sm font-medium text-accent hover:underline"
+              >
+                Filter zurücksetzen
+              </button>
+            ) : (
+              <a
+                href="/dashboard-verwalter/handwerker"
+                className="text-sm font-medium text-accent hover:underline"
+              >
+                Zum Handwerker-Verzeichnis →
+              </a>
+            )}
           </div>
         ) : (
           <div className="flex flex-col gap-3">

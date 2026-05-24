@@ -165,18 +165,29 @@ export default function HandwerkerUebersicht() {
 
       {/* Liste */}
       {gefiltert.length === 0 ? (
-        <div className="bg-white border border-line rounded-2xl p-12 text-center shadow-sm">
-          <div className="w-12 h-12 rounded-2xl bg-surface mx-auto mb-3 flex items-center justify-center">
+        <div className="bg-white border border-line rounded-2xl p-12 text-center shadow-sm" role="status">
+          <div className="w-12 h-12 rounded-2xl bg-surface mx-auto mb-3 flex items-center justify-center" aria-hidden="true">
             <Briefcase size={22} className="text-ink-muted" />
           </div>
           <div className="text-sm font-semibold text-ink mb-1">
-            {handwerker.length === 0 ? "Noch keine Handwerker registriert" : "Keine Treffer"}
+            {handwerker.length === 0 ? "Noch keine Handwerker registriert" : "Keine Treffer für deine Suche"}
           </div>
-          <div className="text-xs text-ink-muted">
+          <div className="text-xs text-ink-muted max-w-sm mx-auto mb-3">
             {handwerker.length === 0
-              ? "Sobald sich Handwerker auf Reparo registrieren, erscheinen sie hier."
-              : "Filter oder Suche anpassen."}
+              ? "In Closed-Beta laden wir Handwerker manuell ein. Sobald die ersten registriert sind, kannst du sie hier filtern und kontaktieren."
+              : `Aktiv: ${[
+                  gewerkFilter !== "alle" ? `Gewerk "${gewerkFilter}"` : null,
+                  suche ? `Suche "${suche}"` : null,
+                ].filter(Boolean).join(" + ") || "Filter aktiv"}. Suchbegriff lockern oder Gewerk-Filter weiten.`}
           </div>
+          {handwerker.length > 0 && (gewerkFilter !== "alle" || suche) && (
+            <button
+              onClick={() => { setGewerkFilter("alle"); setSuche("") }}
+              className="text-sm font-medium text-accent hover:underline"
+            >
+              Filter zurücksetzen
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-3">

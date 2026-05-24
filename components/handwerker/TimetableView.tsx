@@ -392,9 +392,15 @@ function PrivatTerminModal({ state, onClose, onSaved, onError, onSuccess }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="privat-termin-modal-title"
+    >
       <div className="bg-surface-card rounded-2xl shadow-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
-        <h3 className="text-lg font-semibold text-ink mb-4">
+        <h3 id="privat-termin-modal-title" className="text-lg font-semibold text-ink mb-4">
           {state.mode === "add" ? "Neuer Privat-Termin" : "Termin bearbeiten"}
         </h3>
 

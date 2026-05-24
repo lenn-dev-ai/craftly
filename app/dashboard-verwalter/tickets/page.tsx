@@ -132,7 +132,42 @@ export default function TicketsPage() {
       {loading ? (
         <CardListSkeleton count={4} rows={2} />
       ) : shown.length === 0 ? (
-        <EmptyState icon="T" title="Keine Tickets" desc="Für diese Filter-Kombination gibt es keine Tickets." />
+        (() => {
+          const hatFilter = statusFilter !== "alle" || typFilter !== "alle"
+          const titel = hatFilter
+            ? "Keine Tickets passen zum Filter"
+            : tickets.length === 0
+              ? "Noch keine Tickets"
+              : "Keine Tickets in dieser Ansicht"
+          const beschreibung = hatFilter
+            ? `Aktiv: ${[
+                statusFilter !== "alle" ? `Status "${statusFilter}"` : null,
+                typFilter !== "alle" ? `Typ "${typFilter}"` : null,
+              ].filter(Boolean).join(" + ")}. Filter zurücksetzen oder Mieter-Meldungen abwarten.`
+            : "Tickets entstehen durch Mieter-Meldungen oder durch deinen eigenen Wizard (+ Neues Ticket)."
+          return (
+            <EmptyState
+              icon="📋"
+              title={titel}
+              desc={beschreibung}
+              action={hatFilter ? (
+                <button
+                  onClick={() => { setStatusFilter("alle"); setTypFilter("alle") }}
+                  className="text-sm font-medium text-accent hover:underline"
+                >
+                  Filter zurücksetzen
+                </button>
+              ) : (
+                <a
+                  href="/dashboard-verwalter/neues-ticket"
+                  className="text-sm font-medium text-accent hover:underline"
+                >
+                  + Neues Ticket anlegen
+                </a>
+              )}
+            />
+          )
+        })()
       ) : (
         <div className="flex flex-col gap-2">
           {shown.map((t, i) => {

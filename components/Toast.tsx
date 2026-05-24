@@ -56,11 +56,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ show, confirm }}>
       {children}
 
-      {/* Toast-Stack — bottom-right */}
-      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+      {/* Toast-Stack — bottom-right. aria-live=polite damit Screen-Reader
+          die Nachricht vorlesen, aber nicht den Focus stehlen. */}
+      <div
+        className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"
+        aria-live="polite"
+        aria-atomic="false"
+      >
         {toasts.map(t => (
           <div
             key={t.id}
+            role={t.type === "error" ? "alert" : "status"}
             className={`pointer-events-auto px-4 py-3 rounded-xl shadow-lg max-w-sm text-sm border ${
               t.type === "error"
                 ? "bg-[#C4574B] text-white border-[#C4574B]"
@@ -76,12 +82,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
       {/* Confirm-Dialog — Center-Modal */}
       {pendingConfirm && (
-        <div className="fixed inset-0 z-[110] bg-black/40 flex items-center justify-center p-4" onClick={() => answerConfirm(false)}>
+        <div
+          className="fixed inset-0 z-[110] bg-black/40 flex items-center justify-center p-4"
+          onClick={() => answerConfirm(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-dialog-message"
+        >
           <div
             className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6"
             onClick={e => e.stopPropagation()}
           >
-            <p className="text-sm text-ink leading-relaxed mb-5 whitespace-pre-wrap">{pendingConfirm.message}</p>
+            <p id="confirm-dialog-message" className="text-sm text-ink leading-relaxed mb-5 whitespace-pre-wrap">{pendingConfirm.message}</p>
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => answerConfirm(false)}
