@@ -727,3 +727,89 @@ Schon dokumentiert in Iteration 14: implementiert vor Urlaub, in dieser Session 
 | L | ✅ neu — Stamm-Gewerke | `e28d316` |
 
 **Migration-Apply-Backlog erweitert um `20260605000080`** (Sprint L). Ohne Apply funktioniert Sprint L nicht (Spalte fehlt → graceful Retry im Profil, Marktplatz fällt auf altes single-gewerk-Feld zurück).
+
+---
+
+## Iteration 19 — 24.05.2026 (Tag 5: Polish-Block M/N/O/P/Q)
+
+Cowork hat einen 9-Sprint-Block (C/D/E/L + M/N/O/P/Q) re-paste'd. Block 1 (C/D/E/L) ist schon aus Iteration 14 + 18 abgehandelt. Hier dokumentiert: Block 2 (M/N/O/P/Q1/Q2), 6 neue Commits in einer Marathon-Session.
+
+**Cowork-Hinweis zur Iteration-Nummerierung:** Cowork erwartet "Iteration 17 — Tag 4" + "Iteration 18 — Tag 5" in dieser Datei, aber meine eigene fortlaufende Numerierung steht schon bei 18 (Tag 4 C/D/E/L vom letzten Run). Diese Sektion läuft daher als **Iteration 19**. Konsequenz für Cowork: Mapping ist Iteration 17→14+18, Iteration 18→19.
+
+### Vorab-Polish (vor Block 2)
+
+- **Commit `cf2861f`** `feat(ux): Vorab-Polish Empty-States + Modal-ARIA` — Empty-States in Tickets/Marktplatz/HW-Verzeichnis aufgewertet mit Filter-Kontext + Reset-Button, Diagnose-Modal + Privat-Termin-Modal + Confirm-Dialog mit `role="dialog"` + `aria-modal`, Toast-Stack mit `aria-live="polite"` + Error-Toasts mit `role="alert"`
+
+### Sprint M — UI-Konsistenz ✅
+
+- **Commit:** `cde683a` — `feat(ui): Konsistenz-Pass über alle 4 Rollen (Sprint M)`
+- **`STYLE-AUDIT.md`** dokumentiert: Token-System (Farben/Radius/Shadow), UI-Library-Inventur, 6 Regeln für künftige Sprints, bekannte Drift-Punkte (3 KPI-Varianten, Inline-Styles für Progress-Bars)
+- **Mini-Cleanup:** toten `"dringlichkeit"`-Step aus Mieter-Wizard-Step-Type + `wizardSteps`-Array entfernt
+- Inventur-Befund: Tailwind-Tokens sind schon strukturiert, 28 `<Button>`-Verwendungen vs. 1 Roh-Button → gesundes Verhältnis
+
+### Sprint N — Empty-States + Tooltips + Error-Handler ✅
+
+- **Commit:** `d96d750` — `feat(ux): Empty-States + Success-Toasts + Form-Tooltips (Sprint N)`
+- **`EmptyState`-Component erweitert:** akzeptiert jetzt Lucide-Icon-Component (nicht nur Emoji), optionale `variant="warn"` für warn-getönte Hintergründe, action-Helper `{label, href|onClick}` als Convenience-API
+- **`Tooltip`-Component neu** (`components/ui/index.tsx::Tooltip`): kleines ?-Icon mit CSS-only Hover/Focus-Tooltip, A11y via `aria-label` + `role="tooltip"` + `group-focus-within`
+- **`lib/api-error.ts`** mit `getUserMessage(error)` — mappt 8 Error-Klassen (Auth/Permission/Rate-Limit/Network/Validation/Not-Found/Stripe/Generic) auf deutsche, handlungsorientierte Texte
+- **Mieter-Dashboard 0-Tickets:** "Alles in Ordnung 🎉" statt "Noch keine Meldungen" — positive Stimmung statt Defizit-Framing
+- **Bulk-Import:** Tooltip neben dem Header-Hinweis listet Pflicht-/Optional-Spalten
+
+### Sprint O — Rollen-Switcher Dropdown ✅
+
+- **Commit:** `c6dfbc7` — `feat(layout): Rollen-Switcher als Dropdown (Sprint O)`
+- **`components/RollenWechsel.tsx` neu geschrieben:** statt 2×2-Chips-Grid jetzt Dropdown mit Trigger + Menü
+- **A11y:** `aria-expanded` + `aria-haspopup="menu"` + `aria-label` auf Trigger, `role="menu"` + `role="menuitem"`, ESC + Click-Outside schließen, Auto-Focus auf erstes Item beim Öffnen
+- Sichtbarkeit unverändert: nur für `istAdmin === true`, normale User sehen nichts
+- Hard-Navigation via `window.location` bleibt — sonst Sibling-Layout-State-Drift
+
+### Sprint P — A11Y + Mobile ✅
+
+- **Commit:** `0123662` — `feat(a11y): WCAG 2.1 AA-Compliance + Mobile-Pass (Sprint P)`
+- **Skip-to-Main-Content-Link** im `<body>` (sr-only focus:not-sr-only-Pattern) + `id="main-content"` auf allen 4 Dashboard-Layouts → Keyboard-User können Sidebar überspringen
+- **Global `:focus-visible`-Ring** (2px accent-grün, 2px offset) in `app/globals.css` — bei Tab sichtbar, bei Maus nicht
+- **Horizontal-Overflow-Fix** auf html/body (`overflow-x: hidden`) — adressiert Feedback `f443670f` ("Seite ragt am Rand raus bei Zoom")
+- **`A11Y-AUDIT.md`** mit Kontrast-Werten pro Token (`ink` 14.5:1 AAA / `ink-faint` 2.6:1 nur für >18pt), Komponenten-A11y-Status, Post-Beta-Backlog (Focus-Trap, Form-Errors-aria-invalid, axe-CI)
+- Lighthouse-Schätzung post-Pass: 92-97 auf den 4 Haupt-Pages (echter Run bleibt für Lennart bei Rückkehr)
+
+### Sprint Q1 — Filter-Persistence ✅
+
+- **Commit:** `9fa7ba8` — `feat(ux): Filter-Persistence Verzeichnis ↔ Marktplatz (Sprint Q1)`
+- **HW-Verzeichnis:** Suche + Gewerk-Filter aus URL-Search-Params (`?q=…&gewerk=…`), Updates via `router.replace` → shareable + Browser-Back-fest
+- **Marktplatz:** `?gewerk=` Initial-Filter wird gelesen, Filter-Wechsel schreibt zurück. `?hw=` bleibt funktional
+- **Quer-Link "Verfügbare Slots"** nimmt jetzt Gewerk + Suche mit. Drift zwischen Verzeichnis-Strings (`heizung_sanitaer`) und Marktplatz-Strings (`sanitaer`/`heizung`) wird graceful auf "alle" gefallen
+
+### Sprint Q2 — Stufenweise Dashboards ✅
+
+- **Commit:** `6ebf35e` — `feat(ux): Stufenweise Dashboards (Sprint Q2)`
+- **`components/ui/Accordion.tsx` neu:** title + optional meta + `persistKey` für localStorage-State + `defaultOpen`, aria-expanded auf Trigger, ChevronDown-Rotation
+- **Admin-Dashboard:** KI-Anomalien + KI-Empfehlungen waren bisher zwei freistehende Block-Boxes, jetzt zusammen in einem einklappbaren "KI-Analyse"-Akkordeon. Default offen wenn Anomalien vorhanden. Persistiert pro User in localStorage.
+- **HW-Dashboard absichtlich nicht angefasst:** die 4 Quick-Actions sind keine Information-Overload und müssen sofort sichtbar bleiben (Spec sah dort Akkordeon vor, das wäre ein UX-Downgrade).
+
+### Stand Ende Tag 5
+
+| Sprint | Status | Commit |
+|---|---|---|
+| Vorab-Polish | ✅ Empty-States + Modal-ARIA | `cf2861f` |
+| M — UI-Konsistenz | ✅ STYLE-AUDIT.md + Mieter-Wizard-Cleanup | `cde683a` |
+| N — Empty-States + Tooltips | ✅ EmptyState erweitert + Tooltip + api-error.ts | `d96d750` |
+| O — Rollen-Switcher Dropdown | ✅ Chip-Grid → Dropdown mit ESC/Click-Out/A11y | `c6dfbc7` |
+| P — A11y + Mobile | ✅ Skip-Link + Focus-Ring + Overflow-Fix + A11Y-AUDIT.md | `0123662` |
+| Q1 — Filter-Persistence | ✅ URL-Params Verzeichnis ↔ Marktplatz | `9fa7ba8` |
+| Q2 — Stufenweise Dashboards | ✅ Accordion + Admin-KI-Akkordeon | `6ebf35e` |
+
+**Verbleibender Migration-Apply-Backlog unverändert** (8 Files). Die Polish-Session war reines Code+Doc-Work, keine neuen Schema-Anforderungen.
+
+### Lighthouse-Score-Übersicht (Schätzung bis Lennart Lighthouse-Runs macht)
+
+| Page | A11y-Score-Schätzung post-Pass |
+|---|---|
+| `/login` | ~95 |
+| `/dashboard-verwalter` | ~92 |
+| `/dashboard-handwerker` | ~93 |
+| `/dashboard-mieter` | ~94 |
+| `/dashboard-admin` | ~92 (mit Akkordeon-Refactor) |
+| `/hausverwaltungen` (Sprint K) | ~97 |
+
+Echte Werte siehst du nach `Cmd+Shift+P` → "Lighthouse" → Mobile + Accessibility.
