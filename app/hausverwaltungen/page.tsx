@@ -326,19 +326,22 @@ function Pricing() {
 
 function SecurityStrip() {
   const sigel = [
-    { icon: <Server className="w-5 h-5" />, label: "EU-Hosting" },
-    { icon: <Shield className="w-5 h-5" />, label: "DSGVO-konform" },
-    { icon: <Database className="w-5 h-5" />, label: "RLS auf DB-Ebene" },
-    { icon: <Lock className="w-5 h-5" />, label: "TLS 1.3" },
+    { icon: <Server className="w-5 h-5" />, label: "EU-Hosting", sub: "Supabase Frankfurt" },
+    { icon: <Shield className="w-5 h-5" />, label: "DSGVO-konform", sub: "AV-Vertrag inklusive" },
+    { icon: <Database className="w-5 h-5" />, label: "RLS auf DB-Ebene", sub: "Row-Level-Security" },
+    { icon: <Lock className="w-5 h-5" />, label: "TLS 1.3", sub: "Ende-zu-Ende verschlüsselt" },
   ]
   return (
     <section className="py-10 px-6 bg-white border-y border-line">
       <div className="max-w-5xl mx-auto">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
           {sigel.map(s => (
-            <div key={s.label} className="flex items-center gap-2 text-ink-secondary">
-              <div className="text-accent">{s.icon}</div>
-              <span className="text-sm font-medium">{s.label}</span>
+            <div key={s.label} className="flex items-start gap-2 text-ink-secondary">
+              <div className="text-accent mt-0.5">{s.icon}</div>
+              <div>
+                <div className="text-sm font-semibold text-ink">{s.label}</div>
+                <div className="text-xs text-ink-muted">{s.sub}</div>
+              </div>
             </div>
           ))}
         </div>

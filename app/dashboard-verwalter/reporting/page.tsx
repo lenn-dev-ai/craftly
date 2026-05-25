@@ -20,12 +20,35 @@ type ProvisionRow = {
   created_at: string
 }
 
+// Audit-H4: Zeitraum-Filter für Reporting. Standard "Dieser Monat" wie
+// bisher, plus Quartal, Jahr und gesamt.
+type Zeitraum = "monat" | "quartal" | "jahr" | "alles"
+
+const ZEITRAEUME: Array<{ key: Zeitraum; label: string }> = [
+  { key: "monat", label: "Dieser Monat" },
+  { key: "quartal", label: "Dieses Quartal" },
+  { key: "jahr", label: "Dieses Jahr" },
+  { key: "alles", label: "Gesamt" },
+]
+
+function zeitraumStart(z: Zeitraum): Date | null {
+  const now = new Date()
+  if (z === "monat") return new Date(now.getFullYear(), now.getMonth(), 1)
+  if (z === "quartal") {
+    const qStart = Math.floor(now.getMonth() / 3) * 3
+    return new Date(now.getFullYear(), qStart, 1)
+  }
+  if (z === "jahr") return new Date(now.getFullYear(), 0, 1)
+  return null // alles
+}
+
 export default function ReportingPage() {
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [provisionen, setProvisionen] = useState<ProvisionRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [zeitraum, setZeitraum] = useState<Zeitraum>("monat")
 
   useEffect(() => {
     async function load() {
@@ -47,21 +70,23 @@ export default function ReportingPage() {
 
   if (loading) return <LoadingSpinner />
 
-  const erledigt = tickets.filter(t => t.status === "erledigt")
+  // Audit-H4: Zeitraum-Filter auf tickets + provisionen anwenden
+  const startZeit = zeitraumStart(zeitraum)
+  const ticketsImZeitraum = startZeit
+    ? tickets.filter(t => new Date(t.created_at) >= startZeit)
+    : tickets
+  const provisionenImZeitraum = startZeit
+    ? provisionen.filter(p => new Date(p.created_at) >= startZeit)
+    : provisionen
+  const erledigt = ticketsImZeitraum.filter(t => t.status === "erledigt")
 
   // Aggregat aus DB-Snapshots — autoritative Quelle
-  const provisionGesamt = provisionen.reduce((s, p) => s + Number(p.provision_betrag || 0), 0)
-  const auftragswertGesamt = provisionen.reduce((s, p) => s + Number(p.auftragswert || 0), 0)
-
-  // Diesen Monat
-  const heute = new Date()
-  const monatsstart = new Date(heute.getFullYear(), heute.getMonth(), 1)
-  const provisionMonat = provisionen
-    .filter(p => new Date(p.created_at) >= monatsstart)
-    .reduce((s, p) => s + Number(p.provision_betrag || 0), 0)
+  const auftragswertImZeitraum = provisionenImZeitraum.reduce((s, p) => s + Number(p.auftragswert || 0), 0)
+  const provisionImZeitraum = provisionenImZeitraum.reduce((s, p) => s + Number(p.provision_betrag || 0), 0)
+  const zeitraumLabel = ZEITRAEUME.find(z => z.key === zeitraum)?.label ?? "Gesamt"
 
   // Ersparnis durch Auktion (vs. teuerstes Angebot)
-  const mitAngeboten = tickets.filter(t => t.angebote && t.angebote.length > 1)
+  const mitAngeboten = ticketsImZeitraum.filter(t => t.angebote && t.angebote.length > 1)
   const ersparnis = mitAngeboten.reduce((s, t) => {
     const preise = (t.angebote || []).map(a => a.preis)
     return s + (Math.max(...preise) - Math.min(...preise))
@@ -100,9 +125,25 @@ export default function ReportingPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto pt-16 md:pt-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-ink">Reporting</h1>
-        <p className="text-sm text-ink-muted mt-1">Kosten- und Provisions-Übersicht</p>
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-ink">Reporting</h1>
+          <p className="text-sm text-ink-muted mt-1">Kosten- und Provisions-Übersicht · {zeitraumLabel}</p>
+        </div>
+        {/* Audit-H4: Zeitraum-Filter */}
+        <div className="flex items-center gap-2">
+          <label htmlFor="reporting-zeitraum" className="text-xs text-ink-muted">Zeitraum:</label>
+          <select
+            id="reporting-zeitraum"
+            value={zeitraum}
+            onChange={e => setZeitraum(e.target.value as Zeitraum)}
+            className="text-xs bg-white border border-line rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-accent/40"
+          >
+            {ZEITRAEUME.map(z => (
+              <option key={z.key} value={z.key}>{z.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Early-Adopter-Banner */}
@@ -125,18 +166,18 @@ export default function ReportingPage() {
         </div>
       )}
 
-      {/* KPI-Grid */}
+      {/* KPI-Grid — alle Werte im gewählten Zeitraum (H4) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <Kpi label="Tickets gesamt" value={tickets.length.toString()} />
-        <Kpi label="Erledigt" value={erledigt.length.toString()} />
+        <Kpi label={`Tickets · ${zeitraumLabel}`} value={ticketsImZeitraum.length.toString()} />
+        <Kpi label="davon erledigt" value={erledigt.length.toString()} />
         <Kpi
           label="Auftragswerte"
-          value={formatEUR(auftragswertGesamt)}
+          value={formatEUR(auftragswertImZeitraum)}
           sub="kumuliert"
         />
         <Kpi
-          label="Provision diesen Monat"
-          value={formatEUR(provisionMonat)}
+          label="Provision"
+          value={formatEUR(provisionImZeitraum)}
           sub={istEarlyAdopter ? "0 % aktiv" : "5 % vom Auftragswert"}
           accent={istEarlyAdopter ? "warm" : "primary"}
         />
