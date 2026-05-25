@@ -165,8 +165,11 @@ export default function HandwerkerDashboard() {
       <SichtbarkeitsBadge profile={profile} />
 
 
-      {/* Standort-Setup-Banner wenn nicht konfiguriert */}
-      {!standortGesetzt && (
+      {/* Standort-Setup-Banner wenn nicht konfiguriert. Audit-R9: nur
+          zeigen wenn Gewerke schon gesetzt sind — sonst hat der HW
+          zwei konkurrierende Warn-Banner. Gewerke sind die wichtigere
+          Voraussetzung (ohne Gewerke siehst du gar nichts). */}
+      {!standortGesetzt && hatStammGewerke && (
         <Link
           href="/dashboard-handwerker/profil"
           className="block mb-6 p-4 rounded-2xl border-2 border-warm/40 bg-warm-light hover:bg-[#F5E5D0] transition-colors"

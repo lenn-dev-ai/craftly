@@ -359,7 +359,7 @@ function FinalCTA() {
         </h2>
         <p className="text-lg text-ink-secondary mb-8 leading-relaxed">
           Live-Demo mit Ihren typischen Workflows. Wenn es passt, bekommen Sie einen Test-Account und können
-          14 Tage mit Ihrem Bestand testen — kein Kreditkartendaten.
+          14 Tage mit Ihrem Bestand testen — keine Kreditkartendaten.
         </p>
         <a
           href={DEMO_MAIL}

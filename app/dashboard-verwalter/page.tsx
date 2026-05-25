@@ -324,6 +324,25 @@ export default function VerwalterDashboard() {
         </section>
       )}
 
+      {/* Audit-R7c: positive Bestätigung wenn Pipeline leer.
+          Sichtbar nur wenn der Verwalter überhaupt schon Tickets hatte
+          (sonst ist der Empty-State weiter oben relevanter). */}
+      {!hatPipelineAction && tickets.length > 0 && erledigt.length > 0 && (
+        <section className="mb-6 bg-status-erledigt/5 border border-status-erledigt/20 rounded-2xl p-4 flex items-center gap-3">
+          <span className="text-2xl" aria-hidden="true">🎉</span>
+          <div className="flex-1 text-sm text-ink">
+            <span className="font-semibold">Pipeline ist sauber.</span>
+            {" "}Keine offenen Befunde, keine Nachträge, keine abgelaufenen Auktionen.
+          </div>
+          <Link
+            href="/dashboard-verwalter/neues-ticket"
+            className="text-xs font-semibold text-status-erledigt hover:underline whitespace-nowrap"
+          >
+            + Nächstes Ticket
+          </Link>
+        </section>
+      )}
+
       {/* Pipeline-Action: Befunde + Nachträge + abgelaufene Auktionen */}
       {hatPipelineAction && (
         <section className="mb-6 bg-white border border-[#7C6CAB]/20 rounded-2xl p-5 shadow-sm">

@@ -53,9 +53,8 @@ const menus: Record<Rolle, MenuItem[]> = {
     { href: "/dashboard-handwerker/profil", label: "Mein Profil", Icon: UserCircle, gruppe: "selten" },
   ],
   mieter: [
-    { href: "/dashboard-mieter", label: "Übersicht", Icon: LayoutDashboard },
+    { href: "/dashboard-mieter", label: "Meine Tickets", Icon: LayoutDashboard },
     { href: "/dashboard-mieter/melden", label: "Schaden melden", Icon: Plus },
-    { href: "/dashboard-mieter/tickets", label: "Meine Tickets", Icon: FileText },
     { href: "/dashboard-mieter/profil", label: "Mein Profil", Icon: UserCircle },
   ],
   admin: [
