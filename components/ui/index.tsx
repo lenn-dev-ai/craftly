@@ -377,3 +377,15 @@ export function Toast({ message, onClose, type }: {
 
 // Re-export Accordion damit Pages `import { Accordion } from "@/components/ui"` machen können.
 export { Accordion } from "./Accordion"
+
+// Sprint M Extension — State-Design-System.
+// `EmptyState` + `LoadingSpinner` + `Toast` bleiben oben in dieser Datei,
+// die neuen 6 Komponenten liegen in `./states/index.tsx`.
+export {
+  LoadingSkeleton,
+  ErrorCard,
+  WarningBanner,
+  ConflictModal,
+  EscalationMarker,
+  SuccessBanner,
+} from "./states"
