@@ -431,28 +431,139 @@ export default function ProfilPage() {
         </div>
       </div>
 
-      {/* KAL-3: Google Calendar Stub. DB-Spalten google_refresh_token +
-          google_calendar_connected existieren bereits. Voller OAuth-Flow
-          braucht Google-API-Credentials + Verifizierung — daher hier
-          nur "Coming soon"-Hinweis. */}
-      <div className="bg-white rounded-2xl border border-line p-6 mt-4">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h2 className="text-base font-semibold text-ink mb-1">
-              Google Kalender verbinden
-            </h2>
-            <p className="text-sm text-ink-muted">
-              Termine automatisch in deinen Google Kalender synchronisieren.
-            </p>
-          </div>
-          <button
-            type="button"
-            disabled
-            className="text-xs font-semibold bg-surface-muted text-ink-muted border border-line px-4 py-2 rounded-xl cursor-not-allowed inline-flex items-center gap-2"
-            aria-disabled="true"
-          >
-            <span className="text-warm-dark">Demnächst</span>
-          </button>
+      {/* Sprint AE — Google-Kalender-Sync (OAuth-Flow live, ENVs evtl. noch nicht gesetzt). */}
+      <GoogleCalSection />
+    </div>
+  )
+}
+
+// ============================================================
+// Sprint AE — Google-Kalender-Verbindung
+// ============================================================
+
+function GoogleCalSection() {
+  const [status, setStatus] = useState<"loading" | "connected" | "disconnected" | "error">("loading")
+  const [connectedAt, setConnectedAt] = useState<string | null>(null)
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null)
+  const [disconnecting, setDisconnecting] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  useEffect(() => {
+    let aktiv = true
+    void (async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { if (aktiv) setStatus("disconnected"); return }
+      const { data, error } = await supabase
+        .from("hw_google_oauth")
+        .select("connected_at, last_sync_at, last_error")
+        .eq("user_id", user.id)
+        .maybeSingle<{ connected_at: string; last_sync_at: string | null; last_error: string | null }>()
+      if (!aktiv) return
+      if (error) { setStatus("error"); setErrorMsg(error.message); return }
+      if (!data) { setStatus("disconnected"); return }
+      setConnectedAt(data.connected_at)
+      setLastSyncAt(data.last_sync_at)
+      setStatus("connected")
+      if (data.last_error) setErrorMsg(data.last_error)
+    })()
+
+    // Query-Param-Feedback nach OAuth-Redirect parsen
+    const url = new URL(window.location.href)
+    const flag = url.searchParams.get("google")
+    if (flag === "connected") {
+      setStatus("connected")
+      url.searchParams.delete("google")
+      window.history.replaceState({}, "", url.toString())
+    } else if (flag === "error") {
+      const reason = url.searchParams.get("reason") ?? "unbekannt"
+      setErrorMsg(`OAuth fehlgeschlagen: ${decodeURIComponent(reason)}`)
+      url.searchParams.delete("google")
+      url.searchParams.delete("reason")
+      window.history.replaceState({}, "", url.toString())
+    }
+
+    return () => { aktiv = false }
+  }, [])
+
+  function connect() {
+    window.location.href = "/api/auth/google/connect"
+  }
+
+  async function disconnect() {
+    setDisconnecting(true)
+    try {
+      const res = await fetch("/api/auth/google/disconnect", { method: "POST" })
+      if (res.ok) {
+        setStatus("disconnected")
+        setConnectedAt(null)
+        setLastSyncAt(null)
+        setErrorMsg(null)
+      } else {
+        const j = await res.json().catch(() => ({}))
+        setErrorMsg(j.error ?? "Trennen fehlgeschlagen")
+      }
+    } finally {
+      setDisconnecting(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-line p-6 mt-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex-1 min-w-[240px]">
+          <h2 className="text-base font-semibold text-ink mb-1">
+            Google Kalender verbinden
+          </h2>
+          <p className="text-sm text-ink-muted">
+            Verbinde deinen Google-Kalender, damit Reparo deine freien Zeiten
+            automatisch nutzt und neue Aufträge direkt im Kalender erscheinen.
+          </p>
+          {status === "connected" && (
+            <div className="mt-3 text-xs text-ink-secondary space-y-0.5">
+              <div className="text-emerald-700 font-medium">🟢 Verbunden</div>
+              {connectedAt && <div>Seit: {new Date(connectedAt).toLocaleDateString("de-DE")}</div>}
+              {lastSyncAt && <div>Letzte Synchronisation: {new Date(lastSyncAt).toLocaleString("de-DE")}</div>}
+            </div>
+          )}
+          {errorMsg && (
+            <div className="mt-3 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+              {errorMsg}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {status === "loading" && (
+            <span className="text-xs text-ink-muted">Lädt…</span>
+          )}
+          {status === "disconnected" && (
+            <button
+              type="button"
+              onClick={connect}
+              className="text-xs font-semibold bg-accent text-white border border-accent px-4 py-2 rounded-xl hover:bg-accent-hover transition-colors"
+            >
+              Mit Google verbinden
+            </button>
+          )}
+          {status === "connected" && (
+            <button
+              type="button"
+              onClick={disconnect}
+              disabled={disconnecting}
+              className="text-xs font-semibold bg-white text-rose-700 border border-rose-200 px-4 py-2 rounded-xl hover:bg-rose-50 transition-colors disabled:opacity-50"
+            >
+              {disconnecting ? "Trennt…" : "Trennen"}
+            </button>
+          )}
+          {status === "error" && (
+            <button
+              type="button"
+              onClick={connect}
+              className="text-xs font-semibold bg-accent text-white px-4 py-2 rounded-xl hover:bg-accent-hover transition-colors"
+            >
+              Erneut verbinden
+            </button>
+          )}
         </div>
       </div>
     </div>

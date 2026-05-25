@@ -137,6 +137,9 @@ export default function MeldenPage() {
     { key: "schimmel", label: "Schimmel",        icon: "o", startText: "Schimmelflecken an Wand oder Decke entdeckt",          gewerkHint: "maler" },
   ]
   const [dynPills, setDynPills] = useState<PillItem[]>(STATIC_PILLS_FALLBACK)
+  // Sprint AF Phase 2: Foto-Prescan-Result — hebt die wahrscheinlichste Pill hervor
+  // sobald das erste Foto hochgeladen ist. Hintergrund-Call, non-blocking.
+  const [likelyPill, setLikelyPill] = useState<string | null>(null)
   useEffect(() => {
     let aktiv = true
     void (async () => {
@@ -153,6 +156,25 @@ export default function MeldenPage() {
     })()
     return () => { aktiv = false }
   }, [])
+
+  // Sprint AF Phase 2: Foto-Prescan sobald sich fotoFiles[0] ändert.
+  useEffect(() => {
+    if (fotoFiles.length === 0) { setLikelyPill(null); return }
+    let aktiv = true
+    void (async () => {
+      try {
+        const form = new FormData()
+        form.append("foto", fotoFiles[0])
+        const res = await fetch("/api/ki/foto-prescan", { method: "POST", body: form })
+        if (!res.ok) return
+        const data = await res.json() as { likelyPill?: string }
+        if (aktiv && data.likelyPill) setLikelyPill(data.likelyPill)
+      } catch {
+        // Stiller Fallback — kein Highlight
+      }
+    })()
+    return () => { aktiv = false }
+  }, [fotoFiles])
 
   // Profil-Adresse laden — beim Mount, damit beim Wechsel auf Step "ort"
   // schon vorbefüllt ist.
@@ -547,16 +569,24 @@ export default function MeldenPage() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {/* Sprint AF Phase 1: dynPills statt hardcoded — saisonal +
-                    Verwalter-Kontext. Fallback auf statische 5 wenn API down. */}
-                {dynPills.map(item => (
-                  <button
-                    key={item.key}
-                    onClick={() => { setBeschreibung(item.startText); }}
-                    className="text-xs bg-surface-muted hover:bg-accent/10 border border-line hover:border-accent/30 rounded-full px-3 py-1.5 transition-all text-ink-muted hover:text-accent"
-                  >
-                    {item.icon} {item.label}
-                  </button>
-                ))}
+                    Verwalter-Kontext. Fallback auf statische 5 wenn API down.
+                    Sprint AF Phase 2: Foto-Prescan-Pill wird hervorgehoben (✓). */}
+                {dynPills.map(item => {
+                  const highlight = likelyPill === item.key
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => { setBeschreibung(item.startText); }}
+                      className={`text-xs border rounded-full px-3 py-1.5 transition-all ${
+                        highlight
+                          ? "bg-accent/20 border-accent text-accent ring-2 ring-accent/30"
+                          : "bg-surface-muted hover:bg-accent/10 border-line hover:border-accent/30 text-ink-muted hover:text-accent"
+                      }`}
+                    >
+                      {highlight && "✓ "}{item.icon} {item.label}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 

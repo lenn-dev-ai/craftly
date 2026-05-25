@@ -419,14 +419,21 @@ export const VERDICTS: Record<string, Verdict> = {
   "9ab7382d-f3b9-46d8-8837-062b2773f029": {
     cat: "feature", sev: "high", area: "Admin-Dashboard Live-Metriken (Mission Control)",
     summary: "Tote Charts statt Live-Nutzung.",
-    recommendation: "Konzept-Memo geschrieben (KONZEPT-admin-mission-control.md). Implementation post-Beta nach Beta-Daten — ~2-3 Tage CC.",
-    status: "needdecision", owner: "lennart", ref: "KONZEPT-admin-mission-control.md",
+    recommendation: "Erledigt via Sprint AH (Mission Control LIVE): /dashboard-admin zeigt jetzt Live-Status, Action-Items, 24h-Aktivität mit Trend-Pfeilen und System-Health-Dots. Alte Charts/KI-Anomalien-Banner sind weg.",
+    status: "done", owner: "erledigt", ref: "Sprint AH commits 85079a2 + f4d6503 + feecf34",
   },
   "0f448aae-7b2e-4814-b5c3-8a3f68247de5": {
     cat: "ux", sev: "low", area: "KPI-Kachel zeigt Striche statt 0",
     summary: "Empty-State-Bug.",
     recommendation: "Erledigt via R21.",
     status: "done", owner: "erledigt", ref: "R21 commit 2644580",
+  },
+  "37f6be65-dd1d-49e3-acc4-5ebe04cfb28c": {
+    cat: "feature", sev: "high", area: "Mieter-Wizard — Wohneinheit-Picker statt Freitext",
+    summary: "Mieter soll im Wizard seine Wohneinheit zuordnen können, damit Verwaltung direkt mappen kann (statt Adress-String).",
+    recommendation: "Wohnungs-Picker bauen: Mieter wählt aus den Wohnungen seiner Verwaltung (RLS-scoped). Bestehende Spalte tickets.wohnung (text) bleibt als Fallback. Sprint R26 oder zusätzliche Phase im Wizard-Sprint.",
+    status: "needdecision", owner: "lennart",
+    ref: "wartet auf Wohnungs-Verknüpfungs-Pattern (Sprint G hat verwalter-side, Mieter-side fehlt)",
   },
 }
 
