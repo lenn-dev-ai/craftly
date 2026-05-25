@@ -10,6 +10,7 @@ import { fuegeTicketZuTagesplan } from "@/lib/auction/routen-planung-sync"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 import { zuschlagEmail, absageEmail } from "@/lib/email/templates"
 import { getDiagnosePreis } from "@/lib/diagnose/preise"
+import { logTicketEvent } from "@/lib/audit/logTicketEvent"
 
 // POST /api/auction/close
 // Body: { ticket_id, angebot_id? }
@@ -306,6 +307,23 @@ export async function POST(request: NextRequest) {
       sendEmailFireAndForget({ to: email, subject, html })
     }
   })().catch(err => console.error("[Email] close-Mails fehlgeschlagen:", err))
+
+  // Sprint T MVP — Audit-Trail
+  void logTicketEvent({
+    ticketId,
+    eventType: "auktion_geschlossen",
+    actorUserId: user.id,
+    actorRole: profile.rolle,
+    eventData: {
+      angebot_id: angebot.id,
+      handwerker_id: angebot.handwerker_id,
+      preis_brutto: angebot.preis,
+      kosten_final: kostenFinal,
+      provision_rate: finalRate,
+      vorkaufsrecht_aktiv: vorkaufsrechtAktiv,
+    },
+    request,
+  })
 
   return NextResponse.json({
     ok: true,
