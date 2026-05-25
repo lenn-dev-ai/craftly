@@ -211,6 +211,46 @@ Wenn 8 klar: **Reparo ist post-Beta-launchable mit dem vollen Mieter-First-Workf
 
 ---
 
+## Nachtrag — 7 zusätzliche Commits nach Erst-Closeout
+
+Auf Lennart-Nachfrage „nicht alle Feedbacks sind umgesetzt" wurden noch
+7 weitere Items durchgezogen:
+
+| Commit | Was |
+|---|---|
+| `5e85907` | Cowork's 44 Verdicts in `lib/feedback-verdicts.ts` committet (vorher 11) |
+| `2629a62` | HW-Sidebar `/zeitslots` + `/termine` + `/diagnosen` → Redirects, Items raus (−1758 LOC); AGB-Page „← Zurück"-Link |
+| `b9b783e` | HW-Profil Werkstatt + Startort vereinheitlicht (Feedback 47f62752) |
+| `6103e08` | 5 veraltete Verdict-Status auf done + 1 Duplikat aufgeräumt |
+| `37ecee9` | Sprint R Phase 1 Pricing-Vereinheitlichung — Option B (per Wohnung) auf Landing + FAQ. Pricing-Calculator nutzt schon Option B → 3 Quellen synchron |
+
+### Verdict-Status nach allen Updates
+
+```
+49× done
+ 6× needdecision  (alle Owner=lennart, Produkt-Entscheidungen)
+ 3× backlog       (Video-Upload / HW-Slot-Ort / Click-Through-Polish — post-Beta)
+ 1× waiting       (Heuristik-Fallback für neue Feedbacks)
+ 0× inprogress    ✅
+```
+
+**Konkret was Lennart noch entscheiden muss:**
+
+| ID | Frage |
+|---|---|
+| `5640787d` | Video-Upload im Mieter-Wizard? (post-Beta) |
+| `54e2df6d` | Google-Calendar-Sync HW? (post-Beta, Memo da) |
+| `b1ad8083` | „extrem manuell" — welcher Pfad wird automatisiert? |
+| `9ab7382d` | Dashboard-Inhalte — Konzept-Frage |
+| `a2f592dc` | Termin-Koordination Mieter ↔ HW — Konzept |
+| `65f26e2d` | Mieter-meldet-Logik — Mieter-First weiter ausbauen |
+| `7326f74f` | Auktion-Dauer-Default (3 Tage hart capped?) |
+| `fbbf6c70` | Quick-Select-Pills im Mieter-Wizard ganz raus? |
+
+Alle 8 sind Produkt-Entscheidungen, nicht Bugs.
+
+---
+
 **Co-Authored-By:** Claude Code (Opus 4.7, 1M context), 21.–25.05.2026.
 **Lennart's Urlaub:** 22.05.–04.06.2026.
 **Sessions:** 5 Tage autonom, 100+ Commits, 0 Production-Schäden gemeldet.
