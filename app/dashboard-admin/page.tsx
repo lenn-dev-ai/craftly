@@ -1,615 +1,206 @@
 "use client"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
-import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend,
-} from "recharts"
-import { Search, TrendingUp, TrendingDown, Minus } from "lucide-react"
-import { Accordion } from "@/components/ui/Accordion"
+import { AlertCircle, Activity, CheckCircle2, RefreshCw } from "lucide-react"
 
-// ============================================================
-// KI-Helfer (unverändert übernommen)
-// ============================================================
-
-interface Stats {
-  totalUsers: number
-  verwalter: number
-  handwerker: number
-  mieter: number
-  totalTickets: number
-  offeneTickets: number
-  erledigteTickets: number
-  totalKosten: number
-  totalAngebote: number
-  recentUsers: ProfileRow[]
-  recentTickets: TicketRow[]
-  alleTickets: TicketRow[]
-}
-
-interface ProfileRow {
-  id: string
-  name: string | null
-  email: string | null
-  rolle: string | null
-  created_at: string
-}
-interface TicketRow {
-  id: string
-  titel: string
-  status: string
-  created_at: string
-  angebote?: Array<{ id: string }> | null
-}
-
-// Health-Score 0-100, ehrlich: leere Plattform = niedrig.
-// Drei Säulen, jede max 30-40 Punkte:
-//   Setup    (max 30) — sind alle Rollen besetzt?
-//   Aktivität (max 40) — wird die Plattform genutzt?
-//   Health   (max 30) — funktioniert der Workflow?
+// Sprint AH+ — Admin-Hauptdashboard.
 //
-// Frische Plattform ohne Daten = 0. Ein Verwalter angelegt = ~10.
-// Volle Setup ohne Aktivität = 30. Aktive Plattform mit guter
-// Erledigung = 90+.
-// Sprint R Phase 19 (Feedback f4f19fbe): bei komplett leerer DB
-// (nach Daten-Reset, 0 User + 0 Tickets + 0 Angebote) gibt's keinen
-// sinnvollen Score → null statt magischer 30.
-function kiHealthScore(s: Stats | null): number | null {
-  if (!s) return null
-  if (s.totalUsers === 0 && s.totalTickets === 0 && s.totalAngebote === 0) {
-    return null
+// Ersetzt die alte Page (Statistik-Cards, KI-Anomalien-Banner,
+// "Tickets pro Woche"-Chart, Verteilungen) durch ein aktionables
+// Mission-Control-Layout. Die alte Page bewahrt CC in commit-History
+// via git revert auf den vorherigen Commit, falls jemals nötig.
+//
+// Endpoints (alle in Sprint AH gebaut):
+//   - GET /api/admin/live
+//   - GET /api/admin/action-items
+//   - GET /api/admin/activity
+//   - GET /api/admin/health
+
+type LiveData = {
+  users_online: number
+  aktive_auktionen: number
+  neue_tickets_letzte_stunde: number
+  timestamp: string
+}
+
+type ActionItem = {
+  type: string
+  actor_id: string
+  actor_name: string
+  metric: number
+  message: string
+  oldest_event_at: string | null
+}
+
+type ActivityVal = { value: number; delta: number | null }
+type ActivityData = {
+  neue_tickets?: ActivityVal
+  vergeben?: ActivityVal
+  erledigt?: ActivityVal
+  neue_hw?: ActivityVal
+}
+
+type HealthData = {
+  db: { ok: boolean; latency_ms: number }
+  resend: { ok: boolean }
+  vapi: { ok: boolean }
+  mapbox: { ok: boolean }
+  timestamp: string
+}
+
+function useAdminFetch<T>(url: string, intervalMs: number): { data: T | null; refresh: () => void } {
+  const [data, setData] = useState<T | null>(null)
+  const fetcher = async () => {
+    try {
+      const res = await fetch(url, { cache: "no-store" })
+      if (res.ok) setData(await res.json())
+    } catch {}
   }
-  let score = 0
-
-  // Setup-Vollständigkeit (max 30)
-  if (s.verwalter > 0)   score += 10
-  if (s.handwerker >= 3) score += 10
-  else if (s.handwerker > 0) score += 5
-  if (s.mieter > 0)      score += 10
-
-  // Aktivität (max 40)
-  if (s.totalTickets > 0)  score += 5
-  if (s.totalTickets >= 5) score += 5
-  if (s.totalAngebote > 0) score += 5
-  if (s.totalAngebote >= 10) score += 5
-  if (s.totalTickets > 0) {
-    const angeboteProTicket = s.totalAngebote / s.totalTickets
-    if (angeboteProTicket >= 2)      score += 20
-    else if (angeboteProTicket >= 1) score += 12
-    else if (angeboteProTicket >= 0.5) score += 6
-  }
-
-  // Workflow-Health (max 30) — Erledigungsrate ist der Killer-Indikator
-  if (s.totalTickets > 0) {
-    const erlRate = s.erledigteTickets / s.totalTickets
-    score += Math.round(erlRate * 30)
-  }
-
-  return Math.min(score, 100)
+  useEffect(() => {
+    fetcher()
+    const id = setInterval(fetcher, intervalMs)
+    return () => clearInterval(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, intervalMs])
+  return { data, refresh: fetcher }
 }
-
-function kiAnomalien(s: Stats | null): string[] {
-  const w: string[] = []
-  if (!s) return w
-  if (s.handwerker === 0) w.push("Keine Handwerker registriert — Auktionen funktionieren nicht")
-  if (s.totalTickets > 0 && s.erledigteTickets === 0) w.push("Kein Ticket abgeschlossen — Workflow prüfen")
-  if (s.verwalter === 0) w.push("Kein Verwalter vorhanden — Tickets können nicht erstellt werden")
-  if (s.totalTickets > 5 && s.totalAngebote === 0) w.push("Viele Tickets aber keine Angebote")
-  if (s.offeneTickets > s.totalTickets * 0.7) w.push("Über 70 % der Tickets sind offen — Kapazitätsengpass?")
-  return w
-}
-
-function kiEmpfehlungen(s: Stats | null): string[] {
-  const t: string[] = []
-  if (!s) return t
-  if (s.handwerker < 3) t.push("Mehr Handwerker einladen für besseren Wettbewerb")
-  if (s.mieter === 0) t.push("Mieter-Accounts anlegen für Schadensmeldungen")
-  if (s.totalTickets > 0 && s.erledigteTickets / s.totalTickets < 0.3)
-    t.push("Erledigungsrate unter 30 % — Erinnerungen aktivieren")
-  if (s.verwalter > 0 && s.handwerker > 0 && s.mieter > 0 && s.totalTickets === 0)
-    t.push("Alle Rollen da — erstelle ein Test-Ticket")
-  return t
-}
-
-// ============================================================
-// Wochen-Buckets aus created_at-Stamps
-// ============================================================
-
-const ANZAHL_WOCHEN = 8
-
-function montagDerWoche(d: Date): Date {
-  const r = new Date(d)
-  const offset = (r.getDay() + 6) % 7
-  r.setDate(r.getDate() - offset)
-  r.setHours(0, 0, 0, 0)
-  return r
-}
-
-function wochenLabel(d: Date): string {
-  return d.toLocaleDateString("de", { day: "2-digit", month: "2-digit" })
-}
-
-interface WochenPunkt {
-  label: string
-  erstellt: number
-  erledigt: number
-}
-
-function wochenBuckets(tickets: TicketRow[]): WochenPunkt[] {
-  const heute = new Date()
-  const startMontag = montagDerWoche(heute)
-  startMontag.setDate(startMontag.getDate() - 7 * (ANZAHL_WOCHEN - 1))
-  const buckets: WochenPunkt[] = []
-  for (let i = 0; i < ANZAHL_WOCHEN; i++) {
-    const mo = new Date(startMontag)
-    mo.setDate(mo.getDate() + 7 * i)
-    buckets.push({ label: wochenLabel(mo), erstellt: 0, erledigt: 0 })
-  }
-  for (const t of tickets) {
-    const created = new Date(t.created_at)
-    const idx = Math.floor((montagDerWoche(created).getTime() - startMontag.getTime()) / (7 * 86400000))
-    if (idx >= 0 && idx < ANZAHL_WOCHEN) {
-      buckets[idx].erstellt++
-      if (t.status === "erledigt") buckets[idx].erledigt++
-    }
-  }
-  return buckets
-}
-
-// Trend dieser Woche vs. letzte Woche
-function trend(buckets: WochenPunkt[], feld: "erstellt" | "erledigt"): { delta: number | null; richtung: "up" | "down" | "flat" | "none" } {
-  if (buckets.length < 2) return { delta: null, richtung: "none" }
-  const jetzt = buckets[buckets.length - 1][feld]
-  const vor = buckets[buckets.length - 2][feld]
-  if (vor === 0 && jetzt === 0) return { delta: null, richtung: "none" }
-  if (vor === 0) return { delta: 100, richtung: "up" }
-  const delta = Math.round(((jetzt - vor) / vor) * 100)
-  return {
-    delta,
-    richtung: delta > 0 ? "up" : delta < 0 ? "down" : "flat",
-  }
-}
-
-// ============================================================
-// Page
-// ============================================================
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const [stats, setStats] = useState<Stats | null>(null)
-  const [me, setMe] = useState<{ name: string | null; rolle: string | null } | null>(null)
-  const [suche, setSuche] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [chartsReady, setChartsReady] = useState(false)
-
+  const [adminGate, setAdminGate] = useState<"checking" | "ok" | "denied">("checking")
   useEffect(() => {
-    const frame = requestAnimationFrame(() => setChartsReady(true))
-    return () => cancelAnimationFrame(frame)
-  }, [])
-
-  useEffect(() => {
-    async function load() {
+    void (async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      const [{ data: profiles }, { data: tickets }, { data: angebote }, { data: meProf }] = await Promise.all([
-        supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-        supabase.from("tickets").select("*, angebote(id)").order("created_at", { ascending: false }),
-        supabase.from("angebote").select("id"),
-        user ? supabase.from("profiles").select("name, rolle").eq("id", user.id).single() : Promise.resolve({ data: null }),
-      ])
-      const p = (profiles as ProfileRow[] | null) ?? []
-      const t = (tickets as TicketRow[] | null) ?? []
-      const a = (angebote as Array<{ id: string }> | null) ?? []
-      setStats({
-        totalUsers: p.length,
-        verwalter: p.filter(u => u.rolle === "verwalter").length,
-        handwerker: p.filter(u => u.rolle === "handwerker").length,
-        mieter: p.filter(u => u.rolle === "mieter").length,
-        totalTickets: t.length,
-        offeneTickets: t.filter(x => x.status !== "erledigt").length,
-        erledigteTickets: t.filter(x => x.status === "erledigt").length,
-        totalKosten: t.reduce((acc, x) => acc + ((x as TicketRow & { kosten_final?: number }).kosten_final ?? 0), 0),
-        totalAngebote: a.length,
-        recentUsers: p.slice(0, 5),
-        recentTickets: t.slice(0, 5),
-        alleTickets: t,
-      })
-      setMe(meProf as { name: string | null; rolle: string | null } | null)
-      setLoading(false)
-    }
-    load()
-  }, [])
+      if (!user) { router.replace("/login"); return }
+      const { data: prof } = await supabase.from("profiles").select("rolle").eq("id", user.id).single<{ rolle: string }>()
+      if (prof?.rolle !== "admin") { setAdminGate("denied"); return }
+      setAdminGate("ok")
+    })()
+  }, [router])
 
-  const wochen = useMemo(() => wochenBuckets(stats?.alleTickets ?? []), [stats])
-  const trendErstellt = useMemo(() => trend(wochen, "erstellt"), [wochen])
+  const { data: live } = useAdminFetch<LiveData>("/api/admin/live", 30_000)
+  const { data: actionItems } = useAdminFetch<{ items: ActionItem[] }>("/api/admin/action-items", 60_000)
+  const { data: activity } = useAdminFetch<ActivityData>("/api/admin/activity", 5 * 60_000)
+  const { data: health } = useAdminFetch<HealthData>("/api/admin/health", 60_000)
 
-  if (loading) return (
-    <div className="min-h-screen bg-surface flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-[#7C6CAB]/20 border-t-[#7C6CAB] rounded-full animate-spin" />
-    </div>
-  )
-  if (!stats) return null
-
-  const health = kiHealthScore(stats)
-  const anomalien = kiAnomalien(stats)
-  const empfehlungen = kiEmpfehlungen(stats)
-  const erlRate = stats.totalTickets > 0 ? Math.round((stats.erledigteTickets / stats.totalTickets) * 100) : 0
-
-  function onSuche(e: React.FormEvent) {
-    e.preventDefault()
-    if (!suche.trim()) return
-    router.push(`/dashboard-admin/nutzer?q=${encodeURIComponent(suche.trim())}`)
+  if (adminGate === "checking") {
+    return <div className="p-6 text-sm text-ink-muted">Lädt…</div>
+  }
+  if (adminGate === "denied") {
+    return <div className="p-6 text-sm text-danger">Nur Admin-User dürfen diese Seite sehen.</div>
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6 pt-16 md:pt-8">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+    <main className="p-6 max-w-6xl mx-auto space-y-6">
+      <header className="flex items-baseline justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-ink tracking-tight">Dashboard</h1>
-          <p className="text-sm text-ink-muted mt-1">Plattform-Übersicht in Echtzeit</p>
+          <h1 className="text-2xl font-bold text-ink">Mission Control</h1>
+          <p className="text-xs text-ink-muted mt-1">Live-Status · Action-Items · 24h-Aktivität · System-Health</p>
         </div>
-        <div className="flex items-center gap-3">
-          <form onSubmit={onSuche} className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Suche…"
-              value={suche}
-              onChange={e => setSuche(e.target.value)}
-              className="pl-9 pr-3 py-2 text-sm bg-white border border-line rounded-xl w-56 focus:outline-none focus:border-[#7C6CAB]/40 transition-colors"
-              aria-label="Globale Suche"
-            />
-          </form>
-          <div className="flex items-center gap-2.5 px-3 py-1.5 bg-white border border-line rounded-xl shadow-sm">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C6CAB] to-[#5B6ABF] flex items-center justify-center text-white text-xs font-bold">
-              {(me?.name || "A").charAt(0).toUpperCase()}
-            </div>
-            <div className="leading-tight">
-              <div className="text-xs font-semibold text-ink">{me?.name || "Admin"}</div>
-              <div className="text-[10px] uppercase tracking-wider text-rolle-admin font-bold">{me?.rolle || "admin"}</div>
-            </div>
+        <div className="text-xs text-ink-muted flex items-center gap-2">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          Live
+        </div>
+      </header>
+
+      <section className="bg-white border border-line rounded-2xl p-5 shadow-sm">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-3">Live</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <BigStat label="User online (5 min)" value={live?.users_online} />
+          <BigStat label="Aktive Auktionen" value={live?.aktive_auktionen} />
+          <BigStat label="Neue Tickets (1h)" value={live?.neue_tickets_letzte_stunde} />
+        </div>
+      </section>
+
+      <section className="bg-white border border-line rounded-2xl p-5 shadow-sm">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-3 flex items-center gap-2">
+          <AlertCircle size={14} /> Brauchen Aktion
+        </h2>
+        {(actionItems?.items ?? []).length === 0 ? (
+          <div className="text-sm text-ink-muted flex items-center gap-2">
+            <CheckCircle2 size={16} className="text-emerald-600" />
+            Keine offenen Action-Items.
           </div>
+        ) : (
+          <ul className="divide-y divide-line">
+            {(actionItems?.items ?? []).map((item, i) => (
+              <li key={i} className="py-3 text-sm flex items-start gap-3">
+                <span className={`mt-0.5 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded ${
+                  item.type === "auktion_ohne_angebot" ? "bg-amber-100 text-amber-900"
+                  : item.type === "verwalter_ohne_vergabe" ? "bg-rose-100 text-rose-900"
+                  : "bg-sky-100 text-sky-900"
+                }`}>{item.type.replace(/_/g, " ")}</span>
+                <div className="flex-1">
+                  <div className="font-medium text-ink">{item.actor_name}</div>
+                  <div className="text-xs text-ink-muted">{item.message}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="bg-white border border-line rounded-2xl p-5 shadow-sm">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-3 flex items-center gap-2">
+          <Activity size={14} /> Letzte 24 Stunden
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <DeltaStat label="Neue Tickets"   data={activity?.neue_tickets} />
+          <DeltaStat label="Vergeben"       data={activity?.vergeben} />
+          <DeltaStat label="Erledigt"       data={activity?.erledigt} />
+          <DeltaStat label="Neue HW"        data={activity?.neue_hw} />
         </div>
+      </section>
+
+      <section className="bg-white border border-line rounded-2xl p-5 shadow-sm">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-3">System</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+          <HealthDot label={`DB (${health?.db.latency_ms ?? "?"} ms)`} ok={health?.db.ok} />
+          <HealthDot label="Resend"  ok={health?.resend.ok} />
+          <HealthDot label="Vapi"    ok={health?.vapi.ok} />
+          <HealthDot label="Mapbox"  ok={health?.mapbox.ok} />
+        </div>
+      </section>
+
+      <div className="flex items-center gap-3 text-xs text-ink-muted">
+        <RefreshCw size={12} />
+        Live alle 30 s · Action-Items alle 60 s · Aktivität alle 5 min
       </div>
+    </main>
+  )
+}
 
-      {/* Sprint Q2 — KI-Anomalien + KI-Empfehlungen in Akkordeon
-          einklappbar. Standard-Verhalten: bei Anomalien default offen
-          (Aufmerksamkeit), sonst zu. User-Präferenz wird persistiert. */}
-      {(anomalien.length > 0 || empfehlungen.length > 0) && (
-        <Accordion
-          title="KI-Analyse"
-          meta={`${anomalien.length} Anomalien · ${empfehlungen.length} Empfehlungen`}
-          persistKey="admin-ki-analyse"
-          defaultOpen={anomalien.length > 0}
-        >
-          <div className="space-y-3">
-            {anomalien.length > 0 && (
-              <div className="p-3 bg-danger/5 border border-danger/20 rounded-xl">
-                <span className="text-[11px] font-bold text-danger uppercase tracking-wider">Anomalien</span>
-                <ul className="space-y-1 mt-2">
-                  {anomalien.map((a, i) => (
-                    <li key={i} className="text-sm text-danger">• {a}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {empfehlungen.length > 0 && (
-              <div className="p-3 bg-rolle-admin/5 border border-[#7C6CAB]/20 rounded-xl">
-                <span className="text-[11px] font-bold text-rolle-admin uppercase tracking-wider">Empfehlungen</span>
-                <ul className="space-y-1 mt-2">
-                  {empfehlungen.map((e, i) => (
-                    <li key={i} className="text-sm text-rolle-admin">– {e}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </Accordion>
-      )}
-
-      {/* KPI-Reihe 1: Nutzer (klickbar → Nutzer-Liste, gefiltert) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="Nutzer gesamt" value={stats.totalUsers} farbe="#7C6CAB"
-          onClick={() => router.push("/dashboard-admin/nutzer")} />
-        <KpiCard label="Verwalter" value={stats.verwalter} farbe="#3D8B7A"
-          onClick={() => router.push("/dashboard-admin/nutzer?rolle=verwalter")} />
-        <KpiCard label="Handwerker" value={stats.handwerker} farbe="#C4956A"
-          onClick={() => router.push("/dashboard-admin/nutzer?rolle=handwerker")} />
-        <KpiCard label="Mieter" value={stats.mieter} farbe="#5B6ABF"
-          onClick={() => router.push("/dashboard-admin/nutzer?rolle=mieter")} />
+function BigStat({ label, value }: { label: string; value: number | undefined }) {
+  return (
+    <div>
+      <div className="text-3xl font-bold tabular-nums text-ink">
+        {value ?? "—"}
       </div>
-
-      {/* KPI-Reihe 2: Tickets + Health (Tickets-Cards → Verwalter-Tickets-Liste) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard
-          label="Tickets gesamt"
-          value={stats.totalTickets}
-          farbe="#7C6CAB"
-          trend={trendErstellt}
-          sparkline={wochen.map(w => w.erstellt)}
-          onClick={() => router.push("/dashboard-verwalter/tickets")}
-        />
-        <KpiCard label="Offen" value={stats.offeneTickets} farbe="#C4574B"
-          onClick={() => router.push("/dashboard-verwalter/tickets?status=offen")} />
-        <KpiCard label="Erledigt" value={stats.erledigteTickets} farbe="#3D8B7A"
-          onClick={() => router.push("/dashboard-verwalter/tickets?status=erledigt")} />
-        <KpiCard
-          label="Gesamtkosten"
-          value={`${stats.totalKosten.toLocaleString("de")} €`}
-          farbe="#C4956A"
-        />
-      </div>
-
-      {/* Ticket-Verlauf-Chart */}
-      <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-        <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-sm font-semibold text-ink">Tickets pro Woche · letzte {ANZAHL_WOCHEN} Wochen</h2>
-          <div className="text-[11px] text-ink-muted">Erstellt vs. Erledigt</div>
-        </div>
-        <div className="h-56 min-h-56 min-w-0">
-          {chartsReady ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={wochen} margin={{ top: 8, right: 12, left: -16, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#EDE8E1" />
-                <XAxis dataKey="label" stroke="#8C857B" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                <YAxis stroke="#8C857B" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{ background: "#ffffff", border: "1px solid #EDE8E1", borderRadius: 12, fontSize: 12 }}
-                  labelStyle={{ color: "#2D2A26", fontWeight: 600 }}
-                />
-                <Legend
-                  wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-                  iconType="circle"
-                  iconSize={8}
-                />
-                <Line type="monotone" dataKey="erstellt" stroke="#5B6ABF" strokeWidth={2} dot={{ r: 3 }} name="Erstellt" />
-                <Line type="monotone" dataKey="erledigt" stroke="#3D8B7A" strokeWidth={2} dot={{ r: 3 }} name="Erledigt" />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Erledigungsrate + Plattform-Health */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <div className="flex items-baseline justify-between mb-2">
-            <span className="text-sm font-semibold text-ink">Erledigungsrate</span>
-            <span className={`text-2xl font-bold tabular-nums ${
-              erlRate >= 70 ? "text-accent" : erlRate >= 30 ? "text-warm" : "text-danger"
-            }`}>{erlRate}%</span>
-          </div>
-          <div className="w-full h-3 bg-surface rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-700 ease-out"
-              style={{
-                width: `${erlRate}%`,
-                background:
-                  erlRate >= 70 ? "#3D8B7A"
-                  : erlRate >= 30 ? "#C4956A"
-                  : "#C4574B",
-              }}
-            />
-          </div>
-          <div className="text-[11px] text-ink-muted mt-2">
-            {stats.erledigteTickets} von {stats.totalTickets} Tickets erledigt
-          </div>
-        </div>
-
-        <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <div className="flex items-baseline justify-between mb-2">
-            <span className="text-sm font-semibold text-ink">KI-Health-Score</span>
-            <span className="text-2xl font-bold text-rolle-admin tabular-nums">
-              {health == null ? "—" : health}
-            </span>
-          </div>
-          <div className="w-full h-3 bg-surface rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r from-[#7C6CAB] to-[#5B6ABF]"
-              style={{ width: `${health ?? 0}%` }}
-            />
-          </div>
-          <div className="text-[11px] text-ink-muted mt-2">
-            {health == null
-              ? "Keine Daten — Plattform leer"
-              : health >= 80 ? "Exzellent" : health >= 60 ? "Gut" : health >= 40 ? "Okay" : "Kritisch"}
-          </div>
-        </div>
-      </div>
-
-      {/* Listen */}
-      <div className="grid md:grid-cols-2 gap-4">
-        {/* Neueste Nutzer */}
-        <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <div className="flex items-baseline justify-between mb-3">
-            <h3 className="text-sm font-semibold text-ink">Neueste Nutzer</h3>
-            <button
-              onClick={() => router.push("/dashboard-admin/nutzer")}
-              className="text-[11px] text-rolle-admin hover:text-[#5B4E8A] font-medium transition-colors"
-            >
-              Alle ansehen →
-            </button>
-          </div>
-          {stats.recentUsers.length === 0 ? (
-            <p className="text-sm text-ink-muted text-center py-6">Keine Nutzer vorhanden</p>
-          ) : (
-            <ul className="space-y-1">
-              {stats.recentUsers.map(u => (
-                <li key={u.id}>
-                  <button
-                    onClick={() => router.push("/dashboard-admin/nutzer")}
-                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-surface transition-colors"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7C6CAB] to-[#5B6ABF] flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                      {(u.name || u.email || "?").charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0 text-left">
-                      <div className="text-sm font-medium text-ink truncate">{u.name || u.email}</div>
-                      <div className="text-[11px] text-ink-muted">{new Date(u.created_at).toLocaleDateString("de")}</div>
-                    </div>
-                    <RolleBadge rolle={u.rolle} />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* Neueste Tickets */}
-        <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <div className="flex items-baseline justify-between mb-3">
-            <h3 className="text-sm font-semibold text-ink">Neueste Tickets</h3>
-            <button
-              onClick={() => router.push("/dashboard-verwalter/tickets")}
-              className="text-[11px] text-rolle-admin hover:text-[#5B4E8A] font-medium transition-colors"
-            >
-              Alle ansehen →
-            </button>
-          </div>
-          {stats.recentTickets.length === 0 ? (
-            <p className="text-sm text-ink-muted text-center py-6">Keine Tickets vorhanden</p>
-          ) : (
-            <ul className="space-y-1">
-              {stats.recentTickets.map(t => (
-                <li key={t.id}>
-                  <button
-                    onClick={() => router.push(`/dashboard-admin/ticket/${t.id}`)}
-                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-surface transition-colors text-left"
-                  >
-                    <StatusBadge status={t.status} />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-ink truncate">{t.titel}</div>
-                      <div className="text-[11px] text-ink-muted">{new Date(t.created_at).toLocaleDateString("de")}</div>
-                    </div>
-                    {(t.angebote?.length ?? 0) > 0 && (
-                      <span className="text-[11px] font-semibold text-accent flex-shrink-0">
-                        {t.angebote!.length} Angebot{t.angebote!.length === 1 ? "" : "e"}
-                      </span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
+      <div className="text-xs text-ink-muted mt-0.5">{label}</div>
     </div>
   )
 }
 
-// ============================================================
-// Sub-Components
-// ============================================================
-
-function KpiCard({
-  label, value, farbe, trend, sparkline, onClick,
-}: {
-  label: string
-  value: number | string
-  farbe: string
-  trend?: { delta: number | null; richtung: "up" | "down" | "flat" | "none" }
-  sparkline?: number[]
-  onClick?: () => void
-}) {
-  const Wrapper = onClick ? "button" : "div"
+function DeltaStat({ label, data }: { label: string; data: ActivityVal | undefined }) {
+  if (!data) return <div className="text-ink-muted text-sm">{label}: —</div>
+  const arrow = data.delta == null ? "" : data.delta > 0 ? "↑" : data.delta < 0 ? "↓" : "="
+  const color = data.delta == null ? "" : data.delta > 0 ? "text-emerald-600" : data.delta < 0 ? "text-rose-600" : "text-ink-muted"
   return (
-    <Wrapper
-      onClick={onClick}
-      className={`bg-white border border-line rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow text-left w-full ${
-        onClick ? "cursor-pointer hover:border-[#7C6CAB]/30 focus:outline-none focus:ring-2 focus:ring-[#7C6CAB]/30" : ""
-      }`}
-      {...(onClick && { type: "button" as const })}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: farbe + "15" }}>
-          <div className="w-2.5 h-2.5 rounded-full" style={{ background: farbe }} />
-        </div>
-        {trend && <TrendBadge t={trend} />}
-      </div>
-      <div className="text-2xl font-bold text-ink tabular-nums">
-        {/* Sprint R Phase 21 (Feedback 0f448aae): bei Loading-Race oder
-            undefined-Werten "0" statt "—" zeigen. Empty-State ist
-            semantisch "0 Tickets", nicht "keine Antwort". */}
-        {typeof value === "number" ? value : value || 0}
-      </div>
-      <div className="text-[10px] text-ink-muted mt-1 font-medium uppercase tracking-wider">{label}</div>
-      {sparkline && sparkline.length > 0 && (
-        <div className="mt-3 flex items-end gap-0.5 h-6">
-          {(() => {
-            const max = Math.max(...sparkline, 1)
-            return sparkline.map((v, i) => (
-              <div
-                key={i}
-                className="flex-1 rounded-sm transition-all"
-                style={{
-                  height: `${Math.max(4, (v / max) * 100)}%`,
-                  background: i === sparkline.length - 1 ? farbe : farbe + "55",
-                }}
-              />
-            ))
-          })()}
-        </div>
-      )}
-    </Wrapper>
+    <div>
+      <div className="text-2xl font-semibold tabular-nums text-ink">{data.value}</div>
+      <div className="text-xs text-ink-muted mt-0.5">{label} {data.delta != null && <span className={color}>{arrow}{Math.abs(data.delta)}</span>}</div>
+    </div>
   )
 }
 
-function TrendBadge({ t }: { t: { delta: number | null; richtung: "up" | "down" | "flat" | "none" } }) {
-  if (t.delta == null) {
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-ink-muted">
-        <Minus size={10} /> —
-      </span>
-    )
-  }
-  if (t.richtung === "up") {
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">
-        <TrendingUp size={10} /> {t.delta}%
-      </span>
-    )
-  }
-  if (t.richtung === "down") {
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-danger bg-danger/10 px-1.5 py-0.5 rounded-full">
-        <TrendingDown size={10} /> {t.delta}%
-      </span>
-    )
-  }
+function HealthDot({ label, ok }: { label: string; ok: boolean | undefined }) {
+  const color = ok === undefined ? "bg-slate-300" : ok ? "bg-emerald-500" : "bg-rose-500"
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-ink-muted">
-      <Minus size={10} /> 0%
-    </span>
-  )
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; bg: string; fg: string }> = {
-    offen:          { label: "Offen",          bg: "bg-danger/10", fg: "text-danger" },
-    auktion:        { label: "Auktion",        bg: "bg-rolle-mieter/10", fg: "text-rolle-mieter" },
-    in_bearbeitung: { label: "In Arbeit",      bg: "bg-warm/10", fg: "text-warm" },
-    erledigt:       { label: "Erledigt",       bg: "bg-accent/10", fg: "text-accent" },
-  }
-  const c = map[status] ?? { label: status, bg: "bg-line", fg: "text-ink-secondary" }
-  return (
-    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0 ${c.bg} ${c.fg}`}>
-      {c.label}
-    </span>
-  )
-}
-
-function RolleBadge({ rolle }: { rolle: string | null }) {
-  if (!rolle) return null
-  const map: Record<string, string> = {
-    admin:      "bg-rolle-admin/10 text-rolle-admin",
-    verwalter:  "bg-accent/10 text-accent",
-    handwerker: "bg-warm/10 text-warm",
-    mieter:     "bg-rolle-mieter/10 text-rolle-mieter",
-  }
-  return (
-    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0 ${map[rolle] ?? "bg-line text-ink-secondary"}`}>
-      {rolle}
-    </span>
+    <div className="flex items-center gap-2">
+      <span className={`inline-block w-2 h-2 rounded-full ${color}`} />
+      <span className="text-xs text-ink">{label}</span>
+    </div>
   )
 }
