@@ -206,19 +206,35 @@ export async function POST(request: NextRequest) {
   const { finalRate } = effektiveProvisionsRate(0.05, surge, isEarlyAdopter)
   const calc = calculateCommission(kostenFinal, finalRate)
 
-  const { error: provisionErr } = await admin.from("provisionen").upsert(
-    {
-      ticket_id: ticketId,
-      verwalter_id: ticket.verwalter_id ?? user.id,
-      handwerker_id: angebot.handwerker_id,
-      auftragswert: kostenFinal,
-      provision_rate: finalRate,
-      provision_betrag: calc.provisionBetrag,
-      gesamt: calc.gesamt,
-      is_early_adopter: isEarlyAdopter,
-    },
+  // Sprint AA Hotfix — Vergabe-Regression (25.05.2026):
+  // public.provisionen hat (noch) keinen UNIQUE-Constraint auf ticket_id,
+  // also kann onConflict-Upsert mit 42P10 failen ("ON CONFLICT
+  // specification doesn't match any constraint"). Migration
+  // 20260605000090 ergänzt den Constraint — solange die nicht
+  // angewandt ist, machen wir manuell delete-then-insert.
+  const provisionRow = {
+    ticket_id: ticketId,
+    verwalter_id: ticket.verwalter_id ?? user.id,
+    handwerker_id: angebot.handwerker_id,
+    auftragswert: kostenFinal,
+    provision_rate: finalRate,
+    provision_betrag: calc.provisionBetrag,
+    gesamt: calc.gesamt,
+    is_early_adopter: isEarlyAdopter,
+  }
+  let { error: provisionErr } = await admin.from("provisionen").upsert(
+    provisionRow,
     { onConflict: "ticket_id" },
   )
+  if (provisionErr && /ON CONFLICT|no.*unique|42P10/i.test(provisionErr.message)) {
+    // Migration 20260605000090 noch nicht angewandt — Fallback:
+    // existierende Row löschen, dann neue inserten. ticket_id ist FK
+    // mit ON DELETE CASCADE in der Gegenrichtung; manuelles delete
+    // hier ist sicher (kein Cascade von provisionen aus).
+    await admin.from("provisionen").delete().eq("ticket_id", ticketId)
+    const insertResult = await admin.from("provisionen").insert(provisionRow)
+    provisionErr = insertResult.error
+  }
   if (provisionErr) {
     return NextResponse.json({ error: "Provisions-Snapshot fehlgeschlagen: " + provisionErr.message }, { status: 500 })
   }
