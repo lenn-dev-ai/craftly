@@ -96,6 +96,38 @@ Keine Drift identifiziert.
 5. **Empty-States über `<EmptyState>`** — siehe Sprint N.
 6. **Rollen-Farben** nur für rollen-spezifische Elemente (Avatar, Sidebar-Active, Wizard-Akzente).
 
+## 8. Sprint-AB-Farb-Diät (Verwalter-Bereich Enterprise-Look)
+
+Aus Designer-Audit (Verwalter-Design-Fit 5.5/10 → Enterprise-Ruhe):
+
+- **`accent` (Reparo-Green)** — nur für Primary-Action pro Screen
+  (Haupt-CTA-Button, primärer Link). KPI-Werte stehen in `text-ink`
+  (Standard), nicht in `text-accent`.
+- **`warm` (Gold)** — nur für Highlights mit echter Bedeutung:
+  Early-Adopter-Banner, Sales-Pricing-„BELIEBT"-Tag, Warn-Cards.
+  NICHT für KPI-Werte, nicht für sekundäre Sektion-Header.
+- **`rolle-*` (Rollen-Farben)** — Avatar / Sidebar-Active / Wizard-
+  Step-Indikator. NICHT als KPI-Akzent-Farbe.
+- **Status-Dots** — `status-offen` rot / `status-auktion` blau /
+  `status-bearbeitung` amber / `status-erledigt` grün. Klein (`w-2 h-2`).
+  NICHT als Background-Fläche im Verwalter-Bereich.
+- **Card-Hierarchie:** max. eine farbige Card pro Section. Mehrere
+  KPIs landen in einem Inline-Strip (siehe `KpiStripItem` in
+  `app/dashboard-verwalter/page.tsx`).
+
+**Tatsächlich umgesetzt in Sprint AB:**
+- AB1 Dashboard: 4 farbige KPI-Cards → ein Strip in `text-ink`,
+  Chart in Akkordeon (commit `7efaeb5`)
+- AB2 Tickets-Liste: Card-pro-Zeile → Tabelle (commit `462442e`)
+- AB3 Marktplatz-KPIs: 3 farbige Cards → ein Strip (commit `1faf65e`)
+- AB4 Reporting: Export-Button-Stub neben Zeitraum-Filter (commit `210558a`)
+- AC Bronze/Silber/Gold → Partner-Stufen mit Reparo-Green-Akzent
+  statt Medaillen-Optik (commit `28c9b6f`)
+
+Marketing-Landing `/hausverwaltungen` (Sprint K) bleibt bewusst
+conversion-orientiert mit Hero-Highlights — die Regeln gelten für
+den Arbeitsbereich, nicht für Marketing.
+
 ## 8. Verifikation
 
 Build grün (Next.js 14.2.35, tsc --noEmit grün). Keine visuelle Regression in den getesteten Sektionen.
