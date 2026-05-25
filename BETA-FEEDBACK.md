@@ -780,6 +780,83 @@ Existierender Playwright-Test `flow-hw-bietet.spec.ts` hat einen Sub-Test der Ve
 
 ---
 
+## Iteration 22 — 25.05.2026 (Sprint AB Verwalter-Beruhigung)
+
+Designer-Audit-Finding (24.05.): „Verwalter brauchen operative Ruhe, Klarheit, Kontrolle — aktuell vermittelt Reparo eher ‚innovatives SaaS' als ‚stabile Arbeitsplattform'." 4 Phasen abgearbeitet, AB5 als Doku-Pass zusammengefasst.
+
+| Phase | Commit | Was |
+|---|---|---|
+| AB1 | `7efaeb5` | Dashboard-KPIs: 4 farbige Cards → Inline-Strip in Standard-Ink; Throughput-Chart in `Accordion` (default zu, localStorage-persistiert) |
+| AB2 | `462442e` | Tickets-Liste: Card-pro-Zeile → `<table>` mit Status-Dot / Titel / Wohnung / Eingang / Aktivität / Status-Badge; responsive Column-Show |
+| AB3 | `1faf65e` | Marktplatz-Stats: 3 farbige KPI-Cards → ein ruhiger Inline-Strip |
+| AB4 | `210558a` | Reporting: Export-Button-Stub (PDF/CSV) neben Zeitraum-Filter, Tooltip „verfügbar nach Beta" |
+| AB5 | `d064d7a` | Farb-Diät-Konventionen in `STYLE-AUDIT.md` §8 dokumentiert — Code-Pass redundant durch AB1-AB3 |
+
+**LOC-Diff:** Verwalter-Dashboard −22 Zeilen, Tickets-Liste +21 (Tabelle braucht etwas mehr Struktur), Marktplatz −0 (Refactor nicht Reduktion), Reporting +11 (Export-Stub). Netto leicht kürzer.
+
+---
+
+## Iteration 23 — 25.05.2026 (Sprint AC Partner-Stufen-Rebrand)
+
+3-zu-1-Audit-Konsens: Bronze/Silber/Gold-Mechanik wirkt zu „Lieferdienst-Ranking" / „Uberisierung". Lösung: Mechanik bleibt, Wording auf Partner-Sprache umstellen.
+
+| Item | Commit | Was |
+|---|---|---|
+| AC1-AC4 | `28c9b6f` | UI-Wording + Visuals rebrand |
+
+**Wording-Mapping (DB unverändert):**
+
+| Alt | Neu |
+|---|---|
+| Bronze | Vertrauter Partner |
+| Silber | Top-Partner |
+| Gold | Premium-Partner |
+| Sichtbarkeits-Stufe | Partner-Status |
+| Angebotstreue | Antwort-Rate (mit Tooltip) |
+
+**Visuell entspielt:**
+- HW-Dashboard `SichtbarkeitsBadge`: keine Medaillen-Emoji, einheitlich Reparo-Green-Akzent
+- HW-Zeitslots `SichtbarkeitsCard`: kein Gradient, kein Pill-Badge
+- Verwalter-HW-Verzeichnis `STUFEN_BADGE`: dezente Border-Badges („Premium" / „Top" / „Vertraut") statt goldener Pillen
+- Verwalter-HW-Verzeichnis KPI „Gold-Status" → „Premium-Partner" mit Reparo-Green
+
+**Constraints eingehalten:** DB-Felder unverändert, `lib/auction/scoring-pipeline.ts` Smart-Score-Logic unangetastet, Cron-Recompute weiter funktional.
+
+---
+
+## Iteration 24 — 25.05.2026 (Sprint M Extension State-Design-System)
+
+Designer-Audit: „Loading / Errors / Empty States / Warnings / Konflikte / Eskalationen / Success Moments — alles als professionelles System."
+
+**Commit `2cec50b`** — `components/ui/states/index.tsx` mit 6 neuen Komponenten + Re-Export ab `components/ui/index.tsx`:
+
+| Component | Zweck |
+|---|---|
+| `LoadingSkeleton` | variant card / table / page; Pulse-Skelett mit konsistentem Markup |
+| `ErrorCard` | bleibt stehen bis behoben, optional Retry + Support-Link |
+| `WarningBanner` | level info / warn / critical, dismissable |
+| `ConflictModal` | Block-Modal mit primärer + sekundärer Entscheidung |
+| `EscalationMarker` | rot, prominent; inline-Badge oder full-Banner |
+| `SuccessBanner` | persistent, optional Action-Button (anders als Toast) |
+
+`EmptyState` + `LoadingSpinner` + `Toast` (Sprint N) bleiben unverändert — diese Library ist additiv.
+
+**Karten-Reduktion (M7):** ist via Sprint AB schon umgesetzt — AB1/AB3 haben die 7 KPI-Cards im Verwalter-Bereich auf 2 Inline-Strips reduziert, AB2 hat Card-pro-Zeile auf Tabelle umgestellt. Im HW-Dashboard bleiben die 4 Quick-Action-Tiles bewusst sichtbar (siehe Sprint Q2 Doku — Information-Overload-Risiko gering, sofortige Sichtbarkeit wichtiger).
+
+---
+
+## Final-Smoke (Stand 25.05.2026 nach 5-Sprint-Block)
+
+Build: grün. TypeScript: clean. Lint: clean. 
+
+Migration-Apply-Backlog jetzt 9 Files (eines davon ist `…000090_sprint_aa_provisionen_ticket_unique.sql`). Apply-Reihenfolge dokumentiert in `supabase/migrations/README-2026-06-vacation-prep.md` + Iteration 21 oben.
+
+**Verbleibend aus Sprint R:** R3 (Wizard-Duplikat-Refactor 915 LOC + 361 LOC → shared `<TicketWizard>`) ist ein größerer Architekturschritt. Risiko: bestehende E2E-Tests (Sprint J `flow-mieter-meldet`, `flow-verwalter-vergibt`) müssen grün bleiben. **Empfehlung Cowork:** R3 als eigener Sprint behandeln, dieser Block ist groß genug.
+
+**Verbleibend aus Sprint AB:** AB3-Wochenstruktur-Akkordeon ist nicht explizit umgesetzt — die generierten 14-Tage-Slots sind schon kompakt in der Marktplatz-Liste integriert (kein separater Generator-Bereich der ein Akkordeon braucht).
+
+---
+
 ## Iteration 18 — 23.05.2026 (Tag 4: Sprint C/D/E/L)
 
 Cowork hat einen korrigierten Tag-4-Block geschickt. **C/D/E sind alle drei bereits aus früheren Iterationen abgeschlossen** (siehe Iteration 14). Neu in der Queue war **Sprint L** (HW-Stamm-Gewerke aus Profil) — den habe ich durchgezogen.
