@@ -30,6 +30,11 @@ const menus: Record<Rolle, MenuItem[]> = {
     { href: "/dashboard-verwalter/handwerker", label: "Handwerker", Icon: Wrench },
     { href: "/dashboard-verwalter/wohnungen", label: "Wohnungen", Icon: Home },
     { href: "/dashboard-verwalter/reporting", label: "Reporting", Icon: BarChart3 },
+    // Sprint AD (Mieter-First-Pivot, 25.05.): Verwalter-Wizard ist
+    // nicht mehr der primäre Eingabe-Pfad. Bleibt erreichbar für
+    // Sonderfälle (Mieter ruft Verwalter direkt an), aber gruppiert
+    // in "Mein Bereich" statt prominent als Top-Item.
+    { href: "/dashboard-verwalter/neues-ticket", label: "Ticket telefonisch", Icon: Plus, gruppe: "selten" },
   ],
   handwerker: [
     // K2: Top-4 — was der HW täglich anfasst.

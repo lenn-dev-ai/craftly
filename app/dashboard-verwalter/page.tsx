@@ -200,12 +200,11 @@ export default function VerwalterDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Link
-            href="/dashboard-verwalter/neues-ticket"
-            className="inline-flex items-center gap-2 text-sm font-semibold bg-rolle-verwalter text-white px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
-          >
-            <span>+</span> Neues Ticket
-          </Link>
+          {/* Sprint AD — Mieter-First-Konzept-Bestätigung (25.05.):
+              "+ Neues Ticket"-Primary-CTA entfernt. Mieter-Wizard ist
+              jetzt der primäre Eingabe-Pfad. Verwalter-Wizard bleibt
+              als Sonderfall erreichbar über Sidebar > "Mein Bereich"
+              (telefonische Aufnahme falls Mieter nicht selber meldet). */}
           <Link
             href="/dashboard-verwalter/marktplatz"
             className="inline-flex items-center gap-2 text-sm font-semibold bg-accent text-white px-5 py-2.5 rounded-xl hover:bg-accent-hover transition-colors"
@@ -318,12 +317,6 @@ export default function VerwalterDashboard() {
             <span className="font-semibold">Pipeline ist sauber.</span>
             {" "}Keine offenen Befunde, keine Nachträge, keine abgelaufenen Auktionen.
           </div>
-          <Link
-            href="/dashboard-verwalter/neues-ticket"
-            className="text-xs font-semibold text-status-erledigt hover:underline whitespace-nowrap"
-          >
-            + Nächstes Ticket
-          </Link>
         </section>
       )}
 
