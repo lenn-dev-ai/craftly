@@ -17,8 +17,13 @@ const STAND = "Mai 2026"
 export default function AGB() {
   return (
     <div className="min-h-screen bg-surface text-ink">
+      {/* Feedback b078859b (Cowork-QA 18.05.): "Hier fehlen oben links
+          die 3 Streifen damit ich wieder zurück zum Auswahl Baum kann".
+          Die AGB-Page ist public (kein Dashboard-Layout, kein Hamburger),
+          aber der "Reparo"-Logo-Link wurde nicht als Zurück-CTA erkannt.
+          Ergänzt: expliziter "← Zurück zur Startseite"-Link. */}
       <nav className="border-b border-line bg-white">
-        <div className="max-w-3xl mx-auto px-6 h-14 flex items-center">
+        <div className="max-w-3xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-ink hover:text-accent transition-colors">
             <div className="w-7 h-7 rounded-md bg-accent flex items-center justify-center">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -27,6 +32,9 @@ export default function AGB() {
               </svg>
             </div>
             <span className="font-semibold">Reparo</span>
+          </Link>
+          <Link href="/" className="text-sm text-ink-muted hover:text-ink transition-colors">
+            ← Zurück zur Startseite
           </Link>
         </div>
       </nav>

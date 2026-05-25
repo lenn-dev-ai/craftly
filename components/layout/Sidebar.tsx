@@ -45,15 +45,14 @@ const menus: Record<Rolle, MenuItem[]> = {
     { href: "/dashboard-handwerker/kalender", label: "Kalender", Icon: CalendarCheck },
     { href: "/dashboard-handwerker/karte", label: "Karte & Route", Icon: Map },
     { href: "/dashboard-handwerker/einnahmen", label: "Einnahmen", Icon: Euro },
-    // Mein Bereich — Settings + sekundäre Detail-Listen. Audit-C2:
-    // die Direct-Routen Aufträge / Diagnosen / Termine / Zeitslots
-    // existieren als 89-645 LOC Pages und waren bisher nur per
-    // Direct-URL erreichbar — jetzt explizit gruppiert, statt dunkle
-    // Routen zu sein. zeitplan ist Redirect zum Kalender (Dupe).
+    // Feedback 9337c802 (25.05.): "Warum haben wir im Menüs immer noch
+    // zeitslots, Terminliste, und Diagnosen? Haben wir doch konsolidiert".
+    // Lennart hat Recht: Zeitslots+Termine sind via Sprint B in den
+    // Kalender gemerged, Diagnosen via Sprint C in normale Aufträge.
+    // Sidebar-Items raus, Routen werden zu Redirects (siehe page.tsx
+    // in den jeweiligen Ordnern). "Meine Aufträge" bleibt, weil es
+    // tatsächlich nichts Äquivalentes im Hauptmenü gibt.
     { href: "/dashboard-handwerker/auftraege", label: "Meine Aufträge", Icon: Briefcase, gruppe: "selten" },
-    { href: "/dashboard-handwerker/termine", label: "Termin-Liste", Icon: Calendar, gruppe: "selten" },
-    { href: "/dashboard-handwerker/zeitslots", label: "Zeitslots", Icon: CalendarRange, gruppe: "selten" },
-    { href: "/dashboard-handwerker/diagnosen", label: "Diagnosen", Icon: FileText, gruppe: "selten" },
     { href: "/dashboard-handwerker/verdienst", label: "Verdienst-Rechner", Icon: Calculator, gruppe: "selten" },
     { href: "/dashboard-handwerker/profil", label: "Mein Profil", Icon: UserCircle, gruppe: "selten" },
   ],
