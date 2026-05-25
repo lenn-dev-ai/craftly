@@ -321,12 +321,19 @@ export default function KarteView() {
           )}
         </div>
       ) : (
-        <div className="rounded-2xl overflow-hidden border border-line shadow-sm" style={{ height: 540 }}>
+        <div className="rounded-2xl overflow-hidden border border-line shadow-sm relative" style={{ height: 540 }}>
+          {/* Sprint R Phase 18 (Feedback 345cee63): Karte fing
+              Scroll-Events ab — User kam auf Mobile nicht mehr aus
+              der Page raus.
+              scrollWheelZoom={false}: Desktop-Scrollen scrollt die
+              Page, nicht die Map. User kann mit Tap auf die Map
+              dragging + pinch-zoom nutzen, aber Page-Scroll bleibt
+              dem User. */}
           <MapContainer
             center={center}
             zoom={13}
             style={{ height: "100%", width: "100%" }}
-            scrollWheelZoom
+            scrollWheelZoom={false}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
