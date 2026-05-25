@@ -239,29 +239,37 @@ function USP() {
 }
 
 function Pricing() {
+  // Sprint R Phase 1 (Pricing-Vereinheitlichung) — Option B per-Wohnung
+  // gewählt. Cowork-Empfehlung + Sales-Material schon im Repo passend
+  // (Calculator/Deck/One-Pager nutzen alle per-Wohnung). Landing zieht
+  // jetzt nach. Marktstandard: Casavi 2,50 €/Whg, Wohnmonitor 1,90 €.
+  // Reparo unter beiden.
   const tiers = [
     {
       name: "Starter",
-      preis: "49",
-      einheit: "/ Monat",
+      preis: "1,29",
+      einheit: "€ pro Wohnung / Monat",
       ziel: "Bis 50 Wohneinheiten",
+      beispiel: "30 Wohnungen ≈ 39 € / Monat",
       features: ["Schadens-Wizard", "Auto-Vergabe", "1 Verwalter-Account", "Standard-Support"],
       cta: "30 Tage testen",
     },
     {
       name: "Pro",
-      preis: "149",
-      einheit: "/ Monat",
-      ziel: "50–300 Wohneinheiten",
+      preis: "0,89",
+      einheit: "€ pro Wohnung / Monat",
+      ziel: "51–500 Wohneinheiten",
+      beispiel: "200 Wohnungen ≈ 178 € / Monat",
       features: ["Alles aus Starter", "Bulk-Import", "Throughput-Analytics", "5 Verwalter-Accounts", "Priorisierter Support"],
       cta: "Demo buchen",
       highlight: true,
     },
     {
       name: "Enterprise",
-      preis: "individuell",
+      preis: "Auf Anfrage",
       einheit: "",
-      ziel: "300+ Wohneinheiten",
+      ziel: "500+ Wohneinheiten",
+      beispiel: "Volumen-Rabatt + Custom-SLA",
       features: ["Alles aus Pro", "SSO/SAML", "Custom-SLA", "API-Zugang", "Dedicated Success Manager"],
       cta: "Sprechen wir",
     },
@@ -271,14 +279,14 @@ function Pricing() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-ink mb-3">Faires Preismodell.</h2>
-          <p className="text-ink-secondary mb-3">Pro Verwaltung, pro Monat — alle Preise netto. Kein Lock-in.</p>
+          <p className="text-ink-secondary mb-3">Pro Wohnung im Bestand — keine Setup-Gebühr, alle Preise netto, kein Lock-in.</p>
           <a
             href="/Reparo-Pricing-Calculator.html"
             target="_blank"
             rel="noopener"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-rolle-verwalter hover:underline"
           >
-            ROI-Calculator öffnen <ArrowRight className="w-3.5 h-3.5" />
+            Eigene Kosten berechnen <ArrowRight className="w-3.5 h-3.5" />
           </a>
         </div>
         <div className="grid md:grid-cols-3 gap-5">
@@ -297,11 +305,12 @@ function Pricing() {
                 </div>
               )}
               <h3 className="text-xl font-bold text-ink mb-1">{t.name}</h3>
-              <p className="text-xs text-ink-muted mb-4">{t.ziel}</p>
-              <div className="flex items-baseline gap-1 mb-5">
-                <span className="text-3xl font-bold text-ink">{t.preis === "individuell" ? "Auf Anfrage" : `${t.preis} €`}</span>
-                {t.einheit && <span className="text-sm text-ink-muted">{t.einheit}</span>}
+              <p className="text-xs text-ink-muted mb-3">{t.ziel}</p>
+              <div className="flex items-baseline gap-1 mb-1">
+                <span className="text-3xl font-bold text-ink">{t.preis}</span>
+                {t.einheit && <span className="text-xs text-ink-muted">{t.einheit}</span>}
               </div>
+              <p className="text-[11px] text-ink-muted mb-5">{t.beispiel}</p>
               <ul className="space-y-2 mb-6">
                 {t.features.map(f => (
                   <li key={f} className="text-sm text-ink-secondary flex items-start gap-2">

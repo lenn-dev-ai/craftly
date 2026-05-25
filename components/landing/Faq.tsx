@@ -10,7 +10,7 @@ const FAQS: { frage: string; antwort: string }[] = [
   {
     frage: "Gibt es eine Mindestlaufzeit?",
     antwort:
-      "Nein. Du kannst dein Konto jederzeit pausieren oder löschen. Verwalter zahlen nur, wenn auch tatsächlich vermittelt wird.",
+      "Nein. Du kannst dein Konto jederzeit pausieren oder löschen. Verwaltungen rechnen monatsweise ab — bei Wohnungs-Verkleinerung passt sich die Rechnung im nächsten Monat an.",
   },
   {
     frage: "Wie werden Handwerker geprüft?",
