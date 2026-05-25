@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
   const [{ data: onlineRpc }, aktiveAuktionen, neueTicketsLetzteStunde] = await Promise.all([
     admin.rpc("count_users_online_last_5min"),
-    admin.from("tickets").select("id", { count: "exact", head: true }).eq("status", "auktion_offen"),
+    admin.from("tickets").select("id", { count: "exact", head: true }).eq("status", "auktion"),
     admin.from("tickets").select("id", { count: "exact", head: true }).gte("created_at", seitEinerStunde),
   ])
 

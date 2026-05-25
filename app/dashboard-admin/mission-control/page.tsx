@@ -38,7 +38,7 @@ type ActivityVal = { value: number; delta: number | null }
 type ActivityData = {
   neue_tickets?: ActivityVal
   vergeben?: ActivityVal
-  abgeschlossen?: ActivityVal
+  erledigt?: ActivityVal
   neue_hw?: ActivityVal
 }
 
@@ -153,7 +153,7 @@ export default function AdminMissionControl() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <DeltaStat label="Neue Tickets"   data={activity?.neue_tickets} />
           <DeltaStat label="Vergeben"       data={activity?.vergeben} />
-          <DeltaStat label="Abgeschlossen"  data={activity?.abgeschlossen} />
+          <DeltaStat label="Erledigt"       data={activity?.erledigt} />
           <DeltaStat label="Neue HW"        data={activity?.neue_hw} />
         </div>
       </section>
