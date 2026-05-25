@@ -6,8 +6,9 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase"
 import { Ticket } from "@/types"
 import { CardListSkeleton, KpiGridSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
-import { TrendingUp, TrendingDown, Minus, PiggyBank, Stethoscope, FileEdit, Clock, ArrowRight, Inbox, Sparkles, Wrench, CheckCircle2 } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, PiggyBank, Stethoscope, FileEdit, Clock, ArrowRight } from "lucide-react"
 import { ThroughputChart, type ThroughputBucket } from "@/components/verwalter/ThroughputChart"
+import { Accordion } from "@/components/ui/Accordion"
 import { authFetch } from "@/lib/auth/clientFetch"
 
 function kostenSchaetzung(t: Ticket): string {
@@ -215,42 +216,25 @@ export default function VerwalterDashboard() {
         </div>
       </div>
 
-      {/* Sprint H — KPI-Cards + Throughput-Chart (wenn nicht leer) */}
+      {/* Sprint AB1 — KPIs als beruhigte Inline-Strip statt 4 farbige
+          Cards. Designer-Audit: weniger Highlights, mehr Klarheit.
+          Throughput-Chart als einklappbares Akkordeon (default zu). */}
       {kpis && tickets.length > 0 && (
-        <section className="mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <KpiTile
-              icon={<Inbox size={16} />}
-              label="Offene Tickets"
-              value={kpis.offene_tickets}
-              accent="text-rolle-verwalter"
-            />
-            <KpiTile
-              icon={<Sparkles size={16} />}
-              label="Neu diese Woche"
-              value={kpis.neu_diese_woche}
-              accent="text-rolle-mieter"
-            />
-            <KpiTile
-              icon={<Wrench size={16} />}
-              label="In Bearbeitung"
-              value={kpis.in_bearbeitung}
-              accent="text-warm"
-            />
-            <KpiTile
-              icon={<CheckCircle2 size={16} />}
-              label="Erledigt diese Woche"
-              value={kpis.erledigt_diese_woche}
-              accent="text-accent"
-            />
+        <section className="mb-6 space-y-3">
+          <div className="bg-white border border-line rounded-2xl px-5 py-3 flex flex-wrap items-center gap-x-8 gap-y-2">
+            <KpiStripItem label="Offen" value={kpis.offene_tickets} />
+            <KpiStripItem label="Neu diese Woche" value={kpis.neu_diese_woche} />
+            <KpiStripItem label="In Bearbeitung" value={kpis.in_bearbeitung} />
+            <KpiStripItem label="Erledigt diese Woche" value={kpis.erledigt_diese_woche} />
           </div>
-          <div className="bg-white border border-line rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-ink">Throughput · 4 Wochen</h3>
-              <span className="text-[10px] text-ink-muted uppercase tracking-wider">Neu / Erledigt</span>
-            </div>
+          <Accordion
+            title="Throughput · 4 Wochen"
+            meta="Neu vs. Erledigt"
+            persistKey="verwalter-throughput-chart"
+            defaultOpen={false}
+          >
             <ThroughputChart data={kpis.throughput_4w} />
-          </div>
+          </Accordion>
         </section>
       )}
 
@@ -817,21 +801,15 @@ function Kpi({ label, value, sub, accent, href }: {
   return <div className={innerCls}>{content}</div>
 }
 
-// Sprint H — kompakte KPI-Kachel mit Icon. Anders als das ältere Kpi
-// (above): zeigt Icon + Label inline für ein dichteres 4-Tile-Grid.
-function KpiTile({ icon, label, value, accent }: {
-  icon: React.ReactNode
-  label: string
-  value: number
-  accent: string
-}) {
+// Sprint AB1 — inline KPI-Strip-Item für Enterprise-Look.
+// Ersetzt das frühere KpiTile (Sprint H) — keine Card, kein Akzent-
+// Farbe, weniger Highlight. Designer-Audit: Verwalter braucht
+// operative Ruhe, nicht 4 farbige Kacheln.
+function KpiStripItem({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-white rounded-2xl border border-line p-4">
-      <div className={`flex items-center gap-1.5 ${accent} mb-1.5`}>
-        {icon}
-        <span className="text-[10px] uppercase tracking-wider font-semibold">{label}</span>
-      </div>
-      <div className="text-2xl font-bold tabular-nums text-ink">{value}</div>
+    <div className="flex items-baseline gap-2">
+      <span className="text-2xl font-bold tabular-nums text-ink">{value}</span>
+      <span className="text-xs text-ink-muted">{label}</span>
     </div>
   )
 }
