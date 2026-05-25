@@ -91,10 +91,10 @@ export const VERDICTS: Record<string, Verdict> = {
     cat: "bug", sev: "blocker",
     area: "HW-Auftrag-Annahme (/api/auction/bid) + vermutlich alle Server-Routes mit auth.getUser()",
     summary: "POST /api/auction/bid wirft 401 Unauthorized — gleiches Pattern wie B1.1 (Bearer-Token wird nicht gelesen).",
-    recommendation: "Beta-Blocker. Claude Code soll systematisch grep'en (auth.getUser() ohne Token-Argument) und alle Treffer mit B1.1-Pattern (Commit 1fd30db) fixen. Helper-Funktion in lib/auth/ zentralisieren statt route-by-route. Nebenbei H2/H3/H4 Auktions-Wording-Reste räumen.",
-    status: "inprogress",
-    owner: "claudecode",
-    ref: "PROMPTS/auto-fix-2026-05-18-1400.md liegt bereit · Cowork-QA bestätigt",
+    recommendation: "Erledigt via H1-Sprint (04f9c88 systematischer Auth-Fix für alle Server-Routes) + H2/H3/H4 Auktions-Wording-Cleanup (16a348a). Bearer-Token-Helper `lib/auth/getUserFromRequest.ts` zentralisiert.",
+    status: "done",
+    owner: "erledigt",
+    ref: "H1 · 04f9c88 + 16a348a · Sprint A",
   },
   "89967c7b-07c3-4e63-822a-3d7e0cd8b9e2": {
     cat: "test", sev: "low",
@@ -130,15 +130,9 @@ export const VERDICTS: Record<string, Verdict> = {
     owner: "erledigt",
   },
   // === Iteration 7 (Cowork-Testrun 14:10) ===
-  "f6d050a3-cb16-4fb1-8386-3a72e30cb9f0": {
-    cat: "ux", sev: "medium",
-    area: "Mieter-Wizard (/dashboard-mieter/melden) - Container-Centering",
-    summary: "Wizard-Seite ist nach rechts verschoben statt zentriert.",
-    recommendation: "Container-Klassen in app/dashboard-mieter/melden/page.tsx oder layout.tsx prüfen. Vermutlich fehlt mx-auto oder Sidebar drückt ohne Ausgleich. 1-Zeilen-Fix, S-Aufwand.",
-    status: "inprogress",
-    owner: "claudecode",
-    ref: "M5 · PROMPTS/auto-fix-2026-05-18-1410.md",
-  },
+  // f6d050a3 (Wizard-Centering) hat einen späteren Eintrag weiter unten
+  // mit status:"done" — der gewinnt (JS-Object-Key-Eindeutigkeit). Hier
+  // entfernt damit die Datei nicht zwei widersprüchliche Einträge zeigt.
   "af5e426a-5d9d-44ef-adbb-318790ca7918": {
     cat: "bug", sev: "high",
     area: "HW-Dashboard (/dashboard-handwerker) - KPI-Kachel 'Offene Ausschreibung'",
@@ -213,8 +207,8 @@ export const VERDICTS: Record<string, Verdict> = {
   "47f62752-6909-4e3b-9a47-be352137f93c": {
     cat: "question", sev: "low", area: "HW-Profil Werkstatt vs morgens-los",
     summary: "Warum unterscheiden? Ein Startort sollte reichen.",
-    recommendation: "Backlog post-Beta: vereinfachen wenn HW-Feedback es bestätigt.",
-    status: "backlog", owner: "lennart",
+    recommendation: "Erledigt via b9b783e: Werkstatt-Adress-Block UI entfernt, Save-Logic spiegelt startort_* automatisch auf adresse/lat/lng (scoring-pipeline-Fallback bleibt funktional).",
+    status: "done", owner: "erledigt", ref: "b9b783e",
   },
   "8e20fa02-f43b-4989-a72c-f6e386ea817e": {
     cat: "feature", sev: "medium", area: "HW-Slots Ort-Angabe",
@@ -279,8 +273,8 @@ export const VERDICTS: Record<string, Verdict> = {
   "b078859b-cc65-49fb-9d40-caec31fb84fd": {
     cat: "ux", sev: "low", area: "AGB-Page Hamburger fehlt",
     summary: "3 Striche fehlen.",
-    recommendation: "Erledigt via Sprint UX (Hamburger-Layout-Pattern).",
-    status: "done", owner: "erledigt", ref: "Sprint UX P1",
+    recommendation: "AGB ist public (kein Dashboard-Layout, daher kein Hamburger). Stattdessen via 2629a62: expliziter \"← Zurück zur Startseite\"-Link rechts in der Nav.",
+    status: "done", owner: "erledigt", ref: "2629a62",
   },
   "90229867-2837-45a9-93c1-0b006acc588c": {
     cat: "ux", sev: "medium", area: "Mieter Vergabe-Uhr passt nicht",
@@ -395,8 +389,8 @@ export const VERDICTS: Record<string, Verdict> = {
   "9337c802-9e7e-4643-a83b-d0606f7c1303": {
     cat: "question", sev: "medium", area: "HW-Sidebar tote Routen (zeitslots/Termine/Diagnosen)",
     summary: "Sollten gemerged sein.",
-    recommendation: "Erledigt via R2 (tote Routen aufgeräumt) + R22 (Diagnose-Preise droppen).",
-    status: "done", owner: "erledigt", ref: "R2 e28c55f + R22 b5c5258",
+    recommendation: "Final erledigt via 2629a62: alle 3 Sidebar-Items (zeitslots/Termine/Diagnosen) entfernt, Pages als Redirects zum Kalender bzw. Dashboard. -1758 LOC.",
+    status: "done", owner: "erledigt", ref: "2629a62 (zusätzlich zu R2 e28c55f + R22 b5c5258)",
   },
   "f4f19fbe-c3e0-47a4-b4b2-2da0db813678": {
     cat: "bug", sev: "medium", area: "KI Health Score 30 bei leerer DB",
