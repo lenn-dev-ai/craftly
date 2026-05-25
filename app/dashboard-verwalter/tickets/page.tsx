@@ -39,6 +39,9 @@ export default function TicketsPage() {
   })
   const [typFilter, setTypFilter] = useState<TypFilter>("alle")
   const [loading, setLoading] = useState(true)
+  // Audit-H5: Sort-Toggle. lokaler State, kein URL-Param —
+  // Standard-Reihenfolge bleibt "neueste zuerst" wie bisher.
+  const [sort, setSort] = useState<"neu" | "alt" | "prio" | "status">("neu")
 
   useEffect(() => {
     async function load() {
@@ -54,9 +57,26 @@ export default function TicketsPage() {
     load()
   }, [router])
 
+  // Audit-H5: Sortier-Reihenfolgen
+  const PRIO_RANK: Record<string, number> = { notfall: 0, zeitnah: 1, planbar: 2 }
+  const STATUS_RANK: Record<string, number> = { offen: 0, auktion: 1, in_bearbeitung: 2, erledigt: 3 }
   const shown = tickets
     .filter(t => statusFilter === "alle" || t.status === statusFilter)
     .filter(t => typFilter === "alle" || (t.ticket_typ ?? "standard") === typFilter)
+    .slice()
+    .sort((a, b) => {
+      if (sort === "neu") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      if (sort === "alt") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      if (sort === "prio") {
+        const ra = PRIO_RANK[a.prioritaet] ?? 99
+        const rb = PRIO_RANK[b.prioritaet] ?? 99
+        return ra - rb || new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      }
+      // status
+      const sa = STATUS_RANK[a.status] ?? 99
+      const sb = STATUS_RANK[b.status] ?? 99
+      return sa - sb || new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
 
   const typCount = (val: TypFilter) =>
     val === "alle" ? tickets.length : tickets.filter(t => (t.ticket_typ ?? "standard") === val).length
@@ -127,6 +147,22 @@ export default function TicketsPage() {
             </button>
           )
         })}
+      </div>
+
+      {/* Audit-H5: Sort-Toggle */}
+      <div className="flex items-center gap-2 mb-4">
+        <label htmlFor="ticket-sort" className="text-xs text-ink-muted">Sortierung:</label>
+        <select
+          id="ticket-sort"
+          value={sort}
+          onChange={e => setSort(e.target.value as typeof sort)}
+          className="text-xs bg-white border border-line rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-accent/40"
+        >
+          <option value="neu">Neueste zuerst</option>
+          <option value="alt">Älteste zuerst</option>
+          <option value="prio">Priorität (Notfall zuerst)</option>
+          <option value="status">Status (Offen zuerst)</option>
+        </select>
       </div>
 
       {loading ? (

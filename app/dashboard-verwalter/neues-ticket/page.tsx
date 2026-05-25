@@ -31,9 +31,24 @@ const GEWERK_LABEL: Record<string, string> = {
 }
 
 const DRINGLICHKEIT = [
-  { key: "planbar", label: "Planbar", sub: "Diese Woche" },
-  { key: "zeitnah", label: "Zeitnah", sub: "Bald bitte" },
-  { key: "notfall", label: "Notfall", sub: "Sofort" },
+  {
+    key: "planbar",
+    label: "Planbar",
+    sub: "Diese Woche",
+    help: "Auktion läuft bis zu 72h, Handwerker vergleichen in Ruhe Preise",
+  },
+  {
+    key: "zeitnah",
+    label: "Zeitnah",
+    sub: "Bald bitte",
+    help: "Auktion läuft maximal 24h, dann automatische Vergabe an besten Treffer",
+  },
+  {
+    key: "notfall",
+    label: "Notfall",
+    sub: "Sofort",
+    help: "Direkt-Vergabe an erstbesten HW im Radius, kein Auktions-Loop",
+  },
 ] as const
 
 const STEPS: Step[] = ["anrufer", "schaden", "ort", "foto", "zusammenfassung"]
@@ -222,6 +237,7 @@ export default function NeuesTicketPage() {
                   <button
                     key={d.key}
                     onClick={() => setPrioritaet(d.key)}
+                    title={d.help}
                     className={`p-3 rounded-lg border text-left transition ${
                       prioritaet === d.key
                         ? "border-rolle-verwalter bg-rolle-verwalter/5"
@@ -233,6 +249,10 @@ export default function NeuesTicketPage() {
                   </button>
                 ))}
               </div>
+              {/* Audit-L2: explizite Erklärung was die gewählte Stufe auslöst */}
+              <p className="text-[11px] text-ink-muted mt-2">
+                {DRINGLICHKEIT.find(d => d.key === prioritaet)?.help}
+              </p>
             </div>
           </div>
         )}
