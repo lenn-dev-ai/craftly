@@ -601,33 +601,36 @@ export default function ZeitslotsPage() {
 }
 
 function SichtbarkeitsCard({ info }: { info: SichtbarkeitsInfo }) {
-  const config = {
-    gold:   { bg: "from-[#C4956A]/15 to-[#C4956A]/5", border: "border-warm/40", badge: "bg-warm text-white", emoji: "🏆", label: "Gold" },
-    silber: { bg: "from-[#94A3B8]/15 to-[#94A3B8]/5", border: "border-[#94A3B8]/40", badge: "bg-[#94A3B8] text-white", emoji: "🥈", label: "Silber" },
-    bronze: { bg: "from-[#78716C]/10 to-[#78716C]/5", border: "border-line",     badge: "bg-[#78716C] text-white", emoji: "🥉", label: "Bronze" },
+  // Sprint AC — Partner-Stufen statt Bronze/Silber/Gold-Medaille.
+  // Visuell entspielt: einheitlich Reparo-Cream-Background + Accent-Border,
+  // kein Gradient, kein Medaillen-Emoji.
+  const partnerLabel = {
+    gold:   "Premium-Partner",
+    silber: "Top-Partner",
+    bronze: "Vertrauter Partner",
   }[info.stufe]
 
   const motivationsText: Record<typeof info.stufe, string> = {
     gold:   "Du wirst aktiv in allen Auktionen bevorzugt eingeladen.",
-    silber: "Trag noch ein paar Slots ein, um in den Gold-Status zu kommen — dort bekommst du mehr Einladungen.",
-    bronze: "Trag freie Slots ein, um in Auktionen sichtbar zu werden.",
+    silber: "Mehr Slots eintragen → Premium-Partner-Status, dort bekommst du mehr Einladungen.",
+    bronze: "Trag freie Slots ein, um im Marktplatz sichtbar zu werden.",
   }
 
   return (
-    <div className={`mb-6 rounded-2xl border bg-gradient-to-br ${config.bg} ${config.border} p-5`}>
+    <div className="mb-6 rounded-2xl border border-accent/20 bg-accent/5 p-5">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="text-3xl" aria-hidden>{config.emoji}</div>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${config.badge}`}>
-                {config.label}-Sichtbarkeit
+              <span className="text-[11px] font-bold uppercase tracking-wider text-accent">
+                Partner-Status
               </span>
               {info.streak >= 2 && (
-                <span className="text-[11px] font-semibold text-danger">🔥 {info.streak} Wochen Streak</span>
+                <span className="text-[11px] font-semibold text-warm-dark">{info.streak} Wochen Streak</span>
               )}
             </div>
-            <div className="text-sm text-ink">
+            <div className="text-lg font-bold text-ink">{partnerLabel}</div>
+            <div className="text-xs text-ink-secondary mt-0.5">
               Diese Woche <strong>{info.freieSlots}</strong> freie Slots eingetragen
             </div>
           </div>

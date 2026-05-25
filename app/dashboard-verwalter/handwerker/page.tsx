@@ -30,10 +30,13 @@ interface Handwerker {
   verifiziert: boolean | null
 }
 
+// Sprint AC: Partner-Stufen statt Bronze/Silber/Gold-Medaillen-Look.
+// Visuell entspielt: dezenter Border-Badge in Reparo-Green statt
+// goldenen/silbernen Pillen.
 const STUFEN_BADGE: Record<string, { label: string; cls: string }> = {
-  gold:   { label: "Gold",   cls: "bg-warm text-white" },
-  silber: { label: "Silber", cls: "bg-[#94A3B8] text-white" },
-  bronze: { label: "Bronze", cls: "bg-[#78716C] text-white" },
+  gold:   { label: "Premium",   cls: "border border-accent/30 text-accent bg-accent/5" },
+  silber: { label: "Top",       cls: "border border-accent/20 text-ink bg-white" },
+  bronze: { label: "Vertraut",  cls: "border border-line text-ink-muted bg-white" },
 }
 
 export default function HandwerkerUebersicht() {
@@ -144,7 +147,7 @@ export default function HandwerkerUebersicht() {
           value={stats.avgBewertung > 0 ? `${stats.avgBewertung.toFixed(1)} / 5` : "—"}
           farbe="#5B6ABF"
         />
-        <Kpi label="Gold-Status" value={String(stats.gold)} farbe="#C4956A" />
+        <Kpi label="Premium-Partner" value={String(stats.gold)} farbe="#3D8B7A" />
       </div>
 
       {/* Filter */}
