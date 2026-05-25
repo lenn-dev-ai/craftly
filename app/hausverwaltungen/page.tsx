@@ -137,25 +137,29 @@ function ProblemCards() {
 }
 
 function SolutionFlow() {
+  // Sprint R14 — Mieter-First-Konzept-Update (25.05.). Vorher war
+  // Step 1 "Verwalter trägt ein" (Telefonat-Pfad). Neuer Workflow:
+  // Mieter meldet selbst über die App, KI-Voice klärt Lücken,
+  // Verwalter vergibt nur mit 1 Klick.
   const steps = [
     {
       icon: <PhoneCall className="w-5 h-5" />,
       nr: "1",
-      titel: "Verwalter trägt ein",
-      text: "Mieter ruft an, Verwalter tippt den Schaden in unseren Wizard — KI erkennt Gewerk und Dringlichkeit automatisch. 2 Minuten statt 20.",
+      titel: "Mieter meldet selbst",
+      text: "Über App oder direkt per Foto. Die KI klassifiziert Gewerk und Dringlichkeit automatisch — ohne dass jemand telefonieren muss.",
     },
     {
       icon: <Sparkles className="w-5 h-5" />,
       nr: "2",
-      titel: "Reparo macht den Marktplatz",
-      text: "Passende Handwerker im Umkreis bekommen die Anfrage. Festpreis vom System kalkuliert — keine Endlos-Verhandlung.",
+      titel: "KI klärt offene Lücken",
+      text: "Fehlen Infos (Wann zu Hause? Schlüssel vorhanden?), ruft die Reparo-KI den Mieter zurück und klärt das in 90 Sekunden. Sie sehen nur das fertige Ticket.",
       highlight: true,
     },
     {
       icon: <MousePointerClick className="w-5 h-5" />,
       nr: "3",
       titel: "Sie vergeben mit 1 Klick",
-      text: "Beste Annahme nach Preis, Bewertung, Verfügbarkeit. Termin wird automatisch mit dem Mieter abgestimmt — Sie machen nichts.",
+      text: "Beste Annahme nach Preis, Bewertung, Verfügbarkeit. Termin wird automatisch mit dem Mieter abgestimmt — Sie machen nur noch das letzte 1%.",
     },
   ]
   return (
@@ -163,7 +167,7 @@ function SolutionFlow() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-ink mb-3">So einfach geht es mit Reparo.</h2>
-          <p className="text-ink-secondary">Drei Klicks vom Anruf bis zur Vergabe.</p>
+          <p className="text-ink-secondary">Drei Schritte — Sie sehen nur das fertige Ticket.</p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           {steps.map(step => (
