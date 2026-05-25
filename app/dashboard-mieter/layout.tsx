@@ -12,7 +12,7 @@ export default function MieterLayout({ children }: { children: React.ReactNode }
       <div className="flex min-h-screen bg-surface">
         <Sidebar rolle="mieter" />
         {/* pb-16 md:pb-0: Platz für die mobile BottomNav (h~56px) */}
-        <main id="main-content" className="flex-1 overflow-auto pb-16 md:pb-0">{children}</main>
+        <main id="main-content" className="flex-1 overflow-auto overflow-x-hidden min-w-0 pb-16 md:pb-0">{children}</main>
         <BottomNav rolle="mieter" />
       </div>
     </RoleGuard>

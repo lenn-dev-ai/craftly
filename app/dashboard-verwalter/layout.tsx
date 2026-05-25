@@ -11,7 +11,7 @@ export default function VerwalterLayout({ children }: { children: React.ReactNod
     <RoleGuard allowed="verwalter">
       <div className="flex min-h-screen bg-surface">
         <Sidebar rolle="verwalter" />
-        <main id="main-content" className="flex-1 overflow-auto pb-16 md:pb-0">{children}</main>
+        <main id="main-content" className="flex-1 overflow-auto overflow-x-hidden min-w-0 pb-16 md:pb-0">{children}</main>
         <BottomNav rolle="verwalter" />
       </div>
     </RoleGuard>
