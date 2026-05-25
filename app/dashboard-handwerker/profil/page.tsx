@@ -114,6 +114,15 @@ export default function ProfilPage() {
       if (Array.isArray(form.handwerker_gewerke) && form.handwerker_gewerke.length > 0) {
         payload.gewerk = form.handwerker_gewerke[0]
       }
+      // Sprint Final 47f62752: ein vereinheitlichter Standort statt
+      // Werkstatt + Startort. Beim Save spiegeln wir den Startort auf
+      // adresse/lat/lng damit alte Code-Pfade (z.B. scoring-pipeline
+      // Fallback lat/lng wenn startort_* null) weiter funktionieren.
+      if (form.startort_adresse && form.startort_lat != null && form.startort_lng != null) {
+        payload.adresse = form.startort_adresse
+        payload.lat = form.startort_lat
+        payload.lng = form.startort_lng
+      }
       let updateErr = (await supabase.from("profiles").update(payload).eq("id", user.id)).error
       if (updateErr && /handwerker_gewerke|column.*does not exist/i.test(updateErr.message)) {
         // Migration noch nicht angewandt — ohne das Feld retry
@@ -231,7 +240,14 @@ export default function ProfilPage() {
         </div>
       </div>
 
-      {/* Standort & Radius */}
+      {/* Standort & Radius — Feedback 47f62752 (Lennart 18.05.):
+          "Warum unterscheiden wir zwischen Werkstatt und morgens los?
+          Macht es nicht Sinn..." → vereinheitlicht. Vorher zwei
+          separate Cards (Werkstatt-Adresse + Startort-morgens) mit
+          praktisch identischem Use-Case. Jetzt: ein Adress-Block,
+          der Startort wird beim Save auf adresse gespiegelt damit
+          alte Code-Pfade (scoring-pipeline lat/lng-Fallback) weiter
+          funktionieren. */}
       <div className={`rounded-2xl border p-6 mb-4 transition-colors ${
         standortGesetzt ? "bg-white border-line" : "bg-warm-light border-warm/40"
       }`}>
@@ -242,10 +258,10 @@ export default function ProfilPage() {
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
-              Standort &amp; Einsatzradius
+              Einsatzradius
             </h2>
             <p className="text-xs text-ink-muted mt-1">
-              Bestimmt, welche Aufträge dir vorgeschlagen werden.
+              Bestimmt, welche Aufträge dir vorgeschlagen werden — gerechnet ab deinem Startort (siehe unten).
             </p>
           </div>
           {standortGesetzt && (
@@ -256,14 +272,8 @@ export default function ProfilPage() {
         </div>
 
         <div className="space-y-4 mt-4">
-          <AddressAutocomplete
-            label="Werkstatt / Büro-Standort"
-            placeholder="Straße, Hausnummer, Ort"
-            initialAdresse={form.adresse}
-            onSelect={({ adresse, lat, lng }) =>
-              setForm(f => ({ ...f, adresse, lat, lng }))
-            }
-          />
+          {/* Werkstatt-Adress-Block entfernt (Sprint Final 47f62752).
+              Startort-Block weiter unten ist die einzige Wahrheit. */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium text-ink">Einsatzradius</label>
