@@ -257,24 +257,25 @@ export default function MarktplatzPage() {
           </div>
         )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <div className="bg-white border border-line rounded-xl p-4">
-            <div className="text-xs text-ink-muted mb-1">Verfügbare Slots</div>
-            <div className="text-2xl font-bold text-accent">{slots.length}</div>
+        {/* Sprint AB3 — Stats als beruhigter Inline-Strip statt 3 Cards.
+            Designer-Audit: weniger visuelle Fragmentierung. */}
+        <div className="bg-white border border-line rounded-xl px-5 py-3 mb-6 flex flex-wrap items-baseline gap-x-8 gap-y-2">
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold tabular-nums text-ink">{slots.length}</span>
+            <span className="text-xs text-ink-muted">verfügbare Slots</span>
           </div>
-          <div className="bg-white border border-line rounded-xl p-4">
-            <div className="text-xs text-ink-muted mb-1">Gewerke</div>
-            <div className="text-2xl font-bold text-warm">{gewerke.length}</div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold tabular-nums text-ink">{gewerke.length}</span>
+            <span className="text-xs text-ink-muted">Gewerke</span>
           </div>
-          <div className="bg-white border border-line rounded-xl p-4 hidden sm:block">
-            <div className="text-xs text-ink-muted mb-1">Ø Preis/h</div>
-            <div className="text-2xl font-bold text-ink">
+          <div className="flex items-baseline gap-2 hidden sm:flex">
+            <span className="text-2xl font-bold tabular-nums text-ink">
               {slots.length > 0
                 ? Math.round(slots.reduce((s, sl) => s + (sl.dynamischer_preis || sl.basis_preis_stunde), 0) / slots.length)
                 : 0
               } €
-            </div>
+            </span>
+            <span className="text-xs text-ink-muted">Ø Preis/h</span>
           </div>
         </div>
 
