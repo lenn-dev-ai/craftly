@@ -1,5 +1,6 @@
 "use client"
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react"
+import { useFocusTrap } from "@/lib/use-focus-trap"
 
 type ToastType = "success" | "error" | "info"
 
@@ -34,6 +35,8 @@ export function useToast(): ToastApi {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
   const [pendingConfirm, setPendingConfirm] = useState<{ message: string; resolve: (v: boolean) => void } | null>(null)
+  const confirmRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(confirmRef, pendingConfirm !== null)
 
   const show = useCallback((message: string, type: ToastType = "info") => {
     const id = Date.now() + Math.random()
@@ -90,6 +93,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           aria-labelledby="confirm-dialog-message"
         >
           <div
+            ref={confirmRef}
             className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6"
             onClick={e => e.stopPropagation()}
           >

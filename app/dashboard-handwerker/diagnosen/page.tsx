@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
@@ -8,6 +8,7 @@ import { Stethoscope, MapPin, Clock, AlertCircle, X } from "lucide-react"
 import { formatGewerk } from "@/types"
 import { useToast } from "@/components/Toast"
 import { authFetch } from "@/lib/auth/clientFetch"
+import { useFocusTrap } from "@/lib/use-focus-trap"
 
 // ============================================================
 // Typen
@@ -292,6 +293,17 @@ function BefundForm({ ticket, onClose, onGespeichert }: {
   const [fotos, setFotos] = useState<File[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, true)
+
+  // ESC schließt das Modal — Standard-Erwartung für role=dialog
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose()
+    }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [onClose])
 
   function leistungHinzu() {
     const t = leistungInput.trim()
@@ -365,6 +377,7 @@ function BefundForm({ ticket, onClose, onGespeichert }: {
       aria-labelledby="befund-modal-title"
     >
       <div
+        ref={dialogRef}
         className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >

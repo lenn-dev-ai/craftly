@@ -1,10 +1,11 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Calendar, CalendarRange, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react"
 import { useToast } from "@/components/Toast"
+import { useFocusTrap } from "@/lib/use-focus-trap"
 
 // ============================================================
 // Konstanten
@@ -345,6 +346,15 @@ function PrivatTerminModal({ state, onClose, onSaved, onError, onSuccess }: {
   const [bis, setBis] = useState(state.bis)
   const [datum, setDatum] = useState(state.datum)
   const [busy, setBusy] = useState(false)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, true)
+
+  // ESC schließt Modal
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose() }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [onClose])
 
   async function speichern() {
     if (!titel.trim()) {
@@ -399,7 +409,7 @@ function PrivatTerminModal({ state, onClose, onSaved, onError, onSuccess }: {
       aria-modal="true"
       aria-labelledby="privat-termin-modal-title"
     >
-      <div className="bg-surface-card rounded-2xl shadow-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
+      <div ref={dialogRef} className="bg-surface-card rounded-2xl shadow-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
         <h3 id="privat-termin-modal-title" className="text-lg font-semibold text-ink mb-4">
           {state.mode === "add" ? "Neuer Privat-Termin" : "Termin bearbeiten"}
         </h3>
