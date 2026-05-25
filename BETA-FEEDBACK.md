@@ -857,6 +857,48 @@ Migration-Apply-Backlog jetzt 9 Files (eines davon ist `…000090_sprint_aa_prov
 
 ---
 
+## Iteration 25 — 25.05.2026 (Post-Reset-Updates + Sprint AD + R14)
+
+Cowork-Update 25.05.:
+1. Daten-Reset auf Production: 6 alte Test-Accounts gelöscht, 9 neue `demo-*@reparo-demo.de` angelegt
+2. Konzept bestätigt: Mieter-First-Workflow (Mieter meldet, KI klärt Lücken, Verwalter vergibt 1-Klick)
+3. Sprint AD neu: Sprint-G-UI verstecken
+4. Sprint R Phase 14 ergänzt: Landing-Sales-Story auf Mieter-First
+
+### Sprint AD — G-UI verstecken ✅ `2c776a2`
+
+- "+ Neues Ticket"-Primary-CTA aus Verwalter-Dashboard-Header entfernt
+- "+ Nächstes Ticket"-Link aus Pipeline-Sauber-Empty-State entfernt
+- Sidebar-Item bleibt erreichbar als "Ticket telefonisch" in `gruppe: "selten"` (Mein-Bereich-Untersektion) statt Top-Item
+- Code für `/dashboard-verwalter/neues-ticket` + `/api/tickets/create-by-verwalter` bleibt komplett — Sonderfall-Funktion für Mieter-ruft-direkt-Verwalter-an
+
+### R14 — Landing-Sales-Story Mieter-First ✅ `522e6c4`
+
+3-Step-Block auf der `/hausverwaltungen`-Landing umgestellt:
+
+| # | Vorher (Verwalter-First) | Nachher (Mieter-First) |
+|---|---|---|
+| 1 | Verwalter trägt ein (Mieter ruft an, Verwalter tippt) | **Mieter meldet selbst** (App + Foto, KI klassifiziert) |
+| 2 | Reparo macht den Marktplatz | **KI klärt offene Lücken** (Reparo-KI ruft Mieter zurück bei fehlenden Infos) |
+| 3 | Sie vergeben mit 1 Klick | **Sie vergeben mit 1 Klick** (… "nur noch das letzte 1%") |
+
+Sub-Headline: "Drei Klicks vom Anruf bis zur Vergabe" → "Drei Schritte — Sie sehen nur das fertige Ticket".
+
+Visual-Layout (3 Cards mit Number-Circle + Icon) unverändert — Marketing-Layout-Constraint eingehalten.
+
+### Demo-Accounts in BETA-WELCOME.md ✅ `b036cca`
+
+- Alle Login-Strings von `test.*@craftly-test.de` auf `demo-*-1@reparo-demo.de`
+- Hinweis dass jeweils 3 Accounts pro Rolle verfügbar sind
+- Verwalter-Intro: "19 offene Tickets" → "frisch zurückgesetzt, leere Pipeline"
+- E2E-Tests sind nicht betroffen (lokale `mieter@reparo.test`-Accounts, nicht Production)
+
+### Voice-AI-Backend-Status
+
+Backend (`/api/voice-call/ingest` + `lib/sms/*` + voice-ai-poc-Paket) bleibt unverändert. Cowork-Hinweis: "Voice-AI V2 (Outbound zu Mieter) braucht neue Spec — KEIN Backend-Bau bis die da ist." V1-Backend ist also der Mieter-Pivot-Anpassung nicht im Weg, wartet nur auf Vapi-Setup von Lennart.
+
+---
+
 ## Iteration 18 — 23.05.2026 (Tag 4: Sprint C/D/E/L)
 
 Cowork hat einen korrigierten Tag-4-Block geschickt. **C/D/E sind alle drei bereits aus früheren Iterationen abgeschlossen** (siehe Iteration 14). Neu in der Queue war **Sprint L** (HW-Stamm-Gewerke aus Profil) — den habe ich durchgezogen.
