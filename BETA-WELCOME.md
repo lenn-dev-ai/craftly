@@ -39,9 +39,11 @@ Du bekommst **drei getrennte Logins** — einen pro Rolle. Alle nutzen dasselbe 
 
 | Rolle | Login | Passwort |
 |---|---|---|
-| 🏠 **Mieter** | `test.mieter@craftly-test.de` | `BetaReparo2026!` |
-| 🏢 **Verwalter** | `test.verwalter@craftly-test.de` | `BetaReparo2026!` |
-| 🔧 **Handwerker** | `test.handwerker@craftly-test.de` | `BetaReparo2026!` |
+| 🏠 **Mieter** | `demo-mieter-1@reparo-demo.de` | `BetaReparo2026!` |
+| 🏢 **Verwalter** | `demo-verwalter-1@reparo-demo.de` | `BetaReparo2026!` |
+| 🔧 **Handwerker** | `demo-handwerker-1@reparo-demo.de` | `BetaReparo2026!` |
+
+> Es gibt jeweils 3 Accounts (`-1` / `-2` / `-3`) falls du gleichzeitig mit jemandem testen willst und nicht aus derselben Session arbeiten kannst.
 
 So siehst du jede Perspektive sauber getrennt, ohne dass sich z.B. Verwalter-Funktionen in die Mieter-Sicht mischen.
 
@@ -53,7 +55,7 @@ Alle Daten sind Testdaten — **du kannst nichts kaputt machen**, lege so viele 
 
 ### 1. Mieter-Sicht ↓
 
-Logg dich als `test.mieter@craftly-test.de` ein. Du bist jetzt jemand, dessen Wasserhahn tropft.
+Logg dich als `demo-mieter-1@reparo-demo.de` ein. Du bist jetzt jemand, dessen Wasserhahn tropft.
 
 1. **Profil** — geh zuerst kurz auf „Mein Profil" (unten rechts oder Sidebar) und hinterleg eine Wohnung-Adresse. Damit der Wizard sie beim Melden auto-befüllt.
 2. **Schaden melden** — klick „Schaden melden". Geh durch alle Wizard-Steps (Foto/Beschreibung mit KI-Analyse → Ort → Dringlichkeit → Zusammenfassung). Probier auch die Schnellauswahl-Buttons. Im Ort-Step solltest du jetzt deine Wohnung als Pill sehen — mit „Andere Adresse eingeben" für Sonderfälle.
@@ -62,7 +64,7 @@ Logg dich als `test.mieter@craftly-test.de` ein. Du bist jetzt jemand, dessen Wa
 
 ### 2. Verwalter-Sicht ↓
 
-Abmelden, neu anmelden als `test.verwalter@craftly-test.de`. Du bist jetzt der Verwalter mit 19 offenen Tickets.
+Abmelden, neu anmelden als `demo-verwalter-1@reparo-demo.de`. Du bist jetzt der Verwalter — die Demo-Umgebung ist frisch zurückgesetzt, du startest mit leerer Pipeline.
 
 1. **Dashboard verstehen** — KPI-Kacheln oben, dann „Laufende Auktionen". Klick eine Kachel an — wird passend gefiltert?
 2. **Ticket öffnen** — klick auf das gerade gemeldete Ticket. Hast du alle Infos die du brauchst (Mieter, Adresse, Beschreibung, KI-Vorschlag)?
@@ -70,7 +72,7 @@ Abmelden, neu anmelden als `test.verwalter@craftly-test.de`. Du bist jetzt der V
 
 ### 3. Handwerker-Sicht ↓
 
-Abmelden, neu anmelden als `test.handwerker@craftly-test.de`. Du bist jetzt der Handwerker, der angeschrieben wurde.
+Abmelden, neu anmelden als `demo-handwerker-1@reparo-demo.de`. Du bist jetzt der Handwerker, der angeschrieben wurde.
 
 1. **Sidebar erkunden** — was findest du intuitiv, was nicht? Macht die Gruppierung Sinn?
 2. **Auftrag annehmen** — klick auf „Aktuelle Ausschreibungen" → Wasserschaden → „Auftrag annehmen". Der Preis ist System-kalkuliert (du kannst nicht selber bieten — bewusste Designentscheidung).
