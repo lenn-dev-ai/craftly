@@ -899,6 +899,62 @@ Backend (`/api/voice-call/ingest` + `lib/sms/*` + voice-ai-poc-Paket) bleibt unv
 
 ---
 
+## Iteration 26 — 25.05.2026 (Sprint R Phasen 15-22 Bug-Fix-Block + Regression-Smoke)
+
+Loop Iteration 22 hat 8 neue Bugs gemeldet (2 davon Regressionen aus früherem Sprint-UX). Alle als einzelne Commits durchgezogen.
+
+| Phase | Commit | Was |
+|---|---|---|
+| R15 | `f0b6a1e` | Hamburger-Überlagerung HW-Kalender (Feedback f28deb26): 3 Header-Container mit `pl-14 pr-4 md:px-6` + Grid `overflow-x-auto` |
+| R16 | `a144ad3` | Container-Overflow Regression auf allen 4 Dashboard-Layouts (Feedback 33ffb279): `overflow-x-hidden` + `min-w-0` auf `<main>`-Element |
+| R17 | `3923a86` | Mieter-Ticket Mobile-zentriert (Feedback ae98f00a): mx-auto-Container hatte intern asymmetrisches Padding (`pl-14 pr-4`) — auf zwei Wrapper-Ebenen umgestellt |
+| R18 | `905dd19` | Karte Mobile-Scroll-Hijacking (Feedback 345cee63): `scrollWheelZoom={false}` auf MapContainer |
+| R19 | `972b2f6` | Health-Score null wenn leere DB (Feedback f4f19fbe): bei 0 Users + 0 Tickets + 0 Angebote → "—" statt magischer Zahl |
+| R20 | `1adffc0` | Feedback-Verdict-Karten CSS-Overlap (Feedback 9a528680): `space-y-2 leading-snug gap-y-1` auf flex-wrap-Zeilen |
+| R21 | `2644580` | KPI-Empty-State "0" statt "—" (Feedback 0f448aae): defensive `typeof value === "number" ? value : value || 0` |
+| R22 | `b5c5258` | Diagnose-Preise Admin-Page droppen (Feedback 07c7a7af): Route → Redirect, Sidebar-Item raus, 302 LOC gelöscht |
+
+### Statischer Regression-Smoke (Cowork-Anforderung "5-Min-Smoke nach R")
+
+Live-Browser-Test war für mich nicht möglich. Statisch via grep + Code-Inspektion:
+
+| Check | Ergebnis | Action |
+|---|---|---|
+| Pages mit `router.back()` + `pl-14`-Hamburger-Clearance | 2 Pages ohne Clearance gefunden | ✅ `95293ac` fix (Verwalter-HW-Auswahl + HW-Angebots-Detail) |
+| `<main>`-Tags mit `overflow-x-hidden` auf allen 4 Dashboard-Layouts | ✅ alle 4 (R16) | – |
+| Admin-KPI-Werte mit Loading-Safety / 0-Fallback | ✅ stats.* Zahlenfelder, KpiCard hat Defensive `value ?? 0` Pattern (R21) | – |
+
+### Sprint-R-Gesamt-Status nach Iteration 26
+
+| Phase | Status |
+|---|---|
+| R1 Pricing | ⏸ wartet auf Lennart |
+| R2 Tote HW-Routen | ✅ (`e28c55f`) |
+| R3 Wizard-Duplikat | ⏸ bewusst verschoben (Architektur, Sprint-J-Risiko) |
+| R4 Mieter-Wizard | ✅ Foto-Hinweis (`e28c55f`), KI-Parallel als nicht-zu-fixen markiert (Audit-L1) |
+| R5 Mieter-Auktions-Wording | ✅ (`d121077`) |
+| R6 Admin-Sidebar | ✅ (`e28c55f`) |
+| R7 Verwalter-Quick-Wins | ✅ (`e575a17` + `6b42389` + `3a3aab1`) |
+| R8 Landing-Polish | ✅ (`e28c55f` + `3a3aab1`) |
+| R9 Code-Drift-Fixes | ✅ HW-Hero (`e28c55f`) + Doppel-Banner (`3a3aab1`); Mieter-Profil-Wohnungen-Sync offen (Architektur) |
+| R10 DB-Cleanup | ⏸ Cowork via MCP |
+| R11 Mieter-Tickets-Duplikat | ✅ (`3a3aab1`) |
+| R12 Karten-Page-Hero | ✅ (`d43eff8`) |
+| R13 Smoke + Final | ✅ Iterations 20+26 zusammen |
+| R14 Mieter-First-Landing | ✅ (`522e6c4`) |
+| R15 Hamburger-HW-Kalender | ✅ (`f0b6a1e`) |
+| R16 Container-Overflow | ✅ (`a144ad3`) |
+| R17 Mieter-Ticket-Mobile | ✅ (`3923a86`) |
+| R18 Karte-Mobile | ✅ (`905dd19`) |
+| R19 Health-Score-Null | ✅ (`972b2f6`) |
+| R20 Feedback-CSS | ✅ (`1adffc0`) |
+| R21 KPI-Empty-State | ✅ (`2644580`) |
+| R22 Diagnose-Preise-droppen | ✅ (`b5c5258`) |
+
+19 von 22 Phasen durch (R1 wartet, R3 verschoben, R10 Cowork-Aufgabe).
+
+---
+
 ## Iteration 18 — 23.05.2026 (Tag 4: Sprint C/D/E/L)
 
 Cowork hat einen korrigierten Tag-4-Block geschickt. **C/D/E sind alle drei bereits aus früheren Iterationen abgeschlossen** (siehe Iteration 14). Neu in der Queue war **Sprint L** (HW-Stamm-Gewerke aus Profil) — den habe ich durchgezogen.
