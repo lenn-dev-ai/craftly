@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket, TicketStatus } from "@/types"
-import { Badge, TypBadge, StatusDot, Card, EmptyState } from "@/components/ui"
+import { Badge, TypBadge, StatusDot, EmptyState } from "@/components/ui"
 import { CardListSkeleton } from "@/components/ui/Skeleton"
 
 type StatusFilter = TicketStatus | "alle"
@@ -205,39 +205,60 @@ export default function TicketsPage() {
           )
         })()
       ) : (
-        <div className="flex flex-col gap-2">
-          {shown.map((t, i) => {
-            const typ = (t.ticket_typ ?? "standard") as "standard" | "diagnose" | "projekt"
-            return (
-              <Card key={t.id}
-                className="cursor-pointer hover:border-accent/30 transition-colors !p-3 animate-fade-in"
-                onClick={() => router.push(`/dashboard-verwalter/ticket/${t.id}`)}>
-                <div className="flex items-center gap-3">
-                  <StatusDot status={t.status} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                      <div className="text-sm font-medium truncate text-ink">{t.titel}</div>
-                      {typ !== "standard" && <TypBadge typ={typ} />}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {t.wohnung && `${t.wohnung} `}
-                      {new Date(t.created_at).toLocaleDateString("de")}
-                      {t.angebote?.length ? ` · ${t.angebote.length} Angebot${t.angebote.length !== 1 ? "e" : ""}` : ""}
-                      {typ === "diagnose" && t.befund_text && " · Befund liegt vor"}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {t.angebote && t.angebote.length > 0 && (
-                      <span className="text-sm font-medium text-accent">
-                        ab {Math.min(...t.angebote.map((a: any) => a.preis)).toLocaleString("de")} EUR
-                      </span>
-                    )}
-                    <Badge status={t.status} />
-                  </div>
-                </div>
-              </Card>
-            )
-          })}
+        // Sprint AB2 — Tabelle statt Card-pro-Zeile. Dense, Enterprise-
+        // Look. Card-Wrapper bleibt für den Border-Container, aber
+        // Zeilen-Padding ist reduziert + Header-Zeile + Zebra-Hover.
+        <div className="bg-white border border-line rounded-2xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-surface-muted/50 border-b border-line">
+                <tr className="text-left text-[10px] uppercase tracking-wider text-ink-muted">
+                  <th className="py-2 pl-4 pr-2 w-6" aria-label="Status" />
+                  <th className="py-2 px-2">Titel</th>
+                  <th className="py-2 px-2 hidden md:table-cell">Wohnung</th>
+                  <th className="py-2 px-2 hidden sm:table-cell">Eingang</th>
+                  <th className="py-2 px-2 hidden lg:table-cell">Aktivität</th>
+                  <th className="py-2 px-2 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map(t => {
+                  const typ = (t.ticket_typ ?? "standard") as "standard" | "diagnose" | "projekt"
+                  const angebotCount = t.angebote?.length ?? 0
+                  const minPreis = angebotCount > 0
+                    ? Math.min(...t.angebote!.map((a: { preis: number }) => a.preis))
+                    : null
+                  return (
+                    <tr
+                      key={t.id}
+                      onClick={() => router.push(`/dashboard-verwalter/ticket/${t.id}`)}
+                      className="border-b border-line last:border-0 hover:bg-surface-muted/30 cursor-pointer transition-colors"
+                    >
+                      <td className="py-2 pl-4 pr-2"><StatusDot status={t.status} /></td>
+                      <td className="py-2 px-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-ink truncate">{t.titel}</span>
+                          {typ !== "standard" && <TypBadge typ={typ} />}
+                        </div>
+                      </td>
+                      <td className="py-2 px-2 text-ink-muted hidden md:table-cell truncate max-w-[180px]">{t.wohnung || "—"}</td>
+                      <td className="py-2 px-2 text-ink-muted hidden sm:table-cell whitespace-nowrap">
+                        {new Date(t.created_at).toLocaleDateString("de")}
+                      </td>
+                      <td className="py-2 px-2 text-ink-muted hidden lg:table-cell whitespace-nowrap">
+                        {minPreis != null
+                          ? `${angebotCount} Angebot${angebotCount !== 1 ? "e" : ""} · ab ${minPreis.toLocaleString("de")} €`
+                          : typ === "diagnose" && t.befund_text ? "Befund liegt vor" : "—"}
+                      </td>
+                      <td className="py-2 px-2 text-right whitespace-nowrap">
+                        <Badge status={t.status} />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
