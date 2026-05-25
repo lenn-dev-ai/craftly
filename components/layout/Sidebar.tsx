@@ -68,7 +68,9 @@ const menus: Record<Rolle, MenuItem[]> = {
     { href: "/dashboard-admin/nutzer", label: "Nutzer", Icon: Users },
     { href: "/dashboard-admin/aktivitaet", label: "Aktivität", Icon: Activity },
     { href: "/dashboard-admin/system", label: "System-Health", Icon: Heart },
-    { href: "/dashboard-admin/diagnose-preise", label: "Diagnose-Preise", Icon: Tag, gruppe: "selten" },
+    // R22: Diagnose-Preise-Page gedroppt — Diagnose-Aufträge sind aus
+    // dem Beta-Scope raus. Route bleibt als Redirect erhalten für alte
+    // Bookmarks (siehe dashboard-admin/diagnose-preise/page.tsx).
     { href: "/dashboard-admin/penalties", label: "Penalties", Icon: AlertTriangle, gruppe: "selten" },
     { href: "/dashboard-verwalter", label: "Verwaltung wechseln", Icon: ShieldCheck, gruppe: "selten" },
   ],
