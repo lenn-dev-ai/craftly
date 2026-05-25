@@ -108,7 +108,7 @@ function kiPreisempfehlung(titel: string): string {
   return "250–600"
 }
 
-function AuktionCountdown({ end }: { end: string }) {
+function AuktionCountdown({ end, mieterSicht = false }: { end: string; mieterSicht?: boolean }) {
   const [secs, setSecs] = useState(0)
   useEffect(() => {
     const calc = () => Math.max(0, Math.floor((new Date(end).getTime() - Date.now()) / 1000))
@@ -133,10 +133,16 @@ function AuktionCountdown({ end }: { end: string }) {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-semibold text-accent">Auktion läuft</span>
+              <span className="text-sm font-semibold text-accent">
+                {mieterSicht ? "Handwerker wird gesucht" : "Auktion läuft"}
+              </span>
               {!expired && <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />}
             </div>
-            <div className="text-[11px] sm:text-xs text-ink-muted">Handwerker bieten in Echtzeit — bestes Preis-Leistungs-Verhältnis gewinnt</div>
+            <div className="text-[11px] sm:text-xs text-ink-muted">
+              {mieterSicht
+                ? "Wir suchen automatisch den besten Handwerker für deinen Schaden"
+                : "Handwerker bieten in Echtzeit — bestes Preis-Leistungs-Verhältnis gewinnt"}
+            </div>
           </div>
         </div>
         <div className="text-right flex-shrink-0">
@@ -748,10 +754,11 @@ export default function TicketDetailView() {
           </div>
         )}
 
-        {/* === AUCTION HERO === */}
+        {/* === AUCTION HERO === Audit-R5: Mieter-Sicht zeigt
+            "Handwerker wird gesucht" statt "Auktion läuft" */}
         {ticket.status === "auktion" && ticket.auktion_ende && (
           <div className="mb-6">
-            <AuktionCountdown end={ticket.auktion_ende} />
+            <AuktionCountdown end={ticket.auktion_ende} mieterSicht={istMieter} />
             {/* Auction Stats */}
             <div className="grid grid-cols-3 gap-3 mt-3">
               <div className="bg-white border border-line rounded-xl p-4 text-center">

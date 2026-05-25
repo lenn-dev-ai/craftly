@@ -8,9 +8,13 @@ import { Badge, Button, Card } from "@/components/ui"
 import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
 import { User as UserIcon, Calendar as CalendarIcon, Loader2 } from "lucide-react"
 
+// Audit-R5: Mieter sieht "Handwerker wird gesucht" statt "Auktion" —
+// für nicht-technische Nutzer wirkt "Auktion" befremdlich
+// ("mein Schaden wird versteigert"). Verwalter behält den Auktions-
+// Begriff im Marktplatz, weil dort Geschäfts-Vokabular.
 const PIPELINE_STEPS = [
   { label: "Gemeldet" },
-  { label: "Auktion" },
+  { label: "Handwerker wird gesucht" },
   { label: "Reparatur" },
   { label: "Fertig" },
 ]
@@ -28,7 +32,7 @@ function getEstimate(ticket: Ticket): string {
   const s = ticket.status
   const p = ticket.prioritaet
   if (s === "in_bearbeitung") return p === "notfall" ? "Heute" : "1–3 Tage"
-  if (s === "auktion") return p === "notfall" ? "Wenige Stunden" : "1–2 Tage bis Vergabe"
+  if (s === "auktion") return p === "notfall" ? "Wenige Stunden" : "1–2 Tage bis Auswahl"
   if (s === "offen") return p === "notfall" ? "Innerhalb 24 Std" : "2–5 Tage"
   return ""
 }
