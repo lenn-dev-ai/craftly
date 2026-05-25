@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
-import { Card, Button } from "@/components/ui"
-import { Home, Upload, Search, AlertCircle } from "lucide-react"
+import { Card, Button, WarningBanner } from "@/components/ui"
+import { Home, Upload, Search } from "lucide-react"
 
 // Sprint I — Wohnungs-Listen-View. Anker für den Import-Wizard +
 // einfache Bestands-Übersicht. Funktioniert erst nach Apply der
@@ -84,19 +84,13 @@ export default function WohnungenPage() {
       </div>
 
       {missingTable && (
-        <Card className="p-6 mb-6 border-warm/30 bg-warm/5">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-warm-dark flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-warm-dark mb-1">Schema-Migration ausstehend</h3>
-              <p className="text-sm text-ink">
-                Die <code className="bg-white px-1 rounded">wohnungen</code>-Tabelle existiert noch nicht.
-                Apply der Migration <code className="bg-white px-1 rounded">20260605000060_sprint_i_wohnungen_table.sql</code> ist nötig
-                (Supabase Studio SQL-Editor oder MCP). Solange läuft der Import-Wizard ins Leere.
-              </p>
-            </div>
-          </div>
-        </Card>
+        <div className="mb-6">
+          <WarningBanner
+            level="warn"
+            title="Schema-Migration ausstehend"
+            description="Die wohnungen-Tabelle existiert noch nicht. Apply der Migration 20260605000060_sprint_i_wohnungen_table.sql ist nötig (Supabase Studio SQL-Editor oder MCP). Solange läuft der Import-Wizard ins Leere."
+          />
+        </div>
       )}
 
       {loading && (
