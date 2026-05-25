@@ -311,8 +311,9 @@ export default function AngebotAbgeben() {
 
   return (
     <div className="min-h-screen bg-surface text-ink">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-surface/95 backdrop-blur border-b border-line px-4 py-3">
+      {/* Header — Sprint R Phase 15 (Regression-Smoke): pl-14 pr-4
+          für Hamburger-Clearance auf Mobile. */}
+      <div className="sticky top-0 z-10 bg-surface/95 backdrop-blur border-b border-line pl-14 pr-4 md:px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <button onClick={() => router.back()} className="text-gray-400 hover:text-ink transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

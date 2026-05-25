@@ -293,7 +293,10 @@ export default function HandwerkerAuswahlPage() {
   const selectedCount = handwerker.filter(hw => hw.selected).length
 
   return (
-    <div className="p-6 md:p-8 max-w-3xl mx-auto pt-16 md:pt-8">
+    // Sprint R Phase 15 (Regression-Smoke): pl-14 pr-4 für Hamburger-
+    // Clearance auf Mobile, sonst überdeckt der Sidebar-Hamburger den
+    // "← Zurück"-Text bei 375px.
+    <div className="pl-14 pr-4 md:px-8 max-w-3xl mx-auto pt-16 md:pt-8 pb-6">
       <button onClick={() => router.back()} className="text-sm text-ink-secondary hover:text-ink mb-4 flex items-center gap-1">
         ← Zurück
       </button>
