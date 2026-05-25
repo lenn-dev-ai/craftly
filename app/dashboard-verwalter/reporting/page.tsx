@@ -130,8 +130,8 @@ export default function ReportingPage() {
           <h1 className="text-2xl font-bold text-ink">Reporting</h1>
           <p className="text-sm text-ink-muted mt-1">Kosten- und Provisions-Übersicht · {zeitraumLabel}</p>
         </div>
-        {/* Audit-H4: Zeitraum-Filter */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Audit-H4: Zeitraum-Filter */}
           <label htmlFor="reporting-zeitraum" className="text-xs text-ink-muted">Zeitraum:</label>
           <select
             id="reporting-zeitraum"
@@ -143,6 +143,17 @@ export default function ReportingPage() {
               <option key={z.key} value={z.key}>{z.label}</option>
             ))}
           </select>
+          {/* Sprint AB4 — Export-Button vorbereitet. Funktion kommt
+              post-Beta (CSV-Generator via /api/verwalter/reporting/export);
+              UI-Pattern + Erwartungs-Marker im Stub. */}
+          <button
+            type="button"
+            disabled
+            title="Export (PDF/CSV) — verfügbar nach Beta"
+            className="text-xs font-medium border border-line text-ink-muted px-3 py-1.5 rounded-lg cursor-not-allowed opacity-60"
+          >
+            Export ↓
+          </button>
         </div>
       </div>
 
