@@ -126,6 +126,34 @@ export default function MeldenPage() {
   const [profilWohnung, setProfilWohnung] = useState<{ adresse: string; lat: number | null; lng: number | null } | null>(null)
   const [nutzeProfilWohnung, setNutzeProfilWohnung] = useState(true)
 
+  // Sprint AF Phase 1: Pills werden dynamisch vom Server geholt (saisonal
+  // + Verwalter-spezifisch). Fallback auf statische Liste wenn API fehlt.
+  type PillItem = { key: string; label: string; icon: string; startText: string; gewerkHint: string }
+  const STATIC_PILLS_FALLBACK: PillItem[] = [
+    { key: "heizung",  label: "Heizung aus",     icon: "!", startText: "Heizung funktioniert nicht mehr, Wohnung wird kalt", gewerkHint: "heizung_sanitaer" },
+    { key: "wasser",   label: "Wasserschaden",   icon: "~", startText: "Wasser tropft oder läuft aus, Feuchtigkeit an Wand",  gewerkHint: "heizung_sanitaer" },
+    { key: "elektro",  label: "Strom/Elektrik",  icon: "#", startText: "Strom ausgefallen oder Steckdose funktioniert nicht", gewerkHint: "elektro" },
+    { key: "tuer",     label: "Tür/Fenster",     icon: "|", startText: "Tür oder Fenster lässt sich nicht richtig schließen", gewerkHint: "schreiner" },
+    { key: "schimmel", label: "Schimmel",        icon: "o", startText: "Schimmelflecken an Wand oder Decke entdeckt",          gewerkHint: "maler" },
+  ]
+  const [dynPills, setDynPills] = useState<PillItem[]>(STATIC_PILLS_FALLBACK)
+  useEffect(() => {
+    let aktiv = true
+    void (async () => {
+      try {
+        const res = await fetch("/api/melden/pills", { cache: "default" })
+        if (!res.ok) return
+        const data = await res.json() as { pills?: PillItem[] }
+        if (aktiv && Array.isArray(data.pills) && data.pills.length > 0) {
+          setDynPills(data.pills)
+        }
+      } catch {
+        // Stiller Fallback auf statische Pills
+      }
+    })()
+    return () => { aktiv = false }
+  }, [])
+
   // Profil-Adresse laden — beim Mount, damit beim Wechsel auf Step "ort"
   // schon vorbefüllt ist.
   useEffect(() => {
@@ -518,16 +546,12 @@ export default function MeldenPage() {
                 Setzt einen Beispieltext ein, den du danach noch anpasst.
               </p>
               <div className="flex flex-wrap gap-2">
-                {[
-                  { label: "Heizung aus", icon: "!", val: "Heizung funktioniert nicht mehr, Wohnung wird kalt" },
-                  { label: "Wasserschaden", icon: "~", val: "Wasser tropft oder läuft aus, Feuchtigkeit an Wand" },
-                  { label: "Strom/Elektrik", icon: "#", val: "Strom ausgefallen oder Steckdose funktioniert nicht" },
-                  { label: "Tür/Fenster", icon: "|", val: "Tür oder Fenster lässt sich nicht richtig schließen" },
-                  { label: "Schimmel", icon: "o", val: "Schimmelflecken an Wand oder Decke entdeckt" },
-                ].map(item => (
+                {/* Sprint AF Phase 1: dynPills statt hardcoded — saisonal +
+                    Verwalter-Kontext. Fallback auf statische 5 wenn API down. */}
+                {dynPills.map(item => (
                   <button
-                    key={item.label}
-                    onClick={() => { setBeschreibung(item.val); }}
+                    key={item.key}
+                    onClick={() => { setBeschreibung(item.startText); }}
                     className="text-xs bg-surface-muted hover:bg-accent/10 border border-line hover:border-accent/30 rounded-full px-3 py-1.5 transition-all text-ink-muted hover:text-accent"
                   >
                     {item.icon} {item.label}
