@@ -527,7 +527,12 @@ function KpiCard({
         </div>
         {trend && <TrendBadge t={trend} />}
       </div>
-      <div className="text-2xl font-bold text-ink tabular-nums">{value}</div>
+      <div className="text-2xl font-bold text-ink tabular-nums">
+        {/* Sprint R Phase 21 (Feedback 0f448aae): bei Loading-Race oder
+            undefined-Werten "0" statt "—" zeigen. Empty-State ist
+            semantisch "0 Tickets", nicht "keine Antwort". */}
+        {typeof value === "number" ? value : value || 0}
+      </div>
       <div className="text-[10px] text-ink-muted mt-1 font-medium uppercase tracking-wider">{label}</div>
       {sparkline && sparkline.length > 0 && (
         <div className="mt-3 flex items-end gap-0.5 h-6">
