@@ -51,8 +51,14 @@ interface TicketRow {
 // Frische Plattform ohne Daten = 0. Ein Verwalter angelegt = ~10.
 // Volle Setup ohne Aktivität = 30. Aktive Plattform mit guter
 // Erledigung = 90+.
-function kiHealthScore(s: Stats | null): number {
-  if (!s) return 0
+// Sprint R Phase 19 (Feedback f4f19fbe): bei komplett leerer DB
+// (nach Daten-Reset, 0 User + 0 Tickets + 0 Angebote) gibt's keinen
+// sinnvollen Score → null statt magischer 30.
+function kiHealthScore(s: Stats | null): number | null {
+  if (!s) return null
+  if (s.totalUsers === 0 && s.totalTickets === 0 && s.totalAngebote === 0) {
+    return null
+  }
   let score = 0
 
   // Setup-Vollständigkeit (max 30)
@@ -394,16 +400,20 @@ export default function AdminDashboard() {
         <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
           <div className="flex items-baseline justify-between mb-2">
             <span className="text-sm font-semibold text-ink">KI-Health-Score</span>
-            <span className="text-2xl font-bold text-rolle-admin tabular-nums">{health}</span>
+            <span className="text-2xl font-bold text-rolle-admin tabular-nums">
+              {health == null ? "—" : health}
+            </span>
           </div>
           <div className="w-full h-3 bg-surface rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r from-[#7C6CAB] to-[#5B6ABF]"
-              style={{ width: `${health}%` }}
+              style={{ width: `${health ?? 0}%` }}
             />
           </div>
           <div className="text-[11px] text-ink-muted mt-2">
-            {health >= 80 ? "Exzellent" : health >= 60 ? "Gut" : health >= 40 ? "Okay" : "Kritisch"}
+            {health == null
+              ? "Keine Daten — Plattform leer"
+              : health >= 80 ? "Exzellent" : health >= 60 ? "Gut" : health >= 40 ? "Okay" : "Kritisch"}
           </div>
         </div>
       </div>
