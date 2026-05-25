@@ -2,9 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import L from "leaflet"
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet"
-import "leaflet/dist/leaflet.css"
+import Map, {
+  Marker,
+  Popup,
+  Source,
+  Layer,
+  NavigationControl,
+  type MapRef,
+} from "react-map-gl"
+import "mapbox-gl/dist/mapbox-gl.css"
+import { useRef } from "react"
 import { createClient } from "@/lib/supabase"
 import { optimiereRoute } from "@/lib/auction/route-bundling"
 import { Map as MapIcon, AlertCircle } from "lucide-react"
@@ -55,58 +62,54 @@ const LABEL: Record<Dringlichkeit, string> = {
   planbar: "🟢 Planbar",
 }
 
-// Default-Leaflet-Icon zerlegen wir nicht — wir bauen eigene divIcons
-// mit der Dringlichkeits-Farbe.
-function farbPin(farbe: string, nummer?: number): L.DivIcon {
-  const inner = nummer != null ? String(nummer) : ""
-  return L.divIcon({
-    className: "reparo-pin",
-    html: `<div style="
-      width: 32px; height: 32px;
-      background: ${farbe};
-      border: 3px solid #ffffff;
-      border-radius: 50% 50% 50% 0;
-      transform: rotate(-45deg);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-      display: flex; align-items: center; justify-content: center;
-    ">
-      <div style="transform: rotate(45deg); color: #fff; font-weight: 700; font-size: 12px;">
-        ${inner}
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? ""
+
+// Reparo-Markers als inline-SVG/CSS — Mapbox rendert beliebige JSX
+function MapPin({ farbe, nummer }: { farbe: string; nummer?: number }) {
+  return (
+    <div
+      style={{
+        width: 32,
+        height: 32,
+        background: farbe,
+        border: "3px solid #ffffff",
+        borderRadius: "50% 50% 50% 0",
+        transform: "translate(-16px, -32px) rotate(-45deg)",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+      }}
+    >
+      <div
+        style={{
+          transform: "rotate(45deg)",
+          color: "#fff",
+          fontWeight: 700,
+          fontSize: 12,
+        }}
+      >
+        {nummer != null ? String(nummer) : ""}
       </div>
-    </div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
-  })
+    </div>
+  )
 }
 
-function startPin(): L.DivIcon {
-  return L.divIcon({
-    className: "reparo-start-pin",
-    html: `<div style="
-      width: 24px; height: 24px;
-      background: #3D8B7A;
-      border: 3px solid #ffffff;
-      border-radius: 50%;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-    "></div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-  })
-}
-
-// Auto-Fit der Map auf alle Marker
-function FitBounds({ punkte }: { punkte: Array<[number, number]> }) {
-  const map = useMap()
-  useEffect(() => {
-    if (punkte.length === 0) return
-    if (punkte.length === 1) {
-      map.setView(punkte[0], 13)
-      return
-    }
-    map.fitBounds(L.latLngBounds(punkte), { padding: [40, 40] })
-  }, [map, punkte])
-  return null
+function StartPin() {
+  return (
+    <div
+      style={{
+        width: 24,
+        height: 24,
+        background: "#3D8B7A",
+        border: "3px solid #ffffff",
+        borderRadius: "50%",
+        transform: "translate(-12px, -12px)",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+      }}
+    />
+  )
 }
 
 // ============================================================
@@ -115,11 +118,13 @@ function FitBounds({ punkte }: { punkte: Array<[number, number]> }) {
 
 export default function KarteView() {
   const router = useRouter()
+  const mapRef = useRef<MapRef | null>(null)
   const [profilGeo, setProfilGeo] = useState<ProfilGeo | null>(null)
   const [stops, setStops] = useState<Stop[]>([])
   const [loading, setLoading] = useState(true)
   const [datum, setDatum] = useState<string>(() => new Date().toISOString().slice(0, 10))
-  const [zeigeAlle, setZeigeAlle] = useState(false) // false = nur heute, true = alle offenen
+  const [zeigeAlle, setZeigeAlle] = useState(false)
+  const [openPopup, setOpenPopup] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -145,7 +150,6 @@ export default function KarteView() {
             einsatzort_adresse: string | null
             ticket: { titel: string; beschreibung: string | null; gewerk: string | null; dringlichkeit: Dringlichkeit | null; status: string; einsatzort_lat: number | null; einsatzort_lng: number | null; einsatzort_adresse: string | null } | null
           }>>(),
-        // Zusätzlich: zugewiesene Tickets ohne festen Termin
         supabase
           .from("tickets")
           .select("id, titel, beschreibung, gewerk, dringlichkeit, status, einsatzort_lat, einsatzort_lng, einsatzort_adresse")
@@ -212,7 +216,6 @@ export default function KarteView() {
   const startLat = profilGeo?.startort_lat ?? profilGeo?.lat
   const startLng = profilGeo?.startort_lng ?? profilGeo?.lng
 
-  // Optimierte Tagesroute (Nearest-Neighbor) für die Polyline
   const route = useMemo(() => {
     if (!zeigeAlle && tagesStops.length >= 2 && startLat != null && startLng != null) {
       return optimiereRoute(startLat, startLng, tagesStops.map(s => ({
@@ -222,13 +225,16 @@ export default function KarteView() {
     return null
   }, [tagesStops, zeigeAlle, startLat, startLng])
 
-  const polyline: Array<[number, number]> = useMemo(() => {
-    if (!route || startLat == null || startLng == null) return []
-    const punkte: Array<[number, number]> = [[startLat, startLng]]
-    for (const r of route.reihenfolge) {
-      punkte.push([r.latitude, r.longitude])
+  // Mapbox erwartet [lng, lat] (im Gegensatz zu Leaflets [lat, lng])
+  const routeGeoJSON = useMemo(() => {
+    if (!route || startLat == null || startLng == null) return null
+    const coords: Array<[number, number]> = [[startLng, startLat]]
+    for (const r of route.reihenfolge) coords.push([r.longitude, r.latitude])
+    return {
+      type: "Feature" as const,
+      properties: {},
+      geometry: { type: "LineString" as const, coordinates: coords },
     }
-    return punkte
   }, [route, startLat, startLng])
 
   const reihenfolgeIndex = useMemo(() => {
@@ -238,6 +244,27 @@ export default function KarteView() {
     return map
   }, [route])
 
+  // FitBounds: Mapbox-Variante via mapRef
+  useEffect(() => {
+    if (!mapRef.current) return
+    const punkte: Array<[number, number]> = [
+      ...(startLat != null && startLng != null ? [[startLng, startLat] as [number, number]] : []),
+      ...sichtbar.map(s => [s.lng, s.lat] as [number, number]),
+    ]
+    if (punkte.length === 0) return
+    if (punkte.length === 1) {
+      mapRef.current.flyTo({ center: punkte[0], zoom: 13, duration: 600 })
+      return
+    }
+    const lngs = punkte.map(p => p[0])
+    const lats = punkte.map(p => p[1])
+    const bounds: [[number, number], [number, number]] = [
+      [Math.min(...lngs), Math.min(...lats)],
+      [Math.max(...lngs), Math.max(...lats)],
+    ]
+    mapRef.current.fitBounds(bounds, { padding: 60, duration: 600, maxZoom: 14 })
+  }, [sichtbar, startLat, startLng])
+
   if (loading) {
     return (
       <div className="p-6 max-w-6xl mx-auto">
@@ -246,14 +273,14 @@ export default function KarteView() {
     )
   }
 
-  // Fit-Punkte aus Stops + Startort
   const fitPunkte: Array<[number, number]> = [
     ...(startLat != null && startLng != null ? [[startLat, startLng] as [number, number]] : []),
     ...sichtbar.map(s => [s.lat, s.lng] as [number, number]),
   ]
 
-  // Fallback-Center: Berlin Mitte wenn nichts da ist
-  const center: [number, number] = fitPunkte[0] ?? [52.520, 13.405]
+  // Fallback-Center: Berlin Mitte
+  const initialLng = startLng ?? sichtbar[0]?.lng ?? 13.405
+  const initialLat = startLat ?? sichtbar[0]?.lat ?? 52.52
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-4">
@@ -320,78 +347,120 @@ export default function KarteView() {
             </button>
           )}
         </div>
+      ) : !MAPBOX_TOKEN ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-sm text-amber-900">
+          Mapbox-Token (NEXT_PUBLIC_MAPBOX_TOKEN) fehlt in den Environment-Variables. Karte kann nicht geladen werden.
+        </div>
       ) : (
         <div className="rounded-2xl overflow-hidden border border-line shadow-sm relative" style={{ height: 540 }}>
-          {/* Sprint R Phase 18 (Feedback 345cee63): Karte fing
-              Scroll-Events ab — User kam auf Mobile nicht mehr aus
-              der Page raus.
-              scrollWheelZoom={false}: Desktop-Scrollen scrollt die
-              Page, nicht die Map. User kann mit Tap auf die Map
-              dragging + pinch-zoom nutzen, aber Page-Scroll bleibt
-              dem User. */}
-          <MapContainer
-            center={center}
-            zoom={13}
-            style={{ height: "100%", width: "100%" }}
-            scrollWheelZoom={false}
+          {/* Sprint AG: Mapbox via react-map-gl (vorher Leaflet/OSM).
+              scrollZoom={false} → Page-Scroll bleibt dem User, statt
+              im Map-Container gefangen zu sein. Auf Mobile sind Pan
+              und Pinch-Zoom out-of-the-box ohne Fullscreen-Lock. */}
+          <Map
+            ref={mapRef}
+            mapboxAccessToken={MAPBOX_TOKEN}
+            initialViewState={{ longitude: initialLng, latitude: initialLat, zoom: 12 }}
+            mapStyle="mapbox://styles/mapbox/streets-v12"
+            style={{ width: "100%", height: "100%" }}
+            scrollZoom={false}
           >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            <NavigationControl position="top-right" showCompass={false} />
 
             {/* Startort-Pin */}
             {startLat != null && startLng != null && (
-              <Marker position={[startLat, startLng]} icon={startPin()}>
-                <Popup>
-                  <div className="text-xs">
-                    <strong>Startort</strong>
-                    {profilGeo?.startort_adresse && <div className="text-ink-secondary">{profilGeo.startort_adresse}</div>}
-                  </div>
-                </Popup>
+              <Marker
+                longitude={startLng}
+                latitude={startLat}
+                anchor="center"
+                onClick={e => { e.originalEvent.stopPropagation(); setOpenPopup("start") }}
+              >
+                <StartPin />
               </Marker>
+            )}
+            {openPopup === "start" && startLat != null && startLng != null && (
+              <Popup
+                longitude={startLng}
+                latitude={startLat}
+                anchor="top"
+                onClose={() => setOpenPopup(null)}
+                closeButton
+                closeOnClick={false}
+              >
+                <div className="text-xs">
+                  <strong>Startort</strong>
+                  {profilGeo?.startort_adresse && (
+                    <div className="text-ink-secondary">{profilGeo.startort_adresse}</div>
+                  )}
+                </div>
+              </Popup>
             )}
 
             {/* Auftrags-Pins */}
             {sichtbar.map(s => {
               const nummer = reihenfolgeIndex?.get(s.ticketId)
+              const popupKey = `t:${s.ticketId}`
               return (
                 <Marker
                   key={s.ticketId}
-                  position={[s.lat, s.lng]}
-                  icon={farbPin(FARBE[s.dringlichkeit], nummer)}
+                  longitude={s.lng}
+                  latitude={s.lat}
+                  anchor="bottom"
+                  onClick={e => { e.originalEvent.stopPropagation(); setOpenPopup(popupKey) }}
                 >
-                  <Popup>
-                    <div className="text-xs space-y-1 min-w-[180px]">
-                      <div className="font-semibold text-ink text-sm">{s.titel}</div>
-                      <div style={{ color: FARBE[s.dringlichkeit] }} className="font-medium">{LABEL[s.dringlichkeit]}</div>
-                      {s.gewerk && <div className="text-ink-secondary">Gewerk: {formatGewerk(s.gewerk)}</div>}
-                      {s.adresse && <div className="text-ink-secondary">📍 {s.adresse}</div>}
-                      {s.von && s.bis && (
-                        <div className="text-ink-secondary">⏰ {s.von}–{s.bis} {s.datum && `· ${s.datum}`}</div>
-                      )}
-                      <button
-                        onClick={() => router.push(`/dashboard-handwerker/ticket/${s.ticketId}`)}
-                        className="mt-2 text-accent hover:underline font-medium"
-                      >
-                        Auftrag öffnen →
-                      </button>
-                    </div>
-                  </Popup>
+                  <MapPin farbe={FARBE[s.dringlichkeit]} nummer={nummer} />
                 </Marker>
               )
             })}
 
-            {/* Optimierte Routen-Linie (nur Tagesansicht) */}
-            {polyline.length >= 2 && (
-              <Polyline
-                positions={polyline}
-                pathOptions={{ color: "#3D8B7A", weight: 3, opacity: 0.7, dashArray: "8 6" }}
-              />
-            )}
+            {sichtbar.map(s => {
+              const popupKey = `t:${s.ticketId}`
+              if (openPopup !== popupKey) return null
+              return (
+                <Popup
+                  key={popupKey}
+                  longitude={s.lng}
+                  latitude={s.lat}
+                  anchor="top"
+                  onClose={() => setOpenPopup(null)}
+                  closeButton
+                  closeOnClick={false}
+                >
+                  <div className="text-xs space-y-1 min-w-[180px]">
+                    <div className="font-semibold text-ink text-sm">{s.titel}</div>
+                    <div style={{ color: FARBE[s.dringlichkeit] }} className="font-medium">{LABEL[s.dringlichkeit]}</div>
+                    {s.gewerk && <div className="text-ink-secondary">Gewerk: {formatGewerk(s.gewerk)}</div>}
+                    {s.adresse && <div className="text-ink-secondary">📍 {s.adresse}</div>}
+                    {s.von && s.bis && (
+                      <div className="text-ink-secondary">⏰ {s.von}–{s.bis} {s.datum && `· ${s.datum}`}</div>
+                    )}
+                    <button
+                      onClick={() => router.push(`/dashboard-handwerker/ticket/${s.ticketId}`)}
+                      className="mt-2 text-accent hover:underline font-medium"
+                    >
+                      Auftrag öffnen →
+                    </button>
+                  </div>
+                </Popup>
+              )
+            })}
 
-            <FitBounds punkte={fitPunkte} />
-          </MapContainer>
+            {/* Optimierte Tagesroute */}
+            {routeGeoJSON && (
+              <Source id="route" type="geojson" data={routeGeoJSON}>
+                <Layer
+                  id="route-line"
+                  type="line"
+                  paint={{
+                    "line-color": "#3D8B7A",
+                    "line-width": 3,
+                    "line-opacity": 0.7,
+                    "line-dasharray": [2, 1.5],
+                  }}
+                />
+              </Source>
+            )}
+          </Map>
         </div>
       )}
 
