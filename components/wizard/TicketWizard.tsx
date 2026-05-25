@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import AddressAutocomplete from "@/components/AddressAutocomplete"
-import { Button } from "@/components/ui/Button"
+import { Button } from "@/components/ui"
 import { useToast } from "@/components/Toast"
 import { formatGewerk } from "@/types"
 
