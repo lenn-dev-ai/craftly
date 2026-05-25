@@ -137,9 +137,12 @@ export default function FeedbackVerdictCard({ row, onMarkViewed }: Props) {
       )}
       <div className="text-sm text-ink whitespace-pre-wrap break-words">{row.message}</div>
 
-      {/* Verdict-Block */}
-      <div className="mt-3 rounded-lg border border-line bg-surface-muted/30 p-3 space-y-1.5 text-xs">
-        <div className="flex items-center gap-2 flex-wrap">
+      {/* Verdict-Block — Sprint R Phase 20 (Feedback 9a528680):
+          flex-wrap-Zeilen brauchen explizites gap-y damit Label +
+          Value bei Schmal-Viewport nicht überlappen, plus
+          leading-snug damit die Text-Linie nicht zu eng ist. */}
+      <div className="mt-3 rounded-lg border border-line bg-surface-muted/30 p-3 space-y-2 text-xs leading-snug">
+        <div className="flex items-center gap-2 flex-wrap gap-y-1">
           <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${STATUS_BADGE[v.status]}`}>
             {STATUS_LABEL[v.status]}
           </span>
@@ -147,21 +150,21 @@ export default function FeedbackVerdictCard({ row, onMarkViewed }: Props) {
             {OWNER_LABEL[v.owner]}
           </span>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <span className="text-ink-muted text-[10px] uppercase tracking-wide w-20 shrink-0">Bereich</span>
+        <div className="flex gap-2 flex-wrap gap-y-1">
+          <span className="text-ink-muted text-[10px] uppercase tracking-wide w-20 shrink-0 leading-relaxed">Bereich</span>
           <span className="inline-flex px-1.5 py-0.5 rounded bg-surface text-ink-secondary font-mono text-[11px]">{v.area}</span>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <span className="text-ink-muted text-[10px] uppercase tracking-wide w-20 shrink-0">Zusammenfassung</span>
+        <div className="flex gap-2 flex-wrap gap-y-1">
+          <span className="text-ink-muted text-[10px] uppercase tracking-wide w-20 shrink-0 leading-relaxed">Zusammenfassung</span>
           <span className="text-ink flex-1 min-w-0">{v.summary}</span>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <span className="text-ink-muted text-[10px] uppercase tracking-wide w-20 shrink-0">Empfehlung</span>
+        <div className="flex gap-2 flex-wrap gap-y-1">
+          <span className="text-ink-muted text-[10px] uppercase tracking-wide w-20 shrink-0 leading-relaxed">Empfehlung</span>
           <span className="text-ink flex-1 min-w-0">{v.recommendation}</span>
         </div>
         {v.ref && (
-          <div className="flex gap-2 flex-wrap">
-            <span className="text-ink-muted text-[10px] uppercase tracking-wide w-20 shrink-0">Referenz</span>
+          <div className="flex gap-2 flex-wrap gap-y-1">
+            <span className="text-ink-muted text-[10px] uppercase tracking-wide w-20 shrink-0 leading-relaxed">Referenz</span>
             <span className="text-accent font-mono text-[11px]">{v.ref}</span>
           </div>
         )}
