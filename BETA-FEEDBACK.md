@@ -684,6 +684,102 @@ Cowork hat Voice-AI-PoC-Setup-Paket angekündigt. CC implementiert vorab den Rep
 
 ---
 
+## Iteration 20 — 25.05.2026 (Sprint R Konsolidierung — ohne R1 Pricing)
+
+Cowork-Mapping: Cowork sagt "Iteration 17" für Tag 4 und "Iteration 18" für Tag 5 — meine fortlaufende Nummerierung ist schon bei 19. Sprint R = Iteration 20.
+
+8 von 12 Sprint-R-Phasen waren bereits via meine Audit-Quick-Fixes der vergangenen Stunden erledigt. Hier dokumentiert die neuen Phasen + Mapping zu den existierenden Commits.
+
+### Bereits durch (Audit-QFs `e28c55f`–`d43eff8`)
+
+- **R2** Tote HW-Routen → in `e28c55f` (Sidebar-Verlinkung + zeitplan-Redirect)
+- **R6** Admin-Sidebar erweitert → `e28c55f` (Nutzer / Aktivität / System-Health / Diagnose-Preise / Penalties)
+- **R7a** Reporting-Zeitraum-Filter → `e575a17`
+- **R7b** Tickets-Sort-Toggle → `6b42389`
+- **R8-CTA** "Bereits Kunde" → "Schon ein Test-Account" → `e28c55f`
+- **R8-Calc** Pricing-Calculator-Link → `e28c55f`
+- **R9-HW-Hero** handwerker_gewerke[] in Hero → `e28c55f`
+- **R12** Karten-Page Hero raus → `d43eff8`
+
+### Neu in dieser Session
+
+- **R5** `d121077` — Mieter-Auktions-Wording: PIPELINE_STEPS "Auktion" → "Handwerker wird gesucht", AuktionCountdown-Component mit mieterSicht-Prop, Estimate "Vergabe" → "Auswahl"
+- **R7c** `3a3aab1` — Verwalter-Dashboard "🎉 Pipeline ist sauber"-Empty-State wenn keine Pipeline-Action + min. 1 erledigt
+- **R8-Tippfehler** `3a3aab1` — "kein Kreditkartendaten" → "keine"
+- **R9-Doppel-Banner** `3a3aab1` — Standort-Banner nur wenn Gewerke schon gesetzt
+- **R11** `3a3aab1` — Mieter `/tickets` → Redirect zum Dashboard, Sidebar-Item entfernt
+
+### Übersprungen / verschoben
+
+- **R1 Pricing** — bewusst übersprungen wie Cowork-Anweisung (Lennart entscheidet)
+- **R3 Wizard-Duplikat-Refactor** — größerer 2h-Refactor, riskant wegen Sprint-J-E2E-Tests. Wartet auf Lennart.
+- **R4 KI-Animation parallelisieren** — bei Re-Inspektion läuft KI tatsächlich 1-3s (nicht 5s), Audit-L1 als "nicht-zu-fixen" markiert.
+- **R10 DB-Cleanup** — Cowork-Aufgabe via MCP
+
+### Migration-Apply-Backlog erweitert um Sprint AA
+
+| # | Datei | Aktiviert |
+|---|---|---|
+| 9 | `…000090_sprint_aa_provisionen_ticket_unique.sql` | Sprint AA Hotfix — UNIQUE-Constraint auf provisionen.ticket_id |
+
+---
+
+## Iteration 21 — 25.05.2026 (Sprint AA Hotfix Vergabe-Regression)
+
+Lennart-Feedback `c636f2bf` vom 25.05. zeigt: gleicher Bug wie `f4d86912` von 18.05. ("beim Klicken von Auftrag-Vergeben kommt Fehlermeldung dass fehlschlägt"). HIGH severity, blockt Verwalter-Workflow.
+
+### Root-Cause-Analyse
+
+**Falsche Hypothese aus dem Sprint-AA-Spec:** "angebote_ticket_handwerker_unique"-Constraint. Bei der Code-Inspektion stellte sich aber heraus: der Vergabe-Endpoint macht `UPDATE` auf angebote, kein INSERT — UNIQUE-Constraint dort ist irrelevant.
+
+**Echte Hypothese (außerhalb der 5 in der Spec):** `provisionen`-Tabelle. Code in `app/api/auction/close/route.ts:209` ruft:
+```ts
+admin.from("provisionen").upsert(provisionRow, { onConflict: "ticket_id" })
+```
+
+Aber DB-Inspektion via Supabase-MCP zeigt: `public.provisionen` hat **keinen UNIQUE-Constraint auf ticket_id** — nur PRIMARY KEY auf `id` und 3 Foreign-Keys. PostgreSQL `INSERT … ON CONFLICT` braucht zwingend einen UNIQUE/PRIMARY-KEY-Constraint auf der `onConflict`-Spalte, sonst SQLSTATE 42P10.
+
+Bestätigt durch:
+- `SELECT … FROM pg_constraint WHERE conrelid = 'public.provisionen'::regclass` zeigt nur `provisionen_pkey` + 3 `*_fkey`
+- `SELECT ticket_id, count(*) FROM provisionen GROUP BY 1 HAVING count(*) > 1` liefert 0 Zeilen (keine Duplikate, Constraint sicher applybar)
+
+### Warum erst jetzt regressiert?
+
+H11/H12-Fix vom 18.05. (Commits `33e83cc` + `628ba51`) adressierte: Toast-UX und einladungen-RLS-Policy. Den UPSERT-Bug aufm `provisionen` haben H11/H12 nicht touchiert — der war damals schon latent, aber:
+
+- Bis Sprint H (KPI-Route) wurde der Vergabe-Pfad in QA wenig getroffen
+- Sprint I (Bulk-Import) hat keine direkten Auswirkungen
+- Sprint L (handwerker_gewerke) → Annahme-Endpoint, nicht Vergabe
+- Vermutlich: Lennart hat heute zum ersten Mal einen Pfad genommen, in dem provisionen für dieses Ticket noch leer war, und kein vorheriger Insert existierte. Der UPSERT-Pfad ohne UNIQUE-Constraint failed konsistent.
+
+### Fix in zwei Stufen
+
+**1. Migration `20260605000090_sprint_aa_provisionen_ticket_unique.sql`** (File-only, MCP read-only für CC):
+```sql
+ALTER TABLE public.provisionen
+  ADD CONSTRAINT provisionen_ticket_id_unique UNIQUE (ticket_id);
+```
+Idempotent via DO-Block. Cowork applied via deren MCP-Connection.
+
+**2. Defensive im Code** (Commit `4eff083`, sofort live):
+- UPSERT-Aufruf bleibt wie er ist (funktioniert nach Apply)
+- Bei UPSERT-Fail mit regex match auf "ON CONFLICT" / "no.*unique" / "42P10" → manueller DELETE + INSERT als Fallback
+- Vergabe funktioniert SOFORT nach Deploy von `4eff083`, auch ohne Migration-Apply
+
+### Regression-Test-Coverage
+
+Existierender Playwright-Test `flow-hw-bietet.spec.ts` hat einen Sub-Test der Verwalter-Vergabe simuliert — der wäre auch ohne MCP-Apply grün, weil der Fallback-Pfad jetzt greift. Spec-Vorgabe für weitere E2E-Tests:
+- ⏸ Vergabe an HW mit `handwerker_gewerke = NULL` — nicht direkt mit Vergabe-Bug verbunden
+- ⏸ Vergabe-Pfade ohne `auktion_ende` — Code prüft das schon (Z.71-73)
+
+**Empfehlung Cowork:** sobald Migration 20260605000090 angewandt ist, kann der Defensive-Fallback in einem späteren Cleanup-Commit wieder raus (UPSERT-Pfad reicht dann).
+
+### Commit
+
+`4eff083` — `fix(verwalter): Vergabe-Regression nach Sprint G/H/I/L (Sprint AA)`
+
+---
+
 ## Iteration 18 — 23.05.2026 (Tag 4: Sprint C/D/E/L)
 
 Cowork hat einen korrigierten Tag-4-Block geschickt. **C/D/E sind alle drei bereits aus früheren Iterationen abgeschlossen** (siehe Iteration 14). Neu in der Queue war **Sprint L** (HW-Stamm-Gewerke aus Profil) — den habe ich durchgezogen.
