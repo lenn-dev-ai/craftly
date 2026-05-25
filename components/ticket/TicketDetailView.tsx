@@ -514,10 +514,13 @@ export default function TicketDetailView() {
 
   return (
     <div className="min-h-screen bg-surface text-ink pb-12">
-      {/* M6: vorher p-4 auf allen Seiten → "← Zurück" bei x=16 hinter dem
-          fixen Sidebar-Hamburger (x=16-56). Auf Mobile pl-14 reservieren,
-          Desktop unverändert. */}
-      <div className="max-w-4xl mx-auto pl-14 pr-4 py-4 md:p-6">
+      {/* Sprint R Phase 17 (Audit-Feedback ae98f00a):
+          vorher hatte der mx-auto-Container das Hamburger-Padding INTERN
+          (pl-14 pr-4) — Mobile-Folge: Content visuell nach rechts
+          verschoben weil pl ≠ pr. Jetzt: Hamburger-Clearance auf den
+          OUTER-Container, mx-auto-Box bleibt symmetrisch zentriert. */}
+      <div className="pl-14 pr-4 md:px-6">
+        <div className="max-w-4xl mx-auto py-4 md:py-6">
         {/* Navigation */}
         <button onClick={() => router.back()} className="text-sm text-ink-muted hover:text-ink-secondary mb-6 flex items-center gap-2 transition-colors">
           ← Zurück
@@ -1185,6 +1188,7 @@ export default function TicketDetailView() {
             <Button onClick={sendChat} disabled={sending}>{sending ? "..." : "Senden"}</Button>
           </div>
         </Card>
+      </div>
       </div>
     </div>
   )
