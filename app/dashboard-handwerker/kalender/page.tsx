@@ -300,7 +300,7 @@ export default function KalenderPage() {
     <div className="min-h-screen bg-surface">
       {/* Header */}
       <div className="bg-white border-b border-line">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3 flex-wrap">
+        <div className="max-w-6xl mx-auto pl-14 pr-4 md:px-6 py-4 flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h1 className="text-lg font-semibold text-ink">Kalender</h1>
             <p className="text-xs text-ink-muted">{formatWochenLabel(tageDerWoche[0])}</p>
@@ -330,7 +330,7 @@ export default function KalenderPage() {
         </div>
 
         {/* Layer-Toggles */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-3 flex items-center gap-2 flex-wrap">
+        <div className="max-w-6xl mx-auto pl-14 pr-4 md:px-6 pb-3 flex items-center gap-2 flex-wrap">
           <LayerChip
             label="Termine"
             icon={<Briefcase size={13} />}
@@ -352,7 +352,7 @@ export default function KalenderPage() {
       </div>
 
       {/* Grid */}
-      <div className="max-w-6xl mx-auto px-2 sm:px-6 py-4">
+      <div className="max-w-6xl mx-auto px-2 sm:px-6 py-4 overflow-x-auto">
         {loading ? (
           <div className="text-center text-sm text-ink-muted py-16">Lädt …</div>
         ) : (
