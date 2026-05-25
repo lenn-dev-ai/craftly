@@ -107,6 +107,13 @@ export default function ProfilPage() {
           (payload.handwerker_gewerke as string[]).length === 0) {
         payload.handwerker_gewerke = null
       }
+      // Audit-QF: single profile.gewerk auf handwerker_gewerke[0] syncen,
+      // damit ältere Code-Stellen die noch das single-Feld lesen (z.B.
+      // Marktplatz-Slots, Verwalter-HW-Karten) den ersten Stamm-Gewerk
+      // sehen. Verhindert Drift zwischen den beiden Repräsentationen.
+      if (Array.isArray(form.handwerker_gewerke) && form.handwerker_gewerke.length > 0) {
+        payload.gewerk = form.handwerker_gewerke[0]
+      }
       let updateErr = (await supabase.from("profiles").update(payload).eq("id", user.id)).error
       if (updateErr && /handwerker_gewerke|column.*does not exist/i.test(updateErr.message)) {
         // Migration noch nicht angewandt — ohne das Feld retry

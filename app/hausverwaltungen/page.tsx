@@ -87,7 +87,7 @@ function Hero() {
             30-Min-Demo buchen <ArrowRight className="w-4 h-4" />
           </a>
           <Link href="/login" className="w-full sm:w-auto px-8 py-3.5 border border-line text-ink rounded-xl hover:bg-white transition-colors font-medium text-base">
-            Bereits Kunde? Anmelden
+            Schon ein Test-Account? Anmelden
           </Link>
         </div>
       </div>
@@ -267,7 +267,15 @@ function Pricing() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-ink mb-3">Faires Preismodell.</h2>
-          <p className="text-ink-secondary">Pro Verwaltung, pro Monat — alle Preise netto. Kein Lock-in.</p>
+          <p className="text-ink-secondary mb-3">Pro Verwaltung, pro Monat — alle Preise netto. Kein Lock-in.</p>
+          <a
+            href="/Reparo-Pricing-Calculator.html"
+            target="_blank"
+            rel="noopener"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-rolle-verwalter hover:underline"
+          >
+            ROI-Calculator öffnen <ArrowRight className="w-3.5 h-3.5" />
+          </a>
         </div>
         <div className="grid md:grid-cols-3 gap-5">
           {tiers.map(t => (

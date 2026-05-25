@@ -12,6 +12,7 @@ import {
   Euro, Calendar, Briefcase, MapPin, CalendarCheck, UserCircle,
   Plus, FileText, ShieldCheck, LogOut, Map, CalendarRange,
   Calculator, AlertTriangle, MessageSquare, Home,
+  Users, Activity, Heart, Tag,
   type LucideProps,
 } from "lucide-react"
 
@@ -39,11 +40,15 @@ const menus: Record<Rolle, MenuItem[]> = {
     { href: "/dashboard-handwerker/kalender", label: "Kalender", Icon: CalendarCheck },
     { href: "/dashboard-handwerker/karte", label: "Karte & Route", Icon: Map },
     { href: "/dashboard-handwerker/einnahmen", label: "Einnahmen", Icon: Euro },
-    // Mein Bereich — Settings/seltener. C4: "Diagnosen"-Item raus —
-    // Diagnose-Tickets erscheinen als normale Aufträge (Status="auktion"
-    // + ticket_typ="diagnose"), die /dashboard-handwerker/diagnosen-Page
-    // bleibt als Direkt-Route erreichbar bis sie in eine gemeinsame
-    // Aufträge-Liste verschmolzen ist.
+    // Mein Bereich — Settings + sekundäre Detail-Listen. Audit-C2:
+    // die Direct-Routen Aufträge / Diagnosen / Termine / Zeitslots
+    // existieren als 89-645 LOC Pages und waren bisher nur per
+    // Direct-URL erreichbar — jetzt explizit gruppiert, statt dunkle
+    // Routen zu sein. zeitplan ist Redirect zum Kalender (Dupe).
+    { href: "/dashboard-handwerker/auftraege", label: "Meine Aufträge", Icon: Briefcase, gruppe: "selten" },
+    { href: "/dashboard-handwerker/termine", label: "Termin-Liste", Icon: Calendar, gruppe: "selten" },
+    { href: "/dashboard-handwerker/zeitslots", label: "Zeitslots", Icon: CalendarRange, gruppe: "selten" },
+    { href: "/dashboard-handwerker/diagnosen", label: "Diagnosen", Icon: FileText, gruppe: "selten" },
     { href: "/dashboard-handwerker/verdienst", label: "Verdienst-Rechner", Icon: Calculator, gruppe: "selten" },
     { href: "/dashboard-handwerker/profil", label: "Mein Profil", Icon: UserCircle, gruppe: "selten" },
   ],
@@ -56,8 +61,12 @@ const menus: Record<Rolle, MenuItem[]> = {
   admin: [
     { href: "/dashboard-admin", label: "Dashboard", Icon: LayoutDashboard },
     { href: "/dashboard-admin/feedback", label: "Feedback", Icon: MessageSquare },
-    { href: "/dashboard-admin/penalties", label: "Penalties", Icon: AlertTriangle },
-    { href: "/dashboard-verwalter", label: "Verwaltung", Icon: ShieldCheck },
+    { href: "/dashboard-admin/nutzer", label: "Nutzer", Icon: Users },
+    { href: "/dashboard-admin/aktivitaet", label: "Aktivität", Icon: Activity },
+    { href: "/dashboard-admin/system", label: "System-Health", Icon: Heart },
+    { href: "/dashboard-admin/diagnose-preise", label: "Diagnose-Preise", Icon: Tag, gruppe: "selten" },
+    { href: "/dashboard-admin/penalties", label: "Penalties", Icon: AlertTriangle, gruppe: "selten" },
+    { href: "/dashboard-verwalter", label: "Verwaltung wechseln", Icon: ShieldCheck, gruppe: "selten" },
   ],
 }
 

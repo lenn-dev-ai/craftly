@@ -481,7 +481,10 @@ export default function MeldenPage() {
                   <circle cx="12" cy="13" r="4" />
                 </svg>
                 <p className="text-sm text-ink font-medium">Fotos aufnehmen oder hochladen</p>
-                <p className="text-xs text-ink-muted mt-1">JPG, PNG, WebP — max. 5 MB pro Foto, bis zu {MAX_FOTOS} Fotos · optional</p>
+                <p className="text-xs text-ink-muted mt-1">JPG, PNG, WebP — max. 5 MB pro Foto, bis zu {MAX_FOTOS} Fotos</p>
+                <p className="text-[11px] text-accent mt-2">
+                  💡 Mit Foto erkennt die KI den Schaden präziser — ohne Foto nur Text-Analyse
+                </p>
               </button>
             )}
 

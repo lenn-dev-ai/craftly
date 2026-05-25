@@ -130,23 +130,25 @@ export default function HandwerkerDashboard() {
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto pt-16 md:pt-8">
-      {/* Hero Greeting */}
+      {/* Hero Greeting — Sprint L/Audit-M1: Stamm-Gewerke aus
+          handwerker_gewerke[] bevorzugen, Fallback single gewerk solange
+          noch nicht alle HW migriert sind. */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-ink">
           Hallo, {profile?.firma || profile?.name || "Handwerker"}
         </h1>
         <p className="text-sm text-ink-muted mt-1.5">
-          {profile?.gewerk && <span>{formatGewerk(profile.gewerk)}</span>}
-          {/* React rendert die Number 0 als Text — daher explizit > 0
-              prüfen, sonst sieht der HW "Heizung0Noch keine Bewertungen". */}
+          {stammGewerke.length > 0 && (
+            <span>{stammGewerke.map(g => formatGewerk(g)).join(" · ")}</span>
+          )}
           {profile?.bewertung_avg != null && Number(profile.bewertung_avg) > 0 ? (
             <>
-              {profile?.gewerk ? " · " : null}
+              {stammGewerke.length > 0 ? " · " : null}
               <span className="text-warm font-medium">★ {profile.bewertung_avg}</span>
             </>
           ) : (
             <>
-              {profile?.gewerk ? " · " : null}
+              {stammGewerke.length > 0 ? " · " : null}
               <span>Noch keine Bewertungen</span>
             </>
           )}
