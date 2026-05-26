@@ -46,6 +46,7 @@ const menus: Record<Rolle, MenuItem[]> = {
     { href: "/dashboard-handwerker", label: "Dashboard", Icon: LayoutDashboard },
     { href: "/dashboard-handwerker/kalender", label: "Kalender", Icon: CalendarCheck },
     { href: "/dashboard-handwerker/karte", label: "Karte & Route", Icon: Map },
+    { href: "/dashboard-handwerker/stamm-anfragen", label: "Stamm-Anfragen", Icon: Heart },
     { href: "/dashboard-handwerker/einnahmen", label: "Einnahmen", Icon: Euro },
     // Feedback 9337c802 (25.05.): "Warum haben wir im Menüs immer noch
     // zeitslots, Terminliste, und Diagnosen? Haben wir doch konsolidiert".
