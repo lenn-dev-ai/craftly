@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server"
 
 // OAuth-Callback für Google (und künftige Provider).
 //
@@ -66,6 +66,35 @@ export async function GET(request: NextRequest) {
     .select("rolle")
     .eq("id", user.id)
     .maybeSingle<{ rolle: string }>()
+
+  // Sprint AE Phase 2: bei Google-Login mit Calendar-Scopes wird der
+  // provider_token (Google access_token) in der Session geliefert. Wenn
+  // vorhanden + User ist Handwerker oder Admin (für Test) → direkt in
+  // hw_google_oauth speichern. So muss HW nach Login NICHT nochmal "Mit
+  // Google verbinden" klicken — Calendar-Sync ist sofort aktiv.
+  const providerToken = data.session.provider_token
+  const providerRefreshToken = data.session.provider_refresh_token
+  if (providerToken && providerRefreshToken) {
+    try {
+      const admin = createServiceRoleClient()
+      const expiresAt = new Date(Date.now() + 3500 * 1000).toISOString()
+      await admin.from("hw_google_oauth").upsert(
+        {
+          user_id: user.id,
+          access_token: providerToken,
+          refresh_token: providerRefreshToken,
+          expires_at: expiresAt,
+          scope: "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events",
+          connected_at: new Date().toISOString(),
+          last_error: null,
+        },
+        { onConflict: "user_id" },
+      )
+    } catch (err) {
+      // Best-Effort — Login-Flow soll nicht failen wenn Cal-Sync nicht klappt
+      console.warn("[auth-callback] hw_google_oauth upsert failed", err)
+    }
+  }
 
   if (profile?.rolle && roleDashboard[profile.rolle]) {
     return NextResponse.redirect(new URL(roleDashboard[profile.rolle], origin))

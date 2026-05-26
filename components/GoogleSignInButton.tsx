@@ -37,11 +37,19 @@ export function GoogleSignInButton({
     try {
       const supabase = createClient()
       const redirectTo = `${window.location.origin}/auth/callback`
+      // Sprint AE Phase 2: zusätzliche Calendar-Scopes mit anfragen.
+      // Bei erfolgreichem Login bekommt Reparo provider_token + refresh
+      // (in der Session) — der Callback speichert es in hw_google_oauth.
+      // So ist Login + Cal-Verknüpfung ein Ein-Klick-Flow für HW.
       const { error: oauthErr } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo,
-          queryParams: { prompt: "select_account" },
+          scopes: "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events",
+          queryParams: {
+            prompt: "consent",
+            access_type: "offline",
+          },
         },
       })
       if (oauthErr) {
