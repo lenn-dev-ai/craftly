@@ -839,8 +839,10 @@ export default function TicketDetailView() {
           <BewertungForm onSubmit={bewertenSpeichern} />
         )}
 
-        {/* Sprint U Phase 2 — Mieter-Reklamations-Button (nach Bewertung sichtbar) */}
-        {(ticket.status === "erledigt" || ticket.status === "abgenommen")
+        {/* Sprint U Phase 2 — Mieter-Reklamations-Button (nach Bewertung sichtbar).
+            DB-Status-Set: erledigt | reklamiert. "abgenommen" existiert nicht
+            in der CHECK-Constraint (Cowork-Initial-Code-Drift). */}
+        {ticket.status === "erledigt"
           && currentUser?.id === ticket.erstellt_von && (
           <ReklamationButton ticketId={ticket.id} />
         )}

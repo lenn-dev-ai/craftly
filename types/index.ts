@@ -1,5 +1,13 @@
 export type Rolle = "verwalter" | "handwerker" | "mieter" | "admin"
-export type TicketStatus = "offen" | "auktion" | "in_bearbeitung" | "erledigt"
+export type TicketStatus =
+  | "gemeldet"        // Sprint U: Mieter hat gemeldet, Verwalter noch nicht gesichtet
+  | "offen"
+  | "rueckfrage"      // Sprint U: Verwalter hat KI-Rückfrage an Mieter
+  | "auktion"
+  | "angebote_da"     // Sprint U: Auktion abgelaufen, Verwalter muss vergeben
+  | "in_bearbeitung"
+  | "erledigt"
+  | "reklamiert"      // Sprint U: Mieter hat reklamiert
 export type Prioritaet = "planbar" | "zeitnah" | "notfall"
 export type AngebotStatus = "eingereicht" | "angenommen" | "abgelehnt"
 export type EinladungStatus = "offen" | "angebot" | "abgelehnt"

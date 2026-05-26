@@ -19,10 +19,14 @@ import { TicketStatus, Prioritaet } from "@/types"
 // ============================================================
 export function Badge({ status }: { status: TicketStatus }) {
   const map: Record<TicketStatus, { label: string; bg: string; text: string; dot: string }> = {
+    gemeldet:       { label: "Gemeldet",       bg: "bg-status-offen/10",       text: "text-status-offen",       dot: "bg-status-offen" },
     offen:          { label: "Offen",          bg: "bg-status-offen/10",       text: "text-status-offen",       dot: "bg-status-offen" },
+    rueckfrage:     { label: "Rückfrage",      bg: "bg-warm/15",               text: "text-warm-dark",          dot: "bg-warm" },
     auktion:        { label: "Auktion",        bg: "bg-status-auktion/10",     text: "text-status-auktion",     dot: "bg-status-auktion" },
+    angebote_da:    { label: "Angebote da",    bg: "bg-status-auktion/10",     text: "text-status-auktion",     dot: "bg-status-auktion" },
     in_bearbeitung: { label: "In Bearbeitung", bg: "bg-status-bearbeitung/10", text: "text-status-bearbeitung", dot: "bg-status-bearbeitung" },
     erledigt:       { label: "Erledigt",       bg: "bg-status-erledigt/10",    text: "text-status-erledigt",    dot: "bg-status-erledigt" },
+    reklamiert:     { label: "Reklamiert",     bg: "bg-danger/10",             text: "text-danger",             dot: "bg-danger" },
   }
   const { label, bg, text, dot } = map[status]
   return (
@@ -83,10 +87,14 @@ export function PrioBadge({ prio }: { prio: Prioritaet }) {
 // ============================================================
 export function StatusDot({ status }: { status: TicketStatus }) {
   const colors: Record<TicketStatus, string> = {
+    gemeldet:       "bg-status-offen",
     offen:          "bg-status-offen",
+    rueckfrage:     "bg-warm",
     auktion:        "bg-status-auktion",
+    angebote_da:    "bg-status-auktion",
     in_bearbeitung: "bg-status-bearbeitung",
     erledigt:       "bg-status-erledigt",
+    reklamiert:     "bg-danger",
   }
   return (
     <span
