@@ -7,6 +7,7 @@ import { Badge, PrioBadge, TypBadge, Avatar, Button, Card, Input, LoadingSpinner
 import PreisAufschluesselung from "@/components/pricing/PreisAufschluesselung"
 import DiagnosePipeline from "@/components/ticket/DiagnosePipeline"
 import NachtragsBox from "@/components/ticket/NachtragsBox"
+import { ReklamationButton } from "@/components/ticket/ReklamationButton"
 import { useToast } from "@/components/Toast"
 import { useActiveRole } from "@/lib/context/ActiveRoleContext"
 import { authFetch } from "@/lib/auth/clientFetch"
@@ -836,6 +837,12 @@ export default function TicketDetailView() {
           && !bewertungen.some(b => b.bewerter_id === currentUser.id)
           && (
           <BewertungForm onSubmit={bewertenSpeichern} />
+        )}
+
+        {/* Sprint U Phase 2 — Mieter-Reklamations-Button (nach Bewertung sichtbar) */}
+        {(ticket.status === "erledigt" || ticket.status === "abgenommen")
+          && currentUser?.id === ticket.erstellt_von && (
+          <ReklamationButton ticketId={ticket.id} />
         )}
 
         {/* Bewertung-Bestätigung wenn bereits abgegeben */}
