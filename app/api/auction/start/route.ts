@@ -12,6 +12,7 @@ import { calculateCommission } from "@/lib/pricing/commission"
 import { fuegeTicketZuTagesplan } from "@/lib/auction/routen-planung-sync"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 import { einladungEmail, zuschlagEmail } from "@/lib/email/templates"
+import { findeUndErzeugeStammAnfrage } from "@/lib/auction/stamm-routing"
 
 const DEFAULT_NOTFALL_STUNDEN = 2
 const DEFAULT_STUNDENSATZ = 50
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, titel, beschreibung, erstellt_von, verwalter_id, status, einsatzort_lat, einsatzort_lng, einsatzort_adresse, gewerk")
+    .select("id, titel, beschreibung, erstellt_von, verwalter_id, status, einsatzort_lat, einsatzort_lng, einsatzort_adresse, gewerk, objekt_id")
     .eq("id", ticketId)
     .single<{
       id: string
@@ -71,6 +72,7 @@ export async function POST(request: NextRequest) {
       einsatzort_lng: number | null
       einsatzort_adresse: string | null
       gewerk: string | null
+      objekt_id: string | null
     }>()
   if (!ticket) return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 })
   // Auth via verwalter_id (M-K3): bei Mieter-erstellten Tickets entscheidet
@@ -287,7 +289,49 @@ export async function POST(request: NextRequest) {
     })
   }
 
-  // === Zeitnah / Planbar: normale Auktion ===
+  // === Zeitnah / Planbar: Stamm-HW-Vorzug, dann Marktplatz-Auktion ===
+  //
+  // Sprint V Phase 2: Bevor Marktplatz öffnet, prüfen ob der Verwalter
+  // einen Stamm-HW für (objekt + gewerk) hinterlegt hat. Wenn ja:
+  // 1:1-Anfrage erzeugen, Ticket bleibt 'offen', kein Auktions-Fenster.
+  // Stamm-HW kann annehmen/ablehnen (eigene Routes); bei Ablehnung oder
+  // Fristablauf öffnet eine separate Aktion die normale Auktion.
+  // Defensiv: Helper returnt matched:false wenn Tabelle/Daten fehlen,
+  // also Fallback auf Marktplatz ist safe.
+  const stamm = await findeUndErzeugeStammAnfrage({
+    ticketId,
+    verwalterId: user.id,
+    objektId: ticket.objekt_id,
+    gewerk: ticket.gewerk,
+  })
+  if (stamm.matched) {
+    // Dringlichkeit + Surge auf Ticket persistieren, aber Auktions-
+    // Fenster NICHT setzen. Status bleibt 'offen' (= "wartet auf
+    // Stamm-HW-Entscheidung"). Bei Ablehnung kann der Verwalter
+    // erneut /api/auction/start aufrufen — der Helper findet dann
+    // (per RLS/policy oder app-Logik) keine 2. Anfrage und fällt auf
+    // Auktion zurück.
+    await supabase
+      .from("tickets")
+      .update({
+        dringlichkeit,
+        surge_faktor: config.surgeFaktor,
+      })
+      .eq("id", ticketId)
+
+    return NextResponse.json({
+      ok: true,
+      ticketId,
+      dringlichkeit,
+      modus: "stamm_anfrage",
+      handwerkerId: stamm.handwerker_id,
+      stammAnfrageId: stamm.stamm_anfrage_id,
+      fristBis: stamm.frist_bis,
+      hinweis: "Stamm-Handwerker wurde direkt angefragt. Bei Ablehnung oder Fristablauf öffnet der Marktplatz.",
+    })
+  }
+
+  // Kein Stamm-HW gefunden → normale Marktplatz-Auktion
   const ende = berechneAuktionsEnde(start, config.auktionsDauerStunden)
 
   const { error: updateErr } = await supabase
