@@ -486,14 +486,33 @@ function GoogleCalSection() {
     return () => { aktiv = false }
   }, [])
 
-  function connect() {
-    window.location.href = "/api/auth/google/connect"
+  async function connect() {
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) {
+      window.location.href = "/login"
+      return
+    }
+    const res = await fetch("/api/auth/google/connect", {
+      headers: { authorization: `Bearer ${session.access_token}` },
+    })
+    if (!res.ok) {
+      setErrorMsg("Google-Verbindung konnte nicht gestartet werden — Login abgelaufen?")
+      return
+    }
+    const data = await res.json() as { redirectUrl?: string }
+    if (data.redirectUrl) window.location.href = data.redirectUrl
   }
 
   async function disconnect() {
     setDisconnecting(true)
     try {
-      const res = await fetch("/api/auth/google/disconnect", { method: "POST" })
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch("/api/auth/google/disconnect", {
+        method: "POST",
+        headers: session?.access_token ? { authorization: `Bearer ${session.access_token}` } : undefined,
+      })
       if (res.ok) {
         setStatus("disconnected")
         setConnectedAt(null)

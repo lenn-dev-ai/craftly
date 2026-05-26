@@ -36,8 +36,22 @@ export function GoogleCalBanner() {
 
   if (status !== "disconnected" || dismissed) return null
 
-  function connect() {
-    window.location.href = "/api/auth/google/connect"
+  async function connect() {
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) {
+      window.location.href = "/login"
+      return
+    }
+    const res = await fetch("/api/auth/google/connect", {
+      headers: { authorization: `Bearer ${session.access_token}` },
+    })
+    if (!res.ok) {
+      alert("Google-Verbindung konnte nicht gestartet werden")
+      return
+    }
+    const data = await res.json() as { redirectUrl?: string }
+    if (data.redirectUrl) window.location.href = data.redirectUrl
   }
   function dismiss() {
     if (typeof window !== "undefined") localStorage.setItem(DISMISS_KEY, "1")

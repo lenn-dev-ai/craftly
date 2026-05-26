@@ -4,6 +4,12 @@ import { buildAuthUrl } from "@/lib/google-cal/oauth"
 
 // GET /api/auth/google/connect
 // Sprint AE — startet den OAuth-Flow für den eingeloggten Handwerker.
+//
+// Aufruf via fetch() + Bearer-Token (Reparo-Auth-Pattern). Server gibt
+// die Google-OAuth-URL als JSON zurück; der Client macht dann selbst
+// window.location.href = data.redirectUrl. Grund: das alte Pattern mit
+// direkter Server-Redirect schickte keinen Bearer-Token mit (top-level
+// nav statt fetch), getUserFromRequest gab dann 401.
 
 export async function GET(request: NextRequest) {
   const { user } = await getUserFromRequest(request)
@@ -12,11 +18,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // state = user.id signiert (für MVP einfach: random + cookie)
     const nonce = crypto.randomUUID()
     const state = `${user.id}:${nonce}`
-    const url = buildAuthUrl(state)
-    const res = NextResponse.redirect(url)
+    const redirectUrl = buildAuthUrl(state)
+    const res = NextResponse.json({ redirectUrl })
     res.cookies.set("g_oauth_state", state, {
       httpOnly: true,
       secure: true,
