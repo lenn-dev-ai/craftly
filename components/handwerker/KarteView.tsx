@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Map, {
   Marker,
@@ -11,7 +11,6 @@ import Map, {
   type MapRef,
 } from "react-map-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
-import { useRef } from "react"
 import { createClient } from "@/lib/supabase"
 import { optimiereRoute } from "@/lib/auction/route-bundling"
 import { Map as MapIcon, AlertCircle } from "lucide-react"

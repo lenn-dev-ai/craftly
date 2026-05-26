@@ -492,11 +492,11 @@ function OrtStep(props: {
       <div>
         <label className="block text-xs text-ink-muted mb-1">Einsatzort-Adresse</label>
         <AddressAutocomplete
-          value={props.adresse}
-          onChange={(adr, geo) => {
-            props.setAdresse(adr)
-            props.setAdresseLat(geo?.lat ?? null)
-            props.setAdresseLng(geo?.lng ?? null)
+          initialAdresse={props.adresse}
+          onSelect={(treffer) => {
+            props.setAdresse(treffer.adresse)
+            props.setAdresseLat(treffer.lat)
+            props.setAdresseLng(treffer.lng)
           }}
         />
       </div>
