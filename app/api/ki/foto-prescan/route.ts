@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Foto-Größe muss zwischen 1 Byte und ${MAX_BYTES} Byte sein` }, { status: 400 })
   }
   if (!ERLAUBTE_MIMES.has(foto.type)) {
-    return NextResponse.json({ error: `Nur ${[...ERLAUBTE_MIMES].join(", ")} erlaubt` }, { status: 400 })
+    return NextResponse.json({ error: `Nur ${Array.from(ERLAUBTE_MIMES).join(", ")} erlaubt` }, { status: 400 })
   }
 
   const buf = Buffer.from(await foto.arrayBuffer())
