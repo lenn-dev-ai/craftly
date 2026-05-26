@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase"
 import { ChevronLeft, ChevronRight, Plus, X, Briefcase, Sun } from "lucide-react"
 import { GEWERK_BASIS_PREISE, berechneDynamischenPreis } from "@/lib/yield-management"
 import { useToast } from "@/components/Toast"
+import { GoogleCalBanner } from "@/components/handwerker/GoogleCalBanner"
 
 // K2.2: Wochen-Kalender mit drei Layer-Toggles. Eine Page für alles,
 // was die HW-Zeitplanung umfasst — Termine (bestätigte Aufträge),
@@ -349,6 +350,11 @@ export default function KalenderPage() {
             Klick auf eine leere Stunde → Verfügbarkeit anbieten
           </span>
         </div>
+      </div>
+
+      {/* Sprint AE — Google-Cal-Connect-Banner (zeigt sich nur wenn HW nicht verbunden) */}
+      <div className="max-w-6xl mx-auto px-2 sm:px-6 pt-4">
+        <GoogleCalBanner />
       </div>
 
       {/* Grid */}
