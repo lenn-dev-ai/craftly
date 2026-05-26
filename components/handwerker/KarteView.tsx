@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import Map, {
+import MapboxMap, {
   Marker,
   Popup,
   Source,
@@ -356,7 +356,7 @@ export default function KarteView() {
               scrollZoom={false} → Page-Scroll bleibt dem User, statt
               im Map-Container gefangen zu sein. Auf Mobile sind Pan
               und Pinch-Zoom out-of-the-box ohne Fullscreen-Lock. */}
-          <Map
+          <MapboxMap
             ref={mapRef}
             mapboxAccessToken={MAPBOX_TOKEN}
             initialViewState={{ longitude: initialLng, latitude: initialLat, zoom: 12 }}
@@ -459,7 +459,7 @@ export default function KarteView() {
                 />
               </Source>
             )}
-          </Map>
+          </MapboxMap>
         </div>
       )}
 
