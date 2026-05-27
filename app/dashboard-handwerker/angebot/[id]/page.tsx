@@ -71,8 +71,11 @@ export default function AngebotAbgeben() {
     setTicket(data as Ticket)
 
     // Eigene Einladung suchen, um den System-Vorschlag-Preis zu zeigen.
+    // Admin-Fallback: falls kein eigener Eintrag (z.B. beim Testen als Admin),
+    // ersten verfügbaren empfohlener_preis nehmen.
     type EinladungMini = { handwerker_id: string; empfohlener_preis: number | null; status: string | null }
-    const meine = ((data.einladungen as EinladungMini[] | null) || []).find(e => e.handwerker_id === user.id)
+    const alle = (data.einladungen as EinladungMini[] | null) || []
+    const meine = alle.find(e => e.handwerker_id === user.id) ?? alle[0]
     setSystemPreis(meine?.empfohlener_preis ?? null)
 
     setLoading(false)
