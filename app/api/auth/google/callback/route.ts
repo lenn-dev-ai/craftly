@@ -79,3 +79,5 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL(ERR_PROFIL + encodeURIComponent(err instanceof Error ? err.message : "exchange_failed"), url.origin))
   }
 }
+
+// retrigger build
