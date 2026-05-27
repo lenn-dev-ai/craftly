@@ -20,3 +20,5 @@ craftly-backup-*/
 test-results/
 playwright-report/
 playwright/.cache/
+# Office lockfiles (LibreOffice/Excel)
+.~lock.*#
