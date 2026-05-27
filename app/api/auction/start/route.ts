@@ -380,11 +380,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: updateErr.message }, { status: 500 })
   }
 
-  // Fire-and-forget: Einladungs-Mails an passende Handwerker im Radius
+  // Fire-and-forget: Einladungs-Zeilen (einladungen-Tabelle) anlegen +
+  // Einladungs-Mails an passende Handwerker im Radius verschicken.
+  //
+  // Loop-26-Fix (27.05.2026): Vorher wurden nur E-Mails geschickt, aber
+  // keine einladungen-Zeilen angelegt. Die Angebot-Seite liest
+  // einladungen.empfohlener_preis — ohne Zeile war der Preis immer null
+  // und der HW konnte den Auftrag nicht annehmen.
+  //
+  // Preis-Formel: (basis_stundensatz ?? basis_preis ?? 50) × h × surge
+  // Estimated Stunden: zeitnah=2, planbar=3. Minimum 80 €.
+  const ESTIMATED_STUNDEN: Record<string, number> = { zeitnah: 2, planbar: 3 }
+  const estimatedH = ESTIMATED_STUNDEN[dringlichkeit] ?? 2
+
   void (async () => {
     let query = supabase
       .from("profiles")
-      .select("id, email, name, gewerk, startort_lat, startort_lng, lat, lng, radius_km")
+      .select("id, email, name, gewerk, startort_lat, startort_lng, lat, lng, radius_km, basis_stundensatz, basis_preis")
       .eq("rolle", "handwerker")
     if (ticket.gewerk && ticket.gewerk !== "allgemein") {
       query = query.ilike("gewerk", `%${ticket.gewerk}%`)
@@ -399,6 +411,8 @@ export async function POST(request: NextRequest) {
       lat: number | null
       lng: number | null
       radius_km: number | null
+      basis_stundensatz: number | null
+      basis_preis: number | null
     }>>()
 
     const auktionEndeFormatiert = ende
@@ -408,8 +422,16 @@ export async function POST(request: NextRequest) {
         })
       : "—"
 
+    // HW im Radius filtern + einladungen-Batch vorbereiten
+    const einladungenBatch: Array<{
+      ticket_id: string
+      handwerker_id: string
+      empfohlener_preis: number
+      status: string
+    }> = []
+    const eingeladene: typeof handwerker = []
+
     for (const hw of handwerker ?? []) {
-      if (!hw.email) continue
       const hwLat = hw.startort_lat ?? hw.lat
       const hwLng = hw.startort_lng ?? hw.lng
       if (hwLat == null || hwLng == null) continue
@@ -420,6 +442,32 @@ export async function POST(request: NextRequest) {
       const radius = hw.radius_km ?? config.radiusKm
       if (distanz > radius) continue
 
+      // Preis berechnen: Stundensatz × h × Surge, min 80 €
+      const stundensatz = hw.basis_stundensatz ?? hw.basis_preis ?? DEFAULT_STUNDENSATZ
+      const empfohlenerPreis = Math.max(80, Math.round(stundensatz * estimatedH * config.surgeFaktor))
+
+      einladungenBatch.push({
+        ticket_id: ticketId,
+        handwerker_id: hw.id,
+        empfohlener_preis: empfohlenerPreis,
+        status: "offen",
+      })
+      eingeladene.push(hw)
+    }
+
+    // 1) einladungen-Zeilen anlegen (vor E-Mail, damit Angebot-Seite sofort lesen kann)
+    if (einladungenBatch.length > 0) {
+      const { error: einlErr } = await supabase
+        .from("einladungen")
+        .upsert(einladungenBatch, { onConflict: "ticket_id,handwerker_id" })
+      if (einlErr) {
+        console.error("[auction/start] einladungen-Upsert fehlgeschlagen:", einlErr.message)
+      }
+    }
+
+    // 2) E-Mails verschicken
+    for (const hw of eingeladene) {
+      if (!hw.email) continue
       const { subject, html } = einladungEmail({
         handwerkerName: hw.name || "Handwerker",
         ticketTitel: ticket.titel,
@@ -427,7 +475,12 @@ export async function POST(request: NextRequest) {
         gewerk: ticket.gewerk || "allgemein",
         dringlichkeit,
         einsatzort: ticket.einsatzort_adresse || "",
-        distanzKm: distanz,
+        distanzKm: haversineKm(
+          hw.startort_lat ?? hw.lat ?? 0,
+          hw.startort_lng ?? hw.lng ?? 0,
+          ticket.einsatzort_lat as number,
+          ticket.einsatzort_lng as number,
+        ),
         auktionEnde: auktionEndeFormatiert,
         ticketId: ticket.id,
       })
