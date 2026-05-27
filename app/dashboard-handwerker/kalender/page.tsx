@@ -148,6 +148,9 @@ export default function KalenderPage() {
   const [verf, setVerf] = useState<KalenderVerf[]>([])
   const [googleEvents, setGoogleEvents] = useState<GoogleEventTag[]>([])
   const [googleAllDay, setGoogleAllDay] = useState<GoogleAllDayTag[]>([])
+  // Audit-Fix #6: Google-Fetch-Status für sichtbares Feedback im Chip.
+  // null = noch nicht geladen / kein Versuch, ""=ok, sonst Fehlertext.
+  const [googleFetchError, setGoogleFetchError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [slotModal, setSlotModal] = useState<SlotModalState | null>(null)
   const [saving, setSaving] = useState(false)
@@ -263,10 +266,16 @@ export default function KalenderPage() {
           }
           setGoogleEvents(perDay)
           setGoogleAllDay(allDay)
+          setGoogleFetchError("")
+        } else if (res.status !== 401) {
+          // 401 = Bearer-Auth fail oder kein Google-Account → still tolerieren,
+          // alles andere ist ein echtes Problem (Token expired upstream o.ä.).
+          setGoogleFetchError(`HTTP ${res.status}`)
         }
       }
     } catch (e) {
       console.warn("[kalender] google-events load failed", e)
+      setGoogleFetchError(e instanceof Error ? e.message : "fetch_error")
     }
   }, [router, wochenStartIso, wochenEndeIso])
 
@@ -432,11 +441,12 @@ export default function KalenderPage() {
             onClick={() => setLayers(l => ({ ...l, verfuegbarkeit: !l.verfuegbarkeit }))}
           />
           <LayerChip
-            label="Google"
+            label={googleFetchError ? "Google ⚠" : "Google"}
             icon={<Briefcase size={13} />}
             active={layers.google}
             tone="google"
             onClick={() => setLayers(l => ({ ...l, google: !l.google }))}
+            title={googleFetchError ? `Google-Cal nicht erreichbar: ${googleFetchError}` : undefined}
           />
           <span className="text-[11px] text-ink-faint ml-auto hidden sm:inline">
             Klick auf eine leere Stunde → Verfügbarkeit anbieten
@@ -810,12 +820,13 @@ export default function KalenderPage() {
   )
 }
 
-function LayerChip({ label, icon, active, tone, onClick }: {
+function LayerChip({ label, icon, active, tone, onClick, title }: {
   label: string
   icon: React.ReactNode
   active: boolean
   tone: "termine" | "slots" | "verf" | "google"
   onClick: () => void
+  title?: string
 }) {
   const toneActive: Record<string, string> = {
     termine: "bg-accent text-white border-accent",
@@ -827,6 +838,7 @@ function LayerChip({ label, icon, active, tone, onClick }: {
     <button
       onClick={onClick}
       aria-pressed={active}
+      title={title}
       className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-full border transition-colors ${
         active
           ? toneActive[tone]
