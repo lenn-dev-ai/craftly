@@ -3,502 +3,568 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
-import { UserProfile, Zeitslot, formatGewerk } from "@/types"
-import { GEWERK_BASIS_PREISE } from "@/lib/yield-management"
-import { formatZeit } from "@/lib/format"
 import { useToast } from "@/components/Toast"
+import { Inbox, Users, Search, Filter as FilterIcon, RefreshCw, Clock, MapPin, AlertCircle } from "lucide-react"
+import { formatGewerk } from "@/types"
 
-type Filter = "alle" | "sanitaer" | "elektro" | "heizung" | "maler" | "schreiner" | "dachdecker" | "schlosser"
+// Sprint AK Stufe 2 (27.05.2026) — Verwalter-Marktplatz, NEU.
+//
+// Das alte Slot-Marktplatz-Konzept ist tot (Stufe 1, siehe Konzept-Memo
+// SPRINT-AK-VERWALTER-MARKTPLATZ-KONZEPT.md). Diese Page ist jetzt eine
+// Zwei-Tab-Oberfläche für die zwei echten Verwalter-Use-Cases:
+//
+//   Tab 1 "Offene Tickets" — welche meiner Tickets warten noch auf HW-Zuweisung?
+//   Tab 2 "Meine Handwerker" — Stamm-HW-Liste mit Live-Verfügbarkeits-Badge
+//                              aus Google-Cal.
+//
+// Backup der alten Page liegt unter /app/dashboard-verwalter/marktplatz-archiv/
+// für Notfall-Rollback, kann nach 1-2 Wochen weg.
 
-// B3: Marktplatz-Slot kann entweder ein konkreter zeitslots-Eintrag sein
-// (mit echter id, bewerbbar) oder aus einer HW-Wochenstruktur generiert
-// (virtual, nicht direkt bewerbbar — der HW muss den Slot erst konkret
-// freigeben, dann kann gebucht werden). Beide tauchen in der Liste auf,
-// werden visuell unterschieden.
-type MarktSlot = Zeitslot & {
-  ist_wochenstruktur?: boolean
-  wochenstruktur_id?: string
+type Tab = "tickets" | "handwerker"
+
+interface OffenesTicket {
+  id: string
+  titel: string
+  gewerk: string | null
+  ticket_typ: string | null
+  prioritaet: string | null
+  einsatzort_adresse: string | null
+  created_at: string
+  status: string
+  erstellt_von: string | null
+  einladungen?: { count: number }[]
+  angebote?: { count: number }[]
 }
 
-const VORSCHAU_TAGE = 14
+interface StammHwEintrag {
+  id: string
+  handwerker_id: string
+  gewerk: string | null
+  prio: number | null
+  handwerker: {
+    id: string
+    name: string | null
+    firma: string | null
+    gewerk: string | null
+    bewertung_avg: number | null
+    auftraege_anzahl: number | null
+    plz_bereich: string | null
+  } | null
+}
 
-function timeToH(t: string): number {
-  const [h, m] = t.split(":").map(Number)
-  return h + (m ?? 0) / 60
+type HwStatus = "frei" | "belegt" | "nicht_verbunden" | "fehler" | "laedt"
+
+function relativAlter(isoDate: string): string {
+  const ms = Date.now() - new Date(isoDate).getTime()
+  const m = Math.floor(ms / 60000)
+  if (m < 60) return `vor ${m} Min`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `vor ${h} Std`
+  const d = Math.floor(h / 24)
+  if (d < 7) return `vor ${d} ${d === 1 ? "Tag" : "Tagen"}`
+  return new Date(isoDate).toLocaleDateString("de", { day: "2-digit", month: "short" })
 }
 
 export default function MarktplatzPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  // F10: HW-Filter via Query-Param. "Slots ansehen" auf der HW-Liste setzt
-  // ?hw=<id>, der Marktplatz zeigt dann nur Slots dieses Handwerkers.
-  // Sprint Q1: zusätzlich ?gewerk=… als persistierter Filter — shareable
-  // + überlebt Browser-Back vom HW-Verzeichnis.
-  const hwParam = searchParams.get("hw")
-  const gewerkParam = searchParams.get("gewerk") as Filter | null
   const { confirm } = useToast()
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [slots, setSlots] = useState<MarktSlot[]>([])
-  const [loading, setLoading] = useState(true)
-  const [filter, setFilterState] = useState<Filter>(gewerkParam ?? "alle")
+  const initialTab = (searchParams.get("tab") as Tab) === "handwerker" ? "handwerker" : "tickets"
+  const [tab, setTab] = useState<Tab>(initialTab)
 
-  // Sprint Q1 — Filter-Setter synct in URL, damit Wechsel-Pfade den
-  // State mitnehmen. Strings die nicht in Filter-Union sind werden
-  // ignoriert (graceful gegen Drift zw. HW-Verzeichnis "heizung_sanitaer"
-  // vs. Marktplatz "sanitaer"/"heizung").
-  function setFilter(v: Filter) {
-    setFilterState(v)
+  const [tickets, setTickets] = useState<OffenesTicket[]>([])
+  const [hws, setHws] = useState<StammHwEintrag[]>([])
+  const [hwStatus, setHwStatus] = useState<Record<string, HwStatus>>({})
+  const [loading, setLoading] = useState(true)
+  const [loadingStatus, setLoadingStatus] = useState(false)
+  const [toast, setToast] = useState("")
+  const [filterGewerk, setFilterGewerk] = useState<string>("alle")
+  const [filterStatus, setFilterStatus] = useState<"alle" | "frei" | "verbunden">("alle")
+  const [suche, setSuche] = useState("")
+  const [einladenDrawer, setEinladenDrawer] = useState<OffenesTicket | null>(null)
+  const [einlade, setEinlade] = useState<string | null>(null)
+
+  // Tab-Sync in URL
+  useEffect(() => {
     const next = new URLSearchParams(searchParams.toString())
-    if (v === "alle") next.delete("gewerk")
-    else next.set("gewerk", v)
+    if (tab === "handwerker") next.set("tab", "handwerker")
+    else next.delete("tab")
     const qs = next.toString()
     router.replace(`/dashboard-verwalter/marktplatz${qs ? `?${qs}` : ""}`, { scroll: false })
-  }
-  const [sending, setSending] = useState<string | null>(null)
-  const [toast, setToast] = useState("")
-  const [gebotPreise, setGebotPreise] = useState<Record<string, number>>({})
-  const [gebotNachrichten, setGebotNachrichten] = useState<Record<string, string>>({})
-  const [expandedSlot, setExpandedSlot] = useState<string | null>(null)
-
-  const hwFilterName = useMemo(() => {
-    if (!hwParam) return null
-    const slot = slots.find(s => s.handwerker_id === hwParam)
-    const hw = slot?.handwerker as { name?: string; firma?: string } | undefined
-    return hw?.firma || hw?.name || null
-  }, [hwParam, slots])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab])
 
   const loadData = useCallback(async () => {
+    setLoading(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
 
-    const heuteIso = new Date().toISOString().split("T")[0]
-    // B4: konsolidierte Tabelle — zwei art-gefilterte Queries gegen
-    // public.zeitslots. verfuegbarkeiten wird nicht mehr gelesen.
-    const [{ data: prof }, { data: verfuegbareSlots }, { data: wochenstruktur }] = await Promise.all([
-      supabase.from("profiles").select("id, email, name, rolle, created_at").eq("id", user.id).single(),
+    const [{ data: t }, { data: h }] = await Promise.all([
       supabase
-        .from("zeitslots")
-        .select("*, handwerker:profiles!handwerker_id(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl, plz_bereich), gebote:zeitslot_gebote(count)")
-        .eq("art", "einmalig")
-        .eq("status", "verfuegbar")
-        .gte("datum", heuteIso)
-        .order("datum", { ascending: true }),
-      // Wochenstruktur — wochentag-Felder, kein konkretes Datum.
+        .from("tickets")
+        .select("id, titel, gewerk, ticket_typ, prioritaet, einsatzort_adresse, created_at, status, erstellt_von, einladungen(count), angebote(count)")
+        .eq("verwalter_id", user.id)
+        .is("zugewiesener_hw", null)
+        .not("status", "in", "(geschlossen,storniert,erledigt)")
+        .order("created_at", { ascending: true }),
       supabase
-        .from("zeitslots")
-        .select("id, handwerker_id, wochentag, von, bis, handwerker:profiles!handwerker_id(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl, plz_bereich, basis_preis)")
-        .eq("art", "wiederkehrend")
-        .eq("status", "verfuegbar"),
+        .from("stamm_handwerker")
+        .select("id, handwerker_id, gewerk, prio, handwerker:profiles!handwerker_id(id, name, firma, gewerk, bewertung_avg, auftraege_anzahl, plz_bereich)")
+        .eq("verwalter_id", user.id)
+        .order("prio", { ascending: false }),
     ])
-
-    // Virtuelle Slots aus Wochenstruktur für die nächsten 14 Tage erzeugen.
-    // Skip, wenn für denselben HW+Datum+Zeit bereits ein konkreter Slot
-    // existiert — der hat Vorrang, weil der HW den explizit freigegeben hat.
-    const konkretKeys = new Set(
-      (verfuegbareSlots ?? []).map(s => `${s.handwerker_id}|${s.datum}|${s.von}|${s.bis}`),
-    )
-    const heute = new Date()
-    heute.setHours(0, 0, 0, 0)
-    const virtuelle: MarktSlot[] = []
-    type WStruktur = {
-      id: string; handwerker_id: string; wochentag: number; von: string; bis: string
-      handwerker: { id: string; name: string | null; firma: string | null; gewerk: string | null; bewertung_avg: number | null; auftraege_anzahl: number | null; plz_bereich: string | null; basis_preis: number | null } | null
-    }
-    for (const w of (wochenstruktur ?? []) as unknown as WStruktur[]) {
-      if (w.wochentag == null) continue
-      for (let i = 0; i < VORSCHAU_TAGE; i++) {
-        const d = new Date(heute)
-        d.setDate(heute.getDate() + i)
-        if (d.getDay() !== w.wochentag) continue
-        const datum = d.toISOString().slice(0, 10)
-        const key = `${w.handwerker_id}|${datum}|${w.von}|${w.bis}`
-        if (konkretKeys.has(key)) continue
-
-        const hwGewerk = w.handwerker?.gewerk ?? "allgemein"
-        const basisPreis = w.handwerker?.basis_preis ?? GEWERK_BASIS_PREISE[hwGewerk] ?? 50
-        const stunden = (timeToH(w.bis) - timeToH(w.von))
-        virtuelle.push({
-          id: `wstr-${w.id}-${datum}`,
-          handwerker_id: w.handwerker_id,
-          titel: `Wochenstruktur ${w.handwerker?.firma ?? w.handwerker?.name ?? ""}`.trim(),
-          gewerk: hwGewerk,
-          datum,
-          von: w.von,
-          bis: w.bis,
-          stunden,
-          basis_preis_stunde: basisPreis,
-          dynamischer_preis: basisPreis,
-          preisfaktor: 1,
-          status: "verfuegbar",
-          ist_luecke: false,
-          notizen: null,
-          created_at: new Date().toISOString(),
-          handwerker: w.handwerker,
-          ist_wochenstruktur: true,
-          wochenstruktur_id: w.id,
-        } as unknown as MarktSlot)
-      }
-    }
-
-    const merged: MarktSlot[] = [
-      ...((verfuegbareSlots ?? []) as MarktSlot[]),
-      ...virtuelle,
-    ].sort((a, b) => (a.datum + a.von).localeCompare(b.datum + b.von))
-
-    setProfile(prof)
-    setSlots(merged)
+    setTickets((t ?? []) as OffenesTicket[])
+    setHws((h ?? []) as unknown as StammHwEintrag[])
     setLoading(false)
   }, [router])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => { void loadData() }, [loadData])
 
-  async function submitGebot(slotId: string) {
-    if (!profile) return
-    const slot = slots.find(s => s.id === slotId)
-    if (!slot) return
-    // B3: virtuelle Wochenstruktur-Slots können nicht direkt beboten werden —
-    // der HW muss sie erst konkret freigeben. Bis B4 (Materialize-API) ist
-    // das ein expliziter Hinweis statt einer stillen Failure.
-    if (slot.ist_wochenstruktur) {
-      setToast("Dieser Slot stammt aus der Wochenstruktur — der Handwerker gibt ihn frei, sobald er ihn konkret anbietet.")
-      setTimeout(() => setToast(""), 4000)
-      return
-    }
-    const preis = gebotPreise[slotId] || slot.dynamischer_preis || slot.basis_preis_stunde
-    if (!await confirm(`Gebot über ${preis} €/h für „${slot.titel}" wirklich absenden?`)) return
-    setSending(slotId)
-
-    const nachricht = gebotNachrichten[slotId] || ""
+  // Verfügbarkeits-Status für die HW-Liste laden (nur wenn Tab "handwerker" aktiv,
+  // damit wir keine Google-API-Calls vergeuden wenn der Verwalter eh Tickets schaut).
+  const loadVerfuegbarkeit = useCallback(async () => {
+    if (hws.length === 0) return
+    setLoadingStatus(true)
+    // Initial alle auf "laedt"
+    const initial: Record<string, HwStatus> = {}
+    for (const h of hws) initial[h.handwerker_id] = "laedt"
+    setHwStatus(initial)
 
     const supabase = createClient()
-    const { error } = await supabase.from("zeitslot_gebote").insert({
-      zeitslot_id: slotId,
-      verwalter_id: profile.id,
-      gebotener_preis: preis,
-      wunsch_stunden: slot.stunden,
-      nachricht: nachricht || null,
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) { setLoadingStatus(false); return }
+    try {
+      const res = await fetch("/api/verwalter/hw-verfuegbarkeit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ handwerker_ids: hws.map(h => h.handwerker_id) }),
+      })
+      if (res.ok) {
+        const json = await res.json() as { status?: Record<string, HwStatus> }
+        setHwStatus(json.status ?? {})
+      } else {
+        setHwStatus({})
+      }
+    } catch (e) {
+      console.warn("[marktplatz] verfuegbarkeit-fetch fehlgeschlagen", e)
+      setHwStatus({})
+    } finally {
+      setLoadingStatus(false)
+    }
+  }, [hws])
+
+  useEffect(() => {
+    if (tab === "handwerker" && hws.length > 0 && Object.keys(hwStatus).length === 0) {
+      void loadVerfuegbarkeit()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, hws.length])
+
+  async function einladen(ticket: OffenesTicket, hwId: string, hwName: string) {
+    if (!await confirm(`„${ticket.titel}" an ${hwName} einladen?`)) return
+    setEinlade(hwId)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setEinlade(null); return }
+    const { error } = await supabase.from("einladungen").insert({
+      ticket_id: ticket.id,
+      handwerker_id: hwId,
+      verwalter_id: user.id,
       status: "offen",
     })
-
     if (error) {
-      if (error.message.includes("duplicate")) {
-        setToast("Du hast bereits ein Gebot für diesen Slot abgegeben")
+      if (error.message.includes("duplicate") || error.message.includes("23505")) {
+        setToast("HW ist bereits eingeladen.")
       } else {
         setToast("Fehler: " + error.message)
       }
     } else {
-      setToast("Gebot erfolgreich gesendet! Der Handwerker wird benachrichtigt.")
-      setExpandedSlot(null)
+      setToast(`${hwName} wurde eingeladen.`)
+      setEinladenDrawer(null)
       await loadData()
     }
-    setSending(null)
-    setTimeout(() => setToast(""), 4000)
+    setEinlade(null)
+    setTimeout(() => setToast(""), 3000)
   }
 
-  if (loading) return (
-    <div className="flex items-center justify-center h-screen bg-surface">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-2 border-accent/30 border-t-[#3D8B7A] rounded-full animate-spin" />
-        <span className="text-sm text-ink-muted">Marktplatz laden...</span>
-      </div>
-    </div>
-  )
+  const gewerkOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const h of hws) {
+      if (h.gewerk) set.add(h.gewerk)
+      else if (h.handwerker?.gewerk) set.add(h.handwerker.gewerk)
+    }
+    return Array.from(set).sort()
+  }, [hws])
 
-  const slotsNachHW = hwParam ? slots.filter(s => s.handwerker_id === hwParam) : slots
-  const filteredSlots = filter === "alle"
-    ? slotsNachHW
-    : slotsNachHW.filter(s => s.gewerk === filter)
-
-  const gewerke = Array.from(new Set(slotsNachHW.map(s => s.gewerk).filter(Boolean))) as string[]
-
-  function hwFilterEntfernen() {
-    const url = new URL(window.location.href)
-    url.searchParams.delete("hw")
-    router.replace(url.pathname + (url.searchParams.toString() ? "?" + url.searchParams.toString() : ""))
-  }
+  const gefilterte = useMemo(() => {
+    return hws.filter(h => {
+      const gewerk = h.gewerk ?? h.handwerker?.gewerk ?? ""
+      if (filterGewerk !== "alle" && gewerk !== filterGewerk) return false
+      if (filterStatus === "frei" && hwStatus[h.handwerker_id] !== "frei") return false
+      if (filterStatus === "verbunden") {
+        const s = hwStatus[h.handwerker_id]
+        if (s === "nicht_verbunden" || s === "fehler" || !s) return false
+      }
+      if (suche) {
+        const hay = `${h.handwerker?.name ?? ""} ${h.handwerker?.firma ?? ""} ${gewerk}`.toLowerCase()
+        if (!hay.includes(suche.toLowerCase())) return false
+      }
+      return true
+    })
+  }, [hws, hwStatus, filterGewerk, filterStatus, suche])
 
   return (
-    <div className="min-h-screen bg-surface text-ink">
-      <div className="max-w-5xl mx-auto p-6 md:p-6 pt-16 md:pt-6">
-        {/* Toast */}
-        {toast && (
-          <div className="fixed top-4 right-4 z-50 bg-white border border-accent/30 text-ink text-sm px-4 py-3 rounded-xl shadow-lg shadow-[#3D8B7A]/10">
-            {toast}
+    <div className="min-h-screen bg-surface">
+      <div className="bg-white border-b border-line">
+        <div className="max-w-6xl mx-auto pl-14 pr-4 md:px-6 py-4 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-lg font-semibold text-ink">Marktplatz</h1>
+            <p className="text-xs text-ink-muted">Offene Tickets &amp; verfügbare Handwerker</p>
           </div>
-        )}
-
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Handwerker-Marktplatz</h1>
-          <p className="text-ink-muted text-sm mt-1">
-            Verfügbare Zeitslots — Biete auf Handwerker deiner Wahl
-          </p>
-        </div>
-
-        {/* F10: HW-Filter-Banner, falls über ?hw=<id> aus der HW-Liste gekommen */}
-        {hwParam && (
-          <div className="mb-5 flex items-center justify-between gap-3 bg-accent/5 border border-accent/20 rounded-xl px-4 py-3">
-            <div className="text-xs text-ink-secondary">
-              Slots gefiltert auf{" "}
-              <span className="font-semibold text-ink">
-                {hwFilterName ?? "diesen Handwerker"}
-              </span>
-              {!hwFilterName && slots.length > 0 && (
-                <span className="text-ink-muted"> — keine verfügbaren Slots.</span>
-              )}
-            </div>
-            <button
-              onClick={hwFilterEntfernen}
-              className="text-xs font-medium text-accent hover:text-[#2D6B5A]"
-            >
-              Filter entfernen
-            </button>
-          </div>
-        )}
-
-        {/* Sprint AB3 — Stats als beruhigter Inline-Strip statt 3 Cards.
-            Designer-Audit: weniger visuelle Fragmentierung. */}
-        <div className="bg-white border border-line rounded-xl px-5 py-3 mb-6 flex flex-wrap items-baseline gap-x-8 gap-y-2">
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold tabular-nums text-ink">{slots.length}</span>
-            <span className="text-xs text-ink-muted">verfügbare Slots</span>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold tabular-nums text-ink">{gewerke.length}</span>
-            <span className="text-xs text-ink-muted">Gewerke</span>
-          </div>
-          <div className="flex items-baseline gap-2 hidden sm:flex">
-            <span className="text-2xl font-bold tabular-nums text-ink">
-              {slots.length > 0
-                ? Math.round(slots.reduce((s, sl) => s + (sl.dynamischer_preis || sl.basis_preis_stunde), 0) / slots.length)
-                : 0
-              } €
-            </span>
-            <span className="text-xs text-ink-muted">Ø Preis/h</span>
-          </div>
-        </div>
-
-        {/* Filter */}
-        <div className="flex flex-wrap gap-2 mb-6">
           <button
-            onClick={() => setFilter("alle")}
-            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
-              filter === "alle"
-                ? "bg-accent/15 text-accent border border-accent/20"
-                : "text-ink-muted border border-line hover:text-ink-secondary hover:border-accent/20"
-            }`}
+            type="button"
+            onClick={() => void loadData()}
+            className="text-xs px-3 py-2 rounded-lg border border-line hover:bg-surface-muted text-ink-secondary inline-flex items-center gap-1.5"
+            aria-label="Liste neu laden"
           >
-            Alle ({slots.length})
+            <RefreshCw size={13} /> Aktualisieren
           </button>
-          {gewerke.map(g => {
-            const count = slots.filter(s => s.gewerk === g).length
-            return (
-              <button
-                key={g}
-                onClick={() => setFilter(g as Filter)}
-                className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
-                  filter === g
-                    ? "bg-accent/15 text-accent border border-accent/20"
-                    : "text-ink-muted border border-line hover:text-ink-secondary hover:border-accent/20"
-                }`}
-              >
-                {formatGewerk(g)} ({count})
-              </button>
-            )
-          })}
         </div>
+        <div className="max-w-6xl mx-auto pl-14 pr-4 md:px-6 flex gap-1 -mb-px">
+          <TabButton
+            active={tab === "tickets"}
+            label="Offene Tickets"
+            count={tickets.length}
+            icon={<Inbox size={14} />}
+            onClick={() => setTab("tickets")}
+          />
+          <TabButton
+            active={tab === "handwerker"}
+            label="Meine Handwerker"
+            count={hws.length}
+            icon={<Users size={14} />}
+            onClick={() => setTab("handwerker")}
+          />
+        </div>
+      </div>
 
-        {/* Slots Grid */}
-        {filteredSlots.length === 0 ? (
-          <div className="bg-white border border-line rounded-2xl p-12 text-center" role="status">
-            <div className="text-4xl mb-3" aria-hidden="true">🔍</div>
-            <div className="text-lg font-semibold mb-1">
-              {filter !== "alle" ? "Keine passenden Slots" : "Aktuell keine Slots im Marktplatz"}
-            </div>
-            <div className="text-sm text-ink-muted mb-4 max-w-md mx-auto">
-              {filter !== "alle"
-                ? `Für ${formatGewerk(filter)} sind aktuell keine Slots offen. Handwerker geben ihre Slots typischerweise wochenweise frei — andere Gewerke prüfen oder später nochmal schauen.`
-                : "Sobald Handwerker freie Stunden eintragen, erscheinen sie hier. Du kannst auch direkt im Handwerker-Verzeichnis nach passenden Anbietern suchen."
-              }
-            </div>
-            {filter !== "alle" ? (
-              <button
-                onClick={() => setFilter("alle")}
-                className="text-sm font-medium text-accent hover:underline"
-              >
-                Filter zurücksetzen
-              </button>
-            ) : (
-              <a
-                href="/dashboard-verwalter/handwerker"
-                className="text-sm font-medium text-accent hover:underline"
-              >
-                Zum Handwerker-Verzeichnis →
-              </a>
-            )}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {filteredSlots.map(s => {
-              const hw = s.handwerker as any
-              const preis = s.dynamischer_preis || s.basis_preis_stunde
-              const basisPreis = GEWERK_BASIS_PREISE[s.gewerk || "allgemein"] || 50
-              const isExpanded = expandedSlot === s.id
-              const gebotsCount = (s.gebote as any)?.[0]?.count || 0
-
-              return (
-                <div
-                  key={s.id}
-                  className={`bg-white border rounded-xl transition-all ${
-                    isExpanded ? "border-accent/30 shadow-lg shadow-[#3D8B7A]/5" : "border-line hover:border-line"
-                  }`}
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-5">
+        {loading ? (
+          <div className="text-center text-sm text-ink-muted py-16">Lädt …</div>
+        ) : tab === "tickets" ? (
+          tickets.length === 0 ? (
+            <EmptyState
+              title="Keine offenen Tickets"
+              text="Alle deine Tickets haben einen zugewiesenen HW oder sind erledigt."
+              ctaLabel="Neues Ticket anlegen"
+              ctaHref="/dashboard-verwalter/neues-ticket"
+            />
+          ) : (
+            <ul className="space-y-2">
+              {tickets.map(t => (
+                <li
+                  key={t.id}
+                  className="bg-white border border-line rounded-2xl px-4 py-3 flex items-start gap-3 hover:border-accent/30 transition-colors"
                 >
-                  <div className="p-4">
-                    <div className="flex items-start justify-between flex-wrap gap-3">
-                      {/* Left: Handwerker Info */}
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-[#3D8B7A]/20 to-[#C4956A]/20 rounded-xl flex items-center justify-center text-sm font-bold text-accent flex-shrink-0">
-                          {hw?.name?.charAt(0) || "H"}
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold flex items-center gap-2">
-                            {hw?.firma || hw?.name || "Handwerker"}
-                            {hw?.bewertung_avg > 0 && (
-                              <span className="text-[10px] text-[#F59E0B]">
-                                ★ {hw.bewertung_avg.toFixed(1)}
-                              </span>
-                            )}
-                            {hw?.auftraege_anzahl > 0 && (
-                              <span className="text-[10px] text-ink/30">
-                                ({hw.auftraege_anzahl} Aufträge)
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-ink-muted mt-0.5">
-                            {formatGewerk(s.gewerk)}
-                            {hw?.plz_bereich && ` · PLZ ${hw.plz_bereich}`}
-                          </div>
-                          <div className="text-xs text-ink/50 mt-1">
-                            <span className="font-medium">
-                              {new Date(s.datum).toLocaleDateString("de", { weekday: "short", day: "numeric", month: "short" })}
-                            </span>
-                            {" · "}
-                            {formatZeit(s.von)} – {formatZeit(s.bis)} ({s.stunden}h)
-                          </div>
-                          {s.ist_luecke && (
-                            <span className="inline-block mt-1 text-[9px] bg-[#8B5CF6]/15 text-[#8B5CF6] px-1.5 py-0.5 rounded-full">
-                              Lücken-Angebot (–15%)
-                            </span>
-                          )}
-                          {s.ist_wochenstruktur && (
-                            <span className="inline-block mt-1 ml-1 text-[9px] bg-accent/15 text-accent px-1.5 py-0.5 rounded-full">
-                              Wochenstruktur
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Right: Price + Action */}
-                      <div className="text-right flex-shrink-0">
-                        <div className="text-2xl font-bold text-accent">{preis} €<span className="text-sm text-ink-muted">/h</span></div>
-                        {s.preisfaktor > 1.0 && (
-                          <div className="text-[10px] text-[#F59E0B]">×{s.preisfaktor} Surge</div>
-                        )}
-                        {s.preisfaktor <= 1.0 && preis < basisPreis && (
-                          <div className="text-[10px] text-[#8B5CF6]">Unter Marktpreis</div>
-                        )}
-                        <div className="text-[10px] text-ink-muted mt-0.5">
-                          Markt: {basisPreis} €/h
-                        </div>
-                        {gebotsCount > 0 && (
-                          <div className="text-[10px] text-[#F59E0B] mt-1">
-                            {gebotsCount} {gebotsCount === 1 ? "Gebot" : "Gebote"} vorhanden
-                          </div>
-                        )}
-                        <button
-                          onClick={() => {
-                            if (s.ist_wochenstruktur) {
-                              submitGebot(s.id) // löst den Wochenstruktur-Hinweis-Toast aus
-                              return
-                            }
-                            setExpandedSlot(isExpanded ? null : s.id)
-                          }}
-                          className={`mt-2 text-xs font-bold px-4 py-2 rounded-lg transition-all ${
-                            s.ist_wochenstruktur
-                              ? "bg-surface-muted text-ink-secondary cursor-help"
-                              : isExpanded
-                                ? "bg-surface-muted text-ink-secondary"
-                                : "bg-gradient-to-r from-[#3D8B7A] to-[#C4956A] text-black hover:brightness-110"
-                          }`}
-                          title={s.ist_wochenstruktur ? "Aus Wochenstruktur generiert — HW gibt konkret frei" : undefined}
-                        >
-                          {s.ist_wochenstruktur
-                            ? "Auf Anfrage"
-                            : isExpanded
-                              ? "Schließen"
-                              : "Slot buchen"}
-                        </button>
-                      </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-ink truncate">{t.titel}</span>
+                      {t.prioritaet === "notfall" && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wide bg-red-100 text-red-800 border border-red-200 px-1.5 py-px rounded">Notfall</span>
+                      )}
+                      {t.status === "auktion" && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wide bg-warm-light text-warm-dark border border-warm/30 px-1.5 py-px rounded">Auktion</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-ink-muted flex-wrap">
+                      {t.gewerk && <span>{formatGewerk(t.gewerk)}</span>}
+                      {t.einsatzort_adresse && (
+                        <span className="inline-flex items-center gap-1 truncate max-w-[260px]">
+                          <MapPin size={11} className="flex-shrink-0" />
+                          {t.einsatzort_adresse}
+                        </span>
+                      )}
+                      <span className="inline-flex items-center gap-1">
+                        <Clock size={11} /> {relativAlter(t.created_at)}
+                      </span>
+                      {(t.einladungen?.[0]?.count ?? 0) > 0 && (
+                        <span className="text-ink-faint">· {t.einladungen![0].count} HW eingeladen</span>
+                      )}
+                      {(t.angebote?.[0]?.count ?? 0) > 0 && (
+                        <span className="text-accent">· {t.angebote![0].count} Angebot{t.angebote![0].count === 1 ? "" : "e"}</span>
+                      )}
                     </div>
                   </div>
+                  <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/dashboard-verwalter/tickets/${t.id}`)}
+                      className="text-xs px-3 py-2 rounded-lg border border-line hover:bg-surface-muted text-ink-secondary"
+                    >
+                      Details
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEinladenDrawer(t)}
+                      className="text-xs font-semibold px-3 py-2 rounded-lg bg-accent text-white hover:bg-accent-hover"
+                    >
+                      HW einladen
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )
+        ) : (
+          // Tab: Handwerker
+          <>
+            <div className="bg-white border border-line rounded-2xl p-3 mb-3 flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-[180px]">
+                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-faint" />
+                <input
+                  type="search"
+                  value={suche}
+                  onChange={e => setSuche(e.target.value)}
+                  placeholder="Name, Firma, Gewerk suchen …"
+                  className="w-full text-sm bg-surface border border-line rounded-lg pl-8 pr-3 py-2 focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20"
+                />
+              </div>
+              <select
+                value={filterGewerk}
+                onChange={e => setFilterGewerk(e.target.value)}
+                className="text-xs bg-surface border border-line rounded-lg px-3 py-2 text-ink-secondary"
+                aria-label="Nach Gewerk filtern"
+              >
+                <option value="alle">Alle Gewerke</option>
+                {gewerkOptions.map(g => <option key={g} value={g}>{formatGewerk(g)}</option>)}
+              </select>
+              <select
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value as typeof filterStatus)}
+                className="text-xs bg-surface border border-line rounded-lg px-3 py-2 text-ink-secondary"
+                aria-label="Nach Verfügbarkeit filtern"
+              >
+                <option value="alle">Alle Verfügbarkeiten</option>
+                <option value="frei">Nur frei jetzt</option>
+                <option value="verbunden">Nur Google-verbundene</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => void loadVerfuegbarkeit()}
+                disabled={loadingStatus}
+                className="text-xs px-3 py-2 rounded-lg border border-line hover:bg-surface-muted text-ink-secondary inline-flex items-center gap-1.5 disabled:opacity-50"
+                aria-label="Verfügbarkeit neu laden"
+              >
+                <RefreshCw size={13} className={loadingStatus ? "animate-spin" : ""} /> Status
+              </button>
+            </div>
 
-                  {/* Expanded: Gebot Form */}
-                  {isExpanded && (
-                    <div className="border-t border-line p-4 bg-white/[0.02]">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                          <label className="text-xs text-ink-muted mb-1 block">Dein Gebot (€/h) *</label>
-                          <input
-                            type="number"
-                            min={1}
-                            value={gebotPreise[s.id] || preis}
-                            onChange={e => setGebotPreise({ ...gebotPreise, [s.id]: Number(e.target.value) })}
-                            className="w-full bg-surface-muted border border-line rounded-xl px-4 py-2.5 text-sm text-ink focus:border-accent/40 focus:outline-none transition-colors"
-                          />
-                          <div className="text-[10px] text-ink/30 mt-1">
-                            {(gebotPreise[s.id] || preis) >= preis
-                              ? "✓ Gebot liegt beim oder über dem aktuellen Preis"
-                              : "⚠ Unter dem aktuellen Preis — Annahme unwahrscheinlich"
-                            }
-                          </div>
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="text-xs text-ink-muted mb-1 block">Nachricht (optional)</label>
-                          <input
-                            type="text"
-                            value={gebotNachrichten[s.id] || ""}
-                            onChange={e => setGebotNachrichten({ ...gebotNachrichten, [s.id]: e.target.value })}
-                            placeholder="z.B. Für Sanitär-Reparatur in Musterstraße 12..."
-                            className="w-full bg-surface-muted border border-line rounded-xl px-4 py-2.5 text-sm text-ink placeholder:text-ink-muted focus:border-accent/40 focus:outline-none transition-colors"
-                          />
+            {hws.length === 0 ? (
+              <EmptyState
+                title="Noch keine Stamm-Handwerker"
+                text="Lege deine bevorzugten HW unter „Stamm-Handwerker“ an — dann erscheinen sie hier mit Live-Verfügbarkeit."
+                ctaLabel="Stamm-Handwerker verwalten"
+                ctaHref="/dashboard-verwalter/stamm-handwerker"
+              />
+            ) : gefilterte.length === 0 ? (
+              <div className="text-center text-sm text-ink-muted py-12 bg-white border border-line rounded-2xl">
+                Keine Treffer für die aktuellen Filter.
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {gefilterte.map(h => {
+                  const name = h.handwerker?.firma || h.handwerker?.name || "Ohne Namen"
+                  const gewerk = h.gewerk || h.handwerker?.gewerk || ""
+                  const status = hwStatus[h.handwerker_id]
+                  return (
+                    <li
+                      key={h.id}
+                      className="bg-white border border-line rounded-2xl px-4 py-3 flex items-center gap-3"
+                    >
+                      <HwStatusBadge status={status} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-ink truncate">{name}</div>
+                        <div className="flex items-center gap-3 mt-0.5 text-xs text-ink-muted flex-wrap">
+                          {gewerk && <span>{formatGewerk(gewerk)}</span>}
+                          {h.handwerker?.plz_bereich && <span>· {h.handwerker.plz_bereich}</span>}
+                          {h.handwerker?.bewertung_avg != null && (
+                            <span className="text-warm">★ {h.handwerker.bewertung_avg.toFixed(1)}</span>
+                          )}
+                          {(h.handwerker?.auftraege_anzahl ?? 0) > 0 && (
+                            <span>· {h.handwerker?.auftraege_anzahl} Aufträge</span>
+                          )}
                         </div>
                       </div>
-
-                      {/* Gesamt-Vorschau */}
-                      <div className="mt-3 bg-surface-muted rounded-lg p-3 flex items-center justify-between">
-                        <div className="text-xs text-ink-muted">
-                          Geschätzte Gesamtkosten: <span className="font-bold text-ink">
-                            {Math.round((gebotPreise[s.id] || preis) * s.stunden)} €
-                          </span>
-                          <span className="text-ink-muted"> ({s.stunden}h × {gebotPreise[s.id] || preis} €)</span>
-                        </div>
+                      <div className="flex gap-2 flex-shrink-0">
                         <button
-                          onClick={() => submitGebot(s.id)}
-                          disabled={sending === s.id}
-                          className="text-xs font-bold bg-gradient-to-r from-[#3D8B7A] to-[#C4956A] text-black px-6 py-2.5 rounded-lg hover:brightness-110 transition-all disabled:opacity-50"
+                          type="button"
+                          onClick={() => router.push(`/dashboard-verwalter/handwerker?id=${h.handwerker_id}`)}
+                          className="text-xs px-3 py-2 rounded-lg border border-line hover:bg-surface-muted text-ink-secondary"
                         >
-                          {sending === s.id ? "Wird gesendet..." : "Gebot senden"}
+                          Profil
                         </button>
                       </div>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+
+            <p className="text-[11px] text-ink-faint mt-3 inline-flex items-center gap-1.5">
+              <FilterIcon size={11} />
+              Verfügbarkeits-Status kommt live aus dem Google-Kalender (4-Stunden-Fenster).
+              HW ohne Google-Verbindung erscheinen als &bdquo;unbekannt&ldquo;.
+            </p>
+          </>
         )}
       </div>
+
+      {/* Einladen-Drawer — wenn Ticket-Card-Action "HW einladen" geklickt wurde */}
+      {einladenDrawer && (
+        <div
+          className="fixed inset-0 z-50 bg-ink/40 flex items-end md:items-center justify-center p-4"
+          onClick={() => setEinladenDrawer(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-2xl shadow-xl max-h-[80vh] flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-line">
+              <h2 className="text-base font-semibold text-ink">HW zu &bdquo;{einladenDrawer.titel}&ldquo; einladen</h2>
+              <p className="text-xs text-ink-muted mt-1">
+                Aus deinen Stamm-Handwerkern. Status zeigt Verfügbarkeit der nächsten 4 Stunden.
+              </p>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-1">
+              {hws.length === 0 ? (
+                <div className="text-sm text-ink-muted text-center py-8">
+                  Keine Stamm-HW angelegt.{" "}
+                  <a href="/dashboard-verwalter/stamm-handwerker" className="text-accent hover:underline">
+                    Jetzt anlegen
+                  </a>
+                </div>
+              ) : (
+                hws.map(h => {
+                  const name = h.handwerker?.firma || h.handwerker?.name || "Ohne Namen"
+                  const gewerk = h.gewerk || h.handwerker?.gewerk || ""
+                  const passt = !einladenDrawer.gewerk || !gewerk || einladenDrawer.gewerk === gewerk
+                  return (
+                    <button
+                      key={h.id}
+                      type="button"
+                      disabled={einlade === h.handwerker_id}
+                      onClick={() => void einladen(einladenDrawer, h.handwerker_id, name)}
+                      className={`w-full text-left px-3 py-2 rounded-lg border flex items-center gap-3 transition-colors ${
+                        passt
+                          ? "border-line hover:border-accent/40 hover:bg-accent/5"
+                          : "border-line hover:bg-surface-muted opacity-70"
+                      } disabled:opacity-50`}
+                    >
+                      <HwStatusBadge status={hwStatus[h.handwerker_id]} compact />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-ink truncate">{name}</div>
+                        <div className="text-xs text-ink-muted">
+                          {gewerk && formatGewerk(gewerk)}
+                          {!passt && gewerk && einladenDrawer.gewerk && (
+                            <span className="ml-2 text-amber-700">
+                              (anderes Gewerk als Ticket)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {einlade === h.handwerker_id && <span className="text-[11px] text-ink-muted">…</span>}
+                    </button>
+                  )
+                })
+              )}
+            </div>
+            <div className="px-5 py-3 border-t border-line text-right">
+              <button
+                type="button"
+                onClick={() => setEinladenDrawer(null)}
+                className="text-xs px-3 py-2 rounded-lg text-ink-secondary hover:bg-surface-muted"
+              >
+                Schließen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-ink text-white text-xs px-4 py-2 rounded-lg shadow-lg">
+          {toast}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function TabButton({ active, label, count, icon, onClick }: {
+  active: boolean; label: string; count: number; icon: React.ReactNode; onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={`inline-flex items-center gap-2 text-sm font-medium px-4 py-2.5 border-b-2 transition-colors -mb-px ${
+        active
+          ? "border-accent text-accent"
+          : "border-transparent text-ink-muted hover:text-ink-secondary"
+      }`}
+    >
+      {icon}
+      {label}
+      <span className={`text-[10px] tabular-nums rounded-full px-1.5 py-0.5 ${
+        active ? "bg-accent/15 text-accent" : "bg-surface-muted text-ink-muted"
+      }`}>{count}</span>
+    </button>
+  )
+}
+
+function HwStatusBadge({ status, compact = false }: { status: HwStatus | undefined; compact?: boolean }) {
+  const meta: Record<HwStatus, { color: string; label: string; help: string }> = {
+    frei:             { color: "bg-emerald-500",   label: "Frei",        help: "Keine Google-Termine in den nächsten 4h" },
+    belegt:           { color: "bg-rose-400",      label: "Belegt",      help: "Hat Google-Termine in den nächsten 4h" },
+    nicht_verbunden:  { color: "bg-ink-faint/40",  label: "Unbekannt",   help: "HW hat keinen Google-Kalender verbunden" },
+    fehler:           { color: "bg-amber-400",     label: "Fehler",      help: "Google-API hat geantwortet mit Fehler" },
+    laedt:            { color: "bg-ink-faint/40 animate-pulse", label: "…", help: "Lädt Status" },
+  }
+  const s = status ?? "nicht_verbunden"
+  const m = meta[s]
+  if (compact) {
+    return (
+      <span className={`w-2.5 h-2.5 rounded-full ${m.color} flex-shrink-0`} title={m.help} aria-label={m.label} />
+    )
+  }
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 text-[11px] font-medium text-ink-muted flex-shrink-0 w-20"
+      title={m.help}
+    >
+      <span className={`w-2 h-2 rounded-full ${m.color} flex-shrink-0`} aria-hidden="true" />
+      {m.label}
+    </span>
+  )
+}
+
+function EmptyState({ title, text, ctaLabel, ctaHref }: {
+  title: string; text: string; ctaLabel: string; ctaHref: string
+}) {
+  return (
+    <div className="bg-white border border-line rounded-2xl px-6 py-10 text-center">
+      <AlertCircle size={28} className="mx-auto text-ink-faint mb-3" />
+      <div className="text-base font-semibold text-ink mb-1">{title}</div>
+      <p className="text-sm text-ink-muted mb-4 max-w-sm mx-auto">{text}</p>
+      <a
+        href={ctaHref}
+        className="inline-block text-xs font-semibold bg-accent text-white px-4 py-2 rounded-xl hover:bg-accent-hover transition-colors"
+      >
+        {ctaLabel}
+      </a>
     </div>
   )
 }

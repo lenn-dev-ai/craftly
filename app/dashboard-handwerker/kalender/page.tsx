@@ -3,10 +3,22 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
-import { ChevronLeft, ChevronRight, Plus, X, Briefcase, Sun } from "lucide-react"
-import { GEWERK_BASIS_PREISE, berechneDynamischenPreis } from "@/lib/yield-management"
+import { ChevronLeft, ChevronRight, Plus, X, Lock } from "lucide-react"
 import { useToast } from "@/components/Toast"
 import { GoogleCalBanner } from "@/components/handwerker/GoogleCalBanner"
+
+// Sprint AK Stufe 1 (27.05.2026): Verfügbarkeits-/Marktplatz-Konzept ist tot.
+// Verfügbarkeit = Google-Kalender (Source of Truth) + Reparo-Termine.
+// Was bleibt:
+//   - Termine-Layer (Aufträge + Vorschläge)
+//   - Google-Layer (private Termine als "belegt")
+//   - Privat-Block-Layer (Convenience für HW ohne Google; speichert in
+//     zeitslots mit status='privat' und art='einmalig' — bleibt erhalten
+//     bis Stufe 3 das wegmigriert)
+// Layer-Toggles → Legende, weil HW eh immer alles sehen will.
+// Wochenstruktur (art='wiederkehrend') und Marktplatz-Slots (status='verfuegbar')
+// werden NICHT mehr neu angelegt — Bestand bleibt für Verwalter-Marktplatz lesbar
+// bis Stufe 2 das umbaut.
 
 // Sprint AE Phase 3: Google-Cal-Events Read-Only-Anzeige.
 interface GoogleEventTag {
@@ -35,16 +47,8 @@ interface GoogleAllDayTag {
 // Kontext des angeklickten Tages/Zeit-Slots.
 
 const TAGE_LABEL = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
-// Wochentag-Index in JS Date: 0=Sonntag … 6=Samstag.
-// Wir mappen auf unseren Mo-So-Index 0..6.
-function jsWochentagToIdx(jsTag: number): number {
-  return (jsTag + 6) % 7
-}
-// Umgekehrt: für `verfuegbarkeiten.wochentag` (DB-Konvention 0=So..6=Sa
-// wie in Sidebar.tsx beobachtet) → unseren Mo-So-Index.
-function dbWochentagToIdx(dbTag: number): number {
-  return (dbTag + 6) % 7
-}
+// Sprint AK Stufe 1 (27.05.): jsWochentagToIdx + dbWochentagToIdx entfernt —
+// Wochenstruktur ist tot, niemand mappt mehr Wochentag→Spalten-Index.
 
 const STUNDE_VON = 7
 const STUNDE_BIS = 20
@@ -86,20 +90,11 @@ interface KalenderTermin {
   status: string
 }
 
-interface KalenderSlot {
+interface PrivatBlock {
+  // Sprint AK Stufe 1: nur noch status='privat' Slots — Convenience-Blocker
+  // für HW ohne Google. Marktplatz-Slots und Wochenstruktur sind tot.
   id: string
   datum: string
-  von: string
-  bis: string
-  basis_preis_stunde: number | null
-  dynamischer_preis: number | null
-  status: string
-}
-
-interface KalenderVerf {
-  // B4: aus zeitslots mit art='wiederkehrend' geladen — wochentag-basierte
-  // Wochenstruktur ohne konkretes Datum.
-  wochentag: number
   von: string
   bis: string
 }
@@ -113,10 +108,9 @@ function timeToMinutes(t: string): number {
   return h * 60 + m
 }
 
-function eventOffsetTop(von: string): number {
-  const mins = timeToMinutes(von) - STUNDE_VON * 60
-  return (mins / 60) * STUNDE_HOEHE_PX
-}
+// U7-Fix Audit (27.05.): offsetTop wurde in den Component-Body verschoben,
+// da es jetzt vom konfigurierbaren arbVon abhängt. Modul-Level-Variante
+// entfernt — wäre dead code.
 
 function eventHeight(von: string, bis: string): number {
   const dauer = timeToMinutes(bis) - timeToMinutes(von)
@@ -147,34 +141,26 @@ function formatWochenLabel(montag: Date): string {
 }
 
 interface SlotModalState {
+  // Sprint AK Stufe 1: Modal blockt nur noch Privat-Zeit. "Verfügbarkeit
+  // anbieten" + "Wochenstruktur" sind weg — passiert jetzt im Google-Cal
+  // bzw. wird gar nicht mehr aktiv gepflegt (Auctions checken Google direkt).
   datum: string
   von: string
   bis: string
-  // B2: "wiederkehrend" macht aus dem einmaligen zeitslots-Eintrag eine
-  // wöchentliche verfuegbarkeiten-Zeile (handwerker_id + wochentag).
-  wiederkehrend: boolean
-  // F2-Fix Audit (27.05.): "privat" = Blockzeit (Mittagspause, Arzt etc.).
-  // Speichert status='privat' statt 'verfuegbar' → Marktplatz filtert ihn raus.
-  privat: boolean
 }
-
-const WOCHENTAG_NAME = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
 
 export default function KalenderPage() {
   const router = useRouter()
   const { confirm } = useToast()
 
   const [montag, setMontag] = useState<Date>(() => getMontag(new Date()))
-  // B1: "Slots" als separates User-Konzept ist weg. Der Verfügbarkeit-Toggle
-  // steuert jetzt sowohl die Wochenstruktur-Hintergründe als auch die
-  // konkreten Buchungsfenster aus public.zeitslots.
-  const [layers, setLayers] = useState({ termine: true, verfuegbarkeit: true, google: true })
   const [userId, setUserId] = useState<string | null>(null)
-  const [profileGewerk, setProfileGewerk] = useState<string>("allgemein")
-  const [profileBasisPreis, setProfileBasisPreis] = useState<number>(50)
+  // U7-Fix Audit (27.05.): Arbeitszeit-Fenster aus profile. Default
+  // STUNDE_VON/BIS bleibt 7-20 wenn profile leer ist.
+  const [arbVon, setArbVon] = useState<number>(STUNDE_VON)
+  const [arbBis, setArbBis] = useState<number>(STUNDE_BIS)
   const [termine, setTermine] = useState<KalenderTermin[]>([])
-  const [slots, setSlots] = useState<KalenderSlot[]>([])
-  const [verf, setVerf] = useState<KalenderVerf[]>([])
+  const [privatBlocks, setPrivatBlocks] = useState<PrivatBlock[]>([])
   const [googleEvents, setGoogleEvents] = useState<GoogleEventTag[]>([])
   const [googleAllDay, setGoogleAllDay] = useState<GoogleAllDayTag[]>([])
   // Audit-Fix #6: Google-Fetch-Status für sichtbares Feedback im Chip.
@@ -203,39 +189,38 @@ export default function KalenderPage() {
     if (!user) { router.push("/login"); return }
     setUserId(user.id)
 
-    const [{ data: prof }, { data: t }, { data: s }, { data: v }] = await Promise.all([
-      supabase.from("profiles").select("id, gewerk, basis_preis").eq("id", user.id).single(),
+    // Sprint AK Stufe 1: nur noch 3 Quellen — Profil (für Arbeitszeit),
+    // Termine, Privat-Blocks. Wochenstruktur + Marktplatz-Slots werden
+    // weder geladen noch angezeigt.
+    const [{ data: prof }, { data: t }, { data: pb }] = await Promise.all([
+      supabase.from("profiles").select("id, arbeitszeit_von, arbeitszeit_bis").eq("id", user.id).single(),
       supabase
         .from("termine")
         .select("id, datum, von, bis, titel, ticket_id, status")
         .eq("handwerker_id", user.id)
         .gte("datum", wochenStartIso)
         .lte("datum", wochenEndeIso),
-      // B4: konkrete Slots — nur art='einmalig' mit datum-Filter.
       supabase
         .from("zeitslots")
-        .select("id, datum, von, bis, basis_preis_stunde, dynamischer_preis, status")
+        .select("id, datum, von, bis")
         .eq("handwerker_id", user.id)
         .eq("art", "einmalig")
+        .eq("status", "privat")
         .gte("datum", wochenStartIso)
         .lte("datum", wochenEndeIso),
-      // B4: Wochenstruktur lebt jetzt in zeitslots (art='wiederkehrend'),
-      // status='verfuegbar' filtert deaktivierte Strukturen.
-      supabase
-        .from("zeitslots")
-        .select("wochentag, von, bis, status")
-        .eq("handwerker_id", user.id)
-        .eq("art", "wiederkehrend")
-        .eq("status", "verfuegbar"),
     ])
 
     if (prof) {
-      setProfileGewerk(prof.gewerk || "allgemein")
-      setProfileBasisPreis(prof.basis_preis ?? GEWERK_BASIS_PREISE[prof.gewerk || "allgemein"] ?? 50)
+      // U7-Fix Audit (27.05.): Arbeitszeit-Fenster aus profile.
+      // Defaults via DB-Spalte (von=7, bis=20) — fallback hier nochmal explizit
+      // für den Fall, dass ein Legacy-Profil noch NULL hat.
+      const pv = (prof as { arbeitszeit_von?: number | null }).arbeitszeit_von
+      const pbv = (prof as { arbeitszeit_bis?: number | null }).arbeitszeit_bis
+      if (typeof pv === "number" && pv >= 0 && pv <= 23) setArbVon(pv)
+      if (typeof pbv === "number" && pbv >= 1 && pbv <= 24 && (typeof pv !== "number" || pbv > pv)) setArbBis(pbv)
     }
     setTermine((t ?? []).filter((x: KalenderTermin) => x.status !== "abgelaufen" && x.status !== "abgelehnt"))
-    setSlots(s ?? [])
-    setVerf(v ?? [])
+    setPrivatBlocks((pb ?? []) as PrivatBlock[])
     setLoading(false)
 
     // Sprint AE Phase 3 — Google-Cal-Events laden (parallel, non-blocking).
@@ -323,8 +308,8 @@ export default function KalenderPage() {
     const tag = tageDerWoche[tagIdx]
     const datum = isoDatum(tag)
     const von = String(stunde).padStart(2, "0") + ":00"
-    const bis = String(Math.min(stunde + 2, STUNDE_BIS)).padStart(2, "0") + ":00"
-    setSlotModal({ datum, von, bis, wiederkehrend: false, privat: false })
+    const bis = String(Math.min(stunde + 2, arbBis)).padStart(2, "0") + ":00"
+    setSlotModal({ datum, von, bis })
   }
 
   function terminKlick(t: KalenderTermin) {
@@ -334,6 +319,8 @@ export default function KalenderPage() {
   }
 
   async function saveSlot() {
+    // Sprint AK Stufe 1: Modal speichert nur noch Privat-Blocks
+    // (art='einmalig', status='privat'). Yield/Marktplatz-Felder = 0/null.
     if (!slotModal || !userId) return
     if (timeToMinutes(slotModal.bis) <= timeToMinutes(slotModal.von)) {
       setToast("Endzeit muss nach Startzeit liegen.")
@@ -342,68 +329,23 @@ export default function KalenderPage() {
     }
     setSaving(true)
     const supabase = createClient()
-
-    let insErr: { message: string } | null = null
-    const basisPreis = profileBasisPreis || GEWERK_BASIS_PREISE[profileGewerk] || 50
-    // F2-Fix Audit (27.05.): privat-Blockzeit ist immer einmalig (kein
-    // wiederkehrender Privattermin via Modal — dafür Google nutzen).
-    const slotStatus = slotModal.privat ? "privat" : "verfuegbar"
-    if (slotModal.wiederkehrend && !slotModal.privat) {
-      // B4: Wochenstruktur — Zeile in zeitslots mit art='wiederkehrend',
-      // datum=null. wochentag aus dem geklickten Datum (JS getDay() ≡ DB).
-      const wochentag = new Date(slotModal.datum).getDay()
-      const { error } = await supabase.from("zeitslots").insert({
-        handwerker_id: userId,
-        titel: "Wochenstruktur",
-        gewerk: profileGewerk,
-        datum: null,
-        von: slotModal.von,
-        bis: slotModal.bis,
-        basis_preis_stunde: basisPreis,
-        status: "verfuegbar",
-        ist_luecke: false,
-        art: "wiederkehrend",
-        wochentag,
-      })
-      insErr = error
+    const { error } = await supabase.from("zeitslots").insert({
+      handwerker_id: userId,
+      titel: "Privat blockiert",
+      datum: slotModal.datum,
+      von: slotModal.von,
+      bis: slotModal.bis,
+      basis_preis_stunde: 0,
+      dynamischer_preis: 0,
+      preisfaktor: 1,
+      status: "privat",
+      ist_luecke: false,
+      art: "einmalig",
+    })
+    if (error) {
+      setToast("Fehler: " + error.message)
     } else {
-      // Einmaliger Slot oder Privat-Block — art='einmalig'.
-      // Privat: ohne Preisberechnung (=0), nicht im Marktplatz.
-      const preisInfo = slotModal.privat
-        ? { dynamischerPreis: 0, gesamtFaktor: 1 }
-        : berechneDynamischenPreis(
-            basisPreis,
-            slotModal.datum,
-            slotModal.von,
-            0,
-            slots.filter(s => s.status === "verfuegbar").length,
-            false,
-          )
-      const { error } = await supabase.from("zeitslots").insert({
-        handwerker_id: userId,
-        titel: slotModal.privat ? "Privat blockiert" : `Slot ${slotModal.datum}`,
-        gewerk: profileGewerk,
-        datum: slotModal.datum,
-        von: slotModal.von,
-        bis: slotModal.bis,
-        basis_preis_stunde: slotModal.privat ? 0 : basisPreis,
-        dynamischer_preis: preisInfo.dynamischerPreis,
-        preisfaktor: preisInfo.gesamtFaktor,
-        status: slotStatus,
-        ist_luecke: false,
-        art: "einmalig",
-      })
-      insErr = error
-    }
-
-    if (insErr) {
-      setToast("Fehler: " + insErr.message)
-    } else {
-      setToast(
-        slotModal.wiederkehrend
-          ? "Wochenstruktur ergänzt."
-          : "Verfügbarkeit eingetragen.",
-      )
+      setToast("Zeit blockiert.")
       setSlotModal(null)
       await loadData()
     }
@@ -411,10 +353,10 @@ export default function KalenderPage() {
     setTimeout(() => setToast(""), 2500)
   }
 
-  async function slotLoeschen(slot: KalenderSlot) {
-    if (!await confirm(`Slot am ${slot.datum} ${fmtTime(slot.von)}-${fmtTime(slot.bis)} entfernen?`)) return
+  async function privatBlockLoeschen(block: PrivatBlock) {
+    if (!await confirm(`Block am ${block.datum} ${fmtTime(block.von)}-${fmtTime(block.bis)} entfernen?`)) return
     const supabase = createClient()
-    const { error } = await supabase.from("zeitslots").delete().eq("id", slot.id)
+    const { error } = await supabase.from("zeitslots").delete().eq("id", block.id)
     if (error) {
       setToast("Fehler: " + error.message)
     } else {
@@ -423,8 +365,19 @@ export default function KalenderPage() {
     setTimeout(() => setToast(""), 2500)
   }
 
-  const stunden = Array.from({ length: STUNDE_BIS - STUNDE_VON }, (_, i) => STUNDE_VON + i)
+  // U7-Fix Audit (27.05.): stunden-Array aus konfigurierbarem Arbeitsfenster.
+  // Wenn Profil ungültig wäre, fallen wir auf 7-20 zurück (Mindest-2h, sonst Fenster leer).
+  const sicherArbVon = arbVon >= 0 && arbVon <= 23 ? arbVon : STUNDE_VON
+  const sicherArbBis = arbBis > sicherArbVon && arbBis <= 24 ? arbBis : STUNDE_BIS
+  const stunden = Array.from({ length: sicherArbBis - sicherArbVon }, (_, i) => sicherArbVon + i)
   const heuteIso = isoDatum(new Date())
+
+  // Lokale Offset-Helper aus konfigurierbarer Start-Stunde — überschreibt
+  // die module-level Helper, die hartcodierte STUNDE_VON nutzen.
+  const offsetTop = (von: string): number => {
+    const mins = timeToMinutes(von) - sicherArbVon * 60
+    return (mins / 60) * STUNDE_HOEHE_PX
+  }
 
   return (
     <div className="min-h-screen bg-surface">
@@ -470,32 +423,23 @@ export default function KalenderPage() {
           </div>
         </div>
 
-        {/* Layer-Toggles */}
-        <div className="max-w-6xl mx-auto pl-14 pr-4 md:px-6 pb-3 flex items-center gap-2 flex-wrap">
-          <LayerChip
-            label="Termine"
-            icon={<Briefcase size={13} />}
-            active={layers.termine}
-            tone="termine"
-            onClick={() => setLayers(l => ({ ...l, termine: !l.termine }))}
-          />
-          <LayerChip
-            label="Verfügbarkeit"
-            icon={<Sun size={13} />}
-            active={layers.verfuegbarkeit}
-            tone="verf"
-            onClick={() => setLayers(l => ({ ...l, verfuegbarkeit: !l.verfuegbarkeit }))}
-          />
-          <LayerChip
-            label={googleFetchError ? "Google ⚠" : "Google"}
-            icon={<Briefcase size={13} />}
-            active={layers.google}
-            tone="google"
-            onClick={() => setLayers(l => ({ ...l, google: !l.google }))}
-            title={googleFetchError ? `Google-Cal nicht erreichbar: ${googleFetchError}` : undefined}
-          />
-          <span className="text-[11px] text-ink-faint ml-auto hidden sm:inline">
-            Klick auf eine leere Stunde → Verfügbarkeit anbieten
+        {/* Sprint AK Stufe 1 (27.05.): Filter-Chips → Legende. HW will eh
+            immer alles sehen; Toggles waren Erbe vom alten Marktplatz-Konzept. */}
+        <div className="max-w-6xl mx-auto pl-14 pr-4 md:px-6 pb-3 flex items-center gap-3 flex-wrap text-[11px]">
+          <LegendItem color="bg-accent" label="Auftrag" />
+          <LegendItem color="bg-rolle-mieter/50" label="Vorschlag" />
+          <LegendItem color="bg-blue-300" label="Google" />
+          <LegendItem color="bg-ink/40" label="Privat blockiert" />
+          {googleFetchError && (
+            <span
+              className="text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full"
+              title={`Google-Cal: ${googleFetchError}`}
+            >
+              ⚠ Google nicht erreichbar
+            </span>
+          )}
+          <span className="text-ink-faint ml-auto hidden sm:inline">
+            Klick auf eine leere Stunde → Zeit privat blockieren
           </span>
         </div>
       </div>
@@ -505,25 +449,23 @@ export default function KalenderPage() {
         <GoogleCalBanner />
       </div>
 
-      {/* B2-Fix Sprint AE Phase 3: Mobile-Hint für Erstnutzer
-          (Desktop hat die Zeile in der Chips-Bar; Mobile bekommt sie hier).
-          Versteckt sich, sobald HW schon Slots/Verfügbarkeit eingetragen hat. */}
-      {slots.length === 0 && verf.length === 0 && (
+      {/* B2-Fix Sprint AE Phase 3 + Sprint AK Stufe 1: Mobile-Hint für Erstnutzer
+          (Desktop hat die Zeile in der Chips-Bar; Mobile bekommt sie hier). */}
+      {privatBlocks.length === 0 && termine.length === 0 && (
         <div className="max-w-6xl mx-auto px-2 sm:px-6 pt-3 sm:hidden">
           <div className="text-[11px] text-ink-muted bg-surface-muted/60 border border-line rounded-lg px-3 py-2">
-            Tippe auf eine leere Stunde im Grid, um deine Verfügbarkeit dort anzubieten.
+            Tippe auf eine leere Stunde im Grid, um diese Zeit privat zu blockieren.
           </div>
         </div>
       )}
 
-      {/* U1-Fix Audit (27.05.): Empty-State-Onboarding für Erstnutzer.
-          Sichtbar wenn HW noch nichts angelegt hat (keine Termine, Slots,
-          Verfügbarkeiten, Google-Events). Dismissable via localStorage.
-          Soll Klick-Pfad zeigen, nicht über-erklären. */}
+      {/* U1-Fix Audit (27.05.) + Sprint AK Stufe 1: Empty-State-Onboarding.
+          Sichtbar wenn HW noch nichts hat (keine Termine, Privat-Blocks, Google).
+          Dismissable via localStorage. Wording entrümpelt — kein "Verfügbarkeit
+          anbieten" mehr, weil das Konzept tot ist. */}
       {!loading
         && termine.length === 0
-        && slots.length === 0
-        && verf.length === 0
+        && privatBlocks.length === 0
         && googleEvents.length === 0
         && googleAllDay.length === 0
         && typeof window !== "undefined"
@@ -535,9 +477,9 @@ export default function KalenderPage() {
               <div className="flex-1 min-w-0 text-sm">
                 <div className="font-semibold text-ink mb-1">So füllst du deinen Kalender</div>
                 <ol className="text-xs text-ink-muted space-y-0.5 list-decimal pl-4">
-                  <li>Klick auf eine freie Stunde im Grid → biete diese Zeit als Verfügbarkeit an</li>
-                  <li>Oder verbinde Google-Kalender — deine Privattermine erscheinen automatisch</li>
-                  <li>Aufträge die du übernimmst landen ebenfalls hier</li>
+                  <li>Verbinde Google-Kalender — deine Privattermine erscheinen automatisch als &bdquo;belegt&ldquo;</li>
+                  <li>Aufträge die du übernimmst landen automatisch hier</li>
+                  <li>Klick auf eine freie Stunde, um sie manuell zu blockieren (z.B. für Pause)</li>
                 </ol>
               </div>
               <button
@@ -615,15 +557,13 @@ export default function KalenderPage() {
                 </div>
               ))}
 
-              {/* Tag-Spalten (klickbar für Slot-Anbieten) */}
+              {/* Tag-Spalten (klickbar für Privat-Block) */}
               {tageDerWoche.map((tag, tagIdx) => {
                 const datumIso = isoDatum(tag)
-                const tagIdxMoSo = tagIdx
                 const tagTermine = termine.filter(t => t.datum === datumIso)
-                const tagSlots = slots.filter(s => s.datum === datumIso)
-                const tagVerf = verf.filter(v => dbWochentagToIdx(v.wochentag) === tagIdxMoSo)
+                const tagPrivat = privatBlocks.filter(p => p.datum === datumIso)
                 const tagGoogle = googleEvents.filter(g => g.datum === datumIso)
-                const tagAllDay = layers.google ? googleAllDay.filter(a => a.datum === datumIso) : []
+                const tagAllDay = googleAllDay.filter(a => a.datum === datumIso)
                 return (
                   <div
                     key={tagIdx}
@@ -638,7 +578,7 @@ export default function KalenderPage() {
                       <div
                         key={s}
                         className="absolute left-0 right-0 border-t border-line/60"
-                        style={{ top: (s - STUNDE_VON) * STUNDE_HOEHE_PX }}
+                        style={{ top: (s - sicherArbVon) * STUNDE_HOEHE_PX }}
                       />
                     ))}
 
@@ -672,27 +612,16 @@ export default function KalenderPage() {
                       </>
                     )}
 
-                    {/* Verfügbarkeits-Layer (Hintergrund) */}
-                    {layers.verfuegbarkeit && tagVerf.map((v, vi) => (
-                      <div
-                        key={`v-${vi}`}
-                        className="absolute left-0 right-0 bg-accent/8 border-l-2 border-accent/30 pointer-events-none"
-                        style={{
-                          top: eventOffsetTop(v.von),
-                          height: eventHeight(v.von, v.bis),
-                        }}
-                      />
-                    ))}
-
-                    {/* Klick-Hotzone pro Stunde (für leere Slots).
-                        Sprint AE Phase 3 Fix: Google-Events blockieren Klick ebenfalls,
-                        damit HW sich nicht doppelt verplant (gegen Privat-Termin). */}
+                    {/* Klick-Hotzone pro Stunde (öffnet Privat-Block-Modal).
+                        Sprint AK Stufe 1: keine Layer-Toggles mehr — Google, Termine
+                        und Privat-Blocks blockieren Klick gleich, weil's eh alle Quellen
+                        zeigen. */}
                     {stunden.map((s) => {
                       const stundeStart = String(s).padStart(2, "0") + ":00"
                       const stundeEnde = String(s + 1).padStart(2, "0") + ":00"
                       const istBelegt =
                         tagTermine.some(t => overlap(t.von, t.bis, stundeStart, stundeEnde)) ||
-                        tagSlots.some(sl => overlap(sl.von, sl.bis, stundeStart, stundeEnde)) ||
+                        tagPrivat.some(p => overlap(p.von, p.bis, stundeStart, stundeEnde)) ||
                         tagGoogle.some(g => overlap(g.von, g.bis, stundeStart, stundeEnde)) ||
                         tagAllDay.length > 0
                       if (istBelegt) return null
@@ -700,57 +629,39 @@ export default function KalenderPage() {
                         <button
                           key={`hot-${s}`}
                           onClick={() => leereStundeKlick(tagIdx, s)}
-                          className="absolute left-0 right-0 hover:bg-accent/5 group flex items-center justify-center"
+                          className="absolute left-0 right-0 hover:bg-ink/5 group flex items-center justify-center"
                           style={{
-                            top: (s - STUNDE_VON) * STUNDE_HOEHE_PX,
+                            top: (s - sicherArbVon) * STUNDE_HOEHE_PX,
                             height: STUNDE_HOEHE_PX,
                           }}
-                          aria-label={`Verfügbarkeit anbieten ${datumIso} ${stundeStart}`}
+                          aria-label={`Zeit blockieren ${datumIso} ${stundeStart}`}
                         >
-                          <Plus size={14} className="opacity-0 group-hover:opacity-60 text-accent" />
+                          <Lock size={12} className="opacity-0 group-hover:opacity-50 text-ink-muted" />
                         </button>
                       )
                     })}
 
-                    {/* Slot-Layer — Verfügbarkeit (warm-orange) ODER privat (grau).
-                        F2-Fix Audit (27.05.): status='privat' = HW-Blockzeit, nicht
-                        im Marktplatz, anders gerendert. */}
-                    {layers.verfuegbarkeit && tagSlots.map(s => {
-                      const istPrivat = s.status === "privat"
-                      return (
-                        <button
-                          key={s.id}
-                          onClick={() => slotLoeschen(s)}
-                          className={`absolute left-1 right-1 rounded-md text-left px-2 py-1 transition-colors ${
-                            istPrivat
-                              ? "bg-ink/10 border border-ink/30 hover:bg-ink/15"
-                              : "bg-warm-light border border-warm/30 hover:bg-warm/15"
-                          }`}
-                          style={{
-                            top: eventOffsetTop(s.von) + 2,
-                            height: eventHeight(s.von, s.bis) - 4,
-                          }}
-                          title={istPrivat ? "Privat blockiert — entfernen?" : "Slot entfernen?"}
-                        >
-                          <div className={`text-[10px] font-semibold uppercase tracking-wide ${
-                            istPrivat ? "text-ink/80" : "text-warm-dark"
-                          }`}>
-                            {istPrivat ? "🔒 Privat" : "Slot"}
-                          </div>
-                          <div className={`text-[10px] truncate ${
-                            istPrivat ? "text-ink/70" : "text-warm-dark/80"
-                          }`}>
-                            {fmtTime(s.von)}–{fmtTime(s.bis)}
-                          </div>
-                          {!istPrivat && s.dynamischer_preis && (
-                            <div className="text-[10px] text-warm-dark/70 truncate">{s.dynamischer_preis} €/h</div>
-                          )}
-                        </button>
-                      )
-                    })}
+                    {/* Privat-Block-Layer — graue Blöcke, klickbar zum Löschen */}
+                    {tagPrivat.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => privatBlockLoeschen(p)}
+                        className="absolute left-1 right-1 rounded-md text-left px-2 py-1 transition-colors bg-ink/10 border border-ink/30 hover:bg-ink/15"
+                        style={{
+                          top: offsetTop(p.von) + 2,
+                          height: eventHeight(p.von, p.bis) - 4,
+                        }}
+                        title="Privat blockiert — entfernen?"
+                      >
+                        <div className="text-[10px] font-semibold uppercase tracking-wide text-ink/80">🔒 Privat</div>
+                        <div className="text-[10px] truncate text-ink/70">
+                          {fmtTime(p.von)}–{fmtTime(p.bis)}
+                        </div>
+                      </button>
+                    ))}
 
                     {/* Sprint AE Phase 3 — Google-Cal-Events (Read-Only, links eingerückt) */}
-                    {layers.google && tagGoogle.map(g => (
+                    {tagGoogle.map(g => (
                       <a
                         key={g.id}
                         href={g.htmlLink || "https://calendar.google.com"}
@@ -758,7 +669,7 @@ export default function KalenderPage() {
                         rel="noopener noreferrer"
                         className="absolute left-1 right-1 rounded-md bg-blue-50 border border-blue-200 text-blue-900 px-2 py-1 hover:bg-blue-100 transition-colors block"
                         style={{
-                          top: eventOffsetTop(g.von) + 2,
+                          top: offsetTop(g.von) + 2,
                           height: eventHeight(g.von, g.bis) - 4,
                           opacity: 0.85,
                         }}
@@ -771,7 +682,7 @@ export default function KalenderPage() {
                     ))}
 
                     {/* Termin-Layer */}
-                    {layers.termine && tagTermine.map(t => {
+                    {tagTermine.map(t => {
                       const istVorschlag = t.status === "vorgeschlagen"
                       return (
                         <button
@@ -783,7 +694,7 @@ export default function KalenderPage() {
                               : "bg-accent text-white border-accent hover:bg-accent-hover"
                           }`}
                           style={{
-                            top: eventOffsetTop(t.von) + 2,
+                            top: offsetTop(t.von) + 2,
                             height: eventHeight(t.von, t.bis) - 4,
                             opacity: istVorschlag ? 0.7 : 1,
                           }}
@@ -809,14 +720,14 @@ export default function KalenderPage() {
 
               {/* U2-Fix Audit (27.05.): Rote Now-Linie — nur sichtbar wenn
                   heute in der aktuell angezeigten Woche liegt UND innerhalb
-                  des Stundenfensters (07:00–20:00). 1 Minute auto-update. */}
+                  des konfigurierten Arbeitsfensters (U7). */}
               {(() => {
                 const now = new Date()
                 const heuteInWoche = tageDerWoche.some(t => isoDatum(t) === isoDatum(now))
                 if (!heuteInWoche) return null
                 const nowMin = now.getHours() * 60 + now.getMinutes()
-                const minOffset = nowMin - STUNDE_VON * 60
-                if (minOffset < 0 || minOffset > (STUNDE_BIS - STUNDE_VON) * 60) return null
+                const minOffset = nowMin - sicherArbVon * 60
+                if (minOffset < 0 || minOffset > (sicherArbBis - sicherArbVon) * 60) return null
                 const top = (minOffset / 60) * STUNDE_HOEHE_PX
                 return (
                   <div
@@ -852,8 +763,8 @@ export default function KalenderPage() {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-line">
-              <h2 className="text-base font-semibold text-ink">
-                {slotModal.privat ? "Privat blockieren" : "Verfügbarkeit anbieten"}
+              <h2 className="text-base font-semibold text-ink flex items-center gap-2">
+                <Lock size={16} className="text-ink-muted" /> Zeit blockieren
               </h2>
               <button onClick={() => setSlotModal(null)} aria-label="Schließen" className="text-ink-muted hover:text-ink">
                 <X size={18} />
@@ -861,89 +772,20 @@ export default function KalenderPage() {
             </div>
             <div className="p-5 space-y-3">
               <p className="text-xs text-ink-muted">
-                {slotModal.privat
-                  ? "Diese Zeit als belegt markieren — taucht nicht im Marktplatz auf. Verwalter können dir hier keinen Auftrag vorschlagen."
-                  : "Diese Zeit zur Verfügung stellen — Verwalter sehen das im Marktplatz und können darauf zugreifen."}
+                Markiere diese Zeit als belegt — niemand kann dir hier einen Auftrag
+                vorschlagen. Tipp: wenn du Google verbunden hast, trag wiederkehrende
+                Termine direkt dort ein.
               </p>
 
-              {/* F2-Fix Audit (27.05.): Modus-Toggle Verfügbarkeit ↔ Privat-Block.
-                  Wiederkehrend wird automatisch deaktiviert wenn Privat aktiv. */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSlotModal(s => s ? { ...s, privat: false } : null)}
-                  aria-pressed={!slotModal.privat}
-                  className={`text-xs font-medium rounded-lg px-3 py-2 border transition-colors ${
-                    !slotModal.privat
-                      ? "bg-accent text-white border-accent"
-                      : "bg-white text-ink-secondary border-line hover:bg-surface-muted"
-                  }`}
-                >
-                  ⚒️ Verfügbar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSlotModal(s => s ? { ...s, privat: true, wiederkehrend: false } : null)}
-                  aria-pressed={slotModal.privat}
-                  className={`text-xs font-medium rounded-lg px-3 py-2 border transition-colors ${
-                    slotModal.privat
-                      ? "bg-ink text-white border-ink"
-                      : "bg-white text-ink-secondary border-line hover:bg-surface-muted"
-                  }`}
-                >
-                  🔒 Privat blockieren
-                </button>
+              <div>
+                <label className="block text-[11px] font-medium text-ink-muted mb-1">Datum</label>
+                <input
+                  type="date"
+                  value={slotModal.datum}
+                  onChange={e => setSlotModal(s => s ? { ...s, datum: e.target.value } : null)}
+                  className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-sm"
+                />
               </div>
-
-              {/* B2: Einmalig vs Wiederkehrend — nur bei "Verfügbar"-Modus,
-                  Privatzeit ist immer einmalig (für Wochenstruktur Google nutzen). */}
-              {!slotModal.privat && (
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSlotModal(s => s ? { ...s, wiederkehrend: false } : null)}
-                  aria-pressed={!slotModal.wiederkehrend}
-                  className={`text-xs font-medium rounded-lg px-3 py-2 border transition-colors ${
-                    !slotModal.wiederkehrend
-                      ? "bg-accent/15 text-accent border-accent/40"
-                      : "bg-white text-ink-secondary border-line hover:bg-surface-muted"
-                  }`}
-                >
-                  Einmalig
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSlotModal(s => s ? { ...s, wiederkehrend: true } : null)}
-                  aria-pressed={slotModal.wiederkehrend}
-                  className={`text-xs font-medium rounded-lg px-3 py-2 border transition-colors ${
-                    slotModal.wiederkehrend
-                      ? "bg-accent/15 text-accent border-accent/40"
-                      : "bg-white text-ink-secondary border-line hover:bg-surface-muted"
-                  }`}
-                >
-                  Jede Woche
-                </button>
-              </div>
-              )}
-
-              {slotModal.wiederkehrend ? (
-                <div className="bg-accent/5 border border-accent/20 rounded-lg px-3 py-2">
-                  <div className="text-[11px] font-medium text-ink-muted">Wiederholt sich</div>
-                  <div className="text-sm text-ink mt-0.5">
-                    Jeden {WOCHENTAG_NAME[new Date(slotModal.datum).getDay()]}
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-[11px] font-medium text-ink-muted mb-1">Datum</label>
-                  <input
-                    type="date"
-                    value={slotModal.datum}
-                    onChange={e => setSlotModal(s => s ? { ...s, datum: e.target.value } : null)}
-                    className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-sm"
-                  />
-                </div>
-              )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-medium text-ink-muted mb-1">Von</label>
@@ -964,13 +806,6 @@ export default function KalenderPage() {
                   />
                 </div>
               </div>
-              <p className="text-[11px] text-ink-faint">
-                {slotModal.privat
-                  ? "Diese Zeit wird in deinem Kalender als belegt angezeigt — niemand sieht den Grund."
-                  : slotModal.wiederkehrend
-                    ? "Wochenstruktur — gilt ab sofort jeden " + WOCHENTAG_NAME[new Date(slotModal.datum).getDay()] + "."
-                    : `Gewerk: ${profileGewerk}. Preis wird vom System dynamisch berechnet.`}
-              </p>
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   onClick={() => setSlotModal(null)}
@@ -982,15 +817,9 @@ export default function KalenderPage() {
                 <button
                   onClick={saveSlot}
                   disabled={saving}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-accent text-white hover:bg-accent-hover disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-ink text-white hover:bg-ink/90 disabled:opacity-50"
                 >
-                  {saving
-                    ? "Speichert …"
-                    : slotModal.privat
-                      ? "Privat blockieren"
-                      : slotModal.wiederkehrend
-                        ? "Wochenstruktur speichern"
-                        : "Verfügbarkeit eintragen"}
+                  {saving ? "Speichert …" : "Blockieren"}
                 </button>
               </div>
             </div>
@@ -1001,34 +830,14 @@ export default function KalenderPage() {
   )
 }
 
-function LayerChip({ label, icon, active, tone, onClick, title }: {
-  label: string
-  icon: React.ReactNode
-  active: boolean
-  tone: "termine" | "slots" | "verf" | "google"
-  onClick: () => void
-  title?: string
-}) {
-  const toneActive: Record<string, string> = {
-    termine: "bg-accent text-white border-accent",
-    slots:   "bg-warm text-white border-warm",
-    verf:    "bg-rolle-handwerker text-white border-rolle-handwerker",
-    google:  "bg-blue-500 text-white border-blue-500",
-  }
+// Sprint AK Stufe 1 (27.05.): Legende statt Filter-Chips — vier kleine
+// farbige Punkte mit Label, kein Klick, nur Hinweis welche Farbe was bedeutet.
+function LegendItem({ color, label }: { color: string; label: string }) {
   return (
-    <button
-      onClick={onClick}
-      aria-pressed={active}
-      title={title}
-      className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-full border transition-colors ${
-        active
-          ? toneActive[tone]
-          : "bg-white text-ink-muted border-line hover:border-ink-muted/30"
-      }`}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
+    <span className="inline-flex items-center gap-1.5 text-ink-muted">
+      <span className={`w-2.5 h-2.5 rounded-sm ${color}`} aria-hidden="true" />
+      {label}
+    </span>
   )
 }
 

@@ -20,6 +20,12 @@ import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 //
 // Bei 100-1000 HW noch eine Update pro HW akzeptabel (≤ 2s Latenz).
 // Bei mehr: SQL-Function wäre nächster Schritt.
+//
+// Sprint AK Stufe 3 (27.05.2026) — DEPRECATED-MARKIERUNG:
+// Komponente 1 (Zeitslot-Verfügbarkeit) liefert ab jetzt für neue HW immer 0,
+// weil das Slot-Konzept abgekündigt ist (siehe Konzept-Memo). Score wird
+// dadurch zu sehr von Bewertung dominiert. Sprint AL ersetzt Komponente 1
+// durch "Google-Cal verbunden + Antwort-Rate auf Einladungen".
 
 const ZIEL_SLOTS = 20      // bei diesem Wert volle 30 Punkte
 const ZIEL_BIDS_30D = 10   // bei diesem Wert volle 20 Punkte

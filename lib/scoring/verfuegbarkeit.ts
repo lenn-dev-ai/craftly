@@ -2,7 +2,17 @@
 // Datenquelle: zeitslots-Tabelle (status='verfuegbar' = pflegender
 // Handwerker hat den Slot aktiv eingetragen, ist noch nicht reserviert).
 //
-// Score (0..100) setzt sich zusammen aus:
+// Sprint AK Stufe 3 (27.05.2026) — DEPRECATED-MARKIERUNG:
+// Slots als Verfügbarkeitssignal sind tot (Mieter-First-Pivot). Diese
+// Funktion läuft noch für Profile, die historische Slots haben, gibt
+// für neue HW aber zwangsläufig bronze zurück (0 freie Slots).
+// Sprint AL ersetzt das durch ein Signal aus:
+//   - Antwortrate auf Einladungen
+//   - Annahme-Quote von Auctions
+//   - Google-Cal-Verbindung als Basis-Score
+// Bis dahin: nicht panisch wegnehmen, kein Schaden — nur weniger informativ.
+//
+// Score (0..100) setzt sich (noch) zusammen aus:
 //   40 %  Slot-Faktor (freie Slots diese Woche / MAX_SLOTS)
 //   30 %  Pflege-Aktualität (sinkt linear auf 0 nach 7 Tagen)
 //   30 %  Streak-Bonus (bis 10 Wochen)

@@ -25,6 +25,10 @@ type FormState = {
   startort_adresse: string
   startort_lat: number | null
   startort_lng: number | null
+  // U7-Fix Audit (27.05.): Arbeitszeit-Fenster — bestimmt die Stunden-Achse
+  // im Kalender. Defaults DB-seitig 7-20.
+  arbeitszeit_von: number
+  arbeitszeit_bis: number
 }
 
 const GEWERK_AUSWAHL = [
@@ -49,6 +53,7 @@ export default function ProfilPage() {
     adresse: "", lat: null, lng: null, radius_km: 25,
     basis_stundensatz: null, mindest_stundensatz: null, fahrtkosten_pro_km: 0.5,
     startort_adresse: "", startort_lat: null, startort_lng: null,
+    arbeitszeit_von: 7, arbeitszeit_bis: 20,
   })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -61,7 +66,7 @@ export default function ProfilPage() {
       if (!user) { router.push("/login"); return }
       const { data } = await supabase
         .from("profiles")
-        .select("id, email, name, rolle, telefon, firma, gewerk, handwerker_gewerke, plz_bereich, radius_km, basis_stundensatz, mindest_stundensatz, fahrtkosten_pro_km, startort_adresse, startort_lat, startort_lng, bewertung_avg, auftraege_anzahl, created_at")
+        .select("id, email, name, rolle, telefon, firma, gewerk, handwerker_gewerke, plz_bereich, radius_km, basis_stundensatz, mindest_stundensatz, fahrtkosten_pro_km, startort_adresse, startort_lat, startort_lng, arbeitszeit_von, arbeitszeit_bis, bewertung_avg, auftraege_anzahl, created_at")
         .eq("id", user.id)
         .single()
       if (data) {
@@ -85,6 +90,12 @@ export default function ProfilPage() {
           startort_adresse: data.startort_adresse || "",
           startort_lat: data.startort_lat ?? null,
           startort_lng: data.startort_lng ?? null,
+          arbeitszeit_von: typeof (data as { arbeitszeit_von?: number | null }).arbeitszeit_von === "number"
+            ? (data as { arbeitszeit_von: number }).arbeitszeit_von
+            : 7,
+          arbeitszeit_bis: typeof (data as { arbeitszeit_bis?: number | null }).arbeitszeit_bis === "number"
+            ? (data as { arbeitszeit_bis: number }).arbeitszeit_bis
+            : 20,
         })
       }
     }
@@ -129,6 +140,13 @@ export default function ProfilPage() {
         const { handwerker_gewerke: _ignored, ...ohneGewerke } = payload
         void _ignored
         updateErr = (await supabase.from("profiles").update(ohneGewerke).eq("id", user.id)).error
+      }
+      // U7-Fix Audit (27.05.): falls Migration `audit_u7_profile_arbeitszeit`
+      // auf der Ziel-DB noch fehlt, retry ohne diese Felder.
+      if (updateErr && /arbeitszeit_(von|bis)|column.*does not exist/i.test(updateErr.message)) {
+        const { arbeitszeit_von: _av, arbeitszeit_bis: _ab, ...ohneArb } = payload
+        void _av; void _ab
+        updateErr = (await supabase.from("profiles").update(ohneArb).eq("id", user.id)).error
       }
       if (updateErr) {
         show("Speichern fehlgeschlagen: " + updateErr.message, "error")
@@ -429,6 +447,83 @@ export default function ProfilPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* U7-Fix Audit (27.05.): Arbeitszeit-Fenster für Kalender-Anzeige.
+          Bestimmt die früheste und späteste Stunde, die in der Stunden-Achse
+          des Kalenders erscheinen. Default 7-20 für Standard-Arbeitstage,
+          aber Frühdienst (5-15) oder Notdienst (8-24) sind genauso möglich. */}
+      <div className="bg-white rounded-2xl border border-line p-6 mt-4">
+        <div className="mb-3">
+          <h2 className="text-base font-semibold text-ink flex items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D8B7A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            Arbeitszeit-Fenster
+          </h2>
+          <p className="text-xs text-ink-muted mt-1">
+            Bestimmt, welche Stunden in deinem Kalender angezeigt werden. Standard 7–20 Uhr.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div>
+            <label htmlFor="arbeitszeit-von" className="text-xs text-ink-muted mb-1.5 block font-medium">
+              Frühestens ab
+            </label>
+            <div className="relative">
+              <input
+                id="arbeitszeit-von"
+                type="number"
+                inputMode="numeric"
+                min="0"
+                max="23"
+                step="1"
+                value={form.arbeitszeit_von}
+                onChange={e => {
+                  const v = Number(e.target.value)
+                  if (Number.isFinite(v) && v >= 0 && v <= 23) {
+                    setForm(f => ({ ...f, arbeitszeit_von: v }))
+                  }
+                }}
+                className="w-full bg-surface border border-line rounded-xl pl-4 pr-12 py-2.5 text-sm text-ink focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20 transition-colors tabular-nums"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-muted pointer-events-none">Uhr</span>
+            </div>
+          </div>
+          <div>
+            <label htmlFor="arbeitszeit-bis" className="text-xs text-ink-muted mb-1.5 block font-medium">
+              Spätestens bis
+            </label>
+            <div className="relative">
+              <input
+                id="arbeitszeit-bis"
+                type="number"
+                inputMode="numeric"
+                min="1"
+                max="24"
+                step="1"
+                value={form.arbeitszeit_bis}
+                onChange={e => {
+                  const v = Number(e.target.value)
+                  if (Number.isFinite(v) && v >= 1 && v <= 24) {
+                    setForm(f => ({ ...f, arbeitszeit_bis: v }))
+                  }
+                }}
+                className="w-full bg-surface border border-line rounded-xl pl-4 pr-12 py-2.5 text-sm text-ink focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20 transition-colors tabular-nums"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-muted pointer-events-none">Uhr</span>
+            </div>
+          </div>
+        </div>
+        {form.arbeitszeit_bis <= form.arbeitszeit_von && (
+          <p className="text-xs text-danger mt-3">
+            ⚠ &bdquo;Bis&ldquo; muss nach &bdquo;Von&ldquo; liegen — sonst bleibt der Kalender leer.
+          </p>
+        )}
+        <p className="text-[11px] text-ink-faint mt-3">
+          Beispiele: Frühdienst <span className="tabular-nums">5–15</span> · Standard <span className="tabular-nums">7–20</span> · Notdienst <span className="tabular-nums">8–24</span>
+        </p>
       </div>
 
       {/* Sprint AE — Google-Kalender-Sync (OAuth-Flow live, ENVs evtl. noch nicht gesetzt). */}

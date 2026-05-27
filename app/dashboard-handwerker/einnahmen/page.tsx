@@ -104,6 +104,21 @@ export default function EinnahmenDashboard() {
         <p className="text-sm text-ink-muted mt-1">Yield Management — Deine Zeit, dein Preis</p>
       </div>
 
+      {/* Sprint AK Stufe 3 (27.05.): Hinweis-Banner — alter Slot-Marktplatz
+          ist abgekündigt, diese Übersicht zeigt nur noch Historie. Neue
+          Einnahmen-Logik bindet an Tickets (Sprint AL).
+          Wenn weder Slots noch Gebote vorhanden → Banner kommentarlos weglassen
+          (für neue HW gibt's keine alte Historie). */}
+      {(slots.length > 0 || gebote.length > 0) && (
+        <div className="mb-6 p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+          <strong>Übergangs-Hinweis:</strong> Diese Übersicht basiert noch auf dem
+          alten Slot-Marktplatz, der schrittweise abgelöst wird (Mieter-First-Workflow).
+          Neue Aufträge laufen direkt über Tickets — der neue Einnahmen-View kommt
+          in einem kommenden Sprint. Bestehende Slots und Gebote bleiben für die
+          Historie erhalten.
+        </div>
+      )}
+
       {/* 100%-Banner: Klarstellung über Provisions-Modell */}
       <div className="mb-6 p-4 rounded-2xl bg-accent/8 border border-accent/25 flex items-center gap-3">
         <div className="w-12 h-12 rounded-xl bg-accent text-white flex items-center justify-center flex-shrink-0 font-bold text-sm">

@@ -231,10 +231,11 @@ export default function HandwerkerDashboard() {
         </div>
       </div>
 
-      {/* Quick Actions — minimaler */}
+      {/* Quick Actions — Sprint AK Stufe 3 (27.05.): "Zeitslots" weg
+          (Konzept tot), durch "Karte & Route" ersetzt für Auftrags-Planung. */}
       <div className="grid grid-cols-4 gap-2 mb-10">
-        <QuickAction href="/dashboard-handwerker/zeitslots" label="Zeitslots" icon="▦" />
         <QuickAction href="/dashboard-handwerker/kalender" label="Kalender" icon="▤" />
+        <QuickAction href="/dashboard-handwerker/karte" label="Karte" icon="◯" />
         <QuickAction href="/dashboard-handwerker/einnahmen" label="Einnahmen" icon="€" />
         <QuickAction href="/dashboard-handwerker/profil" label="Profil" icon="◎" />
       </div>
@@ -492,7 +493,7 @@ function SichtbarkeitsBadge({ profile }: { profile: UserProfile | null }) {
       </div>
       {naechsteStufe && fehlend > 0 && (
         <div className="text-xs text-accent font-medium">
-          Noch {fehlend} Punkte bis {naechsteStufe.name} — mehr Slots anbieten oder Bewertungen sammeln
+          Noch {fehlend} Punkte bis {naechsteStufe.name} — auf Einladungen schnell antworten, Bewertungen sammeln
         </div>
       )}
       {!naechsteStufe && (
