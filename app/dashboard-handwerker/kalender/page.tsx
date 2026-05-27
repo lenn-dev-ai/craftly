@@ -153,6 +153,9 @@ interface SlotModalState {
   // B2: "wiederkehrend" macht aus dem einmaligen zeitslots-Eintrag eine
   // wöchentliche verfuegbarkeiten-Zeile (handwerker_id + wochentag).
   wiederkehrend: boolean
+  // F2-Fix Audit (27.05.): "privat" = Blockzeit (Mittagspause, Arzt etc.).
+  // Speichert status='privat' statt 'verfuegbar' → Marktplatz filtert ihn raus.
+  privat: boolean
 }
 
 const WOCHENTAG_NAME = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
@@ -321,7 +324,7 @@ export default function KalenderPage() {
     const datum = isoDatum(tag)
     const von = String(stunde).padStart(2, "0") + ":00"
     const bis = String(Math.min(stunde + 2, STUNDE_BIS)).padStart(2, "0") + ":00"
-    setSlotModal({ datum, von, bis, wiederkehrend: false })
+    setSlotModal({ datum, von, bis, wiederkehrend: false, privat: false })
   }
 
   function terminKlick(t: KalenderTermin) {
@@ -342,7 +345,10 @@ export default function KalenderPage() {
 
     let insErr: { message: string } | null = null
     const basisPreis = profileBasisPreis || GEWERK_BASIS_PREISE[profileGewerk] || 50
-    if (slotModal.wiederkehrend) {
+    // F2-Fix Audit (27.05.): privat-Blockzeit ist immer einmalig (kein
+    // wiederkehrender Privattermin via Modal — dafür Google nutzen).
+    const slotStatus = slotModal.privat ? "privat" : "verfuegbar"
+    if (slotModal.wiederkehrend && !slotModal.privat) {
       // B4: Wochenstruktur — Zeile in zeitslots mit art='wiederkehrend',
       // datum=null. wochentag aus dem geklickten Datum (JS getDay() ≡ DB).
       const wochentag = new Date(slotModal.datum).getDay()
@@ -361,26 +367,29 @@ export default function KalenderPage() {
       })
       insErr = error
     } else {
-      // Einmaliger Slot — art='einmalig' (Default, explizit für Klarheit).
-      const preisInfo = berechneDynamischenPreis(
-        basisPreis,
-        slotModal.datum,
-        slotModal.von,
-        0,
-        slots.filter(s => s.status === "verfuegbar").length,
-        false,
-      )
+      // Einmaliger Slot oder Privat-Block — art='einmalig'.
+      // Privat: ohne Preisberechnung (=0), nicht im Marktplatz.
+      const preisInfo = slotModal.privat
+        ? { dynamischerPreis: 0, gesamtFaktor: 1 }
+        : berechneDynamischenPreis(
+            basisPreis,
+            slotModal.datum,
+            slotModal.von,
+            0,
+            slots.filter(s => s.status === "verfuegbar").length,
+            false,
+          )
       const { error } = await supabase.from("zeitslots").insert({
         handwerker_id: userId,
-        titel: `Slot ${slotModal.datum}`,
+        titel: slotModal.privat ? "Privat blockiert" : `Slot ${slotModal.datum}`,
         gewerk: profileGewerk,
         datum: slotModal.datum,
         von: slotModal.von,
         bis: slotModal.bis,
-        basis_preis_stunde: basisPreis,
+        basis_preis_stunde: slotModal.privat ? 0 : basisPreis,
         dynamischer_preis: preisInfo.dynamischerPreis,
         preisfaktor: preisInfo.gesamtFaktor,
-        status: "verfuegbar",
+        status: slotStatus,
         ist_luecke: false,
         art: "einmalig",
       })
@@ -440,6 +449,17 @@ export default function KalenderPage() {
             >
               Heute
             </button>
+            {/* F3-Fix Audit (27.05.): Datum-Picker für Direkt-Sprung
+                zu spezifischer Woche. Setzt montag auf den Mo der gewählten Woche. */}
+            <input
+              type="date"
+              value={isoDatum(tageDerWoche[0])}
+              onChange={(e) => {
+                if (e.target.value) setMontag(getMontag(new Date(e.target.value)))
+              }}
+              className="hidden sm:inline text-xs px-2 py-2 rounded-lg border border-line hover:bg-surface-muted text-ink-secondary"
+              aria-label="Zu Woche springen"
+            />
             <button
               onClick={() => shiftWoche(7)}
               className="w-9 h-9 rounded-lg border border-line hover:bg-surface-muted flex items-center justify-center text-ink-secondary"
@@ -692,25 +712,42 @@ export default function KalenderPage() {
                       )
                     })}
 
-                    {/* Slot-Layer */}
-                    {layers.verfuegbarkeit && tagSlots.map(s => (
-                      <button
-                        key={s.id}
-                        onClick={() => slotLoeschen(s)}
-                        className="absolute left-1 right-1 rounded-md bg-warm-light border border-warm/30 text-left px-2 py-1 hover:bg-warm/15 transition-colors"
-                        style={{
-                          top: eventOffsetTop(s.von) + 2,
-                          height: eventHeight(s.von, s.bis) - 4,
-                        }}
-                        title="Slot entfernen"
-                      >
-                        <div className="text-[10px] font-semibold text-warm-dark uppercase tracking-wide">Slot</div>
-                        <div className="text-[10px] text-warm-dark/80 truncate">{fmtTime(s.von)}–{fmtTime(s.bis)}</div>
-                        {s.dynamischer_preis && (
-                          <div className="text-[10px] text-warm-dark/70 truncate">{s.dynamischer_preis} €/h</div>
-                        )}
-                      </button>
-                    ))}
+                    {/* Slot-Layer — Verfügbarkeit (warm-orange) ODER privat (grau).
+                        F2-Fix Audit (27.05.): status='privat' = HW-Blockzeit, nicht
+                        im Marktplatz, anders gerendert. */}
+                    {layers.verfuegbarkeit && tagSlots.map(s => {
+                      const istPrivat = s.status === "privat"
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => slotLoeschen(s)}
+                          className={`absolute left-1 right-1 rounded-md text-left px-2 py-1 transition-colors ${
+                            istPrivat
+                              ? "bg-ink/10 border border-ink/30 hover:bg-ink/15"
+                              : "bg-warm-light border border-warm/30 hover:bg-warm/15"
+                          }`}
+                          style={{
+                            top: eventOffsetTop(s.von) + 2,
+                            height: eventHeight(s.von, s.bis) - 4,
+                          }}
+                          title={istPrivat ? "Privat blockiert — entfernen?" : "Slot entfernen?"}
+                        >
+                          <div className={`text-[10px] font-semibold uppercase tracking-wide ${
+                            istPrivat ? "text-ink/80" : "text-warm-dark"
+                          }`}>
+                            {istPrivat ? "🔒 Privat" : "Slot"}
+                          </div>
+                          <div className={`text-[10px] truncate ${
+                            istPrivat ? "text-ink/70" : "text-warm-dark/80"
+                          }`}>
+                            {fmtTime(s.von)}–{fmtTime(s.bis)}
+                          </div>
+                          {!istPrivat && s.dynamischer_preis && (
+                            <div className="text-[10px] text-warm-dark/70 truncate">{s.dynamischer_preis} €/h</div>
+                          )}
+                        </button>
+                      )
+                    })}
 
                     {/* Sprint AE Phase 3 — Google-Cal-Events (Read-Only, links eingerückt) */}
                     {layers.google && tagGoogle.map(g => (
@@ -815,19 +852,52 @@ export default function KalenderPage() {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-line">
-              <h2 className="text-base font-semibold text-ink">Verfügbarkeit anbieten</h2>
+              <h2 className="text-base font-semibold text-ink">
+                {slotModal.privat ? "Privat blockieren" : "Verfügbarkeit anbieten"}
+              </h2>
               <button onClick={() => setSlotModal(null)} aria-label="Schließen" className="text-ink-muted hover:text-ink">
                 <X size={18} />
               </button>
             </div>
             <div className="p-5 space-y-3">
               <p className="text-xs text-ink-muted">
-                Diese Zeit zur Verfügung stellen — Verwalter sehen das im Marktplatz und können darauf zugreifen.
+                {slotModal.privat
+                  ? "Diese Zeit als belegt markieren — taucht nicht im Marktplatz auf. Verwalter können dir hier keinen Auftrag vorschlagen."
+                  : "Diese Zeit zur Verfügung stellen — Verwalter sehen das im Marktplatz und können darauf zugreifen."}
               </p>
 
-              {/* B2: Einmalig vs Wiederkehrend. Default einmalig — Wochen-
-                  struktur ist die kräftigere Variante, die User bewusst
-                  wählen sollten. */}
+              {/* F2-Fix Audit (27.05.): Modus-Toggle Verfügbarkeit ↔ Privat-Block.
+                  Wiederkehrend wird automatisch deaktiviert wenn Privat aktiv. */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSlotModal(s => s ? { ...s, privat: false } : null)}
+                  aria-pressed={!slotModal.privat}
+                  className={`text-xs font-medium rounded-lg px-3 py-2 border transition-colors ${
+                    !slotModal.privat
+                      ? "bg-accent text-white border-accent"
+                      : "bg-white text-ink-secondary border-line hover:bg-surface-muted"
+                  }`}
+                >
+                  ⚒️ Verfügbar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSlotModal(s => s ? { ...s, privat: true, wiederkehrend: false } : null)}
+                  aria-pressed={slotModal.privat}
+                  className={`text-xs font-medium rounded-lg px-3 py-2 border transition-colors ${
+                    slotModal.privat
+                      ? "bg-ink text-white border-ink"
+                      : "bg-white text-ink-secondary border-line hover:bg-surface-muted"
+                  }`}
+                >
+                  🔒 Privat blockieren
+                </button>
+              </div>
+
+              {/* B2: Einmalig vs Wiederkehrend — nur bei "Verfügbar"-Modus,
+                  Privatzeit ist immer einmalig (für Wochenstruktur Google nutzen). */}
+              {!slotModal.privat && (
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -835,7 +905,7 @@ export default function KalenderPage() {
                   aria-pressed={!slotModal.wiederkehrend}
                   className={`text-xs font-medium rounded-lg px-3 py-2 border transition-colors ${
                     !slotModal.wiederkehrend
-                      ? "bg-accent text-white border-accent"
+                      ? "bg-accent/15 text-accent border-accent/40"
                       : "bg-white text-ink-secondary border-line hover:bg-surface-muted"
                   }`}
                 >
@@ -847,13 +917,14 @@ export default function KalenderPage() {
                   aria-pressed={slotModal.wiederkehrend}
                   className={`text-xs font-medium rounded-lg px-3 py-2 border transition-colors ${
                     slotModal.wiederkehrend
-                      ? "bg-accent text-white border-accent"
+                      ? "bg-accent/15 text-accent border-accent/40"
                       : "bg-white text-ink-secondary border-line hover:bg-surface-muted"
                   }`}
                 >
                   Jede Woche
                 </button>
               </div>
+              )}
 
               {slotModal.wiederkehrend ? (
                 <div className="bg-accent/5 border border-accent/20 rounded-lg px-3 py-2">
@@ -894,9 +965,11 @@ export default function KalenderPage() {
                 </div>
               </div>
               <p className="text-[11px] text-ink-faint">
-                {slotModal.wiederkehrend
-                  ? "Wochenstruktur — gilt ab sofort jeden " + WOCHENTAG_NAME[new Date(slotModal.datum).getDay()] + "."
-                  : `Gewerk: ${profileGewerk}. Preis wird vom System dynamisch berechnet.`}
+                {slotModal.privat
+                  ? "Diese Zeit wird in deinem Kalender als belegt angezeigt — niemand sieht den Grund."
+                  : slotModal.wiederkehrend
+                    ? "Wochenstruktur — gilt ab sofort jeden " + WOCHENTAG_NAME[new Date(slotModal.datum).getDay()] + "."
+                    : `Gewerk: ${profileGewerk}. Preis wird vom System dynamisch berechnet.`}
               </p>
               <div className="flex justify-end gap-2 pt-2">
                 <button
@@ -913,9 +986,11 @@ export default function KalenderPage() {
                 >
                   {saving
                     ? "Speichert …"
-                    : slotModal.wiederkehrend
-                      ? "Wochenstruktur speichern"
-                      : "Verfügbarkeit eintragen"}
+                    : slotModal.privat
+                      ? "Privat blockieren"
+                      : slotModal.wiederkehrend
+                        ? "Wochenstruktur speichern"
+                        : "Verfügbarkeit eintragen"}
                 </button>
               </div>
             </div>
