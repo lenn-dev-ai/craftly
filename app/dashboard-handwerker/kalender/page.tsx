@@ -18,6 +18,16 @@ interface GoogleEventTag {
   htmlLink?: string
 }
 
+// Audit-Fix #2 (27.05.): Ganztages-Events (Urlaub etc.) erscheinen als
+// schmaler Top-Streifen über der Tagsspalte plus subtiler Hintergrund.
+// Klick-Hotzonen sind gesperrt, damit HW sich nicht doppelt verplant.
+interface GoogleAllDayTag {
+  id: string
+  datum: string
+  summary: string
+  htmlLink?: string
+}
+
 // K2.2: Wochen-Kalender mit drei Layer-Toggles. Eine Page für alles,
 // was die HW-Zeitplanung umfasst — Termine (bestätigte Aufträge),
 // Slots (Marktplatz-Angebote) und Verfügbarkeit (Wochenrhythmus).
@@ -137,6 +147,7 @@ export default function KalenderPage() {
   const [slots, setSlots] = useState<KalenderSlot[]>([])
   const [verf, setVerf] = useState<KalenderVerf[]>([])
   const [googleEvents, setGoogleEvents] = useState<GoogleEventTag[]>([])
+  const [googleAllDay, setGoogleAllDay] = useState<GoogleAllDayTag[]>([])
   const [loading, setLoading] = useState(true)
   const [slotModal, setSlotModal] = useState<SlotModalState | null>(null)
   const [saving, setSaving] = useState(false)
@@ -208,8 +219,24 @@ export default function KalenderPage() {
           const json = await res.json() as { events?: Array<{ id: string; summary: string; start: string; end: string; allDay: boolean; htmlLink?: string }> }
           // Events pro Tag clippen — Google liefert ISO mit Datum+Zeit
           const perDay: GoogleEventTag[] = []
+          const allDay: GoogleAllDayTag[] = []
           for (const ev of json.events ?? []) {
-            if (ev.allDay) continue  // Ganztages werden vorerst übersprungen (Layer ist Stunden-basiert)
+            if (ev.allDay) {
+              // Google end.date ist EXKLUSIV (z.B. start=Mo, end=Di = nur Mo).
+              const sd = new Date(ev.start + "T00:00:00")
+              const ed = new Date(ev.end + "T00:00:00")
+              const c = new Date(sd)
+              while (c < ed) {
+                allDay.push({
+                  id: ev.id + "-ad-" + isoDatum(c),
+                  datum: isoDatum(c),
+                  summary: ev.summary,
+                  htmlLink: ev.htmlLink,
+                })
+                c.setDate(c.getDate() + 1)
+              }
+              continue
+            }
             const startDate = new Date(ev.start)
             const endDate = new Date(ev.end)
             // Pro Tag splitten
@@ -235,6 +262,7 @@ export default function KalenderPage() {
             }
           }
           setGoogleEvents(perDay)
+          setGoogleAllDay(allDay)
         }
       }
     } catch (e) {
@@ -421,6 +449,17 @@ export default function KalenderPage() {
         <GoogleCalBanner />
       </div>
 
+      {/* B2-Fix Sprint AE Phase 3: Mobile-Hint für Erstnutzer
+          (Desktop hat die Zeile in der Chips-Bar; Mobile bekommt sie hier).
+          Versteckt sich, sobald HW schon Slots/Verfügbarkeit eingetragen hat. */}
+      {slots.length === 0 && verf.length === 0 && (
+        <div className="max-w-6xl mx-auto px-2 sm:px-6 pt-3 sm:hidden">
+          <div className="text-[11px] text-ink-muted bg-surface-muted/60 border border-line rounded-lg px-3 py-2">
+            Tippe auf eine leere Stunde im Grid, um deine Verfügbarkeit dort anzubieten.
+          </div>
+        </div>
+      )}
+
       {/* Grid */}
       <div className="max-w-6xl mx-auto px-2 sm:px-6 py-4 overflow-x-auto">
         {loading ? (
@@ -471,6 +510,7 @@ export default function KalenderPage() {
                 const tagSlots = slots.filter(s => s.datum === datumIso)
                 const tagVerf = verf.filter(v => dbWochentagToIdx(v.wochentag) === tagIdxMoSo)
                 const tagGoogle = googleEvents.filter(g => g.datum === datumIso)
+                const tagAllDay = layers.google ? googleAllDay.filter(a => a.datum === datumIso) : []
                 return (
                   <div
                     key={tagIdx}
@@ -489,6 +529,36 @@ export default function KalenderPage() {
                       />
                     ))}
 
+                    {/* Sprint AE Phase 3 — Ganztages-Google-Events: subtiler
+                        Hintergrund über die volle Spalte + Top-Band mit Summary.
+                        Klick-Hotzonen sind oben via tagAllDay.length > 0 gesperrt. */}
+                    {tagAllDay.length > 0 && (
+                      <>
+                        <div
+                          className="absolute inset-0 pointer-events-none"
+                          style={{
+                            backgroundImage:
+                              "repeating-linear-gradient(45deg, rgba(59,130,246,0.06) 0 6px, transparent 6px 12px)",
+                          }}
+                        />
+                        <div className="absolute left-0 right-0 top-0 z-10 flex flex-col gap-0.5 p-1">
+                          {tagAllDay.map(a => (
+                            <a
+                              key={a.id}
+                              href={a.htmlLink || "https://calendar.google.com"}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block rounded-md bg-blue-100 border border-blue-200 text-blue-900 px-2 py-0.5 hover:bg-blue-200 transition-colors truncate text-[10px] font-medium"
+                              title={`Ganztägig: ${a.summary}`}
+                            >
+                              <span className="text-blue-700 font-semibold mr-1">Google</span>
+                              {a.summary}
+                            </a>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
                     {/* Verfügbarkeits-Layer (Hintergrund) */}
                     {layers.verfuegbarkeit && tagVerf.map((v, vi) => (
                       <div
@@ -501,13 +571,17 @@ export default function KalenderPage() {
                       />
                     ))}
 
-                    {/* Klick-Hotzone pro Stunde (für leere Slots) */}
+                    {/* Klick-Hotzone pro Stunde (für leere Slots).
+                        Sprint AE Phase 3 Fix: Google-Events blockieren Klick ebenfalls,
+                        damit HW sich nicht doppelt verplant (gegen Privat-Termin). */}
                     {stunden.map((s) => {
                       const stundeStart = String(s).padStart(2, "0") + ":00"
                       const stundeEnde = String(s + 1).padStart(2, "0") + ":00"
                       const istBelegt =
                         tagTermine.some(t => overlap(t.von, t.bis, stundeStart, stundeEnde)) ||
-                        tagSlots.some(sl => overlap(sl.von, sl.bis, stundeStart, stundeEnde))
+                        tagSlots.some(sl => overlap(sl.von, sl.bis, stundeStart, stundeEnde)) ||
+                        tagGoogle.some(g => overlap(g.von, g.bis, stundeStart, stundeEnde)) ||
+                        tagAllDay.length > 0
                       if (istBelegt) return null
                       return (
                         <button
