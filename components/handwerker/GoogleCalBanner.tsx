@@ -2,37 +2,84 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase"
-import { X } from "lucide-react"
+import { X, Check } from "lucide-react"
 
 // Sprint AE Phase 2 — Kompakter Banner für Kalender-Page.
-// Zeigt sich nur wenn HW Google-Kalender noch NICHT verbunden hat.
-// Klick → /dashboard-handwerker/profil#google-cal (Section-Anchor) ODER
-// startet OAuth-Flow direkt. Dismiss via X (Browser-Local-Storage).
+// Disconnected → CTA "Mit Google verbinden".
+// U4-Fix (27.05., Sprint AE Phase 3): Connected → schmaler grüner
+// Status-Hinweis "Verbunden mit <email> seit <datum>", dismissable.
+// So weiß HW, dass Sync läuft, und sieht wo er die Verbindung verwaltet.
 
 const DISMISS_KEY = "googleCalBannerDismissed"
+const STATUS_DISMISS_KEY = "googleCalStatusDismissed"
+
+interface OauthRow {
+  connected_at: string | null
+  scope: string | null
+  user_id: string
+}
 
 export function GoogleCalBanner() {
   const [status, setStatus] = useState<"loading" | "connected" | "disconnected">("loading")
+  const [oauthRow, setOauthRow] = useState<OauthRow | null>(null)
+  const [userEmail, setUserEmail] = useState<string>("")
   const [dismissed, setDismissed] = useState(false)
+  const [statusDismissed, setStatusDismissed] = useState(false)
 
   useEffect(() => {
-    if (typeof window !== "undefined" && localStorage.getItem(DISMISS_KEY) === "1") {
-      setDismissed(true)
+    if (typeof window !== "undefined") {
+      if (localStorage.getItem(DISMISS_KEY) === "1") setDismissed(true)
+      if (localStorage.getItem(STATUS_DISMISS_KEY) === "1") setStatusDismissed(true)
     }
     let aktiv = true
     void (async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { if (aktiv) setStatus("disconnected"); return }
+      setUserEmail(user.email ?? "")
       const { data } = await supabase
         .from("hw_google_oauth")
-        .select("user_id")
+        .select("user_id, connected_at, scope")
         .eq("user_id", user.id)
-        .maybeSingle<{ user_id: string }>()
-      if (aktiv) setStatus(data ? "connected" : "disconnected")
+        .maybeSingle<OauthRow>()
+      if (aktiv) {
+        setOauthRow(data ?? null)
+        setStatus(data ? "connected" : "disconnected")
+      }
     })()
     return () => { aktiv = false }
   }, [])
+
+  // Connected → schmaler grüner Status, dismissable
+  if (status === "connected" && !statusDismissed) {
+    const seitText = oauthRow?.connected_at
+      ? new Date(oauthRow.connected_at).toLocaleDateString("de", { day: "numeric", month: "short", year: "numeric" })
+      : ""
+    const dismissStatus = () => {
+      if (typeof window !== "undefined") localStorage.setItem(STATUS_DISMISS_KEY, "1")
+      setStatusDismissed(true)
+    }
+    return (
+      <div className="bg-accent/8 border border-accent/30 rounded-xl px-3 py-2 mb-4 flex items-center gap-2.5">
+        <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
+          <Check size={12} className="text-accent" />
+        </div>
+        <div className="flex-1 min-w-0 text-xs text-ink">
+          <span className="font-semibold">Google-Kalender verbunden</span>
+          {userEmail && <span className="text-ink-muted"> · {userEmail}</span>}
+          {seitText && <span className="text-ink-faint"> · seit {seitText}</span>}
+        </div>
+        <button
+          type="button"
+          onClick={dismissStatus}
+          aria-label="Status-Hinweis ausblenden"
+          className="p-1 text-ink-muted hover:text-ink"
+        >
+          <X size={14} />
+        </button>
+      </div>
+    )
+  }
 
   if (status !== "disconnected" || dismissed) return null
 
