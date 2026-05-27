@@ -8,6 +8,16 @@ import { GEWERK_BASIS_PREISE, berechneDynamischenPreis } from "@/lib/yield-manag
 import { useToast } from "@/components/Toast"
 import { GoogleCalBanner } from "@/components/handwerker/GoogleCalBanner"
 
+// Sprint AE Phase 3: Google-Cal-Events Read-Only-Anzeige.
+interface GoogleEventTag {
+  id: string
+  datum: string  // YYYY-MM-DD (clipped pro Tag, mehrtätige Events splitten wir)
+  von: string    // HH:MM
+  bis: string
+  summary: string
+  htmlLink?: string
+}
+
 // K2.2: Wochen-Kalender mit drei Layer-Toggles. Eine Page für alles,
 // was die HW-Zeitplanung umfasst — Termine (bestätigte Aufträge),
 // Slots (Marktplatz-Angebote) und Verfügbarkeit (Wochenrhythmus).
@@ -119,13 +129,14 @@ export default function KalenderPage() {
   // B1: "Slots" als separates User-Konzept ist weg. Der Verfügbarkeit-Toggle
   // steuert jetzt sowohl die Wochenstruktur-Hintergründe als auch die
   // konkreten Buchungsfenster aus public.zeitslots.
-  const [layers, setLayers] = useState({ termine: true, verfuegbarkeit: true })
+  const [layers, setLayers] = useState({ termine: true, verfuegbarkeit: true, google: true })
   const [userId, setUserId] = useState<string | null>(null)
   const [profileGewerk, setProfileGewerk] = useState<string>("allgemein")
   const [profileBasisPreis, setProfileBasisPreis] = useState<number>(50)
   const [termine, setTermine] = useState<KalenderTermin[]>([])
   const [slots, setSlots] = useState<KalenderSlot[]>([])
   const [verf, setVerf] = useState<KalenderVerf[]>([])
+  const [googleEvents, setGoogleEvents] = useState<GoogleEventTag[]>([])
   const [loading, setLoading] = useState(true)
   const [slotModal, setSlotModal] = useState<SlotModalState | null>(null)
   const [saving, setSaving] = useState(false)
@@ -183,6 +194,52 @@ export default function KalenderPage() {
     setSlots(s ?? [])
     setVerf(v ?? [])
     setLoading(false)
+
+    // Sprint AE Phase 3 — Google-Cal-Events laden (parallel, non-blocking).
+    // Wenn HW keine Cal-Verbindung hat, returnt API leeres Array.
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        const res = await fetch(
+          `/api/google-cal/events?from=${wochenStartIso}&to=${wochenEndeIso}`,
+          { headers: { authorization: `Bearer ${session.access_token}` } },
+        )
+        if (res.ok) {
+          const json = await res.json() as { events?: Array<{ id: string; summary: string; start: string; end: string; allDay: boolean; htmlLink?: string }> }
+          // Events pro Tag clippen — Google liefert ISO mit Datum+Zeit
+          const perDay: GoogleEventTag[] = []
+          for (const ev of json.events ?? []) {
+            if (ev.allDay) continue  // Ganztages werden vorerst übersprungen (Layer ist Stunden-basiert)
+            const startDate = new Date(ev.start)
+            const endDate = new Date(ev.end)
+            // Pro Tag splitten
+            const cursor = new Date(startDate)
+            while (cursor < endDate) {
+              const dayIso = cursor.toISOString().slice(0, 10)
+              const dayEnd = new Date(cursor)
+              dayEnd.setHours(23, 59, 59, 999)
+              const segEnd = endDate < dayEnd ? endDate : dayEnd
+              const von = `${String(cursor.getHours()).padStart(2, "0")}:${String(cursor.getMinutes()).padStart(2, "0")}`
+              const bis = `${String(segEnd.getHours()).padStart(2, "0")}:${String(segEnd.getMinutes()).padStart(2, "0")}`
+              perDay.push({
+                id: ev.id + "-" + dayIso,
+                datum: dayIso,
+                von,
+                bis,
+                summary: ev.summary,
+                htmlLink: ev.htmlLink,
+              })
+              // Cursor auf nächsten Tag 00:00
+              cursor.setDate(cursor.getDate() + 1)
+              cursor.setHours(0, 0, 0, 0)
+            }
+          }
+          setGoogleEvents(perDay)
+        }
+      }
+    } catch (e) {
+      console.warn("[kalender] google-events load failed", e)
+    }
   }, [router, wochenStartIso, wochenEndeIso])
 
   useEffect(() => { loadData() }, [loadData])
@@ -346,6 +403,13 @@ export default function KalenderPage() {
             tone="verf"
             onClick={() => setLayers(l => ({ ...l, verfuegbarkeit: !l.verfuegbarkeit }))}
           />
+          <LayerChip
+            label="Google"
+            icon={<Briefcase size={13} />}
+            active={layers.google}
+            tone="google"
+            onClick={() => setLayers(l => ({ ...l, google: !l.google }))}
+          />
           <span className="text-[11px] text-ink-faint ml-auto hidden sm:inline">
             Klick auf eine leere Stunde → Verfügbarkeit anbieten
           </span>
@@ -406,6 +470,7 @@ export default function KalenderPage() {
                 const tagTermine = termine.filter(t => t.datum === datumIso)
                 const tagSlots = slots.filter(s => s.datum === datumIso)
                 const tagVerf = verf.filter(v => dbWochentagToIdx(v.wochentag) === tagIdxMoSo)
+                const tagGoogle = googleEvents.filter(g => g.datum === datumIso)
                 return (
                   <div
                     key={tagIdx}
@@ -478,6 +543,27 @@ export default function KalenderPage() {
                           <div className="text-[10px] text-warm-dark/70 truncate">{s.dynamischer_preis} €/h</div>
                         )}
                       </button>
+                    ))}
+
+                    {/* Sprint AE Phase 3 — Google-Cal-Events (Read-Only, links eingerückt) */}
+                    {layers.google && tagGoogle.map(g => (
+                      <a
+                        key={g.id}
+                        href={g.htmlLink || "https://calendar.google.com"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute left-1 right-1 rounded-md bg-blue-50 border border-blue-200 text-blue-900 px-2 py-1 hover:bg-blue-100 transition-colors block"
+                        style={{
+                          top: eventOffsetTop(g.von) + 2,
+                          height: eventHeight(g.von, g.bis) - 4,
+                          opacity: 0.85,
+                        }}
+                        title={`Google: ${g.summary} (${fmtTime(g.von)}–${fmtTime(g.bis)})`}
+                      >
+                        <div className="text-[10px] font-semibold uppercase tracking-wide text-blue-700">Google</div>
+                        <div className="text-[10px] truncate text-blue-900">{g.summary}</div>
+                        <div className="text-[10px] text-blue-800/70 truncate">{fmtTime(g.von)}–{fmtTime(g.bis)}</div>
+                      </a>
                     ))}
 
                     {/* Termin-Layer */}
@@ -654,13 +740,14 @@ function LayerChip({ label, icon, active, tone, onClick }: {
   label: string
   icon: React.ReactNode
   active: boolean
-  tone: "termine" | "slots" | "verf"
+  tone: "termine" | "slots" | "verf" | "google"
   onClick: () => void
 }) {
   const toneActive: Record<string, string> = {
     termine: "bg-accent text-white border-accent",
     slots:   "bg-warm text-white border-warm",
     verf:    "bg-rolle-handwerker text-white border-rolle-handwerker",
+    google:  "bg-blue-500 text-white border-blue-500",
   }
   return (
     <button
