@@ -202,7 +202,12 @@ export default function HandwerkerDashboard() {
             scrollt zur Ausschreibungs-Liste weiter unten (gleicher
             Page-Anchor). Pattern wie Verwalter-F9 (29626eb), aber
             statt Route-Filter ein In-Page-Anchor, weil die Liste
-            ohnehin direkt darunter steht. */}
+            ohnehin direkt darunter steht.
+            Loop-25-Fix (27.05., Feedback 55302a76): Kachel zeigt jetzt
+            sichtbareAuktionen.length (= mit Gewerk-Filter), damit
+            Hero-Zahl IMMER zur Liste passt. Zusatz-Hinweis wenn HW im
+            Radius hat, die aber per Gewerk ausgeblendet sind — sonst
+            wirkt es wie ein Bug ("1" steht da aber Liste leer). */}
         <a
           href="#ausschreibungen"
           className="block bg-gradient-to-br from-[#3D8B7A] to-[#2D6B5A] rounded-2xl p-5 text-white sm:col-span-1 hover:shadow-md hover:brightness-105 transition-all cursor-pointer"
@@ -210,9 +215,12 @@ export default function HandwerkerDashboard() {
           <div className="text-xs font-medium text-white/80 mb-1 uppercase tracking-wide">
             Verfügbar im Radius
           </div>
-          <div className="text-4xl font-bold tabular-nums">{imRadius}</div>
+          <div className="text-4xl font-bold tabular-nums">{sichtbareAuktionen.length}</div>
           <div className="text-xs text-white/70 mt-2">
-            {imRadius === 1 ? "offene Ausschreibung" : "offene Ausschreibungen"}
+            {sichtbareAuktionen.length === 1 ? "offene Ausschreibung" : "offene Ausschreibungen"}
+            {ausgeblendetWegenGewerk > 0 && (
+              <span className="block mt-0.5">+{ausgeblendetWegenGewerk} anderes Gewerk</span>
+            )}
             {standortGesetzt && imRadius < auktionen.length && (
               <span className="block mt-0.5">+{auktionen.length - imRadius} außerhalb</span>
             )}
