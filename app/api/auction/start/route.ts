@@ -13,6 +13,7 @@ import { fuegeTicketZuTagesplan } from "@/lib/auction/routen-planung-sync"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 import { einladungEmail, zuschlagEmail } from "@/lib/email/templates"
 import { findeUndErzeugeStammAnfrage } from "@/lib/auction/stamm-routing"
+import { hasGoogleEventInRange } from "@/lib/google-cal/events"
 
 const DEFAULT_NOTFALL_STUNDEN = 2
 const DEFAULT_STUNDENSATZ = 50
@@ -178,7 +179,38 @@ export async function POST(request: NextRequest) {
       if (b.score !== a.score) return b.score - a.score
       return (erfahrungById.get(b.id) ?? 0) - (erfahrungById.get(a.id) ?? 0)
     })
-    const top = imRadius[0]
+
+    // F1-Fix Audit (27.05.): Google-Cal-Block-Check.
+    // Notfall-Match nimmt sonst stupide den Top-Score, auch wenn der HW
+    // gerade in einem privaten Google-Termin sitzt. Wir prüfen die Top-5
+    // (mehr wäre teuer in Google-API-Calls) und nehmen den ersten, der
+    // im 2h-Notfall-Fenster KEINEN Google-Event hat. Wenn alle Top-5
+    // belegt sind, fallen wir auf imRadius[0] zurück (besser als zu
+    // sagen "kein HW verfügbar", weil die Übrigen ggf. nicht verbunden
+    // sind = false-positive Block).
+    const notfallVon = new Date()
+    const notfallBis = new Date(Date.now() + DEFAULT_NOTFALL_STUNDEN * 60 * 60 * 1000)
+    let topFrei: typeof imRadius[number] | undefined
+    let blockedTop: string[] = []
+    for (const kandidat of imRadius.slice(0, 5)) {
+      try {
+        const busy = await hasGoogleEventInRange(kandidat.id, notfallVon, notfallBis)
+        if (!busy) {
+          topFrei = kandidat
+          break
+        }
+        blockedTop.push(kandidat.id)
+      } catch (err) {
+        // Google-API-Fehler tolerieren — kein Block für diesen HW
+        console.warn("[F1-google-check] failed for", kandidat.id, err)
+        topFrei = kandidat
+        break
+      }
+    }
+    const top = topFrei ?? imRadius[0]
+    if (blockedTop.length > 0) {
+      console.log("[F1-google-check] blocked-Top-HW (Google-Event):", blockedTop, "→ chose:", top.id)
+    }
     const auftragswert = Math.round(top.stundensatz * DEFAULT_NOTFALL_STUNDEN * 100) / 100
 
     // Synthetisches Angebot anlegen (status=angenommen)

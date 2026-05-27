@@ -81,3 +81,25 @@ export async function listEventsForUser(
     return []
   }
 }
+
+/**
+ * F1-Fix Audit (27.05.): Quick-Check für Auctions — gibt true zurück wenn
+ * der User im angefragten Zeitfenster MINDESTENS einen busy Google-Event hat.
+ * Wird vom Notfall-Match aufgerufen, um HW auszuschließen, die gerade privat
+ * verplant sind. Performance-Notiz: 1 Google-API-Call pro HW; Aufrufer
+ * sollte das auf Top-N Kandidaten begrenzen (nicht ganzen Radius scannen).
+ *
+ * Returns false bei: kein Token (HW nicht verbunden), API-Fehler, keine
+ * Events. Heißt: "not connected" = "frei verfügbar" (kein false-positive
+ * Block für HW ohne Google-Setup).
+ */
+export async function hasGoogleEventInRange(
+  userId: string,
+  from: Date,
+  to: Date,
+): Promise<boolean> {
+  const events = await listEventsForUser(userId, from, to)
+  // Auch All-Day-Events zählen — wenn HW "Urlaub" eingetragen hat, ist
+  // er auch für 2h-Notfall-Slot nicht verfügbar.
+  return events.length > 0
+}

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { sendEmailFireAndForget } from "@/lib/email/send"
+import { hasGoogleEventInRange } from "@/lib/google-cal/events"
 
 // K1.3a: HW schickt 2-3 Termin-Vorschläge an den Mieter.
 //
@@ -87,6 +88,35 @@ export async function POST(request: NextRequest) {
       einsatzort_adresse: string | null; einsatzort_lat: number | null; einsatzort_lng: number | null
     }>()
   if (tErr || !ticket) return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 })
+
+  // F1-Fix Audit (27.05.): Google-Cal-Conflict-Check.
+  // Wenn HW Google verbunden hat, prüfe jeden Slot gegen seine
+  // privaten Termine. Bei Konflikt: 422 mit konflikt-Liste, der HW
+  // korrigiert dann im UI. Wenn HW nicht verbunden → kein Check.
+  // Body-Param `force=true` umgeht den Check (HW weiß was er tut).
+  const force = (body as { force?: unknown }).force === true
+  if (!force) {
+    const konflikte: Array<{ datum: string; von: string; bis: string }> = []
+    for (const s of slots) {
+      const von = new Date(`${s.datum}T${s.von}:00`)
+      const bis = new Date(`${s.datum}T${s.bis}:00`)
+      try {
+        if (await hasGoogleEventInRange(user.id, von, bis)) {
+          konflikte.push(s)
+        }
+      } catch (err) {
+        // API-Fehler tolerieren — Slot durchwinken
+        console.warn("[F1-vorschlagen-check] google-fehler:", err)
+      }
+    }
+    if (konflikte.length > 0) {
+      return NextResponse.json({
+        error: "google_conflict",
+        message: `${konflikte.length} Slot(s) überlappen mit deinem Google-Kalender. Wähle andere Zeiten oder bestätige mit force=true.`,
+        konflikte,
+      }, { status: 422 })
+    }
+  }
 
   // HW-Berechtigung: zugewiesener_hw oder eingeladen
   if (ticket.zugewiesener_hw !== user.id) {
