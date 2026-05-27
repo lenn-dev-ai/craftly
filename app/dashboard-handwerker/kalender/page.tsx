@@ -215,7 +215,7 @@ export default function KalenderPage() {
             // Pro Tag splitten
             const cursor = new Date(startDate)
             while (cursor < endDate) {
-              const dayIso = cursor.toISOString().slice(0, 10)
+              const dayIso = isoDatum(cursor)
               const dayEnd = new Date(cursor)
               dayEnd.setHours(23, 59, 59, 999)
               const segEnd = endDate < dayEnd ? endDate : dayEnd

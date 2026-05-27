@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
           access_token: providerToken,
           refresh_token: providerRefreshToken,
           expires_at: expiresAt,
-          scope: "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events",
+          scope: "https://www.googleapis.com/auth/calendar.readonly",
           connected_at: new Date().toISOString(),
           last_error: null,
         },

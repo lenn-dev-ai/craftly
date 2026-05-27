@@ -13,9 +13,11 @@ import { createServiceRoleClient } from "@/lib/supabase-server"
 const AUTH_URL  = "https://accounts.google.com/o/oauth2/v2/auth"
 const TOKEN_URL = "https://oauth2.googleapis.com/token"
 
+// Read-only bis Reparo→Google-Write-Sync gebaut ist. Sonst signt der HW
+// einen Schreib-Scope für ein Lese-Feature — DSGVO/Trust + Google-Verification-
+// Hürde. Bei Bedarf Write-Scope zusätzlich + erneuten Consent triggern.
 const SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
-  "https://www.googleapis.com/auth/calendar.events",
   "openid",
   "email",
 ].join(" ")

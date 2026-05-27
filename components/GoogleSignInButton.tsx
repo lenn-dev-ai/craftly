@@ -45,7 +45,7 @@ export function GoogleSignInButton({
         provider: "google",
         options: {
           redirectTo,
-          scopes: "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events",
+          scopes: "https://www.googleapis.com/auth/calendar.readonly",
           queryParams: {
             prompt: "consent",
             access_type: "offline",
