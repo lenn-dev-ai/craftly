@@ -50,6 +50,32 @@ const STUNDE_VON = 7
 const STUNDE_BIS = 20
 const STUNDE_HOEHE_PX = 56
 
+// U3-Fix Audit (27.05.): bundesweite DE-Feiertage 2026/2027.
+// Im Header der Tagsspalte als Badge anzeigen + visuell als belegt
+// markieren (Verfügbarkeit eher unüblich). Regionale Feiertage
+// (Fronleichnam, Mariä Himmelfahrt etc.) bewusst weggelassen — HW
+// kennt seine Region selbst.
+const DE_FEIERTAGE: Record<string, string> = {
+  "2026-01-01": "Neujahr",
+  "2026-04-03": "Karfreitag",
+  "2026-04-06": "Ostermontag",
+  "2026-05-01": "Tag d. Arbeit",
+  "2026-05-14": "Himmelfahrt",
+  "2026-05-25": "Pfingstmontag",
+  "2026-10-03": "Tag d. Einheit",
+  "2026-12-25": "1. Weihnachten",
+  "2026-12-26": "2. Weihnachten",
+  "2027-01-01": "Neujahr",
+  "2027-03-26": "Karfreitag",
+  "2027-03-29": "Ostermontag",
+  "2027-05-01": "Tag d. Arbeit",
+  "2027-05-06": "Himmelfahrt",
+  "2027-05-17": "Pfingstmontag",
+  "2027-10-03": "Tag d. Einheit",
+  "2027-12-25": "1. Weihnachten",
+  "2027-12-26": "2. Weihnachten",
+}
+
 interface KalenderTermin {
   id: string
   datum: string
@@ -470,12 +496,60 @@ export default function KalenderPage() {
         </div>
       )}
 
+      {/* U1-Fix Audit (27.05.): Empty-State-Onboarding für Erstnutzer.
+          Sichtbar wenn HW noch nichts angelegt hat (keine Termine, Slots,
+          Verfügbarkeiten, Google-Events). Dismissable via localStorage.
+          Soll Klick-Pfad zeigen, nicht über-erklären. */}
+      {!loading
+        && termine.length === 0
+        && slots.length === 0
+        && verf.length === 0
+        && googleEvents.length === 0
+        && googleAllDay.length === 0
+        && typeof window !== "undefined"
+        && localStorage.getItem("kalenderOnboardingDismissed") !== "1"
+        && (
+          <div className="max-w-6xl mx-auto px-2 sm:px-6 pt-2">
+            <div className="bg-surface-alt border border-line rounded-2xl px-4 py-3 flex items-start gap-3 mb-2">
+              <div className="text-2xl flex-shrink-0">📅</div>
+              <div className="flex-1 min-w-0 text-sm">
+                <div className="font-semibold text-ink mb-1">So füllst du deinen Kalender</div>
+                <ol className="text-xs text-ink-muted space-y-0.5 list-decimal pl-4">
+                  <li>Klick auf eine freie Stunde im Grid → biete diese Zeit als Verfügbarkeit an</li>
+                  <li>Oder verbinde Google-Kalender — deine Privattermine erscheinen automatisch</li>
+                  <li>Aufträge die du übernimmst landen ebenfalls hier</li>
+                </ol>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== "undefined") localStorage.setItem("kalenderOnboardingDismissed", "1")
+                  // Re-render trigger — Toast als no-op state set
+                  setToast(" ")
+                  setTimeout(() => setToast(""), 100)
+                }}
+                aria-label="Onboarding ausblenden"
+                className="p-1 text-ink-muted hover:text-ink flex-shrink-0"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        )
+      }
+
       {/* Grid */}
       <div className="max-w-6xl mx-auto px-2 sm:px-6 py-4 overflow-x-auto">
         {loading ? (
           <div className="text-center text-sm text-ink-muted py-16">Lädt …</div>
         ) : (
-          <div className="bg-white border border-line rounded-2xl overflow-hidden">
+          <div
+            className="bg-white border border-line rounded-2xl overflow-hidden"
+            style={{ minWidth: "min(700px, 100%)" }}
+            /* U9-Fix Audit (27.05.): min-width gibt Tagsspalten auf Mobile
+               genug Platz (mind. ~93px pro Spalte); Outer hat overflow-x-auto,
+               sodass schmale Screens horizontal scrollen statt zu quetschen. */
+          >
             {/* Tagesspalten-Header */}
             <div
               className="grid border-b border-line bg-surface-muted/40"
@@ -484,10 +558,19 @@ export default function KalenderPage() {
               <div />
               {tageDerWoche.map((d, i) => {
                 const isHeute = isoDatum(d) === heuteIso
+                const feiertag = DE_FEIERTAGE[isoDatum(d)]
                 return (
                   <div key={i} className={`text-center py-2 text-[11px] font-medium ${isHeute ? "text-accent" : "text-ink-secondary"}`}>
                     <div>{TAGE_LABEL[i]}</div>
                     <div className={`text-xs ${isHeute ? "font-bold" : "font-normal"}`}>{d.getDate()}.</div>
+                    {feiertag && (
+                      <div
+                        className="mt-0.5 text-[9px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1 py-px mx-1 truncate"
+                        title={feiertag}
+                      >
+                        {feiertag}
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -686,6 +769,29 @@ export default function KalenderPage() {
                   </div>
                 )
               })}
+
+              {/* U2-Fix Audit (27.05.): Rote Now-Linie — nur sichtbar wenn
+                  heute in der aktuell angezeigten Woche liegt UND innerhalb
+                  des Stundenfensters (07:00–20:00). 1 Minute auto-update. */}
+              {(() => {
+                const now = new Date()
+                const heuteInWoche = tageDerWoche.some(t => isoDatum(t) === isoDatum(now))
+                if (!heuteInWoche) return null
+                const nowMin = now.getHours() * 60 + now.getMinutes()
+                const minOffset = nowMin - STUNDE_VON * 60
+                if (minOffset < 0 || minOffset > (STUNDE_BIS - STUNDE_VON) * 60) return null
+                const top = (minOffset / 60) * STUNDE_HOEHE_PX
+                return (
+                  <div
+                    className="pointer-events-none absolute z-30 flex items-center"
+                    style={{ top: `${top}px`, left: "48px", right: 0 }}
+                    aria-hidden="true"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-red-500 -ml-1 flex-shrink-0 shadow" />
+                    <div className="flex-1 h-px bg-red-500/80" />
+                  </div>
+                )
+              })()}
             </div>
           </div>
         )}
