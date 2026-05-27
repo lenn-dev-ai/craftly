@@ -77,6 +77,7 @@ export interface Ticket {
   status: TicketStatus; prioritaet: Prioritaet
   vergabemodus: "direkt" | "auktion"; gewerk?: string
   objekt_id?: string; wohnung?: string; raum?: string
+  wohneinheit_referenz?: string | null
   erstellt_von: string; zugewiesener_hw?: string
   verwalter_id?: string | null
   auktion_ende?: string; kosten_final?: number; created_at: string

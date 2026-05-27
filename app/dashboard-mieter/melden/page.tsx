@@ -94,12 +94,13 @@ export default function MeldenPage() {
   const [kiResult, setKiResult] = useState<string | null>(null)
   const [form, setForm] = useState<{
     titel: string; beschreibung: string; wohnung: string
+    wohneinheit_referenz: string
     prioritaet: string; gewerk: string
     einsatzort_adresse: string
     einsatzort_lat: number | null
     einsatzort_lng: number | null
   }>({
-    titel: "", beschreibung: "", wohnung: "",
+    titel: "", beschreibung: "", wohnung: "", wohneinheit_referenz: "",
     prioritaet: "planbar", gewerk: "allgemein",
     einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null,
   })
@@ -353,6 +354,7 @@ export default function MeldenPage() {
       titel: form.titel,
       beschreibung: form.beschreibung,
       wohnung: form.wohnung,
+      wohneinheit_referenz: form.wohneinheit_referenz.trim() || null,
       prioritaet: form.prioritaet,
       gewerk: form.gewerk,
       status: "offen",
@@ -814,6 +816,24 @@ export default function MeldenPage() {
               />
             </div>
 
+            {/* Loop-23 (27.05.): Mieter-/Wohneinheits-Nummer als eindeutiger
+                Identifier für die Verwaltung. Hilft besonders bei großen
+                Beständen, Tickets sofort zu matchen. */}
+            <div className="mb-4">
+              <label className="text-xs text-ink-muted mb-1.5 block font-medium">
+                Mieter-Nr. / Wohneinheits-Nr. <span className="text-ink-faint font-normal">(falls bekannt)</span>
+              </label>
+              <input
+                value={form.wohneinheit_referenz}
+                onChange={e => setForm(f => ({ ...f, wohneinheit_referenz: e.target.value }))}
+                placeholder="z.B. M-1234 oder WE-12-A — steht meistens im Mietvertrag"
+                className="w-full bg-white border border-line rounded-xl px-4 py-3 text-sm text-ink placeholder-[#B5AEA4] focus:outline-none focus:border-accent/50"
+              />
+              <p className="text-[11px] text-ink-faint mt-1">
+                Wenn deine Verwaltung mit Nummern arbeitet, kann sie deine Meldung damit sofort zuordnen.
+              </p>
+            </div>
+
             <div className="mb-6">
               <p className="text-xs text-ink-muted mb-2">Schnellauswahl Raum (optional):</p>
               <div className="flex flex-wrap gap-2">
@@ -958,7 +978,7 @@ export default function MeldenPage() {
                 setFotoFiles([])
                 fotoPreviewUrls.forEach(u => URL.revokeObjectURL(u))
                 setFotoPreviewUrls([])
-                setForm({ titel: "", beschreibung: "", wohnung: "", prioritaet: "planbar", gewerk: "allgemein", einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null })
+                setForm({ titel: "", beschreibung: "", wohnung: "", wohneinheit_referenz: "", prioritaet: "planbar", gewerk: "allgemein", einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null })
               }}>
                 Weiteren Schaden melden
               </Button>

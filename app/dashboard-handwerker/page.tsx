@@ -135,7 +135,14 @@ export default function HandwerkerDashboard() {
           noch nicht alle HW migriert sind. */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-ink">
-          Hallo, {profile?.firma || profile?.name || "Handwerker"}
+          {(() => {
+            // Loop-23-Fix (27.05.): Demo-Accounts haben oft profile.name
+            // exakt = "Mieter"/"Handwerker"/etc — dann nicht den Rollen-
+            // Begriff der falschen Rolle als Greeting nehmen.
+            const raw = profile?.firma || profile?.name
+            const istRollenWort = raw != null && /^(mieter|verwalter|handwerker|admin|demo\s+(mieter|verwalter|admin))$/i.test(raw.trim())
+            return `Hallo, ${!raw || istRollenWort ? "Handwerker" : raw}`
+          })()}
         </h1>
         <p className="text-sm text-ink-muted mt-1.5">
           {stammGewerke.length > 0 && (

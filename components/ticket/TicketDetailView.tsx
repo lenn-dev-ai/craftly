@@ -541,6 +541,13 @@ export default function TicketDetailView() {
                   <TypBadge typ={ticket.ticket_typ as "diagnose" | "projekt"} />
                 )}
                 {ticket.wohnung && <span className="text-xs text-ink-faint bg-surface px-2 py-1 rounded-lg">{ticket.wohnung}</span>}
+                {/* Loop-23 (27.05.): Mieter-/Wohneinheits-Nr als prominentes
+                    Badge — Verwalter sieht beim ersten Blick die Zuordnung. */}
+                {ticket.wohneinheit_referenz && (
+                  <span className="text-xs text-rolle-verwalter bg-rolle-verwalter/10 border border-rolle-verwalter/20 px-2 py-1 rounded-lg font-mono font-medium">
+                    #{ticket.wohneinheit_referenz}
+                  </span>
+                )}
               </div>
               {ticket.beschreibung && <p className="text-sm text-ink-secondary leading-relaxed break-words whitespace-pre-wrap">{ticket.beschreibung}</p>}
             </div>
@@ -578,6 +585,7 @@ export default function TicketDetailView() {
                 {(ticket.wohnung || typeof ticket.objekte.einheiten_anzahl === "number") && (
                   <div className="text-[11px] text-ink-faint mt-2 pt-2 border-t border-line space-y-0.5">
                     {ticket.wohnung && <div>Wohnung: <span className="text-ink-secondary">{ticket.wohnung}</span></div>}
+                    {ticket.wohneinheit_referenz && <div>Mieter-/WE-Nr: <span className="text-ink-secondary font-mono">{ticket.wohneinheit_referenz}</span></div>}
                     {typeof ticket.objekte.einheiten_anzahl === "number" && (
                       <div>{ticket.objekte.einheiten_anzahl} Einheiten gesamt</div>
                     )}
