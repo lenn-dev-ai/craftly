@@ -20,22 +20,30 @@ interface ActiveRoleContextType {
   rolle: ActiveRolle
   setRolle: (r: ActiveRolle) => void
   istAdmin: boolean
+  // Sprint AJ: Wenn gesetzt (Demo-User), enthält die Liste der Rollen
+  // zwischen denen der User per Switcher wechseln darf. Format: dieselben
+  // Strings wie profiles.demo_rollen — also 'mieter' | 'verwalter' | 'handwerker'.
+  // istAdmin überschreibt — Admins dürfen sowieso alles.
+  darfWechselnZu?: string[]
 }
 
 const ActiveRoleContext = createContext<ActiveRoleContextType>({
   rolle: "verwaltung",
   setRolle: () => {},
   istAdmin: false,
+  darfWechselnZu: undefined,
 })
 
 export function ActiveRoleProvider({
   children,
   istAdmin,
   defaultRolle = "verwaltung",
+  darfWechselnZu,
 }: {
   children: ReactNode
   istAdmin: boolean
   defaultRolle?: ActiveRolle
+  darfWechselnZu?: string[]
 }) {
   const [rolle, setRolleState] = useState<ActiveRolle>(defaultRolle)
 
@@ -55,7 +63,7 @@ export function ActiveRoleProvider({
   }, [])
 
   return (
-    <ActiveRoleContext.Provider value={{ rolle, setRolle, istAdmin }}>
+    <ActiveRoleContext.Provider value={{ rolle, setRolle, istAdmin, darfWechselnZu }}>
       {children}
     </ActiveRoleContext.Provider>
   )

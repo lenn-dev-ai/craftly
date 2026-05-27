@@ -29,6 +29,7 @@ export default function RoleGuard({
 }) {
   const router = useRouter()
   const [istAdmin, setIstAdmin] = useState(false)
+  const [demoRollen, setDemoRollen] = useState<string[] | undefined>(undefined)
   const [ok, setOk] = useState(false)
 
   useEffect(() => {
@@ -42,12 +43,17 @@ export default function RoleGuard({
       }
       const { data: profile } = await supabase
         .from("profiles")
-        .select("rolle")
+        .select("rolle, demo_rollen")
         .eq("id", user.id)
-        .maybeSingle()
+        .maybeSingle<{ rolle: Rolle | null; demo_rollen: string[] | null }>()
       const rolle = (profile?.rolle as Rolle | undefined) ?? null
       if (!aktiv) return
       if (rolle === "admin") setIstAdmin(true)
+      // Sprint AJ: Demo-User mit demo_rollen[] dürfen zwischen den dort
+      // gelisteten Rollen switchen. Wird an ActiveRoleProvider durchgereicht.
+      if (profile?.demo_rollen && profile.demo_rollen.length > 1) {
+        setDemoRollen(profile.demo_rollen)
+      }
       if (rolle === allowed || rolle === "admin") {
         setOk(true)
         return
@@ -81,7 +87,11 @@ export default function RoleGuard({
 
   if (defaultRolle) {
     return (
-      <ActiveRoleProvider istAdmin={istAdmin} defaultRolle={defaultRolle}>
+      <ActiveRoleProvider
+        istAdmin={istAdmin}
+        defaultRolle={defaultRolle}
+        darfWechselnZu={demoRollen}
+      >
         {children}
       </ActiveRoleProvider>
     )

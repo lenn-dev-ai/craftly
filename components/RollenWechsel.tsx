@@ -5,18 +5,25 @@ import { useEffect, useRef, useState } from "react"
 import { ChevronDown, Check } from "lucide-react"
 
 // Sprint O — Rollen-Switcher als Dropdown (vorher: 2×2-Grid Chips).
+// Sprint AJ — erweitert für Demo-User mit profile.demo_rollen[].
 //
-// Sichtbar nur für Admins (profiles.rolle === 'admin'). Normale User
-// haben nur 1 Rolle → kein Switcher.
+// Sichtbar wenn:
+//   - istAdmin: alle 4 Optionen, reine Frontend-Navigation (Admin darf RLS-mäßig sowieso alles)
+//   - sonst wenn darfWechselnZu.length > 1: nur die freigegebenen Rollen,
+//     Klick triggered POST /api/dev/switch-rolle der profile.rolle in DB updatet,
+//     erst danach Hard-Reload aufs Ziel-Dashboard.
 //
 // Hard-Navigation via window.location: Soft-Navigation mit router.push
 // hatte beim Sibling-Layout-Wechsel (verwalter ↔ handwerker) den Effekt,
 // dass Sidebar/ActiveRoleProvider den alten State behielt. Hard-Reload
 // mountet alles frisch — Auth ist via Cookie, daher kein Round-Trip-Kost.
-//
-// A11y: aria-expanded/haspopup auf Trigger, role="menu" auf Liste,
-// role="menuitem" pro Eintrag. ESC + Click-Outside schließen. Erste
-// Auswahl per Auto-Focus erhält initial den Tastatur-Fokus.
+
+// Mapping ActiveRolle (UI-Term) → profiles.demo_rollen (DB-Term)
+const DEMO_KEY: Partial<Record<ActiveRolle, string>> = {
+  mieter: "mieter",
+  verwaltung: "verwalter",
+  handwerker: "handwerker",
+}
 
 const OPTIONEN: Array<{
   rolle: ActiveRolle
@@ -31,10 +38,12 @@ const OPTIONEN: Array<{
 ]
 
 export function RollenWechsel() {
-  const { rolle, istAdmin } = useActiveRole()
+  const { rolle, istAdmin, darfWechselnZu } = useActiveRole()
   const [open, setOpen] = useState(false)
+  const [pending, setPending] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const firstItemRef = useRef<HTMLButtonElement>(null)
+  const istDemo = !istAdmin && (darfWechselnZu?.length ?? 0) > 1
 
   // Click-Outside + ESC schließen
   useEffect(() => {
@@ -57,20 +66,57 @@ export function RollenWechsel() {
     }
   }, [open])
 
-  if (!istAdmin) return null
+  if (!istAdmin && !istDemo) return null
 
-  const aktuell = OPTIONEN.find(o => o.rolle === rolle) ?? OPTIONEN[0]
+  // Demo-User sieht nur die Optionen, die in seinen demo_rollen[] freigegeben sind.
+  // Admin sieht alle 4. Mapping über DEMO_KEY weil ActiveRolle 'verwaltung' heißt,
+  // demo_rollen aber 'verwalter' (DB-Konvention).
+  const sichtbareOptionen = istAdmin
+    ? OPTIONEN
+    : OPTIONEN.filter(o => {
+        const key = DEMO_KEY[o.rolle]
+        return key && darfWechselnZu?.includes(key)
+      })
 
-  function wechsel(opt: typeof OPTIONEN[number]) {
+  const aktuell = sichtbareOptionen.find(o => o.rolle === rolle) ?? sichtbareOptionen[0]
+
+  async function wechsel(opt: typeof OPTIONEN[number]) {
     setOpen(false)
-    if (opt.rolle === rolle) return
-    window.location.href = opt.ziel
+    if (opt.rolle === rolle || pending) return
+
+    // Admin: reine Navigation, kein DB-UPDATE nötig
+    if (istAdmin) {
+      window.location.href = opt.ziel
+      return
+    }
+
+    // Demo-User: erst DB-UPDATE (profile.rolle setzen), dann Hard-Reload
+    const dbKey = DEMO_KEY[opt.rolle]
+    if (!dbKey) return
+    setPending(true)
+    try {
+      const res = await fetch("/api/dev/switch-rolle", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ rolle: dbKey }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Switch fehlgeschlagen" }))
+        alert(`Rollen-Wechsel fehlgeschlagen: ${err.error || res.statusText}`)
+        setPending(false)
+        return
+      }
+      window.location.href = opt.ziel
+    } catch (e) {
+      alert(`Netzwerkfehler beim Rollen-Wechsel: ${e instanceof Error ? e.message : "unbekannt"}`)
+      setPending(false)
+    }
   }
 
   return (
     <div className="w-full" ref={containerRef}>
       <div className="text-[9px] font-bold uppercase tracking-wider text-ink-muted mb-1.5 px-1">
-        Sicht wechseln
+        {istDemo ? "Demo: Rolle wechseln" : "Sicht wechseln"}
       </div>
       <div className="relative">
         <button
@@ -97,7 +143,7 @@ export function RollenWechsel() {
             aria-label="Rollen-Auswahl"
             className="absolute left-0 right-0 mt-1 bg-white border border-line rounded-xl shadow-lg z-50 overflow-hidden"
           >
-            {OPTIONEN.map((opt, idx) => {
+            {sichtbareOptionen.map((opt, idx) => {
               const aktiv = opt.rolle === rolle
               return (
                 <button
@@ -105,8 +151,9 @@ export function RollenWechsel() {
                   ref={idx === 0 ? firstItemRef : undefined}
                   role="menuitem"
                   type="button"
-                  onClick={() => wechsel(opt)}
-                  className={`w-full text-left px-3 py-2 flex items-center gap-2 text-sm hover:bg-surface-muted focus:bg-surface-muted focus:outline-none ${
+                  disabled={pending}
+                  onClick={() => { void wechsel(opt) }}
+                  className={`w-full text-left px-3 py-2 flex items-center gap-2 text-sm hover:bg-surface-muted focus:bg-surface-muted focus:outline-none disabled:opacity-60 disabled:cursor-wait ${
                     aktiv ? "font-semibold text-ink" : "text-ink-secondary"
                   }`}
                 >
