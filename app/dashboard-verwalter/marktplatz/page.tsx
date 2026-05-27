@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { useToast } from "@/components/Toast"
-import { Inbox, Users, Search, Filter as FilterIcon, RefreshCw, Clock, MapPin, AlertCircle } from "lucide-react"
+import { Inbox, Users, Search, Filter as FilterIcon, RefreshCw, Clock, MapPin, AlertCircle, Star, Zap } from "lucide-react"
 import { formatGewerk } from "@/types"
 
 // Sprint AK Stufe 2 (27.05.2026) — Verwalter-Marktplatz, NEU.
@@ -52,7 +52,24 @@ interface StammHwEintrag {
   } | null
 }
 
+// Sprint AK Phase 4 (27.05.): Pool-HW aus Radius-Suche, neben Stamm-HW.
+// Lennart-Feedback 444f646e: Verwalter darf nicht erst alle HW als Stamm
+// anlegen müssen — Auctions-Logik soll alle passenden HW im Radius sehen.
+interface PoolHw {
+  id: string
+  name: string | null
+  firma: string | null
+  gewerk: string | null
+  plz_bereich: string | null
+  bewertung_avg: number | null
+  auftraege_anzahl: number | null
+  entfernung_km: number
+  ist_stamm: boolean
+}
+
 type HwStatus = "frei" | "belegt" | "nicht_verbunden" | "fehler" | "laedt"
+
+type Dringlichkeit = "notfall" | "zeitnah" | "planbar"
 
 function relativAlter(isoDate: string): string {
   const ms = Date.now() - new Date(isoDate).getTime()
@@ -74,6 +91,9 @@ export default function MarktplatzPage() {
 
   const [tickets, setTickets] = useState<OffenesTicket[]>([])
   const [hws, setHws] = useState<StammHwEintrag[]>([])
+  const [poolHws, setPoolHws] = useState<PoolHw[]>([])
+  const [poolLoading, setPoolLoading] = useState(false)
+  const [poolError, setPoolError] = useState<string | null>(null)
   const [hwStatus, setHwStatus] = useState<Record<string, HwStatus>>({})
   const [loading, setLoading] = useState(true)
   const [loadingStatus, setLoadingStatus] = useState(false)
@@ -83,6 +103,9 @@ export default function MarktplatzPage() {
   const [suche, setSuche] = useState("")
   const [einladenDrawer, setEinladenDrawer] = useState<OffenesTicket | null>(null)
   const [einlade, setEinlade] = useState<string | null>(null)
+  const [stammHinzu, setStammHinzu] = useState<string | null>(null)
+  const [auctionStarten, setAuctionStarten] = useState<OffenesTicket | null>(null)
+  const [auctionLaeuft, setAuctionLaeuft] = useState(false)
 
   // Tab-Sync in URL
   useEffect(() => {
@@ -119,16 +142,52 @@ export default function MarktplatzPage() {
     setLoading(false)
   }, [router])
 
+  // Sprint AK Phase 4 (27.05.): Pool-HW aus Radius — non-blocking, lädt
+  // wenn Tab "handwerker" aktiv wird. Filter-Gewerk wird respektiert.
+  const loadPool = useCallback(async () => {
+    setPoolLoading(true)
+    setPoolError(null)
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) { setPoolLoading(false); return }
+    try {
+      const res = await fetch("/api/verwalter/hw-im-pool", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({
+          gewerk: filterGewerk !== "alle" ? filterGewerk : undefined,
+          max_distance_km: 50,
+        }),
+      })
+      if (res.ok) {
+        const json = await res.json() as { handwerker?: PoolHw[] }
+        setPoolHws(json.handwerker ?? [])
+      } else {
+        const j = await res.json().catch(() => ({}))
+        setPoolError(j.error ?? `HTTP ${res.status}`)
+        setPoolHws([])
+      }
+    } catch (e) {
+      setPoolError(e instanceof Error ? e.message : "fetch_error")
+      setPoolHws([])
+    } finally {
+      setPoolLoading(false)
+    }
+  }, [filterGewerk])
+
   useEffect(() => { void loadData() }, [loadData])
 
   // Verfügbarkeits-Status für die HW-Liste laden (nur wenn Tab "handwerker" aktiv,
   // damit wir keine Google-API-Calls vergeuden wenn der Verwalter eh Tickets schaut).
   const loadVerfuegbarkeit = useCallback(async () => {
-    if (hws.length === 0) return
+    // Sprint AK Phase 4: Stamm-IDs UND Pool-IDs prüfen, max 20 (Endpoint-Cap)
+    const stammIds = hws.map(h => h.handwerker_id)
+    const poolIds = poolHws.filter(p => !p.ist_stamm).map(p => p.id)
+    const alleIds = Array.from(new Set([...stammIds, ...poolIds])).slice(0, 20)
+    if (alleIds.length === 0) return
     setLoadingStatus(true)
-    // Initial alle auf "laedt"
     const initial: Record<string, HwStatus> = {}
-    for (const h of hws) initial[h.handwerker_id] = "laedt"
+    for (const id of alleIds) initial[id] = "laedt"
     setHwStatus(initial)
 
     const supabase = createClient()
@@ -138,7 +197,7 @@ export default function MarktplatzPage() {
       const res = await fetch("/api/verwalter/hw-verfuegbarkeit", {
         method: "POST",
         headers: { "Content-Type": "application/json", authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ handwerker_ids: hws.map(h => h.handwerker_id) }),
+        body: JSON.stringify({ handwerker_ids: alleIds }),
       })
       if (res.ok) {
         const json = await res.json() as { status?: Record<string, HwStatus> }
@@ -152,7 +211,7 @@ export default function MarktplatzPage() {
     } finally {
       setLoadingStatus(false)
     }
-  }, [hws])
+  }, [hws, poolHws])
 
   useEffect(() => {
     if (tab === "handwerker" && hws.length > 0 && Object.keys(hwStatus).length === 0) {
@@ -160,6 +219,72 @@ export default function MarktplatzPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, hws.length])
+
+  // Sprint AK Phase 4: Pool laden wenn Tab "handwerker" aktiv ist + bei Gewerk-Filter-Wechsel
+  useEffect(() => {
+    if (tab !== "handwerker") return
+    void loadPool()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, filterGewerk])
+
+  // Sprint AK Phase 4: Pool-HW zu Stamm hinzufügen — One-Click ohne
+  // Objekt-Bindung (gewerk/prio/frist bleiben null, Verwalter kann später
+  // im Stamm-HW-Manager verfeinern).
+  async function zuStammHinzufuegen(hw: PoolHw) {
+    if (!await confirm(`${hw.firma || hw.name || "Handwerker"} als Stamm-Handwerker anlegen?`)) return
+    setStammHinzu(hw.id)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setStammHinzu(null); return }
+    const { error } = await supabase.from("stamm_handwerker").insert({
+      verwalter_id: user.id,
+      handwerker_id: hw.id,
+      gewerk: hw.gewerk,
+      prio: 50,
+    })
+    if (error) {
+      if (error.message.includes("duplicate") || error.message.includes("23505")) {
+        setToast("HW ist bereits in deinem Stamm.")
+      } else {
+        setToast("Fehler: " + error.message)
+      }
+    } else {
+      setToast(`${hw.firma || hw.name} als Stamm-HW angelegt.`)
+      // Pool + Stamm neu laden, damit das ist_stamm-Flag + Stamm-Liste aktuell sind
+      await Promise.all([loadData(), loadPool()])
+    }
+    setStammHinzu(null)
+    setTimeout(() => setToast(""), 3000)
+  }
+
+  // Sprint AK Phase 4: Auction für ein Ticket starten — ruft existing
+  // /api/auction/start. Verwalter wählt Dringlichkeit, System macht Rest.
+  async function starteAuction(ticket: OffenesTicket, dringlichkeit: Dringlichkeit) {
+    setAuctionLaeuft(true)
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) { setAuctionLaeuft(false); return }
+    try {
+      const res = await fetch("/api/auction/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ ticket_id: ticket.id, dringlichkeit }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (res.ok) {
+        setToast(dringlichkeit === "notfall" ? "Notfall-Match gestartet — Top-HW informiert." : "Auction läuft — HWs erhalten Einladungen.")
+        setAuctionStarten(null)
+        await loadData()
+      } else {
+        setToast("Fehler: " + (json.error ?? `HTTP ${res.status}`))
+      }
+    } catch (e) {
+      setToast("Netzwerk-Fehler: " + (e instanceof Error ? e.message : "fetch_error"))
+    } finally {
+      setAuctionLaeuft(false)
+      setTimeout(() => setToast(""), 4000)
+    }
+  }
 
   async function einladen(ticket: OffenesTicket, hwId: string, hwName: string) {
     if (!await confirm(`„${ticket.titel}" an ${hwName} einladen?`)) return
@@ -213,6 +338,26 @@ export default function MarktplatzPage() {
       return true
     })
   }, [hws, hwStatus, filterGewerk, filterStatus, suche])
+
+  // Sprint AK Phase 4: Pool nochmal client-filtern. Pool-Endpoint hat den
+  // Gewerk-Filter bereits angewandt, aber Suche + Verfügbarkeits-Filter
+  // bleiben client-seitig. Stamm-HW werden in der Pool-Sektion versteckt
+  // (sie erscheinen schon in der Stamm-Sektion oben).
+  const gefilterterPool = useMemo(() => {
+    return poolHws.filter(h => {
+      if (h.ist_stamm) return false
+      if (filterStatus === "frei" && hwStatus[h.id] !== "frei") return false
+      if (filterStatus === "verbunden") {
+        const s = hwStatus[h.id]
+        if (s === "nicht_verbunden" || s === "fehler" || !s) return false
+      }
+      if (suche) {
+        const hay = `${h.name ?? ""} ${h.firma ?? ""} ${h.gewerk ?? ""}`.toLowerCase()
+        if (!hay.includes(suche.toLowerCase())) return false
+      }
+      return true
+    })
+  }, [poolHws, hwStatus, filterStatus, suche])
 
   return (
     <div className="min-h-screen bg-surface">
@@ -307,9 +452,18 @@ export default function MarktplatzPage() {
                     <button
                       type="button"
                       onClick={() => setEinladenDrawer(t)}
-                      className="text-xs font-semibold px-3 py-2 rounded-lg bg-accent text-white hover:bg-accent-hover"
+                      className="text-xs px-3 py-2 rounded-lg border border-line hover:bg-surface-muted text-ink-secondary"
+                      title="Einzelnen HW aus deinem Stamm einladen"
                     >
                       HW einladen
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAuctionStarten(t)}
+                      className="text-xs font-semibold px-3 py-2 rounded-lg bg-accent text-white hover:bg-accent-hover"
+                      title="Auction starten — System findet passende HW im Radius und sendet Einladungen automatisch"
+                    >
+                      Auction
                     </button>
                   </div>
                 </li>
@@ -360,31 +514,36 @@ export default function MarktplatzPage() {
               </button>
             </div>
 
+            {/* Sprint AK Phase 4: Sektion 1 — Stamm-HW (sortiert nach prio) */}
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-ink-secondary uppercase tracking-wide">
+              <Star size={13} className="text-warm" />
+              Stamm-Handwerker
+              <span className="text-ink-faint normal-case font-normal">({gefilterte.length})</span>
+            </div>
             {hws.length === 0 ? (
-              <EmptyState
-                title="Noch keine Stamm-Handwerker"
-                text="Lege deine bevorzugten HW unter „Stamm-Handwerker“ an — dann erscheinen sie hier mit Live-Verfügbarkeit."
-                ctaLabel="Stamm-Handwerker verwalten"
-                ctaHref="/dashboard-verwalter/stamm-handwerker"
-              />
+              <div className="bg-surface-alt border border-line rounded-2xl px-4 py-4 text-center mb-4">
+                <p className="text-sm text-ink-muted">
+                  Keine bevorzugten HW gepflegt. Du kannst HW unten aus dem Pool zu Stamm machen oder
+                  {" "}<a href="/dashboard-verwalter/stamm-handwerker" className="text-accent hover:underline">über Stamm-HW verwalten</a> anlegen.
+                </p>
+              </div>
             ) : gefilterte.length === 0 ? (
-              <div className="text-center text-sm text-ink-muted py-12 bg-white border border-line rounded-2xl">
-                Keine Treffer für die aktuellen Filter.
+              <div className="text-center text-xs text-ink-muted py-6 bg-white border border-line rounded-2xl mb-4">
+                Keine Treffer in deinem Stamm für die aktuellen Filter.
               </div>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-2 mb-6">
                 {gefilterte.map(h => {
                   const name = h.handwerker?.firma || h.handwerker?.name || "Ohne Namen"
                   const gewerk = h.gewerk || h.handwerker?.gewerk || ""
                   const status = hwStatus[h.handwerker_id]
                   return (
-                    <li
-                      key={h.id}
-                      className="bg-white border border-line rounded-2xl px-4 py-3 flex items-center gap-3"
-                    >
+                    <li key={h.id} className="bg-white border border-line rounded-2xl px-4 py-3 flex items-center gap-3">
                       <HwStatusBadge status={status} />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-ink truncate">{name}</div>
+                        <div className="text-sm font-semibold text-ink truncate flex items-center gap-1.5">
+                          <Star size={12} className="text-warm flex-shrink-0" /> {name}
+                        </div>
                         <div className="flex items-center gap-3 mt-0.5 text-xs text-ink-muted flex-wrap">
                           {gewerk && <span>{formatGewerk(gewerk)}</span>}
                           {h.handwerker?.plz_bereich && <span>· {h.handwerker.plz_bereich}</span>}
@@ -411,10 +570,75 @@ export default function MarktplatzPage() {
               </ul>
             )}
 
+            {/* Sprint AK Phase 4: Sektion 2 — Pool im Radius (alle HW im Umkreis + Gewerk-Match) */}
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-ink-secondary uppercase tracking-wide">
+              <Search size={13} className="text-accent" />
+              Auch verfügbar in deinem Radius
+              <span className="text-ink-faint normal-case font-normal">({gefilterterPool.length})</span>
+              {poolLoading && <span className="text-ink-faint normal-case font-normal">· lädt …</span>}
+            </div>
+            {poolError ? (
+              <div className="bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-2xl px-4 py-3">
+                Pool-Suche fehlgeschlagen: {poolError}
+                {poolError.includes("Standort") && (
+                  <> · <a href="/dashboard-verwalter" className="underline">Verwalter-Profil prüfen</a></>
+                )}
+              </div>
+            ) : gefilterterPool.length === 0 && !poolLoading ? (
+              <div className="text-center text-xs text-ink-muted py-6 bg-white border border-line rounded-2xl">
+                Keine weiteren HW im 50 km-Radius (nach aktuellen Filtern).
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {gefilterterPool.map(p => {
+                  const name = p.firma || p.name || "Ohne Namen"
+                  const status = hwStatus[p.id]
+                  return (
+                    <li key={p.id} className="bg-white border border-line rounded-2xl px-4 py-3 flex items-center gap-3">
+                      <HwStatusBadge status={status} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-ink truncate">{name}</div>
+                        <div className="flex items-center gap-3 mt-0.5 text-xs text-ink-muted flex-wrap">
+                          {p.gewerk && <span>{formatGewerk(p.gewerk)}</span>}
+                          {p.plz_bereich && <span>· {p.plz_bereich}</span>}
+                          <span className="text-accent">· {p.entfernung_km} km entfernt</span>
+                          {p.bewertung_avg != null && (
+                            <span className="text-warm">★ {p.bewertung_avg.toFixed(1)}</span>
+                          )}
+                          {(p.auftraege_anzahl ?? 0) > 0 && (
+                            <span>· {p.auftraege_anzahl} Aufträge</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => void zuStammHinzufuegen(p)}
+                          disabled={stammHinzu === p.id}
+                          className="text-xs px-3 py-2 rounded-lg border border-line hover:bg-warm/10 hover:border-warm/40 text-ink-secondary inline-flex items-center gap-1 disabled:opacity-50"
+                          title="Zu Stamm-Handwerkern hinzufügen"
+                        >
+                          <Star size={12} /> {stammHinzu === p.id ? "…" : "Stamm"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/dashboard-verwalter/handwerker?id=${p.id}`)}
+                          className="text-xs px-3 py-2 rounded-lg border border-line hover:bg-surface-muted text-ink-secondary"
+                        >
+                          Profil
+                        </button>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+
             <p className="text-[11px] text-ink-faint mt-3 inline-flex items-center gap-1.5">
               <FilterIcon size={11} />
               Verfügbarkeits-Status kommt live aus dem Google-Kalender (4-Stunden-Fenster).
               HW ohne Google-Verbindung erscheinen als &bdquo;unbekannt&ldquo;.
+              Pool-Radius: 50 km um deinen Startort.
             </p>
           </>
         )}
@@ -494,6 +718,64 @@ export default function MarktplatzPage() {
         </div>
       )}
 
+      {/* Sprint AK Phase 4: Auction-Start-Modal — Dringlichkeit wählen, System macht Rest */}
+      {auctionStarten && (
+        <div
+          className="fixed inset-0 z-50 bg-ink/40 flex items-end md:items-center justify-center p-4"
+          onClick={() => !auctionLaeuft && setAuctionStarten(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-2xl shadow-xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-line flex items-center gap-2">
+              <Zap size={18} className="text-accent" />
+              <h2 className="text-base font-semibold text-ink">
+                Auction starten für &bdquo;{auctionStarten.titel}&ldquo;
+              </h2>
+            </div>
+            <div className="p-5 space-y-3">
+              <p className="text-xs text-ink-muted">
+                Das System sucht passende HW im Radius (Gewerk-Match + verfügbar laut Google-Cal)
+                und sendet automatisch Einladungen. Du musst niemanden manuell auswählen.
+              </p>
+              <div className="grid gap-2">
+                <AuctionStartOption
+                  label="🔴 Notfall"
+                  text="Sofort-Match — Top-1-HW im 10 km-Radius wird direkt benachrichtigt."
+                  disabled={auctionLaeuft}
+                  onClick={() => void starteAuction(auctionStarten, "notfall")}
+                />
+                <AuctionStartOption
+                  label="🟡 Zeitnah"
+                  text="6 Stunden Auction-Fenster, mittlerer Radius. HW bieten ab — du pickst das beste."
+                  disabled={auctionLaeuft}
+                  onClick={() => void starteAuction(auctionStarten, "zeitnah")}
+                />
+                <AuctionStartOption
+                  label="🟢 Planbar"
+                  text="72 Stunden Auction-Fenster, voller Radius — maximale HW-Auswahl."
+                  disabled={auctionLaeuft}
+                  onClick={() => void starteAuction(auctionStarten, "planbar")}
+                />
+              </div>
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAuctionStarten(null)}
+                  disabled={auctionLaeuft}
+                  className="text-xs px-3 py-2 rounded-lg text-ink-secondary hover:bg-surface-muted disabled:opacity-50"
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-ink text-white text-xs px-4 py-2 rounded-lg shadow-lg">
           {toast}
@@ -548,6 +830,22 @@ function HwStatusBadge({ status, compact = false }: { status: HwStatus | undefin
       <span className={`w-2 h-2 rounded-full ${m.color} flex-shrink-0`} aria-hidden="true" />
       {m.label}
     </span>
+  )
+}
+
+function AuctionStartOption({ label, text, disabled, onClick }: {
+  label: string; text: string; disabled: boolean; onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="w-full text-left px-3 py-2.5 rounded-lg border border-line hover:border-accent/40 hover:bg-accent/5 transition-colors disabled:opacity-50"
+    >
+      <div className="text-sm font-semibold text-ink">{label}</div>
+      <div className="text-xs text-ink-muted mt-0.5">{text}</div>
+    </button>
   )
 }
 
