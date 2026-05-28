@@ -194,7 +194,7 @@ Reparo hat einen **automatischen Feedback-Loop**:
 
 ---
 
-## 9. Demo-Accounts (Passwort: `Demo1234!`)
+## 9. Demo-Accounts (Passwort: `BetaReparo2026!`)
 
 | Rolle | E-Mail |
 |---|---|
