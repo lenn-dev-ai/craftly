@@ -1,0 +1,56 @@
+{
+  "_comment": "Reference-Config für Reparo Vapi-Assistant. Zum manuellen Übertragen in Vapi-Dashboard oder via Vapi-API als Vorlage.",
+  "name": "Reparo-Verwalter",
+  "language": "de",
+  "model": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "temperature": 0.3,
+    "maxTokens": 250
+  },
+  "voice": {
+    "provider": "11labs",
+    "voiceId": "Antoni",
+    "stability": 0.6,
+    "similarityBoost": 0.8,
+    "language": "de"
+  },
+  "transcriber": {
+    "provider": "deepgram",
+    "model": "nova-3",
+    "language": "de"
+  },
+  "firstMessage": "Hallo! Hier ist Reparo. Dieses Gespräch wird aufgezeichnet, um die Schadensmeldung sauber zu dokumentieren. Sind Sie einverstanden?",
+  "endCallMessage": "Vielen Dank, schönen Tag noch!",
+  "maxDurationSeconds": 480,
+  "silenceTimeoutSeconds": 3,
+  "responseDelaySeconds": 0.3,
+  "interruptionThreshold": 0.5,
+  "backgroundSound": "off",
+  "recordingEnabled": true,
+  "endCallPhrases": ["stopp", "abbrechen", "tschüss", "auf wiederhören"],
+  "serverUrl": "https://reparo-app.netlify.app/api/voice-call/ingest",
+  "serverUrlSecret": "[wird in Vapi-Dashboard gesetzt]",
+  "analysisPlan": {
+    "summaryPrompt": "Fasse den Schadensvorgang in 1-2 Sätzen zusammen.",
+    "structuredDataPrompt": "Extrahiere strukturiert: adresse_strasse, adresse_hausnummer, adresse_plz, adresse_ort (default Berlin), wohnungs_bezeichnung, gewerk (wasser|heizung|strom|schloss|sonstiges), beschreibung_kurz, dringlichkeit (notfall|zeitnah|planbar), mieter_telefon (E.164 wenn möglich), mieter_fotos_versprochen (bool), dsgvo_aufzeichnung_consent (bool), vollstaendigkeits_score (0-100).",
+    "structuredDataSchema": {
+      "type": "object",
+      "properties": {
+        "adresse_strasse": {"type": "string"},
+        "adresse_hausnummer": {"type": "string"},
+        "adresse_plz": {"type": ["string", "null"]},
+        "adresse_ort": {"type": "string"},
+        "wohnungs_bezeichnung": {"type": ["string", "null"]},
+        "gewerk": {"type": "string", "enum": ["wasser", "heizung", "strom", "schloss", "sonstiges"]},
+        "beschreibung_kurz": {"type": "string"},
+        "dringlichkeit": {"type": "string", "enum": ["notfall", "zeitnah", "planbar"]},
+        "mieter_telefon": {"type": ["string", "null"]},
+        "mieter_fotos_versprochen": {"type": "boolean"},
+        "dsgvo_aufzeichnung_consent": {"type": "boolean"},
+        "vollstaendigkeits_score": {"type": "integer", "minimum": 0, "maximum": 100}
+      },
+      "required": ["gewerk", "beschreibung_kurz", "dringlichkeit", "vollstaendigkeits_score"]
+    }
+  }
+}
