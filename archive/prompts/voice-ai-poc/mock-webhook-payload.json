@@ -1,0 +1,44 @@
+{
+  "_comment": "Mock-Payload das Vapi nach einem Anruf-Ende an /api/voice-call/ingest schickt. Verwende dies für lokale Tests bevor Vapi live ist.",
+  "message": {
+    "type": "end-of-call-report",
+    "call": {
+      "id": "call_mock_2026052301",
+      "orgId": "org_reparo_test",
+      "type": "inboundPhoneCall",
+      "createdAt": "2026-05-23T09:42:11.000Z",
+      "endedAt": "2026-05-23T09:45:48.000Z",
+      "phoneNumberId": "phone_de_test_1",
+      "customer": {
+        "number": "+4915112345678"
+      }
+    },
+    "durationSeconds": 217,
+    "endedReason": "assistant-ended-call",
+    "transcript": "Reparo: Hallo, hier ist Reparo. Dieses Gespräch wird aufgezeichnet — sind Sie einverstanden?\nVerwalter: Ja, einverstanden.\nReparo: Danke. Was ist passiert?\nVerwalter: Ich hab gerade einen Mieter dran, Spülkasten WC läuft, Musterstraße 12 in Berlin Wohnung 3B. Tropft seit gestern Abend.\nReparo: Verstanden, das klingt nach einem Wasser-Schaden. Wie dringend ist es — Notfall, zeitnah oder planbar?\nVerwalter: Zeitnah, also innerhalb 24 Stunden wäre gut.\nReparo: Hat der Mieter seine Telefonnummer hinterlassen, falls der Handwerker zurückrufen muss?\nVerwalter: Ja, plus 49 30 12345678.\nReparo: Perfekt. Lass mich kurz zusammenfassen: Musterstraße 12 in Berlin, Wohnung 3B, Wasser-Schaden Spülkasten, zeitnah innerhalb 24 Stunden, Mieter erreichbar unter plus 49 30 12345678. Passt das so?\nVerwalter: Genau, passt.\nReparo: Perfekt. Ich lege das Ticket jetzt an. Sie bekommen gleich eine SMS mit der Ticket-Nummer und einem Link zur Auktion. Vielen Dank, schönen Tag noch!",
+    "recordingUrl": "https://vapi.ai/recordings/mock-recording-2026052301.mp3",
+    "summary": "Wasserschaden Spülkasten WC, Musterstraße 12 Berlin Whg 3B, Dringlichkeit zeitnah",
+    "structuredData": {
+      "adresse_strasse": "Musterstraße",
+      "adresse_hausnummer": "12",
+      "adresse_plz": null,
+      "adresse_ort": "Berlin",
+      "wohnungs_bezeichnung": "3B",
+      "gewerk": "wasser",
+      "beschreibung_kurz": "Spülkasten WC läuft seit gestern Abend, tropft.",
+      "dringlichkeit": "zeitnah",
+      "mieter_telefon": "+493012345678",
+      "mieter_fotos_versprochen": false,
+      "dsgvo_aufzeichnung_consent": true,
+      "vollstaendigkeits_score": 95
+    },
+    "messages": [
+      {"role": "assistant", "content": "Hallo, hier ist Reparo..."},
+      {"role": "user", "content": "Ja, einverstanden..."}
+    ],
+    "analysis": {
+      "successEvaluation": "true",
+      "summary": "Wasserschaden Spülkasten WC, Musterstraße 12 Berlin Whg 3B"
+    }
+  }
+}
