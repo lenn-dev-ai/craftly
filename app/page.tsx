@@ -6,7 +6,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-surface text-ink">
       <Nav />
       <Hero />
-      <Auktion4Schritte />
+      <Festpreis4Schritte />
       <MechanikVorteile />
       <HandwerkerSection />
       <VerwalterSection />
@@ -99,9 +99,9 @@ function Hero() {
   )
 }
 
-/* -------------------------------------------- 4-SCHRITT AUKTIONS-FLOW */
+/* ------------------------------------------ 4-SCHRITT FESTPREIS-FLOW */
 
-function Auktion4Schritte() {
+function Festpreis4Schritte() {
   const schritte = [
     {
       nr: 1,
@@ -328,7 +328,7 @@ function VerwalterSection() {
     <section className="py-20 px-6 bg-white">
       <div className="max-w-6xl mx-auto">
         <div className="grid md:grid-cols-2 gap-16 items-center">
-          {/* Auktions-Mockup */}
+          {/* Festpreis-Mockup */}
           <div className="bg-surface rounded-2xl border border-line shadow-lg p-6 order-2 md:order-1">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-semibold text-lg">Auftrag vergeben</h3>
