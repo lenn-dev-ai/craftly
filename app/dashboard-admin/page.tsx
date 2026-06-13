@@ -43,7 +43,7 @@ type ActivityData = {
 
 type HealthData = {
   db: { ok: boolean; latency_ms: number }
-  resend: { ok: boolean; reason?: string }
+  resend: { ok: boolean; reason?: string; paused?: boolean }
   vapi: { ok: boolean }
   mapbox: { ok: boolean }
   timestamp: string
@@ -158,7 +158,7 @@ export default function AdminDashboard() {
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-3">System</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
           <HealthDot label={`DB (${health?.db.latency_ms ?? "?"} ms)`} ok={health?.db.ok} />
-          <HealthDot label="Resend"  ok={health?.resend.ok} reason={health?.resend.reason} />
+          <HealthDot label="Resend"  ok={health?.resend.ok} reason={health?.resend.reason} paused={health?.resend.paused} />
           <HealthDot label="Vapi"    ok={health?.vapi.ok} />
           <HealthDot label="Mapbox"  ok={health?.mapbox.ok} />
         </div>
@@ -195,14 +195,22 @@ function DeltaStat({ label, data }: { label: string; data: ActivityVal | undefin
   )
 }
 
-function HealthDot({ label, ok, reason }: { label: string; ok: boolean | undefined; reason?: string }) {
-  const color = ok === undefined ? "bg-slate-300" : ok ? "bg-emerald-500" : "bg-rose-500"
+function HealthDot({ label, ok, reason, paused }: { label: string; ok: boolean | undefined; reason?: string; paused?: boolean }) {
+  const color = ok === undefined
+    ? "bg-slate-300"
+    : paused
+    ? "bg-amber-400"
+    : ok
+    ? "bg-emerald-500"
+    : "bg-rose-500"
+  const reasonColor = paused ? "text-amber-700" : "text-rose-600"
+  const showReason = reason && (paused || !ok)
   return (
-    <div className="flex items-center gap-2" title={!ok && reason ? reason : undefined}>
+    <div className="flex items-center gap-2" title={showReason ? reason : undefined}>
       <span className={`inline-block w-2 h-2 rounded-full ${color}`} />
       <span className="text-xs text-ink">{label}</span>
-      {!ok && reason && (
-        <span className="text-[10px] text-rose-600 truncate max-w-[160px]" title={reason}>
+      {showReason && (
+        <span className={`text-[10px] ${reasonColor} truncate max-w-[160px]`} title={reason}>
           {reason}
         </span>
       )}

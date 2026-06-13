@@ -43,7 +43,15 @@ export async function GET(request: NextRequest) {
 // (Check prüfte nur, ob RESEND_API_KEY gesetzt ist). Jetzt wird zusätzlich
 // ein leichter API-Call gemacht und der Fehlergrund (`reason`) zurückgegeben,
 // damit er im UI als Tooltip angezeigt werden kann.
-async function checkResend(): Promise<{ ok: boolean; reason?: string }> {
+//
+// 2026-06-09: Zusätzlich Prüfung, dass mindestens eine Domain verified ist.
+// Ohne verified Domain liefert Resend zwar HTTP 200 auf /domains, aber jeder
+// echte Mail-Versand schlägt still fehl ("From"-Domain nicht verifiziert) —
+// das hatte vorher zu falschem Grün geführt.
+async function checkResend(): Promise<{ ok: boolean; reason?: string; paused?: boolean }> {
+  if (process.env.RESEND_PAUSED === "1" || process.env.RESEND_PAUSED === "true") {
+    return { ok: true, paused: true, reason: "Pausiert — keine verifizierte Domain" }
+  }
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     return { ok: false, reason: "RESEND_API_KEY nicht gesetzt" }
@@ -53,11 +61,21 @@ async function checkResend(): Promise<{ ok: boolean; reason?: string }> {
       headers: { Authorization: `Bearer ${apiKey}` },
       signal: AbortSignal.timeout(5000),
     })
-    if (res.ok) {
-      return { ok: true }
+    if (!res.ok) {
+      const body = await res.text()
+      return { ok: false, reason: `HTTP ${res.status}: ${body.slice(0, 100)}` }
     }
-    const body = await res.text()
-    return { ok: false, reason: `HTTP ${res.status}: ${body.slice(0, 100)}` }
+    const json = (await res.json()) as { data?: Array<{ name?: string; status?: string }> }
+    const domains = json.data ?? []
+    if (domains.length === 0) {
+      return { ok: false, reason: "Keine Resend-Domain konfiguriert — Mail-Versand schlägt fehl" }
+    }
+    const verified = domains.filter(d => d.status === "verified")
+    if (verified.length === 0) {
+      const statuses = domains.map(d => `${d.name ?? "?"}:${d.status ?? "?"}`).join(", ")
+      return { ok: false, reason: `Keine verifizierte Resend-Domain (${statuses})` }
+    }
+    return { ok: true }
   } catch (err) {
     return { ok: false, reason: String(err) }
   }

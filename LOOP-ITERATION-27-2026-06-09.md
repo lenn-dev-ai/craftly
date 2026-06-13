@@ -71,6 +71,31 @@ folgende Punkte direkt gefixt:
 - Resend-Health-Check liefert jetzt einen `reason`-String, der im
   Mission-Control-Tooltip/Text angezeigt wird, statt nur rot/grün.
 
+## Resend-Pause (Nachzieher 09.06.2026 abends)
+
+Verifikation des Resend-Status zeigte: API-Key valide (HTTP 200 auf
+`GET /domains`), aber **keine verifizierte Domain** im Account
+(`data: []`). Default `RESEND_FROM_EMAIL = noreply@reparo-app.de` ist
+also bei Resend unbekannt → jeder echte Mail-Versand schlüge still
+fehl. Der vorherige Health-Check hätte `ok: true` zurückgegeben
+(falsches Grün).
+
+Entscheidung: Resend pausieren, bis Domain `reparo-app.de` bei Resend
+verifiziert ist (DNS-Records). Umgesetzt als Feature-Flag:
+
+- `RESEND_PAUSED=1` (Netlify-Env muss noch gesetzt werden!) →
+  `sendEmail()` skipt ohne Warnung, Health-Check meldet
+  `{ ok: true, paused: true, reason: "Pausiert — keine verifizierte
+  Domain" }`.
+- Mission-Control-Dot zeigt jetzt drei Zustände: 🟢 ok, 🟡 paused
+  (amber), 🔴 error.
+- Zusätzlich: Health-Check prüft auch ohne Pause-Flag, dass mind. 1
+  verifizierte Domain existiert — sonst rot mit Grund. Verhindert
+  falsches Grün bei künftigem Reaktivieren.
+
+Wenn Domain verified ist: `RESEND_PAUSED` entfernen (oder auf 0
+setzen), Domain als `RESEND_FROM_EMAIL` eintragen.
+
 ## Status: Loop-27 DURCH
 
 - d3495b20: ERLEDIGT (Loop-26, verifiziert)

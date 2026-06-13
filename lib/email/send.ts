@@ -23,8 +23,16 @@ interface SendEmailResult {
 const apiKey = process.env.RESEND_API_KEY
 const resend = apiKey ? new Resend(apiKey) : null
 const fromAddress = process.env.RESEND_FROM_EMAIL || "Reparo <noreply@reparo-app.de>"
+// 2026-06-09: Resend wird absichtlich pausiert, solange noch keine
+// verifizierte Domain existiert. Alle Mailversuche schlugen sonst still
+// fehl (HTTP 200 auf /domains, aber Send-Endpoint 403 wegen From-Domain).
+const paused = process.env.RESEND_PAUSED === "1" || process.env.RESEND_PAUSED === "true"
 
 export async function sendEmail({ to, subject, html, replyTo }: SendEmailParams): Promise<SendEmailResult> {
+  if (paused) {
+    console.warn("[Email] RESEND_PAUSED — Mail an", to, "übersprungen")
+    return { success: false, skipped: "paused" }
+  }
   if (!resend) {
     // Soft-skip: kein API-Key konfiguriert. Hilfreich in Dev / vor erstem Resend-Setup.
     console.warn("[Email] RESEND_API_KEY fehlt — Mail an", to, "übersprungen")
