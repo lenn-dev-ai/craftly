@@ -435,6 +435,50 @@ export const VERDICTS: Record<string, Verdict> = {
     status: "needdecision", owner: "lennart",
     ref: "wartet auf Wohnungs-Verknüpfungs-Pattern (Sprint G hat verwalter-side, Mieter-side fehlt)",
   },
+
+  // === Iteration 27 (09.06.2026) — 5 Feedbacks vom 27.05. nach
+  // Supabase-Reaktivierung (Free-Tier Auto-Pause) triagiert. Siehe
+  // LOOP-ITERATION-27-2026-06-09.md für Details. ===
+  "d3495b20-9d41-4441-b0cc-df954d767b6c": {
+    cat: "question", sev: "medium",
+    area: "HW-Angebot-Detail / Festpreis",
+    summary: "Was muss passieren, damit wir ein System-Preis bekommen?",
+    recommendation: "Erledigt via Loop-26 (Commits aff1032 + 7186097): System-/Festpreis wird auf der Angebot-Seite angezeigt. Live verifiziert am 09.06.2026 — zeigt 121€ Festpreis korrekt.",
+    status: "done", owner: "erledigt",
+    ref: "Loop-26 · aff1032 + 7186097 · verifiziert Loop-27",
+  },
+  "55302a76-abb4-4e2a-a90d-683cab5a3a5a": {
+    cat: "bug", sev: "medium",
+    area: "HW-Dashboard #ausschreibungen Kachel",
+    summary: "Verfügbar im Radius 1, aber Klick auf Kachel tut nichts / Ausschreibungs-Liste leer.",
+    recommendation: "Bereits gefixt via Loop-25 (H5): Kachel ist jetzt <a href=\"#ausschreibungen\"> mit Hover-Styling und scrollt zur Ausschreibungs-Liste. Am 09.06.2026 im Code verifiziert — kein weiterer Handlungsbedarf. Feedback kam vor dem Fix.",
+    status: "done", owner: "erledigt",
+    ref: "Loop-25 · H5 · verifiziert Loop-27",
+  },
+  "444f646e-a08c-4c53-8eae-2866f518e5d0": {
+    cat: "ux", sev: "medium",
+    area: "Verwalter-Marktplatz Stamm-HW vs. Pool-HW",
+    summary: "Warum muss Handwerker erst als Stamm-Handwerker angelegt werden — passt das noch zur Auktionslogik?",
+    recommendation: "Konzept-Klarstellung: Marktplatz zeigt Stamm-HW UND Pool-HW; Stamm-HW ist optional/bevorzugt, Auktion läuft auch ohne Stamm-HW (Radius-Matching im Pool). Empfehlung: Tooltip/Erklär-Text auf Marktplatz-Seite ergänzen (\"Stamm-HW = bevorzugt, Pool = alle verfügbaren HW im Radius\"). Sprint AL oder Loop-28.",
+    status: "backlog", owner: "claudecode",
+    ref: "Loop-27 Triage · Sprint AL / Loop-28",
+  },
+  "d0ec6e39-1e6b-49df-945b-4c3c4cf446c9": {
+    cat: "feature", sev: "medium",
+    area: "Mieter-Melden-Wizard",
+    summary: "Hier fehlt die Mieternummer / Wohneinheit-Referenz.",
+    recommendation: "Migration loop23_tickets_wohneinheit_referenz ist live (Spalte existiert), UI-Feld fehlt noch im Wizard. Empfehlung: im Ticket-Wizard nach \"Adresse\" optionales Feld \"Wohneinheit / Mieternummer\" einfügen. Sprint AL.",
+    status: "backlog", owner: "claudecode",
+    ref: "Loop-27 Triage · Migration loop23_tickets_wohneinheit_referenz · Sprint AL",
+  },
+  "16d4d582-94d3-4daf-8ecc-00eeb57b85ea": {
+    cat: "bug", sev: "low",
+    area: "HW-Dashboard Begrüßung",
+    summary: "Warum steht hier \"Hallo Mieter\", wenn es ein Handwerker ist?",
+    recommendation: "Bereits gefixt via Sprint AJ: Rollen-Switcher + Begrüßung korrigiert. Heute live: \"Hallo, [Name]\" ohne Rollen-Präfix. Kein Handlungsbedarf — Feedback kam vor dem Fix.",
+    status: "done", owner: "erledigt",
+    ref: "Sprint AJ · verifiziert Loop-27",
+  },
 }
 
 // Heuristik-Fallback: wenn kein manuelles Verdict da ist, klassifizieren
