@@ -57,7 +57,7 @@ function Hero() {
       <div className="max-w-4xl mx-auto text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-accent/10 text-accent rounded-full text-sm font-medium mb-8">
           <span className="w-1.5 h-1.5 bg-accent rounded-full" />
-          Die erste Stundenauktion für Immobilien
+          Die intelligente Schadensmeldung für Immobilien
         </div>
 
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight tracking-tight mb-6">
@@ -68,7 +68,7 @@ function Hero() {
 
         <p className="text-lg sm:text-xl text-ink-secondary max-w-2xl mx-auto mb-10 leading-relaxed">
           Reparo füllt deinen Kalender automatisch mit Aufträgen in deiner Nähe — zu fairen Marktpreisen.
-          Verwalter bieten auf deine Stunden. Du arbeitest, wir organisieren.
+          Verwalter buchen dich direkt — zum Festpreis. Du arbeitest, wir organisieren.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -119,8 +119,8 @@ function Auktion4Schritte() {
     },
     {
       nr: 3,
-      titel: "Verwalter vergibt per Auktion",
-      text: "Stundensatz wird geboten. Der beste Mix aus Preis, Nähe und Bewertung gewinnt — keine Telefon­runde nötig.",
+      titel: "Verwalter erhält Festpreis-Angebot",
+      text: "System berechnet automatisch den Festpreis. Der passendste Handwerker erhält eine Einladung und nimmt an — keine Telefon­runde nötig.",
       icon: <IconAuction />,
       farbe: "#3D8B7A",
     },
@@ -137,7 +137,7 @@ function Auktion4Schritte() {
     <section className="py-20 px-6 bg-white">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">So funktioniert die Stundenauktion</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">So funktioniert Reparo</h2>
           <p className="text-ink-secondary text-lg max-w-2xl mx-auto">
             Vier Schritte vom Schaden zum erledigten Auftrag — automatisch, fair, schnell.
           </p>
@@ -277,8 +277,8 @@ function HandwerkerSection() {
               {[
                 { time: "08:00 – 10:00", task: "Wasserschaden Altbau", loc: "Schwabing · 1,2 km", status: "Bestätigt", color: "#3D8B7A" },
                 { time: "10:30 – 12:00", task: "Heizungsventil tauschen", loc: "Maxvorstadt · 0,8 km", status: "Bestätigt", color: "#3D8B7A" },
-                { time: "13:00 – 14:30", task: "Türschloss defekt", loc: "Schwabing · 0,3 km", status: "Neu via Auktion", color: "#C4956A" },
-                { time: "15:00 – 16:30", task: "Balkon-Abdichtung", loc: "Lehel · 2,1 km", status: "Auktion läuft", color: "#8C857B" },
+                { time: "13:00 – 14:30", task: "Türschloss defekt", loc: "Schwabing · 0,3 km", status: "Neue Einladung", color: "#C4956A" },
+                { time: "15:00 – 16:30", task: "Balkon-Abdichtung", loc: "Lehel · 2,1 km", status: "Wartet auf Annahme", color: "#8C857B" },
               ].map((slot, i) => (
                 <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-surface border border-line">
                   <div className="text-xs text-ink-muted w-24 flex-shrink-0 font-mono tabular-nums">{slot.time}</div>
@@ -309,15 +309,15 @@ function VerwalterSection() {
   const punkte = [
     {
       titel: "Marktpreise statt Bauchgefühl",
-      text: "Sehen Sie auf einen Blick, was eine Stunde Sanitär in Ihrem PLZ-Gebiet kostet — basierend auf echten Geboten der letzten Tage.",
+      text: "Sehen Sie auf einen Blick, was eine Stunde Sanitär in Ihrem PLZ-Gebiet kostet — basierend auf echten Festpreisen der letzten Tage.",
     },
     {
       titel: "Favoritenliste für Stamm-Handwerker",
-      text: "Ihre bewährten Profis erscheinen bei jeder neuen Meldung zuerst. Sie können auch direkt vergeben, ohne den Auktions-Prozess zu durchlaufen.",
+      text: "Ihre bewährten Profis erscheinen bei jeder neuen Meldung zuerst und werden direkt zum Festpreis eingeladen.",
     },
     {
       titel: "Express-Modus für Notfälle",
-      text: "Wasserschaden Sonntagnacht? Ein Klick — Aufträge mit Priorität „Dringend“ gehen sofort an verfügbare Handwerker im Umkreis, Auktion in Minuten.",
+      text: "Wasserschaden Sonntagnacht? Ein Klick — Aufträge mit Priorität „Dringend“ gehen sofort als Einladung an verfügbare Handwerker im Umkreis, Zusage in Minuten.",
     },
     {
       titel: "Reporting für Eigentümer",
@@ -332,7 +332,7 @@ function VerwalterSection() {
           <div className="bg-surface rounded-2xl border border-line shadow-lg p-6 order-2 md:order-1">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-semibold text-lg">Auftrag vergeben</h3>
-              <span className="text-xs px-2 py-1 bg-warm/10 text-warm rounded-full font-medium">Auktion aktiv</span>
+              <span className="text-xs px-2 py-1 bg-warm/10 text-warm rounded-full font-medium">Einladung gesendet</span>
             </div>
             <div className="bg-white rounded-lg p-4 mb-4 border border-line">
               <p className="text-sm font-medium mb-1">Wasserhahn tropft — Küche</p>
@@ -382,8 +382,8 @@ function VerwalterSection() {
               <span className="text-accent">Handwerker beauftragt.</span>
             </h2>
             <p className="text-ink-secondary text-lg leading-relaxed mb-8">
-              Keine Telefonrunden mehr. Die Stundenauktion zeigt Ihnen sofort verfügbare Handwerker mit transparenten
-              Preisen, Bewertungen und Entfernung. In Minuten statt Tagen — und Ihre Stamm-Handwerker bleiben zuerst dran.
+              Keine Telefonrunden mehr. Reparo zeigt Ihnen sofort verfügbare Handwerker mit transparenten
+              Festpreisen, Bewertungen und Entfernung. In Minuten statt Tagen — und Ihre Stamm-Handwerker bleiben zuerst dran.
             </p>
             <ul className="space-y-4">
               {punkte.map(p => (
@@ -557,8 +557,8 @@ function KIAutomation() {
       farbe: "#3D8B7A",
     },
     {
-      titel: "Smart-Auktionen",
-      text: "Matching nach Preis, Nähe, Verfügbarkeit und Bewertung — der beste Mix gewinnt, nicht nur der billigste.",
+      titel: "Smart-Matching",
+      text: "Matching nach Festpreis, Nähe, Verfügbarkeit und Bewertung — der passendste Handwerker erhält die Einladung.",
       icon: <IconAuction />,
       farbe: "#C4956A",
     },
@@ -629,7 +629,7 @@ function BeispielSzenarien() {
       kontext: "Beispiel-Vorgang",
       rolle: "Hausverwaltung",
       zitat:
-        "Wasserhahn-Meldung um 9:42, Auktion bis 10:00, Stamm-Handwerker zum besten Preis vergeben, Mieter informiert — alles vor der Mittagspause.",
+        "Wasserhahn-Meldung um 9:42, Festpreis um 9:45 berechnet, Stamm-Handwerker eingeladen und bestätigt, Mieter informiert — alles vor der Mittagspause.",
       farbe: "#3D8B7A",
     },
     {
@@ -748,7 +748,7 @@ function DualCTA() {
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold mb-3">Verwalter?</h2>
             <p className="text-white/75 mb-6">
-              Transparente Preise, schnelle Vergabe, zufriedene Mieter. Testen Sie die Stundenauktion.
+              Transparente Festpreise, schnelle Vergabe, zufriedene Mieter. Jetzt kostenlos testen.
             </p>
             <Link href="/registrierung" className="inline-block px-8 py-3.5 bg-white text-ink rounded-xl hover:bg-surface transition-colors font-semibold text-base">
               Kostenlos registrieren

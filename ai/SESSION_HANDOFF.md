@@ -2,16 +2,36 @@
 
 > **Zweck**: Zeitliche Lage. Was sich pro Session ändert.
 > Für die langlebige Konstitution → `REPARO_OPERATING_SYSTEM.md`.
-> **Letzte Review:** 27.05.2026, 22:30 lokal
+> **Letzte Review:** 09.06.2026, Health-Fix-Sprint
 
 ---
 
 ## TL;DR für die nächste Session
 
-- **Letzter Loop:** Loop-26 (Feedback-ID `d3495b20`) — gefixt + deployed
-- **Letzte Commits auf main:** `7186097` (Admin-Fallback Angebot-Seite), `aff1032` (auction/start einladungen-UPSERT)
-- **Nächster geplanter Sprint:** AL (Sichtbarkeits-Score V2 + Einnahmen-Seite ohne zeitslots)
+- **Letzter Loop:** Loop-27 (Health-Fix-Sprint, 5 Feedbacks vom 27.05. triagiert) — siehe `LOOP-ITERATION-27-2026-06-09.md`
+- **Letzte Aktion:** Supabase-Projekt war 13 Tage pausiert (Free-Tier Auto-Pause) → reaktiviert. Anti-Pause-Cron jetzt eingebaut.
+- **Nächster geplanter Sprint:** AL (Sichtbarkeits-Score V2 + Einnahmen-Seite ohne zeitslots + Marktplatz-Erklärtext + Wohneinheit-Feld)
 - **Größter offener Blocker:** Pricing-Konflikt (3 widersprüchliche Modelle live) — Lennart muss Option A/B/C/D wählen
+
+---
+
+## ⚠️ Supabase Free Tier — Auto-Pause
+
+**WICHTIG**: Das Supabase-Projekt (`gkojaogdzzyuboajwyom`, Free Tier)
+pausiert nach ~7 Tagen ohne aktive DB-Verbindungen automatisch.
+
+**Symptom**: Login-Spinner dreht endlos, Browser-Console zeigt
+`TypeError: Failed to fetch` auf `_refreshAccessToken`/`_callRefreshToken`,
+Network-Tab zeigt `503` auf `/auth/v1/token?grant_type=refresh_token`.
+
+**Sofort-Fix**:
+1. Supabase-MCP: `restore_project` mit `project_id: "gkojaogdzzyuboajwyom"`
+2. 30–60 Sekunden warten
+3. Im Browser `localStorage`, `sessionStorage` und Cookies clearen, dann neu laden
+
+**Dauerhafte Lösung (seit 09.06.2026 live)**:
+`/api/cron/keep-alive` pingt täglich (06:00 UTC via
+`netlify/functions/keep-alive.mts`) die DB an, um Auto-Pause zu verhindern.
 
 ---
 
@@ -23,6 +43,7 @@
 | Sprint AK | zeitslots-Cleanup + Marktplatz-Rebuild + Pool-Endpoint | ✅ live |
 | Loop-26 | `auction/start` legt `einladungen`-Zeilen mit Preis an | ✅ live (commit `aff1032`) |
 | Hotfix | Admin-Fallback auf Angebot-Seite (erster verfügbarer `empfohlener_preis` statt null) | ✅ live (commit `7186097`) |
+| Loop-27 / Health-Fix | Supabase reaktiviert + Anti-Pause-Cron, Demo-HW-Profile (Gewerk/Stundensatz/Koordinaten), Landing-Page Festpreis-Sprache, Resend-Health-Check mit `reason` | ✅ live |
 
 ### Offen / Nächste Prioritäten
 1. **Sprint AL** — Sichtbarkeits-Score V2 (Google-Cal-Verbindung + Antwort-Rate, nicht mehr Slots)
@@ -30,6 +51,7 @@
 3. **Loop-23 Feature** — Wohneinheits-Referenz im Verwalter-Ticket-Detail anzeigen (Migration live, UI fehlt)
 4. **HW-Reject-Flow** — Handwerker kann Auftrag ablehnen (Angebot-Seite hat nur Annehmen)
 5. **Voice-AI V2** — Outbound-Rückruf bei lückenhaften Tickets (Vapi-Account live, Spec ausstehend)
+6. **Loop-28** — Marktplatz-Erklärtext Stamm-HW vs. Pool-HW (aus Loop-27-Triage)
 
 ### Pending (extern blockiert)
 - `#4` Netlify-ENVs Impressum → Lennart einpflegen
@@ -67,8 +89,9 @@ Vollständige Analyse: `CRITICAL-Pricing-Konflikt-2026-05-24.md`.
 | Loop-23 | siehe `LOOP-ITERATION-23-2026-05-27.md` | 27.05. | ✅ Migration live, UI offen |
 | Loop-24 | siehe `LOOP-ITERATION-24-2026-05-27.md` | 27.05. | ✅ |
 | **Loop-26** | `d3495b20` | 27.05. | ✅ gefixt + deployed |
+| **Loop-27** | siehe `LOOP-ITERATION-27-2026-06-09.md` (5 Feedbacks vom 27.05., Supabase-Pause) | 09.06. | ✅ alle triagiert |
 
-→ **Nächster Loop = 27.** Cowork startet mit Query auf `feedback WHERE viewed = false`.
+→ **Nächster Loop = 28.** Cowork startet mit Query auf `feedback WHERE viewed = false`.
 
 ---
 
