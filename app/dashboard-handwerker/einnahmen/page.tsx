@@ -190,30 +190,10 @@ export default function EinnahmenDashboard() {
         </div>
       </div>
 
-      {/* CTA: Mehr Slots einstellen */}
-      {verfuegbareSlots.length < 5 && (
-        <div className="bg-accent/5 border border-accent/15 rounded-xl p-4 mb-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-sm font-semibold text-ink">
-                {verfuegbareSlots.length === 0
-                  ? "Starte jetzt — Stell deine ersten Zeitslots ein!"
-                  : `Noch ${5 - verfuegbareSlots.length} Slots bis zur optimalen Sichtbarkeit`
-                }
-              </div>
-              <div className="text-xs text-ink-muted mt-1">
-                Handwerker mit 5+ Slots erhalten 4x mehr Anfragen
-              </div>
-            </div>
-            <Link
-              href="/dashboard-handwerker/zeitslots"
-              className="text-xs font-bold bg-accent text-white px-4 py-2.5 rounded-xl hover:bg-accent-hover transition-colors flex-shrink-0"
-            >
-              + Zeitslot erstellen
-            </Link>
-          </div>
-        </div>
-      )}
+      {/* Loop-28 (Feedback 8e382074): "+ Zeitslot erstellen"-CTA entfernt —
+          widersprach dem Übergangs-Hinweis direkt darüber (alter
+          Slot-Marktplatz wird abgelöst, neue Aufträge laufen über Tickets).
+          CTA hätte aktiv zum Ausbau des abgekündigten Systems aufgefordert. */}
 
       {/* Offene Gebote */}
       {offeneGebote.length > 0 && (
