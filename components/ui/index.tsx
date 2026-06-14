@@ -17,7 +17,7 @@ import { TicketStatus, Prioritaet } from "@/types"
 // ============================================================
 // Status-Badge — primär hervorgehoben, eine Farbe pro Workflow-Stufe
 // ============================================================
-export function Badge({ status }: { status: TicketStatus }) {
+export function Badge({ status, mieterSicht = false }: { status: TicketStatus; mieterSicht?: boolean }) {
   const map: Record<TicketStatus, { label: string; bg: string; text: string; dot: string }> = {
     gemeldet:       { label: "Gemeldet",       bg: "bg-status-offen/10",       text: "text-status-offen",       dot: "bg-status-offen" },
     offen:          { label: "Offen",          bg: "bg-status-offen/10",       text: "text-status-offen",       dot: "bg-status-offen" },
@@ -28,7 +28,19 @@ export function Badge({ status }: { status: TicketStatus }) {
     erledigt:       { label: "Erledigt",       bg: "bg-status-erledigt/10",    text: "text-status-erledigt",    dot: "bg-status-erledigt" },
     reklamiert:     { label: "Reklamiert",     bg: "bg-danger/10",             text: "text-danger",             dot: "bg-danger" },
   }
-  const { label, bg, text, dot } = map[status]
+  // Quick-Win 3 (Audit Sprint AB2): Für Mieter dieselben Laien-Begriffe
+  // wie im Phasen-Indikator / Mini-Pipeline verwenden ("Handwerker wird
+  // gesucht" statt "Auktion", "Reparatur" statt "In Bearbeitung", "Fertig"
+  // statt "Erledigt"). Andere Rollen (Verwalter/Handwerker/Admin) sehen
+  // weiterhin die Geschäfts-Begriffe.
+  const mieterLabels: Partial<Record<TicketStatus, string>> = {
+    auktion: "Handwerker wird gesucht",
+    angebote_da: "Handwerker wird gesucht",
+    in_bearbeitung: "Reparatur",
+    erledigt: "Fertig",
+  }
+  const { label: defaultLabel, bg, text, dot } = map[status]
+  const label = mieterSicht ? (mieterLabels[status] ?? defaultLabel) : defaultLabel
   return (
     <span
       role="status"

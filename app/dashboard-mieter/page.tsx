@@ -219,7 +219,7 @@ export default function MieterDashboard() {
                           Diagnose
                         </span>
                       )}
-                      <Badge status={t.status} />
+                      <Badge status={t.status} mieterSicht />
                     </div>
 
                     {/* E: HW + Termin inline, sobald zugewiesen. Spart einen

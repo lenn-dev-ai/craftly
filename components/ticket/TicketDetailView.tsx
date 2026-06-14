@@ -62,17 +62,21 @@ function ValueScoreRing({ score }: { score: number }) {
 // C4: Phasen-Indikator für Standard-Tickets. Synchron zu dem Mini-Pipeline-
 // Block in app/dashboard-mieter/page.tsx — beide nutzen Mieter-Mental-
 // Model "gemeldet → auktion → reparatur → erledigt".
-const PHASEN: { key: string; label: string }[] = [
-  { key: "offen",          label: "Gemeldet" },
-  { key: "auktion",        label: "Auktion" },
-  { key: "in_bearbeitung", label: "Reparatur" },
-  { key: "erledigt",       label: "Erledigt" },
+// Quick-Win 3 (Audit Sprint AB2): Mieter sehen Laien-Begriffe
+// ("Handwerker wird gesucht" / "Fertig"), Verwalter/Handwerker behalten
+// die Geschäfts-Begriffe ("Auktion" / "Erledigt") — analog zu PIPELINE_STEPS
+// in app/dashboard-mieter/page.tsx (Audit-R5).
+const PHASEN: { key: string; label: string; labelMieter: string }[] = [
+  { key: "offen",          label: "Gemeldet",  labelMieter: "Gemeldet" },
+  { key: "auktion",        label: "Auktion",   labelMieter: "Handwerker wird gesucht" },
+  { key: "in_bearbeitung", label: "Reparatur", labelMieter: "Reparatur" },
+  { key: "erledigt",       label: "Erledigt",  labelMieter: "Fertig" },
 ]
 function phasenIndex(status: string): number {
   const idx = PHASEN.findIndex(p => p.key === status)
   return idx < 0 ? 0 : idx
 }
-function PhasenIndikator({ status }: { status: string }) {
+function PhasenIndikator({ status, mieterSicht = false }: { status: string; mieterSicht?: boolean }) {
   const aktiv = phasenIndex(status)
   return (
     <div className="mt-4 pt-4 border-t border-line">
@@ -85,7 +89,9 @@ function PhasenIndikator({ status }: { status: string }) {
       </div>
       <div className="flex justify-between text-[10px]">
         {PHASEN.map((p, i) => (
-          <span key={p.key} className={i <= aktiv ? "text-accent font-medium" : "text-ink-faint"}>{p.label}</span>
+          <span key={p.key} className={i <= aktiv ? "text-accent font-medium" : "text-ink-faint"}>
+            {mieterSicht ? p.labelMieter : p.label}
+          </span>
         ))}
       </div>
     </div>
@@ -535,7 +541,7 @@ export default function TicketDetailView() {
               <div className="flex items-center gap-2 flex-wrap mb-3">
                 {/* Reihenfolge: Status (primär gefüllt) → Prio (nur wenn !=normal) →
                     Typ (subtil) → Meta. Audit Punkt 4: nur EIN gefüllter Chip. */}
-                <Badge status={ticket.status} />
+                <Badge status={ticket.status} mieterSicht={istMieter} />
                 <PrioBadge prio={ticket.prioritaet} />
                 {ticket.ticket_typ && ticket.ticket_typ !== "standard" && (
                   <TypBadge typ={ticket.ticket_typ as "diagnose" | "projekt"} />
@@ -559,7 +565,7 @@ export default function TicketDetailView() {
               Projekt-Tickets bekommen die ausführlichere DiagnosePipeline
               weiter unten. Phasen orientieren sich am Mieter-Dashboard. */}
           {(!ticket.ticket_typ || ticket.ticket_typ === "standard") && (
-            <PhasenIndikator status={ticket.status} />
+            <PhasenIndikator status={ticket.status} mieterSicht={istMieter} />
           )}
 
           {/* Ticket meta */}
@@ -1017,7 +1023,7 @@ export default function TicketDetailView() {
                             currentUser?.early_adopter_bis &&
                             new Date(currentUser.early_adopter_bis).getTime() > Date.now()
                               ? 0
-                              : 0.05
+                              : Math.round(0.05 * ((ticket as { surge_faktor?: number }).surge_faktor ?? 1) * 10000) / 10000
                           }
                           earlyAdopterBis={currentUser?.early_adopter_bis ?? null}
                           compact
