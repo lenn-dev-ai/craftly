@@ -6,6 +6,7 @@ import {
   getVerdict,
   STATUS_LABEL,
   OWNER_LABEL,
+  type Verdict,
   type VerdictCat,
   type VerdictSev,
   type VerdictStatus,
@@ -30,6 +31,9 @@ export interface FeedbackRow {
 interface Props {
   row: FeedbackRow
   onMarkViewed: (id: string, viewed: boolean) => Promise<void>
+  // Live-Verdicts aus public.feedback_verdicts (Supabase), vom Dashboard
+  // geladen. Hat Vorrang vor lib/feedback-verdicts.ts (siehe getVerdict).
+  dbVerdicts?: Record<string, Verdict>
 }
 
 const SEV_BORDER: Record<VerdictSev, string> = {
@@ -94,8 +98,8 @@ function trimUrl(u: string): string {
     .replace("http://localhost:3000", "[local]")
 }
 
-export default function FeedbackVerdictCard({ row, onMarkViewed }: Props) {
-  const v = getVerdict(row.id, row.message)
+export default function FeedbackVerdictCard({ row, onMarkViewed, dbVerdicts }: Props) {
+  const v = getVerdict(row.id, row.message, dbVerdicts)
   const [busy, setBusy] = useState(false)
   const ts = new Date(row.created_at)
   const datum = ts.toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })

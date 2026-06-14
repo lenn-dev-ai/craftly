@@ -509,6 +509,17 @@ export function classifyHeuristisch(message: string | null | undefined): Verdict
   }
 }
 
-export function getVerdict(id: string, message?: string | null): Verdict {
+// dbVerdicts: Live-Verdicts aus public.feedback_verdicts (Supabase), vom
+// Dashboard geladen. Diese haben Vorrang vor der statischen VERDICTS-Map
+// hier im Code, damit der Auto-Loop (oder Cowork manuell via SQL) neue
+// Triage-Ergebnisse sofort im Dashboard sichtbar machen kann — ohne
+// Code-Änderung + Git-Push. Die statische Map bleibt als Snapshot/Backup
+// und Fallback für den Fall, dass die DB-Tabelle (noch) leer ist.
+export function getVerdict(
+  id: string,
+  message?: string | null,
+  dbVerdicts?: Record<string, Verdict> | null,
+): Verdict {
+  if (dbVerdicts && dbVerdicts[id]) return dbVerdicts[id]
   return VERDICTS[id] ?? classifyHeuristisch(message)
 }

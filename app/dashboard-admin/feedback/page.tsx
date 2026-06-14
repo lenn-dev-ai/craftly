@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase"
 import { useToast } from "@/components/Toast"
 import { MessageSquare, RefreshCw } from "lucide-react"
 import FeedbackVerdictCard, { type FeedbackRow } from "@/components/admin/FeedbackVerdictCard"
-import { getVerdict } from "@/lib/feedback-verdicts"
+import { getVerdict, type Verdict } from "@/lib/feedback-verdicts"
 
 // P3.3: Admin-Feedback-Dashboard (Next.js-Variante des
 // /feedback-dashboard.html-Standalones). RLS regelt Admin-only-Read.
@@ -43,6 +43,7 @@ const ROLLE_FILTER: { value: RolleFilter; label: string }[] = [
 export default function FeedbackPage() {
   const toast = useToast()
   const [rows, setRows] = useState<FeedbackRow[]>([])
+  const [dbVerdicts, setDbVerdicts] = useState<Record<string, Verdict>>({})
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("alle")
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>("alle")
@@ -99,6 +100,32 @@ export default function FeedbackPage() {
         }
       }),
     )
+
+    // Live-Verdicts aus public.feedback_verdicts (Supabase). Diese haben
+    // Vorrang vor der statischen Map in lib/feedback-verdicts.ts — so
+    // landen Loop-/Cowork-Triage-Ergebnisse ohne Code-Änderung + Git-Push
+    // direkt im Dashboard. Fehler hier sind nicht fatal (z.B. Tabelle
+    // noch leer / RLS) — Fallback ist die statische Map + Heuristik.
+    const { data: verdictRows, error: verdictError } = await supabase
+      .from("feedback_verdicts")
+      .select("feedback_id, cat, sev, area, summary, recommendation, status, owner, ref")
+    if (!verdictError && verdictRows) {
+      const map: Record<string, Verdict> = {}
+      for (const v of verdictRows as Record<string, unknown>[]) {
+        map[v.feedback_id as string] = {
+          cat: v.cat as Verdict["cat"],
+          sev: v.sev as Verdict["sev"],
+          area: v.area as string,
+          summary: v.summary as string,
+          recommendation: v.recommendation as string,
+          status: v.status as Verdict["status"],
+          owner: v.owner as Verdict["owner"],
+          ref: (v.ref as string | null) ?? undefined,
+        }
+      }
+      setDbVerdicts(map)
+    }
+
     setLastRefresh(new Date())
     setLoading(false)
   }, [toast])
@@ -126,7 +153,7 @@ export default function FeedbackPage() {
     for (const f of rows) {
       total++
       if (!f.viewed) unviewed++
-      const v = getVerdict(f.id, f.message)
+      const v = getVerdict(f.id, f.message, dbVerdicts)
       if (v.sev === "blocker") blocker++
       if (v.owner === "lennart") lennart++
       if (v.owner === "claudecode") claudecode++
@@ -134,16 +161,16 @@ export default function FeedbackPage() {
       if (v.cat !== "test") echt++
     }
     return { total, unviewed, blocker, lennart, claudecode, done, echt }
-  }, [rows])
+  }, [rows, dbVerdicts])
 
   const filtered = useMemo(() => rows.filter(f => {
-    const v = getVerdict(f.id, f.message)
+    const v = getVerdict(f.id, f.message, dbVerdicts)
     if (statusFilter === "unviewed" && f.viewed) return false
     if (statusFilter === "viewed" && !f.viewed) return false
     if (rolleFilter !== "alle" && f.rolle !== rolleFilter) return false
     if (ownerFilter !== "alle" && v.owner !== ownerFilter) return false
     return true
-  }), [rows, statusFilter, ownerFilter, rolleFilter])
+  }), [rows, dbVerdicts, statusFilter, ownerFilter, rolleFilter])
 
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto pt-16 md:pt-8 space-y-5">
@@ -209,17 +236,19 @@ export default function FeedbackPage() {
       ) : (
         <div className="space-y-3">
           {filtered.map(r => (
-            <FeedbackVerdictCard key={r.id} row={r} onMarkViewed={markViewed} />
+            <FeedbackVerdictCard key={r.id} row={r} onMarkViewed={markViewed} dbVerdicts={dbVerdicts} />
           ))}
         </div>
       )}
 
       {/* Doku-Note */}
       <div className="bg-warm-light border border-warm/30 rounded-xl p-3 text-xs text-warm-dark/90 leading-relaxed">
-        <strong>Verdict-Quelle:</strong> Manuell von Cowork erstellt für bekannte Feedbacks
-        (<code>lib/feedback-verdicts.ts</code>). Neue Einträge ohne manuelles Verdict
-        bekommen einen Heuristik-Fallback mit Status &bdquo;Wartet&ldquo; — der Cowork-Loop
-        klassifiziert sie beim nächsten Lauf (stündlich :17).
+        <strong>Verdict-Quelle:</strong> Live aus <code>public.feedback_verdicts</code> (Supabase) —
+        Cowork bzw. der Auto-Loop kann hier per SQL direkt schreiben, ohne Code-Änderung oder
+        Git-Push. Als Fallback dient ein Snapshot in <code>lib/feedback-verdicts.ts</code>.
+        Neue Einträge ganz ohne Verdict bekommen einen Heuristik-Fallback mit Status &bdquo;Wartet&ldquo;
+        — der Cowork-Loop klassifiziert sie beim nächsten Lauf (stündlich :17) und schreibt
+        das Ergebnis direkt in die Tabelle.
       </div>
     </div>
   )
