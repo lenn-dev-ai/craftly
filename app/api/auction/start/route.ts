@@ -14,6 +14,8 @@ import { sendEmailFireAndForget } from "@/lib/email/send"
 import { einladungEmail, zuschlagEmail } from "@/lib/email/templates"
 import { findeUndErzeugeStammAnfrage } from "@/lib/auction/stamm-routing"
 import { hasGoogleEventInRange } from "@/lib/google-cal/events"
+import { berechneAuslastung } from "@/lib/google-cal/auslastung"
+import { berechneAuftragswert } from "@/lib/pricing/auftragswert"
 
 const DEFAULT_NOTFALL_STUNDEN = 2
 const DEFAULT_STUNDENSATZ = 50
@@ -211,7 +213,19 @@ export async function POST(request: NextRequest) {
     if (blockedTop.length > 0) {
       console.log("[F1-google-check] blocked-Top-HW (Google-Event):", blockedTop, "→ chose:", top.id)
     }
-    const auftragswert = Math.round(top.stundensatz * DEFAULT_NOTFALL_STUNDEN * 100) / 100
+
+    // Sprint AM — Preisformel: Zeitdruck (surge_faktor, bestehend) +
+    // Fahrtweg (Anfahrtspauschale) + Auslastung (Google-Cal-Dichte,
+    // fail-open → neutral 1.0 ohne Verbindung).
+    const auslastung = await berechneAuslastung(top.id).catch(() => null)
+    const preisBreakdown = berechneAuftragswert({
+      stundensatz: top.stundensatz,
+      geschaetzteStunden: DEFAULT_NOTFALL_STUNDEN,
+      surgeFaktor: config.surgeFaktor,
+      entfernungKm: top.entfernungKm,
+      auslastung,
+    })
+    const auftragswert = preisBreakdown.gesamt
 
     // Synthetisches Angebot anlegen (status=angenommen)
     await supabase.from("angebote").upsert(
@@ -312,12 +326,13 @@ export async function POST(request: NextRequest) {
       entfernungKm: top.entfernungKm,
       fahrzeitMin: top.fahrzeitMin,
       auftragswert,
+      preisBreakdown,
       surgeFaktor: config.surgeFaktor,
       provisionRate: finalRate,
       provisionBetrag: calc.provisionBetrag,
       gesamt: calc.gesamt,
       isEarlyAdopter,
-      hinweis: `Auftragswert basiert auf ${top.stundensatz}€/h × ${DEFAULT_NOTFALL_STUNDEN}h. kosten_final kann angepasst werden.`,
+      hinweis: `Auftragswert: ${top.stundensatz}€/h × ${DEFAULT_NOTFALL_STUNDEN}h × Surge ${config.surgeFaktor} + Anfahrtspauschale ${preisBreakdown.anfahrtspauschale}€ (${preisBreakdown.fahrzeitMin} min), Auslastungs-Faktor ${preisBreakdown.auslastungsMultiplikator}. kosten_final kann angepasst werden.`,
     })
   }
 
@@ -430,6 +445,7 @@ export async function POST(request: NextRequest) {
       status: string
     }> = []
     const eingeladene: typeof handwerker = []
+    const imRadiusFuerPreis: Array<{ hw: NonNullable<typeof handwerker>[number]; entfernungKm: number }> = []
 
     for (const hw of handwerker ?? []) {
       const hwLat = hw.startort_lat ?? hw.lat
@@ -441,19 +457,35 @@ export async function POST(request: NextRequest) {
       )
       const radius = hw.radius_km ?? config.radiusKm
       if (distanz > radius) continue
+      imRadiusFuerPreis.push({ hw, entfernungKm: distanz })
+    }
 
-      // Preis berechnen: Stundensatz × h × Surge, min 80 €
+    // Sprint AM — Preisformel: Auslastung pro Kandidat parallel abfragen
+    // (Google-API-Calls), fail-open → null bei fehlendem Cal/Fehler.
+    const auslastungen = await Promise.all(
+      imRadiusFuerPreis.map(({ hw }) => berechneAuslastung(hw.id).catch(() => null)),
+    )
+
+    imRadiusFuerPreis.forEach(({ hw, entfernungKm }, i) => {
+      // Preis berechnen: Zeitdruck (Stundensatz × h × Surge) + Fahrtweg
+      // (Anfahrtspauschale) × Auslastung, min 80 €
       const stundensatz = hw.basis_stundensatz ?? hw.basis_preis ?? DEFAULT_STUNDENSATZ
-      const empfohlenerPreis = Math.max(80, Math.round(stundensatz * estimatedH * config.surgeFaktor))
+      const preisBreakdown = berechneAuftragswert({
+        stundensatz,
+        geschaetzteStunden: estimatedH,
+        surgeFaktor: config.surgeFaktor,
+        entfernungKm,
+        auslastung: auslastungen[i],
+      })
 
       einladungenBatch.push({
         ticket_id: ticketId,
         handwerker_id: hw.id,
-        empfohlener_preis: empfohlenerPreis,
+        empfohlener_preis: preisBreakdown.gesamt,
         status: "offen",
       })
       eingeladene.push(hw)
-    }
+    })
 
     // 1) einladungen-Zeilen anlegen (vor E-Mail, damit Angebot-Seite sofort lesen kann)
     if (einladungenBatch.length > 0) {
