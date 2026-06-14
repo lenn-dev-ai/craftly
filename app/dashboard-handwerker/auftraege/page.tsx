@@ -55,7 +55,7 @@ export default function AuftraegePage() {
             >
               <div className="flex items-center gap-3">
                 <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                  t.status === "erledigt" ? "bg-accent" : "bg-warm"
+                  t.status === "erledigt" ? "bg-accent" : t.status === "fertiggestellt_hw" ? "bg-status-auktion" : "bg-warm"
                 }`} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-ink truncate">{t.titel}</div>
@@ -67,6 +67,8 @@ export default function AuftraegePage() {
                 <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                   t.status === "erledigt"
                     ? "bg-accent/8 text-accent border border-accent/15"
+                    : t.status === "fertiggestellt_hw"
+                    ? "bg-status-auktion/10 text-status-auktion border border-status-auktion/15"
                     : t.status === "in_bearbeitung"
                     ? "bg-warm/10 text-warm border border-warm/15"
                     : t.status === "auktion"
@@ -74,6 +76,7 @@ export default function AuftraegePage() {
                     : "bg-line text-ink-secondary border border-line"
                 }`}>
                   {t.status === "erledigt" ? "Erledigt"
+                    : t.status === "fertiggestellt_hw" ? "Wartet auf Bestätigung"
                     : t.status === "in_bearbeitung" ? "In Arbeit"
                     : t.status === "auktion" ? "Auktion"
                     : t.status === "offen" ? "Offen"

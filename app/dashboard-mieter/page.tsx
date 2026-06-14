@@ -20,10 +20,13 @@ const PIPELINE_STEPS = [
 ]
 
 // Status-Übergang: offen → auktion → in_bearbeitung → erledigt
+// Sprint AL: "fertiggestellt_hw" (HW fertig, Verwalter prüft) bleibt
+// visuell auf der "Reparatur"-Stufe — erst "erledigt" springt weiter.
 function getStepIndex(status: string): number {
   if (status === "offen") return 0
   if (status === "auktion") return 1
   if (status === "in_bearbeitung") return 2
+  if (status === "fertiggestellt_hw") return 2
   if (status === "erledigt") return 3
   return 0
 }
@@ -32,6 +35,7 @@ function getEstimate(ticket: Ticket): string {
   const s = ticket.status
   const p = ticket.prioritaet
   if (s === "in_bearbeitung") return p === "notfall" ? "Heute" : "1–3 Tage"
+  if (s === "fertiggestellt_hw") return "Wird geprüft"
   if (s === "auktion") return p === "notfall" ? "Wenige Stunden" : "1–2 Tage bis Auswahl"
   if (s === "offen") return p === "notfall" ? "Innerhalb 24 Std" : "2–5 Tage"
   return ""

@@ -6,6 +6,7 @@ export type TicketStatus =
   | "auktion"
   | "angebote_da"     // Sprint U: Auktion abgelaufen, Verwalter muss vergeben
   | "in_bearbeitung"
+  | "fertiggestellt_hw" // Sprint AL: HW hat Arbeit abgeschlossen, Verwalter muss bestätigen
   | "erledigt"
   | "reklamiert"      // Sprint U: Mieter hat reklamiert
 export type Prioritaet = "planbar" | "zeitnah" | "notfall"
@@ -114,6 +115,9 @@ export interface Ticket {
   // eingetragen hat (statt vom Mieter selbst gemeldet). Treibt das
   // "📞 telefonisch"-Badge in der Verwalter-Ticket-Liste.
   eingetragen_von_verwalter?: boolean | null
+  // Sprint AL: Handwerker-Self-Service-Abschluss (Status fertiggestellt_hw)
+  hw_abschluss_kommentar?: string | null
+  hw_abschluss_am?: string | null
 }
 
 export interface Angebot {

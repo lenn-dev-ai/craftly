@@ -73,6 +73,10 @@ const PHASEN: { key: string; label: string; labelMieter: string }[] = [
   { key: "erledigt",       label: "Erledigt",  labelMieter: "Fertig" },
 ]
 function phasenIndex(status: string): number {
+  // Sprint AL: "fertiggestellt_hw" ist ein Zwischenstatus innerhalb der
+  // Reparatur-Phase (HW fertig, Verwalter prüft noch) — visuell bleibt die
+  // Phasen-Anzeige auf "Reparatur", erst "erledigt" springt weiter.
+  if (status === "fertiggestellt_hw") return PHASEN.findIndex(p => p.key === "in_bearbeitung")
   const idx = PHASEN.findIndex(p => p.key === status)
   return idx < 0 ? 0 : idx
 }
@@ -209,6 +213,11 @@ export default function TicketDetailView() {
   const [showKosten, setShowKosten] = useState(false)
   const [vergebenConfirm, setVergebenConfirm] = useState<string | null>(null)
   const [fotoUrl, setFotoUrl] = useState<string | null>(null)
+  // Sprint AL: Handwerker-Self-Service-Abschluss
+  const [showHwAbschluss, setShowHwAbschluss] = useState(false)
+  const [hwKommentar, setHwKommentar] = useState("")
+  const [hwAbschlussLoading, setHwAbschlussLoading] = useState(false)
+  const [hwZurueckweisenLoading, setHwZurueckweisenLoading] = useState(false)
   const chatRef = useRef<HTMLDivElement>(null)
   // F5: ActiveRole muss hier oben mitgezogen werden (Rules of Hooks),
   // damit isVerwalter/isHandwerker weiter unten den Layout-Kontext kennen.
@@ -415,6 +424,71 @@ export default function TicketDetailView() {
 
     show("Auftrag abgeschlossen.", "success")
     setShowKosten(false)
+    await load()
+  }
+
+  // Sprint AL — Handwerker-Self-Service-Abschluss (Feature #216)
+  // HW meldet seine Arbeit als fertig (optional mit Kommentar). Status
+  // wechselt zu "fertiggestellt_hw" — Verwalter sieht ein Bestätigungs-
+  // Banner und kann annehmen (-> erledigt, abschliessen()) oder
+  // zurückweisen (-> zurück zu in_bearbeitung).
+  async function hwAbschliessen() {
+    if (!currentUser) return
+    setHwAbschlussLoading(true)
+    const supabase = createClient()
+    const { error } = await supabase.from("tickets").update({
+      status: "fertiggestellt_hw",
+      hw_abschluss_kommentar: hwKommentar.trim() || null,
+      hw_abschluss_am: new Date().toISOString(),
+    }).eq("id", id)
+    if (error) {
+      show("Konnte nicht gemeldet werden: " + error.message, "error")
+      setHwAbschlussLoading(false)
+      return
+    }
+
+    const { error: nachrichtErr } = await supabase.from("nachrichten").insert({
+      ticket_id: id,
+      absender_id: currentUser.id,
+      text: `✓ Arbeit als abgeschlossen gemeldet.${hwKommentar.trim() ? ` Kommentar: ${hwKommentar.trim()}` : ""} Der Verwalter prüft den Abschluss.`,
+    })
+    if (nachrichtErr) {
+      console.warn("[hwAbschliessen] System-Nachricht fail:", nachrichtErr.message)
+    }
+
+    show("Als abgeschlossen gemeldet — der Verwalter wird benachrichtigt.", "success")
+    setShowHwAbschluss(false)
+    setHwKommentar("")
+    setHwAbschlussLoading(false)
+    await load()
+  }
+
+  // Verwalter weist den HW-Abschluss zurück: Status zurück auf
+  // in_bearbeitung, HW wird per System-Nachricht im Chat informiert.
+  async function hwAbschlussZurueckweisen() {
+    if (!currentUser) return
+    setHwZurueckweisenLoading(true)
+    const supabase = createClient()
+    const { error } = await supabase.from("tickets").update({
+      status: "in_bearbeitung",
+    }).eq("id", id)
+    if (error) {
+      show("Zurückweisen fehlgeschlagen: " + error.message, "error")
+      setHwZurueckweisenLoading(false)
+      return
+    }
+
+    const { error: nachrichtErr } = await supabase.from("nachrichten").insert({
+      ticket_id: id,
+      absender_id: currentUser.id,
+      text: `Der Abschluss wurde zurückgewiesen — bitte die Arbeit fortsetzen bzw. Rücksprache halten.`,
+    })
+    if (nachrichtErr) {
+      console.warn("[hwAbschlussZurueckweisen] System-Nachricht fail:", nachrichtErr.message)
+    }
+
+    show("Abschluss zurückgewiesen — Handwerker wurde informiert.", "success")
+    setHwZurueckweisenLoading(false)
     await load()
   }
 
@@ -717,7 +791,7 @@ export default function TicketDetailView() {
 
         {/* Nachträge — sichtbar für Projekt-Tickets während/nach Bearbeitung */}
         {ticket.ticket_typ === "projekt" &&
-          (ticket.status === "in_bearbeitung" || ticket.status === "erledigt") && (
+          (ticket.status === "in_bearbeitung" || ticket.status === "fertiggestellt_hw" || ticket.status === "erledigt") && (
           <NachtragsBox ticket={ticket} currentUser={currentUser} onReload={load} />
         )}
 
@@ -902,6 +976,78 @@ export default function TicketDetailView() {
               )
             })()}
           </div>
+        )}
+
+        {/* Sprint AL — Handwerker-Self-Service-Abschluss (Feature #216):
+            HW meldet Arbeit als fertig, optional mit Kommentar. */}
+        {isHandwerker && ticket.status === "in_bearbeitung" && (
+          <Card className="mb-6 bg-white border border-line">
+            {!showHwAbschluss ? (
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <h3 className="text-sm font-semibold text-ink">Arbeit erledigt?</h3>
+                  <p className="text-xs text-ink-muted mt-0.5">Melde dem Verwalter, dass du mit der Reparatur fertig bist.</p>
+                </div>
+                <Button size="sm" onClick={() => setShowHwAbschluss(true)}>Arbeit abgeschlossen melden</Button>
+              </div>
+            ) : (
+              <div>
+                <h3 className="text-sm font-semibold text-ink mb-2">Arbeit abgeschlossen melden</h3>
+                <Input
+                  label="Kommentar für den Verwalter (optional)"
+                  type="text"
+                  placeholder="z.B. Dichtung ersetzt, Leitung gespült"
+                  value={hwKommentar}
+                  onChange={e => setHwKommentar(e.target.value)}
+                />
+                <div className="flex gap-2 mt-3">
+                  <Button onClick={hwAbschliessen} disabled={hwAbschlussLoading}>
+                    {hwAbschlussLoading ? "Wird gemeldet..." : "Melden"}
+                  </Button>
+                  <button onClick={() => setShowHwAbschluss(false)} className="text-sm text-ink-muted hover:text-ink-secondary px-3">
+                    Abbrechen
+                  </button>
+                </div>
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* Sprint AL — Verwalter-Bestätigungs-Banner: HW hat Arbeit als
+            abgeschlossen gemeldet, Verwalter muss bestätigen oder
+            zurückweisen. */}
+        {isVerwalter && ticket.status === "fertiggestellt_hw" && !showKosten && (
+          <Card className="mb-6 border-status-auktion/30 bg-status-auktion/5">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-status-auktion/15 flex items-center justify-center flex-shrink-0 text-status-auktion font-bold">!</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-ink">Handwerker meldet: Arbeit abgeschlossen</div>
+                {ticket.hw_abschluss_kommentar && (
+                  <p className="text-xs text-ink-secondary mt-1 italic">„{ticket.hw_abschluss_kommentar}“</p>
+                )}
+                {ticket.hw_abschluss_am && (
+                  <p className="text-[10px] text-ink-faint mt-1">
+                    Gemeldet am {new Date(ticket.hw_abschluss_am).toLocaleDateString("de", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                  </p>
+                )}
+                <p className="text-xs text-ink-muted mt-2">Bitte prüfen und bestätigen — oder zurückweisen, falls noch etwas fehlt.</p>
+                <div className="flex gap-2 mt-3">
+                  <Button size="sm" onClick={() => setShowKosten(true)}>Bestätigen & Abschließen</Button>
+                  <button onClick={hwAbschlussZurueckweisen} disabled={hwZurueckweisenLoading} className="text-xs text-ink-muted hover:text-danger px-3 disabled:opacity-50">
+                    {hwZurueckweisenLoading ? "..." : "Zurückweisen"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Sprint AL — Mieter-Info: HW hat Arbeit gemeldet, wird geprüft. */}
+        {istMieter && ticket.status === "fertiggestellt_hw" && (
+          <Card className="mb-6 border-status-auktion/30 bg-status-auktion/5">
+            <div className="text-sm font-semibold text-ink">Dein Handwerker hat die Arbeit als abgeschlossen gemeldet</div>
+            <p className="text-xs text-ink-muted mt-1">Dein Verwalter prüft den Abschluss — du wirst informiert, sobald alles final ist.</p>
+          </Card>
         )}
 
         {/* Handwerker einladen (Verwalter, offen) */}
