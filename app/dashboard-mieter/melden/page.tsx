@@ -564,9 +564,9 @@ export default function MeldenPage() {
                 Jetzt klar gelabelt: nur Starttext, der Mieter ergänzt selbst. */}
             <div className="mb-6">
               <p className="text-xs text-ink-muted mb-1">
-                Hilfe für den Anfang <span className="text-ink-faint font-normal">(optional)</span>
+                Hilfe für den Anfang <span className="text-ink-muted font-normal">(optional)</span>
               </p>
-              <p className="text-[11px] text-ink-faint mb-2">
+              <p className="text-[11px] text-ink-muted mb-2">
                 Setzt einen Beispieltext ein, den du danach noch anpasst.
               </p>
               <div className="flex flex-wrap gap-2">
@@ -671,7 +671,7 @@ export default function MeldenPage() {
             </Card>
 
             {/* KI-1: Disclaimer dass die Schätzung unverbindlich ist */}
-            <p className="text-[11px] text-ink-faint mb-4 leading-relaxed">
+            <p className="text-[11px] text-ink-muted mb-4 leading-relaxed">
               Unverbindliche Ersteinschätzung — der finale Preis und die genaue
               Bearbeitungszeit werden vom Handwerker nach Sichtung bestimmt.
             </p>
@@ -789,7 +789,7 @@ export default function MeldenPage() {
                     Doch meine Wohnung verwenden
                   </button>
                 ) : (
-                  <p className="mt-2 text-[11px] text-ink-faint">
+                  <p className="mt-2 text-[11px] text-ink-muted">
                     Tipp:{" "}
                     <button
                       type="button"
@@ -806,7 +806,7 @@ export default function MeldenPage() {
 
             <div className="mb-4">
               <label className="text-xs text-ink-muted mb-1.5 block font-medium">
-                Wohnung / Raum <span className="text-ink-faint font-normal">(optional)</span>
+                Wohnung / Raum <span className="text-ink-muted font-normal">(optional)</span>
               </label>
               <input
                 value={form.wohnung}
@@ -821,7 +821,7 @@ export default function MeldenPage() {
                 Beständen, Tickets sofort zu matchen. */}
             <div className="mb-4">
               <label className="text-xs text-ink-muted mb-1.5 block font-medium">
-                Mieter-Nr. / Wohneinheits-Nr. <span className="text-ink-faint font-normal">(falls bekannt)</span>
+                Mieter-Nr. / Wohneinheits-Nr. <span className="text-ink-muted font-normal">(falls bekannt)</span>
               </label>
               <input
                 value={form.wohneinheit_referenz}
@@ -829,7 +829,7 @@ export default function MeldenPage() {
                 placeholder="z.B. M-1234 oder WE-12-A — steht meistens im Mietvertrag"
                 className="w-full bg-white border border-line rounded-xl px-4 py-3 text-sm text-ink placeholder-[#B5AEA4] focus:outline-none focus:border-accent/50"
               />
-              <p className="text-[11px] text-ink-faint mt-1">
+              <p className="text-[11px] text-ink-muted mt-1">
                 Wenn deine Verwaltung mit Nummern arbeitet, kann sie deine Meldung damit sofort zuordnen.
               </p>
             </div>

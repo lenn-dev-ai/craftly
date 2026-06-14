@@ -11,11 +11,18 @@ import { haversineKm, schaetzeFahrzeitMin } from "@/lib/distance"
 import { calculateCommission } from "@/lib/pricing/commission"
 import { fuegeTicketZuTagesplan } from "@/lib/auction/routen-planung-sync"
 import { sendEmailFireAndForget } from "@/lib/email/send"
-import { einladungEmail, zuschlagEmail } from "@/lib/email/templates"
+import { zuschlagEmail } from "@/lib/email/templates"
 import { findeUndErzeugeStammAnfrage } from "@/lib/auction/stamm-routing"
 import { hasGoogleEventInRange } from "@/lib/google-cal/events"
 import { berechneAuslastung } from "@/lib/google-cal/auslastung"
 import { berechneAuftragswert } from "@/lib/pricing/auftragswert"
+import {
+  starteDirektvergabe,
+  fuehreMassInviteAus,
+  type DirektvergabeTicketKontext,
+  DIREKTVERGABE_TIMEOUT_MIN,
+  MAX_ESKALATIONEN,
+} from "@/lib/auction/direktvergabe"
 
 const DEFAULT_NOTFALL_STUNDEN = 2
 const DEFAULT_STUNDENSATZ = 50
@@ -378,7 +385,61 @@ export async function POST(request: NextRequest) {
     })
   }
 
-  // Kein Stamm-HW gefunden → normale Marktplatz-Auktion
+  // Kein Stamm-HW gefunden → Sprint AM Phase 2: generalisierte
+  // sequenzielle Direktvergabe. Statt sofort eine Mass-Invite-Auktion zu
+  // öffnen, wird die Kandidatenliste einmal berechnet (Preisformel +
+  // Smart-Score je Kandidat) und der Top-Kandidat zuerst angefragt. Nur
+  // wenn es im Radius keine Kandidaten gibt oder alle Top-10 laut
+  // Google-Cal im relevanten Zeitfenster blockiert sind, öffnet sich
+  // sofort die bisherige Mass-Invite-Auktion (Fallback).
+  const ticketKontext: DirektvergabeTicketKontext = {
+    id: ticket.id,
+    titel: ticket.titel,
+    beschreibung: ticket.beschreibung,
+    gewerk: ticket.gewerk,
+    dringlichkeit,
+    einsatzort_lat: ticket.einsatzort_lat,
+    einsatzort_lng: ticket.einsatzort_lng,
+    einsatzort_adresse: ticket.einsatzort_adresse,
+  }
+
+  const direktvergabe = await starteDirektvergabe(ticketKontext)
+
+  if (direktvergabe.modus === "direktvergabe") {
+    // Dringlichkeit + Surge persistieren, Ticket bleibt 'offen' — es
+    // wartet auf die Reaktion des angefragten Kandidaten (Annahme über
+    // /api/einladungen/[id]/annehmen, Ablehnung/Timeout eskaliert über
+    // den Cron "direktvergabe-eskalation" zum nächsten Kandidaten).
+    const { error: updateErr } = await supabase
+      .from("tickets")
+      .update({
+        dringlichkeit,
+        surge_faktor: config.surgeFaktor,
+      })
+      .eq("id", ticketId)
+    if (updateErr) {
+      return NextResponse.json({ error: updateErr.message }, { status: 500 })
+    }
+
+    const top = direktvergabe.kandidaten[direktvergabe.index]
+    return NextResponse.json({
+      ok: true,
+      ticketId,
+      dringlichkeit,
+      modus: "direktvergabe",
+      handwerkerId: top.hw_id,
+      smartScore: top.score,
+      empfohlenerPreis: top.preis,
+      kandidatenAnzahl: direktvergabe.kandidaten.length,
+      timeoutMin: DIREKTVERGABE_TIMEOUT_MIN[dringlichkeit],
+      hinweis: `Direktanfrage an den am besten passenden Handwerker gesendet (Score ${top.score}). Antwortet er nicht innerhalb von ${DIREKTVERGABE_TIMEOUT_MIN[dringlichkeit]} Minuten oder lehnt ab, wird automatisch der nächste Kandidat angefragt (max. ${MAX_ESKALATIONEN} Versuche), danach öffnet die Marktplatz-Auktion.`,
+    })
+  }
+
+  // direktvergabe.modus === "mass_invite": keine Kandidaten im Radius
+  // oder alle Top-10 laut Google-Cal blockiert → normale
+  // Marktplatz-Auktion (bisheriges Verhalten, jetzt über
+  // fuehreMassInviteAus() in lib/auction/direktvergabe.ts).
   const ende = berechneAuktionsEnde(start, config.auktionsDauerStunden)
 
   const { error: updateErr } = await supabase
@@ -397,128 +458,9 @@ export async function POST(request: NextRequest) {
 
   // Fire-and-forget: Einladungs-Zeilen (einladungen-Tabelle) anlegen +
   // Einladungs-Mails an passende Handwerker im Radius verschicken.
-  //
-  // Loop-26-Fix (27.05.2026): Vorher wurden nur E-Mails geschickt, aber
-  // keine einladungen-Zeilen angelegt. Die Angebot-Seite liest
-  // einladungen.empfohlener_preis — ohne Zeile war der Preis immer null
-  // und der HW konnte den Auftrag nicht annehmen.
-  //
-  // Preis-Formel: (basis_stundensatz ?? basis_preis ?? 50) × h × surge
-  // Estimated Stunden: zeitnah=2, planbar=3. Minimum 80 €.
-  const ESTIMATED_STUNDEN: Record<string, number> = { zeitnah: 2, planbar: 3 }
-  const estimatedH = ESTIMATED_STUNDEN[dringlichkeit] ?? 2
-
-  void (async () => {
-    let query = supabase
-      .from("profiles")
-      .select("id, email, name, gewerk, startort_lat, startort_lng, lat, lng, radius_km, basis_stundensatz, basis_preis")
-      .eq("rolle", "handwerker")
-    if (ticket.gewerk && ticket.gewerk !== "allgemein") {
-      query = query.ilike("gewerk", `%${ticket.gewerk}%`)
-    }
-    const { data: handwerker } = await query.returns<Array<{
-      id: string
-      email: string | null
-      name: string | null
-      gewerk: string | null
-      startort_lat: number | null
-      startort_lng: number | null
-      lat: number | null
-      lng: number | null
-      radius_km: number | null
-      basis_stundensatz: number | null
-      basis_preis: number | null
-    }>>()
-
-    const auktionEndeFormatiert = ende
-      ? ende.toLocaleString("de-DE", {
-          day: "2-digit", month: "long", year: "numeric",
-          hour: "2-digit", minute: "2-digit",
-        })
-      : "—"
-
-    // HW im Radius filtern + einladungen-Batch vorbereiten
-    const einladungenBatch: Array<{
-      ticket_id: string
-      handwerker_id: string
-      empfohlener_preis: number
-      status: string
-    }> = []
-    const eingeladene: typeof handwerker = []
-    const imRadiusFuerPreis: Array<{ hw: NonNullable<typeof handwerker>[number]; entfernungKm: number }> = []
-
-    for (const hw of handwerker ?? []) {
-      const hwLat = hw.startort_lat ?? hw.lat
-      const hwLng = hw.startort_lng ?? hw.lng
-      if (hwLat == null || hwLng == null) continue
-      const distanz = haversineKm(
-        hwLat, hwLng,
-        ticket.einsatzort_lat as number, ticket.einsatzort_lng as number,
-      )
-      const radius = hw.radius_km ?? config.radiusKm
-      if (distanz > radius) continue
-      imRadiusFuerPreis.push({ hw, entfernungKm: distanz })
-    }
-
-    // Sprint AM — Preisformel: Auslastung pro Kandidat parallel abfragen
-    // (Google-API-Calls), fail-open → null bei fehlendem Cal/Fehler.
-    const auslastungen = await Promise.all(
-      imRadiusFuerPreis.map(({ hw }) => berechneAuslastung(hw.id).catch(() => null)),
-    )
-
-    imRadiusFuerPreis.forEach(({ hw, entfernungKm }, i) => {
-      // Preis berechnen: Zeitdruck (Stundensatz × h × Surge) + Fahrtweg
-      // (Anfahrtspauschale) × Auslastung, min 80 €
-      const stundensatz = hw.basis_stundensatz ?? hw.basis_preis ?? DEFAULT_STUNDENSATZ
-      const preisBreakdown = berechneAuftragswert({
-        stundensatz,
-        geschaetzteStunden: estimatedH,
-        surgeFaktor: config.surgeFaktor,
-        entfernungKm,
-        auslastung: auslastungen[i],
-      })
-
-      einladungenBatch.push({
-        ticket_id: ticketId,
-        handwerker_id: hw.id,
-        empfohlener_preis: preisBreakdown.gesamt,
-        status: "offen",
-      })
-      eingeladene.push(hw)
-    })
-
-    // 1) einladungen-Zeilen anlegen (vor E-Mail, damit Angebot-Seite sofort lesen kann)
-    if (einladungenBatch.length > 0) {
-      const { error: einlErr } = await supabase
-        .from("einladungen")
-        .upsert(einladungenBatch, { onConflict: "ticket_id,handwerker_id" })
-      if (einlErr) {
-        console.error("[auction/start] einladungen-Upsert fehlgeschlagen:", einlErr.message)
-      }
-    }
-
-    // 2) E-Mails verschicken
-    for (const hw of eingeladene) {
-      if (!hw.email) continue
-      const { subject, html } = einladungEmail({
-        handwerkerName: hw.name || "Handwerker",
-        ticketTitel: ticket.titel,
-        ticketBeschreibung: ticket.beschreibung || "",
-        gewerk: ticket.gewerk || "allgemein",
-        dringlichkeit,
-        einsatzort: ticket.einsatzort_adresse || "",
-        distanzKm: haversineKm(
-          hw.startort_lat ?? hw.lat ?? 0,
-          hw.startort_lng ?? hw.lng ?? 0,
-          ticket.einsatzort_lat as number,
-          ticket.einsatzort_lng as number,
-        ),
-        auktionEnde: auktionEndeFormatiert,
-        ticketId: ticket.id,
-      })
-      sendEmailFireAndForget({ to: hw.email, subject, html })
-    }
-  })().catch(err => console.error("[Email] Einladungs-Mails fehlgeschlagen:", err))
+  void fuehreMassInviteAus(ticketKontext, ende).catch(err =>
+    console.error("[Email] Einladungs-Mails fehlgeschlagen:", err),
+  )
 
   return NextResponse.json({
     ok: true,

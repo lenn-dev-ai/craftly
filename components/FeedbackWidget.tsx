@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { useToast } from "@/components/Toast"
 import { MessageSquare, X } from "lucide-react"
 import { authFetch } from "@/lib/auth/clientFetch"
+import { useFocusTrap } from "@/lib/use-focus-trap"
 
 // Floating Feedback-Button für Beta-User-Loop.
 //
@@ -42,6 +43,10 @@ export function FeedbackWidget() {
     })
     return () => { aktiv = false }
   }, [pathname])
+
+  // A11Y-Cleanup (Audit #82): Focus-Trap im Feedback-Modal, solange `open`.
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, open)
 
   const hidden = HIDDEN_ON.some(p =>
     typeof p === "string" ? pathname === p : p.test(pathname),
@@ -121,6 +126,7 @@ export function FeedbackWidget() {
           aria-label="Feedback geben"
         >
           <div
+            ref={dialogRef}
             className="w-full max-w-md bg-white rounded-2xl shadow-xl"
             onClick={e => e.stopPropagation()}
           >

@@ -1,7 +1,8 @@
 "use client"
 
 import { AlertTriangle, AlertCircle, CheckCircle2, Info, RefreshCw, X } from "lucide-react"
-import type { ReactNode } from "react"
+import { useRef, type ReactNode } from "react"
+import { useFocusTrap } from "@/lib/use-focus-trap"
 
 // Sprint M Extension (Designer-Audit) — State-Design-System.
 // "Loading / Errors / Empty States / Warnings / Konflikte / Eskalationen
@@ -167,6 +168,12 @@ export function ConflictModal({
   secondaryLabel?: string
   onSecondary: () => void
 }) {
+  // A11Y-Cleanup (Audit #82): Focus-Trap aktivieren solange das Modal
+  // offen ist — kreist Tab/Shift+Tab im Dialog und stellt beim Schließen
+  // den vorherigen Fokus wieder her.
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, open)
+
   if (!open) return null
   return (
     <div
@@ -175,7 +182,7 @@ export function ConflictModal({
       aria-modal="true"
       aria-labelledby="conflict-modal-title"
     >
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+      <div ref={dialogRef} className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
         <div className="flex items-start gap-3 mb-4">
           <AlertTriangle className="w-5 h-5 text-warm-dark flex-shrink-0 mt-0.5" aria-hidden="true" />
           <h2 id="conflict-modal-title" className="text-base font-semibold text-ink">{title}</h2>

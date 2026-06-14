@@ -130,7 +130,7 @@ export default function FeedbackVerdictCard({ row, onMarkViewed, dbVerdicts }: P
             <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded bg-surface-muted text-ink-muted">viewed</span>
           )}
         </div>
-        <span className="text-[11px] text-ink-faint whitespace-nowrap" title={ts.toISOString()}>
+        <span className="text-[11px] text-ink-muted whitespace-nowrap" title={ts.toISOString()}>
           {datum} · vor {ago(ts)}
         </span>
       </div>

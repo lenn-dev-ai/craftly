@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reparo · Pricing-Calculator</title>
+<style>
+  :root {
+    --primary: #1a7a5a;
+    --primary-dark: #0f4d39;
+    --primary-light: #c8e6d8;
+    --cream: #faf7f0;
+    --sand: #ede6d3;
+    --gold: #d4a93b;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --white: #ffffff;
+    --shadow: 0 4px 16px rgba(15, 77, 57, 0.10);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--primary-dark);
+    border-bottom: 4px solid var(--gold);
+    padding: 20px 24px;
+    margin: -32px -24px 32px -24px;
+  }
+  .logo {
+    font-family: Georgia, serif;
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--cream);
+    letter-spacing: 4px;
+    margin: 0;
+  }
+  .tagline {
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* INTRO */
+  .intro {
+    margin-bottom: 32px;
+  }
+  .intro h1 {
+    font-family: Georgia, serif;
+    font-size: 32px;
+    color: var(--primary-dark);
+    margin: 0 0 8px 0;
+  }
+  .intro p {
+    color: var(--text-muted);
+    font-size: 15px;
+    margin: 0;
+  }
+
+  /* SLIDER CARD */
+  .slider-card {
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+  .slider-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 16px;
+  }
+  .slider-label .label {
+    font-size: 14px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 600;
+  }
+  .slider-label .value {
+    font-family: Georgia, serif;
+    font-size: 42px;
+    font-weight: bold;
+    color: var(--primary);
+  }
+  .slider-label .value-unit {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-left: 4px;
+  }
+  input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    background: var(--sand);
+    border-radius: 4px;
+    outline: none;
+    margin: 12px 0;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    background: var(--gold);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid var(--primary-dark);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+    background: var(--gold);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid var(--primary-dark);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  .slider-ticks {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* COST DISPLAY */
+  .costs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .cost-card {
+    background: var(--primary-dark);
+    color: var(--cream);
+    padding: 24px;
+    border-radius: 12px;
+    text-align: center;
+  }
+  .cost-card.highlight {
+    background: var(--primary);
+  }
+  .cost-label {
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .cost-value {
+    font-family: Georgia, serif;
+    font-size: 36px;
+    font-weight: bold;
+    color: var(--cream);
+    margin: 0;
+  }
+  .cost-sub {
+    font-size: 12px;
+    color: var(--primary-light);
+    margin-top: 4px;
+  }
+
+  /* TIER RECO */
+  .tier-reco {
+    background: var(--gold);
+    color: var(--primary-dark);
+    padding: 16px 24px;
+    border-radius: 12px;
+    margin: 16px 0 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .tier-reco .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+  .tier-reco .name {
+    font-family: Georgia, serif;
+    font-size: 22px;
+    font-weight: bold;
+    margin: 0;
+  }
+  .tier-reco .why {
+    font-size: 13px;
+    margin-top: 2px;
+  }
+
+  /* TIERS COMPARISON */
+  .tiers {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+  .tier {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 20px;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    box-shadow: var(--shadow);
+  }
+  .tier.active {
+    border-color: var(--primary);
+    background: var(--primary-light);
+  }
+  .tier-name {
+    font-family: Georgia, serif;
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--primary-dark);
+    margin: 0 0 4px 0;
+  }
+  .tier-range {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .tier-price {
+    font-family: Georgia, serif;
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--primary);
+    margin-bottom: 2px;
+  }
+  .tier-unit {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* SAVINGS BOX */
+  .savings {
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .savings h3 {
+    font-family: Georgia, serif;
+    color: var(--primary-dark);
+    margin: 0 0 4px 0;
+    font-size: 20px;
+  }
+  .savings-note {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-bottom: 16px;
+  }
+  .savings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+  .savings-item {
+    text-align: center;
+    padding: 12px;
+    background: var(--sand);
+    border-radius: 8px;
+  }
+  .savings-item .amount {
+    font-family: Georgia, serif;
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--primary);
+  }
+  .savings-item .desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .savings-total {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px dashed var(--primary-light);
+    text-align: center;
+  }
+  .savings-total .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  .savings-total .amount {
+    font-family: Georgia, serif;
+    font-size: 32px;
+    font-weight: bold;
+    color: var(--gold);
+    margin-top: 4px;
+  }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 24px 0;
+    margin-top: 16px;
+  }
+  .footer-cta {
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: var(--primary-dark);
+    font-weight: 600;
+  }
+
+  /* MOBILE */
+  @media (max-width: 600px) {
+    .costs, .tiers, .savings-grid { grid-template-columns: 1fr; }
+    .intro h1 { font-size: 24px; }
+    .slider-label .value { font-size: 32px; }
+    .cost-value { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">REPARO</div>
+  <div class="tagline">Pricing-Calculator</div>
+</div>
+
+<div class="container">
+
+  <div class="intro">
+    <h1>Was kostet Reparo für Ihre Verwaltung?</h1>
+    <p>Wählen Sie Ihre Wohnungs-Anzahl. Sie sehen sofort die monatlichen und jährlichen Kosten plus eine konservative Schätzung Ihrer Ersparnis.</p>
+  </div>
+
+  <!-- SLIDER -->
+  <div class="slider-card">
+    <div class="slider-label">
+      <div class="label">Wohnungs-Bestand</div>
+      <div>
+        <span class="value" id="wohnung-count">200</span>
+        <span class="value-unit">Wohnungen</span>
+      </div>
+    </div>
+    <input type="range" id="wohnung-slider" min="10" max="2000" value="200" step="10">
+    <div class="slider-ticks">
+      <span>10</span>
+      <span>500</span>
+      <span>1.000</span>
+      <span>1.500</span>
+      <span>2.000</span>
+    </div>
+
+    <!-- COSTS -->
+    <div class="costs">
+      <div class="cost-card">
+        <div class="cost-label">Pro Monat</div>
+        <div class="cost-value" id="cost-monthly">178 €</div>
+        <div class="cost-sub" id="cost-monthly-detail">200 × 0,89 €</div>
+      </div>
+      <div class="cost-card highlight">
+        <div class="cost-label">Pro Jahr</div>
+        <div class="cost-value" id="cost-yearly">2.136 €</div>
+        <div class="cost-sub">monatlich kündbar</div>
+      </div>
+    </div>
+
+    <!-- TIER RECO -->
+    <div class="tier-reco" id="tier-reco">
+      <div>
+        <div class="label">Empfohlen für Sie</div>
+        <div class="name" id="tier-name">Pro</div>
+        <div class="why" id="tier-why">51–500 Wohnungen · bester Preis pro Wohnung</div>
+      </div>
+    </div>
+
+    <!-- TIERS -->
+    <div class="tiers">
+      <div class="tier" id="tier-starter">
+        <div class="tier-name">Starter</div>
+        <div class="tier-range">bis 50 Wohnungen</div>
+        <div class="tier-price">1,29 €</div>
+        <div class="tier-unit">/ Wohnung / Monat</div>
+      </div>
+      <div class="tier" id="tier-pro">
+        <div class="tier-name">Pro</div>
+        <div class="tier-range">51–500 Wohnungen</div>
+        <div class="tier-price">0,89 €</div>
+        <div class="tier-unit">/ Wohnung / Monat</div>
+      </div>
+      <div class="tier" id="tier-enterprise">
+        <div class="tier-name">Enterprise</div>
+        <div class="tier-range">500+ Wohnungen</div>
+        <div class="tier-price">Custom</div>
+        <div class="tier-unit">Volumen-Rabatte</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVINGS -->
+  <div class="savings">
+    <h3>Konservative Ersparnis-Schätzung pro Jahr</h3>
+    <div class="savings-note">Annahmen für die Beispielrechnung — Ihre echten Werte ermitteln wir gemeinsam in der Demo.</div>
+    <div class="savings-grid">
+      <div class="savings-item">
+        <div class="amount" id="save-time">6.240 €</div>
+        <div class="desc">Zeitersparnis (Annahme 3h/Woche × 40 €)</div>
+      </div>
+      <div class="savings-item">
+        <div class="amount" id="save-price">4.500 €</div>
+        <div class="desc">Bessere HW-Preise (Annahme 12% Ø)</div>
+      </div>
+      <div class="savings-item">
+        <div class="amount" id="save-rec">1.800 €</div>
+        <div class="desc">Weniger Reklamationen (Annahme 30%)</div>
+      </div>
+    </div>
+    <div class="savings-total">
+      <div class="label">Geschätzte Netto-Ersparnis</div>
+      <div class="amount" id="save-total">10.404 €</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-cta">Bereit für eine 30-Min-Demo? Wir zeigen Reparo an Ihrem Wohnungs-Bestand.</div>
+    Reparo GmbH (i.G.) · Berlin · 2026 · Erste 30 Tage gratis · monatlich kündbar
+  </div>
+
+</div>
+
+<script>
+  const slider = document.getElementById('wohnung-slider');
+  const wohnungCount = document.getElementById('wohnung-count');
+  const costMonthly = document.getElementById('cost-monthly');
+  const costMonthlyDetail = document.getElementById('cost-monthly-detail');
+  const costYearly = document.getElementById('cost-yearly');
+  const tierName = document.getElementById('tier-name');
+  const tierWhy = document.getElementById('tier-why');
+  const saveTime = document.getElementById('save-time');
+  const savePrice = document.getElementById('save-price');
+  const saveRec = document.getElementById('save-rec');
+  const saveTotal = document.getElementById('save-total');
+
+  const tierStarter = document.getElementById('tier-starter');
+  const tierPro = document.getElementById('tier-pro');
+  const tierEnterprise = document.getElementById('tier-enterprise');
+
+  function fmt(n) {
+    return new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 }).format(n);
+  }
+  function fmtMoney(n) {
+    return fmt(n) + ' €';
+  }
+
+  function update() {
+    const n = parseInt(slider.value, 10);
+    wohnungCount.textContent = fmt(n);
+
+    let pricePerWohnung;
+    let tier;
+    let why;
+    [tierStarter, tierPro, tierEnterprise].forEach(t => t.classList.remove('active'));
+
+    if (n <= 50) {
+      pricePerWohnung = 1.29;
+      tier = 'Starter';
+      why = 'bis 50 Wohnungen · ideal für kleine Bestände';
+      tierStarter.classList.add('active');
+    } else if (n <= 500) {
+      pricePerWohnung = 0.89;
+      tier = 'Pro';
+      why = '51–500 Wohnungen · bester Preis pro Wohnung';
+      tierPro.classList.add('active');
+    } else {
+      pricePerWohnung = 0.69; // assume Enterprise gets even better
+      tier = 'Enterprise';
+      why = '500+ Wohnungen · Volumen-Rabatte verhandelbar (Beispiel: 0,69 €)';
+      tierEnterprise.classList.add('active');
+    }
+
+    const monthly = Math.round(n * pricePerWohnung);
+    const yearly = monthly * 12;
+
+    costMonthly.textContent = fmtMoney(monthly);
+    costMonthlyDetail.textContent = fmt(n) + ' × ' + pricePerWohnung.toLocaleString('de-DE', { minimumFractionDigits: 2 }) + ' €';
+    costYearly.textContent = fmtMoney(yearly);
+
+    tierName.textContent = tier;
+    tierWhy.textContent = why;
+
+    // Savings — scale linearly with Wohnungs-Count from 200=baseline
+    const scale = n / 200;
+    const sTime = Math.round(6240 * scale);
+    const sPrice = Math.round(4500 * scale);
+    const sRec = Math.round(1800 * scale);
+    const total = sTime + sPrice + sRec - yearly;
+
+    saveTime.textContent = fmtMoney(sTime);
+    savePrice.textContent = fmtMoney(sPrice);
+    saveRec.textContent = fmtMoney(sRec);
+    saveTotal.textContent = fmtMoney(total);
+  }
+
+  slider.addEventListener('input', update);
+  update();
+</script>
+
+</body>
+</html>

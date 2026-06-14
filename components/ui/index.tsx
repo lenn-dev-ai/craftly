@@ -227,46 +227,85 @@ export function Button({ children, onClick, disabled, className = "", variant = 
 // Input + Select + Textarea — einheitliche Form-Standards
 // ============================================================
 const formFieldBase =
-  "w-full px-4 py-3 bg-surface-card border border-line rounded-xl text-sm text-ink placeholder:text-ink-faint " +
+  "w-full px-4 py-3 bg-surface-card border border-line rounded-xl text-sm text-ink placeholder:text-ink-muted " +
   "focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent transition-colors"
+
+// A11Y-Cleanup (Audit #82, A11Y-AUDIT.md Post-Beta-Backlog): die drei
+// Form-Primitives akzeptieren jetzt ein optionales `error`-Prop. Ist es
+// gesetzt, wird automatisch aria-invalid="true" + aria-describedby auf
+// eine sichtbare role="alert"-Fehlermeldung gesetzt — bisher gab es das
+// nur händisch auf login/registrierung/onboarding. Ein evtl. vom Aufrufer
+// übergebenes aria-describedby wird mit der Fehler-ID kombiniert statt
+// überschrieben.
+function combineDescribedBy(existing: string | undefined, errorId: string | undefined): string | undefined {
+  return [existing, errorId].filter(Boolean).join(" ") || undefined
+}
+
+const errorFieldCls = "border-danger focus-visible:ring-danger/40 focus:border-danger"
 
 export const Input = forwardRef<
   HTMLInputElement,
-  { label?: string } & React.InputHTMLAttributes<HTMLInputElement>
->(function Input({ label, id, className = "", ...props }, ref) {
+  { label?: string; error?: string } & React.InputHTMLAttributes<HTMLInputElement>
+>(function Input({ label, id, className = "", error, "aria-describedby": describedBy, "aria-invalid": ariaInvalid, ...props }, ref) {
   const autoId = useId()
   const fieldId = id ?? autoId
+  const errorId = error ? `${fieldId}-error` : undefined
   return (
     <div className="flex flex-col gap-1.5">
       {label && <label htmlFor={fieldId} className="text-sm font-medium text-ink-secondary">{label}</label>}
-      <input ref={ref} id={fieldId} {...props} className={`${formFieldBase} ${className}`} />
+      <input
+        ref={ref}
+        id={fieldId}
+        aria-invalid={ariaInvalid ?? (error ? true : undefined)}
+        aria-describedby={combineDescribedBy(describedBy, errorId)}
+        {...props}
+        className={`${formFieldBase} ${error ? errorFieldCls : ""} ${className}`}
+      />
+      {error && <p id={errorId} role="alert" className="text-xs text-danger mt-0.5">{error}</p>}
     </div>
   )
 })
 
 export const Select = forwardRef<
   HTMLSelectElement,
-  { label?: string } & React.SelectHTMLAttributes<HTMLSelectElement>
->(function Select({ label, id, children, className = "", ...props }, ref) {
+  { label?: string; error?: string } & React.SelectHTMLAttributes<HTMLSelectElement>
+>(function Select({ label, id, children, className = "", error, "aria-describedby": describedBy, "aria-invalid": ariaInvalid, ...props }, ref) {
   const autoId = useId()
   const fieldId = id ?? autoId
+  const errorId = error ? `${fieldId}-error` : undefined
   return (
     <div className="flex flex-col gap-1.5">
       {label && <label htmlFor={fieldId} className="text-sm font-medium text-ink-secondary">{label}</label>}
-      <select ref={ref} id={fieldId} {...props} className={`${formFieldBase} appearance-none ${className}`}>
+      <select
+        ref={ref}
+        id={fieldId}
+        aria-invalid={ariaInvalid ?? (error ? true : undefined)}
+        aria-describedby={combineDescribedBy(describedBy, errorId)}
+        {...props}
+        className={`${formFieldBase} appearance-none ${error ? errorFieldCls : ""} ${className}`}
+      >
         {children}
       </select>
+      {error && <p id={errorId} role="alert" className="text-xs text-danger mt-0.5">{error}</p>}
     </div>
   )
 })
 
-export function Textarea({ label, id, className = "", ...props }: { label?: string } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function Textarea({ label, id, className = "", error, "aria-describedby": describedBy, "aria-invalid": ariaInvalid, ...props }: { label?: string; error?: string } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const autoId = useId()
   const fieldId = id ?? autoId
+  const errorId = error ? `${fieldId}-error` : undefined
   return (
     <div className="flex flex-col gap-1.5">
       {label && <label htmlFor={fieldId} className="text-sm font-medium text-ink-secondary">{label}</label>}
-      <textarea id={fieldId} {...props} className={`${formFieldBase} ${className}`} />
+      <textarea
+        id={fieldId}
+        aria-invalid={ariaInvalid ?? (error ? true : undefined)}
+        aria-describedby={combineDescribedBy(describedBy, errorId)}
+        {...props}
+        className={`${formFieldBase} ${error ? errorFieldCls : ""} ${className}`}
+      />
+      {error && <p id={errorId} role="alert" className="text-xs text-danger mt-0.5">{error}</p>}
     </div>
   )
 }

@@ -85,7 +85,7 @@ export default function VerdienstPage() {
                 value={stundensatz}
                 onChange={e => setStundensatz(Number(e.target.value) || 0)}
               />
-              <p className="text-[11px] text-ink-faint mt-1.5">Brutto vor Reparo-Gebühr</p>
+              <p className="text-[11px] text-ink-muted mt-1.5">Brutto vor Reparo-Gebühr</p>
             </div>
             <div>
               <Input
@@ -97,7 +97,7 @@ export default function VerdienstPage() {
                 value={stundenProWoche}
                 onChange={e => setStundenProWoche(Number(e.target.value) || 0)}
               />
-              <p className="text-[11px] text-ink-faint mt-1.5">realistisch verfügbar für Reparo</p>
+              <p className="text-[11px] text-ink-muted mt-1.5">realistisch verfügbar für Reparo</p>
             </div>
           </div>
         </div>

@@ -90,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <LogOut size={16} />
           <span>Abmelden</span>
         </button>
-        <div className="mt-3 flex gap-3 px-3 text-[11px] text-ink-faint">
+        <div className="mt-3 flex gap-3 px-3 text-[11px] text-ink-muted">
           <a href="/impressum" className="hover:text-ink transition-colors">Impressum</a>
           <a href="/agb" className="hover:text-ink transition-colors">AGB</a>
           <a href="/datenschutz" className="hover:text-ink transition-colors">Datenschutz</a>

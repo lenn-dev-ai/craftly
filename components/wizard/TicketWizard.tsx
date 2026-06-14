@@ -370,7 +370,7 @@ function FotoStep(props: {
         />
       </div>
       <div className="mb-6">
-        <p className="text-xs text-ink-muted mb-1">Hilfe für den Anfang <span className="text-ink-faint font-normal">(optional)</span></p>
+        <p className="text-xs text-ink-muted mb-1">Hilfe für den Anfang <span className="text-ink-muted font-normal">(optional)</span></p>
         <div className="flex flex-wrap gap-2">
           {props.pills.map(p => {
             const highlight = props.likelyPill === p.key

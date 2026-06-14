@@ -521,7 +521,7 @@ export default function ProfilPage() {
             ⚠ &bdquo;Bis&ldquo; muss nach &bdquo;Von&ldquo; liegen — sonst bleibt der Kalender leer.
           </p>
         )}
-        <p className="text-[11px] text-ink-faint mt-3">
+        <p className="text-[11px] text-ink-muted mt-3">
           Beispiele: Frühdienst <span className="tabular-nums">5–15</span> · Standard <span className="tabular-nums">7–20</span> · Notdienst <span className="tabular-nums">8–24</span>
         </p>
       </div>

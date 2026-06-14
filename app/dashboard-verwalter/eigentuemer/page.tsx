@@ -177,7 +177,7 @@ export default function EigentuemerPage() {
                       <span>🏠 {meineWohnungen.length} Wohnung(en)</span>
                       {meaTotal > 0 && <span>📊 MEA {(meaTotal / 10).toFixed(1)}%</span>}
                     </div>
-                    {e.notizen && <div className="text-xs text-ink-faint mt-1 italic">{e.notizen}</div>}
+                    {e.notizen && <div className="text-xs text-ink-muted mt-1 italic">{e.notizen}</div>}
                   </div>
                   <button onClick={() => openEdit(e)} className="text-xs text-accent hover:underline px-2 py-1">Bearbeiten</button>
                   <button onClick={() => loeschen(e.id)} className="text-xs text-rose-600 hover:text-rose-800 px-2 py-1">Löschen</button>
@@ -289,7 +289,7 @@ function WohnungRow({ wohnung, eigentuemer, onUpdate }: {
           min={1}
           max={1000}
         />
-        <span className="text-[10px] text-ink-faint">‰</span>
+        <span className="text-[10px] text-ink-muted">‰</span>
       </div>
     </div>
   )

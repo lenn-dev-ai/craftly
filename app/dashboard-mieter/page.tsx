@@ -268,7 +268,7 @@ export default function MieterDashboard() {
                         </div>
                       ))}
                     </div>
-                    <div className="flex justify-between text-[9px] text-ink-faint mb-3">
+                    <div className="flex justify-between text-[9px] text-ink-muted mb-3">
                       {PIPELINE_STEPS.map((ps, i) => (
                         <span key={ps.label} className={i <= stepIdx ? "text-accent" : ""}>{ps.label}</span>
                       ))}
@@ -285,7 +285,7 @@ export default function MieterDashboard() {
                           <span className="text-xs text-ink-muted">Geschätzt: {estimate}</span>
                         </div>
                       )}
-                      <span className="text-xs text-ink-faint">{new Date(t.created_at).toLocaleDateString("de")}</span>
+                      <span className="text-xs text-ink-muted">{new Date(t.created_at).toLocaleDateString("de")}</span>
                     </div>
                   </div>
                 </Card>
@@ -310,7 +310,7 @@ export default function MieterDashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-ink-muted truncate">{t.titel}</div>
                   </div>
-                  <span className="text-xs text-ink-faint">{new Date(t.created_at).toLocaleDateString("de")}</span>
+                  <span className="text-xs text-ink-muted">{new Date(t.created_at).toLocaleDateString("de")}</span>
                 </div>
               </Card>
             ))}

@@ -93,7 +93,7 @@ function PhasenIndikator({ status, mieterSicht = false }: { status: string; miet
       </div>
       <div className="flex justify-between text-[10px]">
         {PHASEN.map((p, i) => (
-          <span key={p.key} className={i <= aktiv ? "text-accent font-medium" : "text-ink-faint"}>
+          <span key={p.key} className={i <= aktiv ? "text-accent font-medium" : "text-ink-muted"}>
             {mieterSicht ? p.labelMieter : p.label}
           </span>
         ))}
@@ -106,7 +106,7 @@ function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) return <span className="text-xs font-bold bg-warm/20 text-warm px-2 py-0.5 rounded-full border border-warm/30">🥇 #1 Empfohlen</span>
   if (rank === 2) return <span className="text-xs font-bold bg-surface text-ink-secondary px-2 py-0.5 rounded-full border border-line">🥈 #2</span>
   if (rank === 3) return <span className="text-xs font-bold bg-[#854F0B]/20 text-warm-dark/80 px-2 py-0.5 rounded-full border border-warm/20">🥉 #3</span>
-  return <span className="text-xs text-ink-faint px-2 py-0.5">#{rank}</span>
+  return <span className="text-xs text-ink-muted px-2 py-0.5">#{rank}</span>
 }
 
 function kiPreisempfehlung(titel: string): string {
@@ -168,7 +168,7 @@ function AuktionCountdown({ end, mieterSicht = false }: { end: string; mieterSic
                 <span className="text-line mx-0.5">:</span>
                 <span className="text-ink-secondary">{fmt(s)}</span>
               </div>
-              <div className="text-[10px] text-ink-faint mt-1">verbleibend</div>
+              <div className="text-[10px] text-ink-muted mt-1">verbleibend</div>
             </>
           )}
         </div>
@@ -620,7 +620,7 @@ export default function TicketDetailView() {
                 {ticket.ticket_typ && ticket.ticket_typ !== "standard" && (
                   <TypBadge typ={ticket.ticket_typ as "diagnose" | "projekt"} />
                 )}
-                {ticket.wohnung && <span className="text-xs text-ink-faint bg-surface px-2 py-1 rounded-lg">{ticket.wohnung}</span>}
+                {ticket.wohnung && <span className="text-xs text-ink-muted bg-surface px-2 py-1 rounded-lg">{ticket.wohnung}</span>}
                 {/* Loop-23 (27.05.): Mieter-/Wohneinheits-Nr als prominentes
                     Badge — Verwalter sieht beim ersten Blick die Zuordnung. */}
                 {ticket.wohneinheit_referenz && (
@@ -643,7 +643,7 @@ export default function TicketDetailView() {
           )}
 
           {/* Ticket meta */}
-          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-line text-xs text-ink-faint">
+          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-line text-xs text-ink-muted">
             <span>Erstellt: {new Date(ticket.created_at).toLocaleDateString("de", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
             {ticket.gewerk && <span>Gewerk: {formatGewerk(ticket.gewerk)}</span>}
             {ticket.vergabemodus && <span>Modus: {ticket.vergabemodus === "auktion" ? "Auktion" : ticket.vergabemodus === "direkt" ? "Sofort-Vergabe" : "Planauftrag"}</span>}
@@ -663,7 +663,7 @@ export default function TicketDetailView() {
                   {ticket.objekte.plz && <><br />{ticket.objekte.plz}</>}
                 </div>
                 {(ticket.wohnung || typeof ticket.objekte.einheiten_anzahl === "number") && (
-                  <div className="text-[11px] text-ink-faint mt-2 pt-2 border-t border-line space-y-0.5">
+                  <div className="text-[11px] text-ink-muted mt-2 pt-2 border-t border-line space-y-0.5">
                     {ticket.wohnung && <div>Wohnung: <span className="text-ink-secondary">{ticket.wohnung}</span></div>}
                     {ticket.wohneinheit_referenz && <div>Mieter-/WE-Nr: <span className="text-ink-secondary font-mono">{ticket.wohneinheit_referenz}</span></div>}
                     {typeof ticket.objekte.einheiten_anzahl === "number" && (
@@ -693,7 +693,7 @@ export default function TicketDetailView() {
                     </div>
                   )}
                   {!ticket.ersteller.email && !ticket.ersteller.telefon && (
-                    <div className="text-ink-faint">Keine Kontaktdaten hinterlegt</div>
+                    <div className="text-ink-muted">Keine Kontaktdaten hinterlegt</div>
                   )}
                 </div>
               </Card>
@@ -712,7 +712,7 @@ export default function TicketDetailView() {
                   </div>
                 )}
                 {typeof ticket.ki_confidence === "number" && (
-                  <div className="text-[11px] text-ink-faint mt-2 pt-2 border-t border-line">
+                  <div className="text-[11px] text-ink-muted mt-2 pt-2 border-t border-line">
                     Confidence: <span className={
                       ticket.ki_confidence >= 0.8 ? "text-accent font-semibold" :
                       ticket.ki_confidence >= 0.5 ? "text-warm font-semibold" :
@@ -970,7 +970,7 @@ export default function TicketDetailView() {
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-bold text-accent">{hw.preis} EUR</div>
-                    <div className="text-[10px] text-ink-faint">Angenommener Preis</div>
+                    <div className="text-[10px] text-ink-muted">Angenommener Preis</div>
                   </div>
                 </div>
               )
@@ -1026,7 +1026,7 @@ export default function TicketDetailView() {
                   <p className="text-xs text-ink-secondary mt-1 italic">„{ticket.hw_abschluss_kommentar}“</p>
                 )}
                 {ticket.hw_abschluss_am && (
-                  <p className="text-[10px] text-ink-faint mt-1">
+                  <p className="text-[10px] text-ink-muted mt-1">
                     Gemeldet am {new Date(ticket.hw_abschluss_am).toLocaleDateString("de", { day: "2-digit", month: "2-digit", year: "numeric" })}
                   </p>
                 )}
@@ -1093,7 +1093,7 @@ export default function TicketDetailView() {
                 <span className="ml-2 text-sm font-normal text-ink-muted">({sortiertAngebote.length})</span>
               </h2>
               {avgPreis > 0 && (
-                <span className="text-xs text-ink-faint bg-surface px-3 py-1 rounded-lg">
+                <span className="text-xs text-ink-muted bg-surface px-3 py-1 rounded-lg">
                   Ø {avgPreis.toLocaleString("de")} EUR
                 </span>
               )}
@@ -1128,7 +1128,7 @@ export default function TicketDetailView() {
                             <div className="flex items-center gap-3 mt-1">
                               <StarRating rating={hw?.bewertung_avg || 0} />
                               {hw?.auftraege_anzahl > 0 && (
-                                <span className="text-[10px] text-ink-faint">{hw.auftraege_anzahl} Aufträge</span>
+                                <span className="text-[10px] text-ink-muted">{hw.auftraege_anzahl} Aufträge</span>
                               )}
                             </div>
                           </div>
@@ -1139,17 +1139,17 @@ export default function TicketDetailView() {
                       {/* Price + Details row */}
                       <div className="grid grid-cols-3 gap-3 mb-4">
                         <div className="bg-surface rounded-xl p-3">
-                          <div className="text-[10px] text-ink-faint mb-1">Preis</div>
+                          <div className="text-[10px] text-ink-muted mb-1">Preis</div>
                           <div className="text-lg font-bold text-accent">{a.preis.toLocaleString("de")} EUR</div>
                         </div>
                         <div className="bg-surface rounded-xl p-3">
-                          <div className="text-[10px] text-ink-faint mb-1">Frühester Termin</div>
+                          <div className="text-[10px] text-ink-muted mb-1">Frühester Termin</div>
                           <div className="text-sm font-medium text-ink">
                             {a.fruehester_termin ? new Date(a.fruehester_termin).toLocaleDateString("de", { day: "2-digit", month: "2-digit" }) : "Flexibel"}
                           </div>
                         </div>
                         <div className="bg-surface rounded-xl p-3">
-                          <div className="text-[10px] text-ink-faint mb-1">Geschätzte Dauer</div>
+                          <div className="text-[10px] text-ink-muted mb-1">Geschätzte Dauer</div>
                           <div className="text-sm font-medium text-ink">{(a as any).geschaetzte_dauer ? (a as any).geschaetzte_dauer + " Tage" : "—"}</div>
                         </div>
                       </div>
@@ -1208,7 +1208,7 @@ export default function TicketDetailView() {
                 <span className="text-2xl text-rolle-mieter">[~]</span>
               </div>
               <div className="text-sm text-ink-secondary font-medium mb-1">Warten auf Angebote</div>
-              <div className="text-xs text-ink-faint">Handwerker können jetzt bieten — Angebote erscheinen hier automatisch.</div>
+              <div className="text-xs text-ink-muted">Handwerker können jetzt bieten — Angebote erscheinen hier automatisch.</div>
             </div>
           </Card>
         )}
@@ -1236,7 +1236,7 @@ export default function TicketDetailView() {
                   <span className="text-xs font-medium text-rolle-mieter">KI-Preisempfehlung</span>
                 </div>
                 <div className="text-lg font-bold text-ink">EUR {kiPreisempfehlung(ticket.titel)}</div>
-                <div className="text-[10px] text-ink-faint mt-1">Basierend auf vergleichbaren Aufträgen in deiner Region</div>
+                <div className="text-[10px] text-ink-muted mt-1">Basierend auf vergleichbaren Aufträgen in deiner Region</div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-4">

@@ -422,7 +422,7 @@ function PrivatTerminModal({ state, onClose, onSaved, onError, onSuccess }: {
               value={titel}
               onChange={e => setTitel(e.target.value)}
               placeholder="z.B. Arzttermin, Materialeinkauf"
-              className="w-full bg-surface-card border border-line rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:border-accent transition-colors"
+              className="w-full bg-surface-card border border-line rounded-xl px-3 py-2 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:border-accent transition-colors"
             />
           </div>
 

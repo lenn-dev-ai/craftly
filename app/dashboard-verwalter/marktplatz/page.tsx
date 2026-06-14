@@ -1,11 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { useToast } from "@/components/Toast"
 import { Inbox, Users, Search, Filter as FilterIcon, RefreshCw, Clock, MapPin, AlertCircle, Star, Zap } from "lucide-react"
 import { formatGewerk } from "@/types"
+import { useFocusTrap } from "@/lib/use-focus-trap"
 
 // Sprint AK Stufe 2 (27.05.2026) — Verwalter-Marktplatz, NEU.
 //
@@ -106,6 +107,13 @@ export default function MarktplatzPage() {
   const [stammHinzu, setStammHinzu] = useState<string | null>(null)
   const [auctionStarten, setAuctionStarten] = useState<OffenesTicket | null>(null)
   const [auctionLaeuft, setAuctionLaeuft] = useState(false)
+
+  // A11Y-Cleanup (Audit #82): Focus-Trap für die beiden Modals dieser Seite
+  // (Einladen-Drawer + Auction-Start-Modal).
+  const einladenDialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(einladenDialogRef, !!einladenDrawer)
+  const auctionDialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(auctionDialogRef, !!auctionStarten)
 
   // Tab-Sync in URL
   useEffect(() => {
@@ -434,7 +442,7 @@ export default function MarktplatzPage() {
                         <Clock size={11} /> {relativAlter(t.created_at)}
                       </span>
                       {(t.einladungen?.[0]?.count ?? 0) > 0 && (
-                        <span className="text-ink-faint">· {t.einladungen![0].count} HW eingeladen</span>
+                        <span className="text-ink-muted">· {t.einladungen![0].count} HW eingeladen</span>
                       )}
                       {(t.angebote?.[0]?.count ?? 0) > 0 && (
                         <span className="text-accent">· {t.angebote![0].count} Angebot{t.angebote![0].count === 1 ? "" : "e"}</span>
@@ -518,7 +526,7 @@ export default function MarktplatzPage() {
             <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-ink-secondary uppercase tracking-wide">
               <Star size={13} className="text-warm" />
               Stamm-Handwerker
-              <span className="text-ink-faint normal-case font-normal">({gefilterte.length})</span>
+              <span className="text-ink-muted normal-case font-normal">({gefilterte.length})</span>
             </div>
             {hws.length === 0 ? (
               <div className="bg-surface-alt border border-line rounded-2xl px-4 py-4 text-center mb-4">
@@ -574,8 +582,8 @@ export default function MarktplatzPage() {
             <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-ink-secondary uppercase tracking-wide">
               <Search size={13} className="text-accent" />
               Auch verfügbar in deinem Radius
-              <span className="text-ink-faint normal-case font-normal">({gefilterterPool.length})</span>
-              {poolLoading && <span className="text-ink-faint normal-case font-normal">· lädt …</span>}
+              <span className="text-ink-muted normal-case font-normal">({gefilterterPool.length})</span>
+              {poolLoading && <span className="text-ink-muted normal-case font-normal">· lädt …</span>}
             </div>
             {poolError ? (
               <div className="bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-2xl px-4 py-3">
@@ -634,7 +642,7 @@ export default function MarktplatzPage() {
               </ul>
             )}
 
-            <p className="text-[11px] text-ink-faint mt-3 inline-flex items-center gap-1.5">
+            <p className="text-[11px] text-ink-muted mt-3 inline-flex items-center gap-1.5">
               <FilterIcon size={11} />
               Verfügbarkeits-Status kommt live aus dem Google-Kalender (4-Stunden-Fenster).
               HW ohne Google-Verbindung erscheinen als &bdquo;unbekannt&ldquo;.
@@ -653,6 +661,7 @@ export default function MarktplatzPage() {
           aria-modal="true"
         >
           <div
+            ref={einladenDialogRef}
             className="w-full max-w-md bg-white rounded-2xl shadow-xl max-h-[80vh] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
@@ -727,6 +736,7 @@ export default function MarktplatzPage() {
           aria-modal="true"
         >
           <div
+            ref={auctionDialogRef}
             className="w-full max-w-md bg-white rounded-2xl shadow-xl"
             onClick={e => e.stopPropagation()}
           >

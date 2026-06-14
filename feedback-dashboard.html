@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Reparo Feedback-Dashboard (Live)</title>
+<style>
+  body { margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:#fafbfc; color:#1a1a1a; font-size:14px; line-height:1.5; }
+  .page { max-width:1100px; margin:0 auto; padding:24px; }
+  h1 { color:#1a7a5a; margin:0 0 4px; font-size:22px; }
+  .subtitle { color:#666; margin-bottom:16px; font-size:13px; }
+  .actions { display:flex; gap:8px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+  .btn { padding:7px 14px; border-radius:6px; border:1px solid #d0d4d8; background:white; cursor:pointer; font-size:13px; }
+  .btn:hover { background:#f5f7f9; }
+  .btn.primary { background:#1a7a5a; color:white; border-color:#1a7a5a; }
+  .btn.primary:hover { background:#1a6850; }
+  .btn.danger { color:#c0392b; }
+  .login { background:white; padding:24px; border-radius:8px; border:1px solid #e2e6ea; max-width:400px; margin:60px auto; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+  .login h2 { margin:0 0 16px; color:#1a7a5a; font-size:18px; }
+  .login p { font-size:12px; color:#666; margin:0 0 16px; }
+  .login input { width:100%; padding:9px 12px; border-radius:6px; border:1px solid #d0d4d8; font-size:14px; margin-bottom:10px; box-sizing:border-box; }
+  .login button { width:100%; padding:10px; border-radius:6px; border:none; background:#1a7a5a; color:white; font-size:14px; cursor:pointer; font-weight:600; }
+  .login .err { background:#fce4e4; color:#c0392b; padding:8px 12px; border-radius:6px; margin-bottom:10px; font-size:12px; }
+  .stats { display:flex; gap:16px; padding:12px 16px; background:white; border:1px solid #e2e6ea; border-radius:8px; margin-bottom:16px; flex-wrap:wrap; box-shadow:0 1px 2px rgba(0,0,0,0.04); }
+  .stat { display:flex; flex-direction:column; gap:2px; }
+  .stat-label { color:#666; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; }
+  .stat-value { font-weight:600; font-size:18px; }
+  .red { color:#c0392b; } .amber { color:#c98a1f; } .green { color:#1a7a5a; }
+  .filters { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; align-items:center; }
+  .chip { padding:5px 12px; border-radius:14px; border:1px solid #d0d4d8; background:white; cursor:pointer; font-size:12px; user-select:none; }
+  .chip.active { background:#1a7a5a; color:white; border-color:#1a7a5a; }
+  .filter-label { color:#666; font-size:12px; margin-right:6px; min-width:50px; }
+  .item { background:white; border:1px solid #e2e6ea; border-radius:8px; padding:14px; margin-bottom:12px; box-shadow:0 1px 2px rgba(0,0,0,0.04); }
+  .item.viewed { opacity:0.55; }
+  .item.blocker { border-left:4px solid #c0392b; }
+  .item.high { border-left:4px solid #c98a1f; }
+  .item.medium { border-left:4px solid #5b95f7; }
+  .item.low { border-left:4px solid #a0a0a0; }
+  .head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+  .badges { display:flex; gap:4px; flex-wrap:wrap; }
+  .badge { padding:2px 8px; border-radius:4px; font-size:10px; text-transform:uppercase; letter-spacing:0.3px; font-weight:600; }
+  .b-rolle-handwerker { background:#fde7c0; color:#8b6914; }
+  .b-rolle-mieter { background:#d5f0e6; color:#1a7a5a; }
+  .b-rolle-verwalter { background:#e1d5f5; color:#5e3b8e; }
+  .b-rolle-admin { background:#f5d5d5; color:#8e3b3b; }
+  .b-cat-bug { background:#fce4e4; color:#c0392b; }
+  .b-cat-ux { background:#e3eefb; color:#2c69b0; }
+  .b-cat-feature { background:#ecf5d6; color:#557a1f; }
+  .b-cat-question { background:#f0e3fb; color:#6e3eb0; }
+  .b-cat-positive { background:#d5f0e6; color:#1a7a5a; }
+  .b-cat-test { background:#e2e6ea; color:#666; }
+  .b-cat-crash { background:#c0392b; color:white; }
+  .b-sev-blocker { background:#c0392b; color:white; }
+  .b-sev-high { background:#c98a1f; color:white; }
+  .b-sev-medium { background:#5b95f7; color:white; }
+  .b-sev-low { background:#a0a0a0; color:white; }
+  .time { color:#888; font-size:11px; white-space:nowrap; }
+  .ctx { font-size:11px; color:#666; word-break:break-all; margin-bottom:6px; font-family:ui-monospace,monospace; }
+  .msg { font-size:13px; white-space:pre-wrap; word-wrap:break-word; }
+  .item-actions { margin-top:10px; display:flex; gap:6px; flex-wrap:wrap; }
+  .empty { padding:40px 16px; text-align:center; color:#888; }
+  .loading { padding:20px; text-align:center; color:#888; }
+  .err { padding:12px; background:#fce4e4; color:#c0392b; border-radius:8px; margin-bottom:12px; font-size:13px; }
+  .pulse { display:inline-block; width:8px; height:8px; border-radius:50%; background:#1a7a5a; margin-right:6px; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
+  /* Einschaetzungs-Karte */
+  .verdict { margin-top:10px; padding:10px 12px; border-radius:6px; border:1px solid #d0d4d8; background:#fafbfc; font-size:12px; line-height:1.55; }
+  .verdict-row { display:flex; gap:8px; align-items:baseline; margin-bottom:4px; flex-wrap:wrap; }
+  .verdict-row:last-child { margin-bottom:0; }
+  .verdict-label { color:#666; min-width:88px; font-size:11px; text-transform:uppercase; letter-spacing:0.3px; }
+  .verdict-value { flex:1; color:#1a1a1a; }
+  .status-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:4px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.3px; }
+  .s-done { background:#d5f0e6; color:#1a7a5a; }
+  .s-inprogress { background:#fff0d4; color:#c98a1f; }
+  .s-waiting { background:#e3eefb; color:#2c69b0; }
+  .s-needdecision { background:#f0e3fb; color:#6e3eb0; }
+  .s-backlog { background:#e2e6ea; color:#555; }
+  .s-blocker { background:#c0392b; color:white; }
+  .area-tag { display:inline-block; padding:2px 7px; border-radius:3px; background:#eef1f4; color:#444; font-size:11px; font-family:ui-monospace,monospace; }
+  .owner-tag { display:inline-block; padding:2px 7px; border-radius:3px; font-size:11px; font-weight:600; }
+  .o-cowork { background:#1a7a5a; color:white; }
+  .o-claudecode { background:#5e3b8e; color:white; }
+  .o-lennart { background:#c98a1f; color:white; }
+  .o-niemand { background:#e2e6ea; color:#666; }
+  .o-erledigt { background:#a0a0a0; color:white; }
+  .ref { font-family:ui-monospace,monospace; font-size:11px; color:#1a7a5a; }
+</style>
+</head>
+<body>
+
+<div id="login-screen" class="login">
+  <h2>Reparo Feedback-Dashboard</h2>
+  <p>Live-Daten aus <code>public.feedback</code>. Login mit deinem Admin-Account (<code>lenn-dev@proton.me</code>). Daten bleiben lokal im Browser.</p>
+  <div id="login-err" class="err" style="display:none"></div>
+  <input id="email" type="email" placeholder="E-Mail" autocomplete="email" value="lenn-dev@proton.me">
+  <input id="pw" type="password" placeholder="Passwort" autocomplete="current-password">
+  <button id="login-btn">Einloggen</button>
+</div>
+
+<div id="app" class="page" style="display:none">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:8px">
+    <div>
+      <h1><span class="pulse"></span>Reparo Feedback-Dashboard</h1>
+      <div class="subtitle">Live aus <code>public.feedback</code> · Einschätzung pro Eintrag · Auto-Refresh 60 s</div>
+    </div>
+    <div style="text-align:right; font-size:11px; color:#666; padding-top:4px">
+      <div id="user-email"></div>
+      <div id="last-refresh"></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn primary" id="refresh-btn">Jetzt aktualisieren</button>
+    <button class="btn" id="evaluate-btn" title="Triggert sofort den Cowork-Scheduled-Task — klassifiziert alle unviewed Feedbacks, schreibt Outputs">⚡ Cowork-Auswertung jetzt anstossen</button>
+    <button class="btn" id="auto-toggle">Auto-Refresh: AN</button>
+    <button class="btn danger" id="logout-btn" style="margin-left:auto">Abmelden</button>
+  </div>
+
+  <div id="err-banner" class="err" style="display:none"></div>
+  <div id="stats" class="stats"></div>
+
+  <div class="filters">
+    <span class="filter-label">Status:</span>
+    <button class="chip active" data-fs="alle">Alle</button>
+    <button class="chip" data-fs="unviewed">Unviewed</button>
+    <button class="chip" data-fs="viewed">Viewed</button>
+  </div>
+  <div class="filters">
+    <span class="filter-label">Owner:</span>
+    <button class="chip active" data-fo="alle">Alle</button>
+    <button class="chip" data-fo="lennart">⚠️ Wartet auf dich</button>
+    <button class="chip" data-fo="claudecode">Claude Code</button>
+    <button class="chip" data-fo="cowork">Cowork</button>
+    <button class="chip" data-fo="erledigt">Erledigt</button>
+  </div>
+  <div class="filters">
+    <span class="filter-label">Rolle:</span>
+    <button class="chip active" data-fr="alle">Alle</button>
+    <button class="chip" data-fr="mieter">Mieter</button>
+    <button class="chip" data-fr="verwalter">Verwalter</button>
+    <button class="chip" data-fr="handwerker">Handwerker</button>
+    <button class="chip" data-fr="admin">Admin</button>
+  </div>
+
+  <div id="list"><div class="loading">Lade…</div></div>
+
+  <div style="margin-top:30px; padding:14px; background:#fff8e1; border:1px solid #f0d878; border-radius:8px; font-size:12px; color:#8b6914;">
+    <strong>Hinweis zur Einschätzung:</strong> Manuell von Cowork erstellt für bestehende 9 Feedbacks. Künftige Feedbacks bekommen die Einschätzung vom stündlichen Scheduled-Task (cowork-feedback-hourly-loop). Solange das nicht passiert ist, zeigt das Dashboard fallback-mäßig die Heuristik.
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = "https://gkojaogdzzyuboajwyom.supabase.co";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdrb2phb2dkenp5dWJvYWp3eW9tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU2ODcsImV4cCI6MjA5MDEzMTY4N30.PUU3WKaKtp2YNW5-F2sL4eDvPxybYV8_r07nTBzwXME";
+
+const supabase = createClient(SUPABASE_URL, ANON_KEY, {
+  auth: { persistSession: true, storageKey: "reparo-fb-dash" }
+});
+
+// ===== EINSCHAETZUNGEN (von Cowork manuell, Stand 18.05.2026 13:40) =====
+// Schluessel: feedback.id
+const VERDICTS = {
+  "1d84ab82-8da9-4e49-8eb5-54d918c4f2b3": {
+    cat: "test", sev: "low",
+    area: "Bubble (Mobile-Smoke)",
+    summary: "Lennarts Mobile-Bubble-Test nach M4-Fix.",
+    recommendation: "Nichts zu tun — Test hat bestaetigt, dass die Bubble nach M4-Deploy live auf reparo-app.netlify.app erreichbar ist.",
+    status: "done",
+    owner: "erledigt",
+    ref: "Commit 9f2b24a · BETA-FEEDBACK Iteration 6 (M4)"
+  },
+  "0dc7348c-69ba-4b61-aecf-0c9378476293": {
+    cat: "test", sev: "low",
+    area: "Bubble (Smoke)",
+    summary: "Admin-Smoke-Test von /dashboard-verwalter/handwerker.",
+    recommendation: "Nichts zu tun — kein echtes Beta-Feedback. Loop wird beim naechsten Lauf als 'test' klassifizieren und viewed=true setzen.",
+    status: "done",
+    owner: "erledigt"
+  },
+  "fb0663dc-e839-4196-8e6d-fb47f3f10549": {
+    cat: "positive", sev: "low",
+    area: "Verwalter-Dashboard / KPI-Kacheln",
+    summary: "Positives Feedback: KPI-Kacheln klickbar + filtern Ticket-Liste sauber.",
+    recommendation: "Nichts zu tun — Lob fuer F9 (Commit 29626eb). Falls Lennart eine Sammlung 'positive Quotes' fuer Pitch braucht, kann ich das aggregieren.",
+    status: "done",
+    owner: "erledigt",
+    ref: "F9 / Commit 29626eb"
+  },
+  "ee101390-01e8-4526-9c03-160a33c9637b": {
+    cat: "feature", sev: "medium",
+    area: "Mieter-Uebersicht (Vorgang-Card)",
+    summary: "Mieter-Wunsch: zugewiesener HW + Termin direkt inline auf der Uebersicht statt erst nach Klick.",
+    recommendation: "Klar implementierbar (M-Aufwand). Card-Komponente in app/dashboard-mieter/page.tsx muss zwei Felder zusaetzlich rendern (handwerker.name + termin.start). Vor Implementierung: Lennart muss entscheiden ob das immer angezeigt wird (auch waehrend 'Auktion' / 'wartet' Status) oder nur ab Status 'Reparatur'.",
+    status: "needdecision",
+    owner: "lennart",
+    ref: "post-H1-Fix in Folge-Sprint"
+  },
+  "d99ff0fb-df46-4cf6-9533-af5727e39d35": {
+    cat: "test", sev: "low",
+    area: "Bubble (Smoke)",
+    summary: "Admin-Smoke-Test von /dashboard-admin.",
+    recommendation: "Nichts zu tun.",
+    status: "done",
+    owner: "erledigt"
+  },
+  "dd42b595-6ae0-4d13-83d2-f97a752fdf23": {
+    cat: "bug", sev: "blocker",
+    area: "HW-Auftrag-Annahme (/api/auction/bid) + vermutlich alle Server-Routes mit auth.getUser()",
+    summary: "POST /api/auction/bid wirft 401 Unauthorized — gleiches Pattern wie B1.1 (Bearer-Token wird nicht gelesen).",
+    recommendation: "Beta-Blocker. Claude Code soll systematisch grep'en (auth.getUser() ohne Token-Argument) und alle Treffer mit B1.1-Pattern (Commit 1fd30db) fixen. Helper-Funktion in lib/auth/ zentralisieren statt route-by-route. Nebenbei H2/H3/H4 Auktions-Wording-Reste raeumen.",
+    status: "inprogress",
+    owner: "claudecode",
+    ref: "PROMPTS/auto-fix-2026-05-18-1400.md liegt bereit · Cowork-QA bestaetigt"
+  },
+  "89967c7b-07c3-4e63-822a-3d7e0cd8b9e2": {
+    cat: "test", sev: "low",
+    area: "Bubble (Smoke, lokal)",
+    summary: "Lokaler Test von localhost.",
+    recommendation: "Nichts zu tun.",
+    status: "done",
+    owner: "erledigt"
+  },
+  "6d9e855e-b3cb-4093-9acf-ed250d201d64": {
+    cat: "test", sev: "low",
+    area: "Bubble (B1.1-Smoke)",
+    summary: "Cowork-Smoketest fuer B1.1 (Bearer-Token-Fix in /api/feedback).",
+    recommendation: "Nichts zu tun — hat funktioniert, deshalb war B1.1 gruen.",
+    status: "done",
+    owner: "erledigt",
+    ref: "Commit 1fd30db (B1.1)"
+  },
+  "20a8821e-ab29-477f-8505-8a70d5a728f8": {
+    cat: "test", sev: "low",
+    area: "Bubble (Smoke, lokal)",
+    summary: "Lokaler Test von localhost.",
+    recommendation: "Nichts zu tun.",
+    status: "done",
+    owner: "erledigt"
+  },
+  "8698ce87-e305-4929-a538-a1d74b940cb7": {
+    cat: "test", sev: "low",
+    area: "Bubble (Smoke, lokal)",
+    summary: "Lokaler Test von localhost.",
+    recommendation: "Nichts zu tun.",
+    status: "done",
+    owner: "erledigt"
+  },
+  // === Iteration 7 (Cowork-Testrun 14:10) ===
+  "f6d050a3-cb16-4fb1-8386-3a72e30cb9f0": {
+    cat: "ux", sev: "medium",
+    area: "Mieter-Wizard (/dashboard-mieter/melden) - Container-Centering",
+    summary: "Wizard-Seite ist nach rechts verschoben statt zentriert.",
+    recommendation: "Container-Klassen in app/dashboard-mieter/melden/page.tsx oder layout.tsx pruefen. Vermutlich fehlt mx-auto oder Sidebar drueckt ohne Ausgleich. 1-Zeilen-Fix, S-Aufwand.",
+    status: "inprogress",
+    owner: "claudecode",
+    ref: "M5 · PROMPTS/auto-fix-2026-05-18-1410.md"
+  },
+  "af5e426a-5d9d-44ef-adbb-318790ca7918": {
+    cat: "bug", sev: "high",
+    area: "HW-Dashboard (/dashboard-handwerker) - KPI-Kachel 'Offene Ausschreibung'",
+    summary: "KPI-Kachel reagiert nicht auf Klick — sollte zur Ausschreibungs-Liste fuehren.",
+    recommendation: "Click-Through aktivieren wie bei Verwalter (F9 / Commit 29626eb). Kpi-Komponente in app/dashboard-handwerker/page.tsx braucht href-Prop. S-Aufwand.",
+    status: "inprogress",
+    owner: "claudecode",
+    ref: "H5 · PROMPTS/auto-fix-2026-05-18-1410.md"
+  },
+  // === Iteration 8 (Auto-Loop 15:45) ===
+  "8e20fa02-f43b-4989-a72c-f6e386ea817e": {
+    cat: "question", sev: "medium",
+    area: "HW-Kalender / Konzept Slots vs. Verfuegbarkeit + Slot-Ort/Fahrzeit",
+    summary: "Lennart fragt: Sollten Slots einen Ort haben (Fahrzeit) und was ist eigentlich der Unterschied zu Verfuegbarkeit?",
+    recommendation: "Zwei Fragen verschmolzen. K3 (Slots vs. Verfuegbarkeit) — Vorschlag: Verfuegbarkeit-Layer entfernen, Slots = single source. K4 (Slot-Ort) — Phase-1-Post-Beta Kandidat. Beide brauchen Lennart-Entscheidung.",
+    status: "needdecision",
+    owner: "lennart",
+    ref: "K3 + K4 · BETA-FEEDBACK Iteration 8"
+  },
+  "47f62752-6909-4e3b-9a47-be352137f93c": {
+    cat: "feature", sev: "medium",
+    area: "HW-Profil - Werkstatt-Adresse vs. 'Morgens los'",
+    summary: "Vorschlag: Werkstatt-Feld entfernen, nur 'Morgendlicher Start' lassen.",
+    recommendation: "Konzept-Entscheidung. Wenn ja: HW-Profil-Form trimmen + Schema-Migration (Spalte werkstatt_adresse nullable lassen). Lennart bitte nicken.",
+    status: "needdecision",
+    owner: "lennart",
+    ref: "K5 · BETA-FEEDBACK Iteration 8"
+  },
+  "175a5c49-55ed-4a8a-a46a-199d6628d2e3": {
+    cat: "bug", sev: "low",
+    area: "HW-Zeitslots - Preis-Input-Layout",
+    summary: "Einheit 'h' (von Stunden) rutscht in der Preis-Eingabe unter den Input statt rechts daneben.",
+    recommendation: "CSS-Fix: Input-Container `whitespace-nowrap` + `min-w-fit`. Trivial. Falls /zeitslots durch K2-Konsolidierung obsolet ist, ggf. Page entfernen statt fixen.",
+    status: "inprogress",
+    owner: "claudecode",
+    ref: "Z1 · PROMPTS/auto-fix-2026-05-18-1545.md"
+  },
+  "5db8c0e2-7e5f-4889-b297-5d7ea695fd18": {
+    cat: "question", sev: "medium",
+    area: "HW-Zeitslots - Konzept Slots vs. Verfuegbarkeit (Wiederholung)",
+    summary: "Lennart versteht nach K2 immer noch nicht den Unterschied zwischen Zeitslots und Verfuegbarkeit.",
+    recommendation: "Duplikat zu K3. Klares Signal: Konzept muss vereinfacht werden (eine Layer raus). Lennart-Entscheidung in K3 entscheidet auch dieses Ticket.",
+    status: "needdecision",
+    owner: "lennart",
+    ref: "K3 · BETA-FEEDBACK Iteration 8"
+  },
+  "3b80448b-d118-4faa-a1e8-4ab4a1ca1890": {
+    cat: "ux", sev: "medium",
+    area: "HW-Kalender - Slot-Klick zeigt nur Loesch-Confirm",
+    summary: "Klick auf Slot im Kalender oeffnet direkt 'Loeschen bestaetigen' statt 'Bearbeiten/Loeschen' Auswahl.",
+    recommendation: "SlotCard-onClick muss Modal mit 2 Buttons (Bearbeiten + Loeschen) statt Confirm-only zeigen. M-Aufwand. Destructive Default ist UX-Antipattern.",
+    status: "inprogress",
+    owner: "claudecode",
+    ref: "H6 · PROMPTS/auto-fix-2026-05-18-1545.md"
+  },
+  "359d64d3-9d95-4d1d-a1b5-81dc674e6e13": {
+    cat: "ux", sev: "low",
+    area: "HW-Einnahmen - KPI-Kacheln nicht klickbar",
+    summary: "Kacheln auf /dashboard-handwerker/einnahmen sollen wie beim Verwalter (F9) klickbar werden.",
+    recommendation: "Pattern aus Commit 29626eb (F9) direkt uebertragen: Kpi-Komponente mit href-Prop befuellen, 3 Sub-Routes oder Filter-Param. S-Aufwand.",
+    status: "inprogress",
+    owner: "claudecode",
+    ref: "E2 · PROMPTS/auto-fix-2026-05-18-1545.md"
+  },
+  "9f0513b9-44a0-400e-ab28-f7406f70b000": {
+    cat: "bug", sev: "high",
+    area: "HW-Einnahmen - Auftrag annehmen/bestaetigen reagiert nicht",
+    summary: "Annahme-Submit auf Einnahmen-Page passiert nichts. Vermutlich gleicher 401-Root-Cause wie H1.",
+    recommendation: "Wird durch H1-Sprint (auth.getUser() Token-Argument systematisch) automatisch erschlagen. Nach H1-Deploy nochmal verifizieren. Falls nach H1 immer noch broken: separates Ticket.",
+    status: "inprogress",
+    owner: "claudecode",
+    ref: "E1 · gekoppelt an H1 · PROMPTS/auto-fix-2026-05-18-1400.md"
+  },
+  "c78feaae-2ca3-4999-8ae9-00910fc4299c": {
+    cat: "question", sev: "medium",
+    area: "Verwalter-Marktplatz - Auktion vs. Festpreis (Wording)",
+    summary: "Lennart fragt erneut, ob Festpreise gelten (Doctolib-Modell) oder Auktion.",
+    recommendation: "Phase-0 #11 hatte Festpreis entschieden. Wording im Verwalter-Marktplatz ist noch 'Auktion'-lastig — passend zu H2/H3/H4 raeumen. Lennart bitte final bestaetigen, dann Wording-Sprint.",
+    status: "needdecision",
+    owner: "lennart",
+    ref: "K6 · BETA-FEEDBACK Iteration 8"
+  },
+  "65f26e2d-a327-44ee-a935-de8c953350ba": {
+    cat: "question", sev: "medium",
+    area: "Verwalter-Ticket - Flow-Logik (Mieter meldet → Verwalter freigibt → Auktion)",
+    summary: "Lennart beschreibt den intendierten Flow und fragt, ob das UI ihn so abbildet.",
+    recommendation: "Verwalter sieht den vollen Flow; Mieter sollte weniger sehen (siehe K7). UI-Detail-Level pro Rolle festlegen. Aktuelle Implementierung schon nahe dran, Lennart soll vorgaben definieren.",
+    status: "needdecision",
+    owner: "lennart",
+    ref: "K7 · BETA-FEEDBACK Iteration 8"
+  },
+  "4da463be-fb21-4e23-9580-78630bdfb53c": {
+    cat: "bug", sev: "medium",
+    area: "Verwalter-Ticket-Detail - Zurueck-Pfeil hinter Hamburger",
+    summary: "'Zurueck' oben links wird vom Hamburger-Menue verdeckt — selbes Pattern wie M1 (Mieter-Wizard).",
+    recommendation: "Header-Layout systematisch fixen (pl-12 oder Hamburger conditional). Gleiche Komponente wie /agb-Fall (AGB1). 1 Commit fuer beide.",
+    status: "inprogress",
+    owner: "claudecode",
+    ref: "V1 · PROMPTS/auto-fix-2026-05-18-1545.md"
+  },
+  "5640787d-298a-4e1e-861d-a390b25cc9f9": {
+    cat: "feature", sev: "medium",
+    area: "Mieter-Wizard - Video-Upload",
+    summary: "Lennart-Vorschlag: Video vom tropfenden Wasserhahn ermoeglichen.",
+    recommendation: "M-L Aufwand: Supabase-Storage-Limit (50 MB free), Mobile-Upload-UX, KI-Analyse-Pipeline derzeit Bild-only. Lennart bitte priorisieren: jetzt vs. Post-Beta.",
+    status: "needdecision",
+    owner: "lennart",
+    ref: "K8 · BETA-FEEDBACK Iteration 8"
+  },
+  "fbbf6c70-84e8-4494-a5d5-db893e48ff07": {
+    cat: "question", sev: "medium",
+    area: "Mieter-Wizard - Schnellauswahl entfernen?",
+    summary: "Lennart denkt um: Schnellauswahl raus, KI nur auf Text+Fotos, Mieter muss ordentlich melden.",
+    recommendation: "Umdenken gegenueber F1 (Iteration 1). Optionen: (a) Schnellauswahl komplett entfernen, (b) hinter 'Inspiration?'-Akkordeon verstecken, (c) lassen. Lennart entscheidet.",
+    status: "needdecision",
+    owner: "lennart",
+    ref: "K9 · BETA-FEEDBACK Iteration 8"
+  },
+  "a2f592dc-ee4b-4a73-884c-acf69903b520": {
+    cat: "question", sev: "medium",
+    area: "Mieter-Ticket - Was sieht Mieter wirklich?",
+    summary: "Lennart-Vorschlag: Mieter sollte NICHT sehen, dass Auktion laeuft. Nur 'In Bearbeitung' + HW meldet sich.",
+    recommendation: "Detail-Level pro Rolle gemeinsam mit K7 entscheiden. Wenn ja: Mieter-Ticket-View entkernen — kein Auktions-Banner, keine Vergabe-Uhr, nur Status-Pill + HW-Kontakt sobald zugewiesen.",
+    status: "needdecision",
+    owner: "lennart",
+    ref: "K7 · BETA-FEEDBACK Iteration 8"
+  },
+  "90229867-2837-45a9-93c1-0b006acc588c": {
+    cat: "bug", sev: "medium",
+    area: "Mieter-Ticket - Vergabe-Uhr vs. Zeitrahmen-Inkonsistenz",
+    summary: "Vergabe-Countdown widerspricht dem '1-2 Tage' Zeitrahmen im Ticket-Header.",
+    recommendation: "Entweder Vergabe-Countdown explizit labeln ('Bis Auktion endet: X Min') oder ganz entfernen (siehe K7-Entscheidung). Wenn behalten: aus `auktion.deadline` lesen, Inkonsistenz raus.",
+    status: "inprogress",
+    owner: "claudecode",
+    ref: "H7 · PROMPTS/auto-fix-2026-05-18-1545.md"
+  },
+  "b078859b-cc65-49fb-9d40-caec31fb84fd": {
+    cat: "bug", sev: "medium",
+    area: "/agb - Mobile-Header fehlt komplett",
+    summary: "Auf /agb fehlen die 3 Streifen (Hamburger) — User kommt nicht zurueck zum Auswahlbaum.",
+    recommendation: "Public-Pages (/agb, /datenschutz, /impressum) muessen dasselbe Mobile-Header-Layout rendern wie Dashboard-Pages. Layout-Wrapper systematisch ausweiten. In einem Commit mit V1 fixbar.",
+    status: "inprogress",
+    owner: "claudecode",
+    ref: "AGB1 · PROMPTS/auto-fix-2026-05-18-1545.md"
+  },
+  "f88ec0c7-796a-4414-80ff-79394df2baf0": {
+    cat: "question", sev: "medium",
+    area: "HW-Sidebar - Kalender vs. Zeitslots Konsolidierung",
+    summary: "Lennart fragt erneut: Alles als 'Kalender' betiteln, /zeitslots als separate Seite raus?",
+    recommendation: "K2 hatte teilweise konsolidiert, /zeitslots existiert aber noch. Empfehlung: Route entfernen, Funktionalitaet vollstaendig in Kalender. Lennart-Entscheidung in K3-Komplex.",
+    status: "needdecision",
+    owner: "lennart",
+    ref: "K3 · BETA-FEEDBACK Iteration 8"
+  },
+  "7de666f7-6e35-412c-90b4-472c8debaa6b": {
+    cat: "ux", sev: "medium",
+    area: "HW-Dashboard - Gewerk-Filter manuell aenderbar",
+    summary: "HW kann pro Session Gewerk umschalten ('heute Sanitaer, morgen Elektriker'). Soll aus Profil kommen.",
+    recommendation: "Gewerk-Filter aus HW-Profil ableiten (Read-only auf Dashboard). Multi-Gewerke (2-3) im Profil-Editor erlauben. M-Aufwand, weil Profil-Schema evtl. von Single zu Array erweitert werden muss.",
+    status: "inprogress",
+    owner: "claudecode",
+    ref: "H8 · PROMPTS/auto-fix-2026-05-18-1545.md"
+  },
+  "f443670f-0683-4bde-b84f-f47d7d6d72b5": {
+    cat: "ux", sev: "low",
+    area: "HW-Pages - Layout-Container nicht buendig",
+    summary: "Seiten wirken leicht reingezoomt, schliessen links/rechts nicht sauber ab.",
+    recommendation: "Root-Container: feste Aussen-Padding `px-4 md:px-6` + `max-w-screen-xl mx-auto`. Ggf. `meta viewport initial-scale=1.0` pruefen. L1 sollte mit V1-Layout-Refactor mitgehen.",
+    status: "inprogress",
+    owner: "claudecode",
+    ref: "L1 · PROMPTS/auto-fix-2026-05-18-1545.md"
+  }
+};
+
+let allFeedbacks = [];
+let filters = { status: "alle", rolle: "alle", owner: "alle" };
+let autoRefresh = true;
+let timer = null;
+
+function classify(fb) {
+  // Wenn Cowork eine manuelle Einschaetzung hat, nimm die. Sonst Heuristik.
+  if (VERDICTS[fb.id]) return VERDICTS[fb.id];
+  const m = (fb.message || "").toLowerCase().trim();
+  let cat = "ux", sev = "medium";
+  if (m === "test" || m.length < 8) { cat = "test"; sev = "low"; }
+  else if (/blocker|crash|500|unauthorized|nicht moeglich|funktioniert nicht|fehler beim/.test(m)) { cat = "bug"; sev = m.includes("blocker") || m.includes("crash") ? "blocker" : "high"; }
+  else if (/super|toll|cool|laeuft gut|intuitiv|schoen|gefaellt|gut geloest|macht spass/.test(m)) { cat = "positive"; sev = "low"; }
+  else if (/waere cool|vermisse|fehlt|wuensche|sollte koennen|inline statt|direkt sehen/.test(m)) { cat = "feature"; sev = "medium"; }
+  else if (/verwirrend|wusste nicht|unklar/.test(m)) { cat = "ux"; sev = "medium"; }
+  return {
+    cat, sev,
+    area: "noch nicht klassifiziert",
+    summary: "Cowork hat diese Nachricht noch nicht ausgewertet.",
+    recommendation: "Wartet auf den naechsten Auto-Loop-Lauf (stuendlich :17). Bis dahin: Heuristik-Klasse: " + cat + " / " + sev + ".",
+    status: "waiting",
+    owner: "cowork"
+  };
+}
+
+function escapeHtml(s) { return String(s || "").replace(/[<>&"]/g, c => ({"<":"&lt;",">":"&gt;","&":"&amp;","\"":"&quot;"})[c]); }
+
+function formatAgo(d) {
+  const sec = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (sec < 60) return sec + "s";
+  if (sec < 3600) return Math.floor(sec / 60) + "m";
+  if (sec < 86400) return Math.floor(sec / 3600) + "h";
+  return Math.floor(sec / 86400) + "d";
+}
+
+const STATUS_LABEL = {
+  done: "Erledigt",
+  inprogress: "In Arbeit",
+  waiting: "Wartet",
+  needdecision: "Lennart-Entscheidung noetig",
+  backlog: "Backlog",
+  blocker: "BLOCKER"
+};
+
+const OWNER_LABEL = {
+  cowork: "Cowork",
+  claudecode: "Claude Code",
+  lennart: "Lennart",
+  erledigt: "—",
+  niemand: "noch nicht zugewiesen"
+};
+
+async function loadFeedbacks() {
+  const list = document.getElementById("list");
+  try {
+    const { data, error } = await supabase
+      .from("feedback")
+      .select("id, user_id, rolle, kontext_url, message, viewed, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw error;
+    allFeedbacks = data || [];
+    document.getElementById("err-banner").style.display = "none";
+    document.getElementById("last-refresh").textContent = "Aktualisiert: " + new Date().toLocaleString("de-DE");
+    render();
+  } catch (e) {
+    const b = document.getElementById("err-banner");
+    b.style.display = "block";
+    b.textContent = "Fehler beim Laden: " + e.message;
+    list.innerHTML = "";
+  }
+}
+
+function render() {
+  const filtered = allFeedbacks.filter(f => {
+    const v = classify(f);
+    if (filters.status === "unviewed" && f.viewed) return false;
+    if (filters.status === "viewed" && !f.viewed) return false;
+    if (filters.rolle !== "alle" && f.rolle !== filters.rolle) return false;
+    if (filters.owner !== "alle" && v.owner !== filters.owner) return false;
+    return true;
+  });
+
+  const s = { total: allFeedbacks.length, unviewed: 0, blocker: 0, lennart: 0, claudecode: 0, done: 0, echt: 0 };
+  allFeedbacks.forEach(f => {
+    if (!f.viewed) s.unviewed++;
+    const v = classify(f);
+    if (v.sev === "blocker") s.blocker++;
+    if (v.owner === "lennart") s.lennart++;
+    if (v.owner === "claudecode") s.claudecode++;
+    if (v.status === "done") s.done++;
+    if (v.cat !== "test") s.echt++;
+  });
+
+  document.getElementById("stats").innerHTML = `
+    <div class="stat"><span class="stat-label">Total</span><span class="stat-value">${s.total}</span></div>
+    <div class="stat"><span class="stat-label">Echte FB</span><span class="stat-value">${s.echt}</span></div>
+    <div class="stat"><span class="stat-label">Unviewed</span><span class="stat-value amber">${s.unviewed}</span></div>
+    <div class="stat"><span class="stat-label">Blocker</span><span class="stat-value ${s.blocker?'red':'green'}">${s.blocker}</span></div>
+    <div class="stat"><span class="stat-label">Wartet auf Lennart</span><span class="stat-value ${s.lennart?'amber':'green'}">${s.lennart}</span></div>
+    <div class="stat"><span class="stat-label">Bei Claude Code</span><span class="stat-value">${s.claudecode}</span></div>
+    <div class="stat"><span class="stat-label">Erledigt</span><span class="stat-value green">${s.done}</span></div>
+  `;
+
+  const list = document.getElementById("list");
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty">Keine Feedbacks fuer diese Filter.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(f => {
+    const v = classify(f);
+    const t = new Date(f.created_at);
+    const ctx = (f.kontext_url || "").replace("https://reparo-app.netlify.app", "").replace("http://localhost:3000", "[local]");
+    return `
+      <div class="item ${f.viewed?'viewed':''} ${v.sev}" data-id="${f.id}">
+        <div class="head">
+          <div class="badges">
+            <span class="badge b-rolle-${f.rolle}">${f.rolle}</span>
+            <span class="badge b-cat-${v.cat}">${v.cat}</span>
+            <span class="badge b-sev-${v.sev}">${v.sev}</span>
+            ${f.viewed ? '<span class="badge" style="background:#e2e6ea;color:#666">viewed</span>' : ''}
+          </div>
+          <span class="time" title="${t.toISOString()}">${t.toLocaleString("de-DE", {dateStyle:"short",timeStyle:"short"})} · vor ${formatAgo(t)}</span>
+        </div>
+        <div class="ctx">${escapeHtml(ctx)}</div>
+        <div class="msg">${escapeHtml(f.message || "")}</div>
+        <div class="verdict">
+          <div class="verdict-row">
+            <span class="verdict-label">Status</span>
+            <span class="status-badge s-${v.status}">${STATUS_LABEL[v.status] || v.status}</span>
+            <span class="owner-tag o-${v.owner}">${OWNER_LABEL[v.owner] || v.owner}</span>
+          </div>
+          <div class="verdict-row">
+            <span class="verdict-label">Bereich</span>
+            <span class="verdict-value"><span class="area-tag">${escapeHtml(v.area)}</span></span>
+          </div>
+          <div class="verdict-row">
+            <span class="verdict-label">Zusammenfassung</span>
+            <span class="verdict-value">${escapeHtml(v.summary)}</span>
+          </div>
+          <div class="verdict-row">
+            <span class="verdict-label">Empfehlung</span>
+            <span class="verdict-value">${escapeHtml(v.recommendation)}</span>
+          </div>
+          ${v.ref ? `<div class="verdict-row"><span class="verdict-label">Referenz</span><span class="verdict-value ref">${escapeHtml(v.ref)}</span></div>` : ''}
+        </div>
+        <div class="item-actions">
+          ${f.viewed
+            ? `<button class="btn" data-mark="${f.id}" data-v="false">Wieder unviewed</button>`
+            : `<button class="btn primary" data-mark="${f.id}" data-v="true">Als viewed markieren</button>`}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  list.querySelectorAll("[data-mark]").forEach(b => {
+    b.addEventListener("click", async e => {
+      e.stopPropagation();
+      const id = b.dataset.mark;
+      const v = b.dataset.v === "true";
+      b.disabled = true; b.textContent = "…";
+      try {
+        const { error } = await supabase.from("feedback").update({ viewed: v }).eq("id", id);
+        if (error) throw error;
+        await loadFeedbacks();
+      } catch (e) { alert("Update fehlgeschlagen: " + e.message); b.disabled = false; }
+    });
+  });
+}
+
+document.querySelectorAll("[data-fs]").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-fs]").forEach(x => x.classList.remove("active"));
+  b.classList.add("active"); filters.status = b.dataset.fs; render();
+}));
+document.querySelectorAll("[data-fr]").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-fr]").forEach(x => x.classList.remove("active"));
+  b.classList.add("active"); filters.rolle = b.dataset.fr; render();
+}));
+document.querySelectorAll("[data-fo]").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-fo]").forEach(x => x.classList.remove("active"));
+  b.classList.add("active"); filters.owner = b.dataset.fo; render();
+}));
+
+document.getElementById("refresh-btn").addEventListener("click", loadFeedbacks);
+function showToast(text, kind) {
+  const t = document.createElement("div");
+  t.textContent = text;
+  t.style.cssText = `position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:${kind==="ok"?"#1a7a5a":"#c98a1f"}; color:white; padding:12px 20px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:10000; font-size:14px; max-width:480px; text-align:center;`;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 5000);
+}
+
+document.getElementById("evaluate-btn").addEventListener("click", async () => {
+  const btn = document.getElementById("evaluate-btn");
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = "Cowork laeuft...";
+  try {
+    // Wenn Dashboard im Cowork-Artifact-Kontext laeuft, direkter Trigger
+    if (window.cowork && typeof window.cowork.runScheduledTask === "function") {
+      await window.cowork.runScheduledTask("reparo-feedback-hourly-loop");
+      showToast("Cowork-Auswertung gestartet — Notification kommt nach Abschluss", "ok");
+      setTimeout(() => { btn.disabled = false; btn.textContent = orig; loadFeedbacks(); }, 5000);
+      return;
+    }
+    // Standalone-Fallback: Trigger-Text in Zwischenablage + Toast
+    const trigger = "Loop jetzt";
+    try {
+      await navigator.clipboard.writeText(trigger);
+      showToast(`"${trigger}" in Zwischenablage kopiert — im Cowork-Chat mit Cmd+V einfuegen`, "ok");
+    } catch {
+      // Clipboard schlaegt fehl (oft bei file://) → prompt-Fallback
+      window.prompt("Diesen Text im Cowork-Chat eingeben (Cmd+C zum Kopieren):", trigger);
+    }
+    btn.disabled = false; btn.textContent = orig;
+  } catch (e) {
+    showToast("Fehler: " + e.message);
+    btn.disabled = false; btn.textContent = orig;
+  }
+});
+document.getElementById("auto-toggle").addEventListener("click", () => {
+  autoRefresh = !autoRefresh;
+  document.getElementById("auto-toggle").textContent = "Auto-Refresh: " + (autoRefresh ? "AN" : "AUS");
+  if (autoRefresh) { timer = setInterval(loadFeedbacks, 60000); }
+  else if (timer) { clearInterval(timer); timer = null; }
+});
+document.getElementById("logout-btn").addEventListener("click", async () => {
+  await supabase.auth.signOut();
+  location.reload();
+});
+
+document.getElementById("login-btn").addEventListener("click", async () => {
+  const email = document.getElementById("email").value.trim();
+  const pw = document.getElementById("pw").value;
+  const err = document.getElementById("login-err");
+  err.style.display = "none";
+  if (!email || !pw) { err.textContent = "E-Mail + Passwort eingeben."; err.style.display = "block"; return; }
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password: pw });
+  if (error) { err.textContent = "Login fehlgeschlagen: " + error.message; err.style.display = "block"; return; }
+  startApp(data.user);
+});
+
+document.getElementById("pw").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("login-btn").click();
+});
+
+function startApp(user) {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  document.getElementById("user-email").textContent = user.email;
+  loadFeedbacks();
+  if (autoRefresh) timer = setInterval(loadFeedbacks, 60000);
+}
+
+(async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) startApp(session.user);
+})();
+</script>
+</body>
+</html>

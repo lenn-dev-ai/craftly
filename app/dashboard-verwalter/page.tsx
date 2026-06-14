@@ -575,7 +575,7 @@ export default function VerwalterDashboard() {
         <div className="text-center mt-6">
           <Link
             href="/dashboard-verwalter/tickets"
-            className="text-xs text-ink-faint hover:text-accent transition-colors"
+            className="text-xs text-ink-muted hover:text-accent transition-colors"
           >
             {erledigt.length} {erledigt.length === 1 ? "erledigter Vorgang" : "erledigte Vorgänge"} im Archiv →
           </Link>
@@ -785,7 +785,7 @@ function Kpi({ label, value, sub, accent, href }: {
     <>
       <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-1">{label}</div>
       <div className={`text-2xl font-bold tabular-nums ${farben[accent || "muted"]}`}>{value}</div>
-      {sub && <div className="text-xs text-ink-faint mt-1">{sub}</div>}
+      {sub && <div className="text-xs text-ink-muted mt-1">{sub}</div>}
     </>
   )
   if (href) {

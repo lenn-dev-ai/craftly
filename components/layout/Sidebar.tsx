@@ -189,7 +189,7 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
           <LogOut size={14} />
           <span>Abmelden</span>
         </button>
-        <div className="mt-3 flex gap-3 px-3 text-[11px] text-ink-faint">
+        <div className="mt-3 flex gap-3 px-3 text-[11px] text-ink-muted">
           <Link
             href="/impressum"
             onClick={() => setMobileOpen(false)}

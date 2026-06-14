@@ -115,7 +115,7 @@ export function GoogleCalBanner() {
         <div className="flex-1 min-w-0 text-xs text-ink">
           <span className="font-semibold">Google-Kalender verbunden</span>
           {userEmail && <span className="text-ink-muted"> · {userEmail}</span>}
-          {seitText && <span className="text-ink-faint"> · seit {seitText}</span>}
+          {seitText && <span className="text-ink-muted"> · seit {seitText}</span>}
         </div>
         <button
           type="button"

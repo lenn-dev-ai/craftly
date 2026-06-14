@@ -116,7 +116,7 @@ export default function TicketsPage() {
               }`}
             >
               {opt.label}
-              <span className={`ml-1.5 ${aktiv ? "text-ink" : "text-ink-faint"}`}>{n}</span>
+              <span className={`ml-1.5 ${aktiv ? "text-ink" : "text-ink-muted"}`}>{n}</span>
             </button>
           )
         })}
@@ -143,7 +143,7 @@ export default function TicketsPage() {
               }`}
             >
               {opt.label}
-              <span className={`ml-1.5 ${aktiv ? "text-white/80" : "text-ink-faint"}`}>{n}</span>
+              <span className={`ml-1.5 ${aktiv ? "text-white/80" : "text-ink-muted"}`}>{n}</span>
             </button>
           )
         })}

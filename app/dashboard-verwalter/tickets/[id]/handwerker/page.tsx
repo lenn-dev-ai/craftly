@@ -527,7 +527,7 @@ function Cell({ label, value, muted, highlight }: {
     <div>
       <div className="text-[10px] text-ink-muted uppercase tracking-wide font-medium">{label}</div>
       <div className={`text-sm font-semibold tabular-nums mt-0.5 ${
-        muted ? "text-ink-faint" : highlight ? "text-accent" : "text-ink"
+        muted ? "text-ink-muted" : highlight ? "text-accent" : "text-ink"
       }`}>
         {value}
       </div>

@@ -294,7 +294,7 @@ function Kpi({ label, value, sub, accent }: {
     <div className="bg-white rounded-2xl border border-line p-4">
       <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-1">{label}</div>
       <div className={`text-xl font-bold tabular-nums ${farbe}`}>{value}</div>
-      {sub && <div className="text-xs text-ink-faint mt-1">{sub}</div>}
+      {sub && <div className="text-xs text-ink-muted mt-1">{sub}</div>}
     </div>
   )
 }

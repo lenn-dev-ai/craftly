@@ -1,11 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { ChevronLeft, ChevronRight, Plus, X, Lock } from "lucide-react"
 import { useToast } from "@/components/Toast"
 import { GoogleCalBanner } from "@/components/handwerker/GoogleCalBanner"
+import { useFocusTrap } from "@/lib/use-focus-trap"
 
 // Sprint AK Stufe 1 (27.05.2026): Verfügbarkeits-/Marktplatz-Konzept ist tot.
 // Verfügbarkeit = Google-Kalender (Source of Truth) + Reparo-Termine.
@@ -168,6 +169,10 @@ export default function KalenderPage() {
   const [googleFetchError, setGoogleFetchError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [slotModal, setSlotModal] = useState<SlotModalState | null>(null)
+
+  // A11Y-Cleanup (Audit #82): Focus-Trap im "Zeit blockieren"-Modal.
+  const slotDialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(slotDialogRef, !!slotModal)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState("")
 
@@ -438,7 +443,7 @@ export default function KalenderPage() {
               ⚠ Google nicht erreichbar
             </span>
           )}
-          <span className="text-ink-faint ml-auto hidden sm:inline">
+          <span className="text-ink-muted ml-auto hidden sm:inline">
             Klick auf eine leere Stunde → Zeit privat blockieren
           </span>
         </div>
@@ -550,7 +555,7 @@ export default function KalenderPage() {
               {stunden.map((s) => (
                 <div
                   key={s}
-                  className="text-[10px] text-ink-faint border-r border-line px-1.5 pt-0.5"
+                  className="text-[10px] text-ink-muted border-r border-line px-1.5 pt-0.5"
                   style={{ gridColumn: 1 }}
                 >
                   {String(s).padStart(2, "0")}:00
@@ -759,6 +764,7 @@ export default function KalenderPage() {
           aria-modal="true"
         >
           <div
+            ref={slotDialogRef}
             className="w-full max-w-sm bg-white rounded-2xl shadow-xl"
             onClick={e => e.stopPropagation()}
           >

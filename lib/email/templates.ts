@@ -4,7 +4,7 @@
 
 import { formatGewerk } from "@/types"
 
-const COLORS = {
+export const COLORS = {
   bg: "#FAF8F5",
   accent: "#3D8B7A",
   warm: "#C4956A",
@@ -14,9 +14,9 @@ const COLORS = {
   border: "#EDE8E1",
 }
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://reparo-app.netlify.app"
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://reparo-app.netlify.app"
 
-function escapeHtml(s: string): string {
+export function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -25,7 +25,7 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;")
 }
 
-function emailLayout(title: string, content: string): string {
+export function emailLayout(title: string, content: string): string {
   return `<!DOCTYPE html>
 <html lang="de">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
@@ -71,7 +71,7 @@ function dringlichkeitBadge(d: string): string {
   return `<span style="display:inline-block;padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600;color:${c.color};background:${c.bg};">${c.label}</span>`
 }
 
-function ctaButton(text: string, url: string): string {
+export function ctaButton(text: string, url: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
     <tr><td>
       <a href="${url}" style="display:inline-block;padding:12px 28px;background:${COLORS.accent};color:#ffffff;text-decoration:none;border-radius:12px;font-weight:600;font-size:15px;">${escapeHtml(text)}</a>
