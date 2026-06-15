@@ -12,9 +12,6 @@ export type TicketStatus =
 export type Prioritaet = "planbar" | "zeitnah" | "notfall"
 export type AngebotStatus = "eingereicht" | "angenommen" | "abgelehnt"
 export type EinladungStatus = "offen" | "angebot" | "abgelehnt"
-export type ZeitslotStatus = "verfuegbar" | "reserviert" | "vergeben" | "abgelaufen"
-export type GebotStatus = "offen" | "angenommen" | "abgelehnt" | "abgelaufen"
-
 export type Gewerk =
   | "sanitaer" | "elektro" | "heizung" | "maler"
   | "schreiner" | "dachdecker" | "schlosser" | "allgemein"
@@ -197,51 +194,3 @@ export interface PrivatTermin {
   bezeichnung?: string; created_at: string
 }
 
-/* ============ YIELD MANAGEMENT TYPES ============ */
-
-export interface Zeitslot {
-  id: string
-  handwerker_id: string
-  titel: string
-  gewerk?: string
-  datum: string
-  von: string
-  bis: string
-  stunden: number
-  basis_preis_stunde: number
-  dynamischer_preis?: number
-  preisfaktor: number
-  status: ZeitslotStatus
-  ist_luecke: boolean
-  notizen?: string
-  created_at: string
-  handwerker?: UserProfile
-  gebote?: ZeitslotGebot[]
-}
-
-export interface ZeitslotGebot {
-  id: string
-  zeitslot_id: string
-  verwalter_id: string
-  ticket_id?: string
-  gebotener_preis: number
-  wunsch_stunden?: number
-  nachricht?: string
-  status: GebotStatus
-  created_at: string
-  verwalter?: UserProfile
-  zeitslot?: Zeitslot
-  ticket?: Ticket
-}
-
-export interface HandwerkerStats {
-  handwerker_id: string
-  woche_einnahmen: number
-  monat_einnahmen: number
-  gesamt_einnahmen: number
-  slots_diese_woche: number
-  slots_naechste_woche: number
-  auslastung_prozent: number
-  durchschnitt_stundensatz: number
-  updated_at: string
-}
