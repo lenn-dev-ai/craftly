@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 import { hasGoogleEventInRange } from "@/lib/google-cal/events"
+import { terminVorschlagenSchema } from "@/lib/schemas"
 
 // K1.3a: HW schickt 2-3 Termin-Vorschläge an den Mieter.
 //
@@ -26,12 +27,6 @@ import { hasGoogleEventInRange } from "@/lib/google-cal/events"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://reparo-app.netlify.app"
 
-interface SlotInput {
-  datum?: unknown
-  von?: unknown
-  bis?: unknown
-}
-
 function escape(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -44,36 +39,26 @@ export async function POST(request: NextRequest) {
   const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  let body: { ticket_id?: unknown; slots?: unknown }
+  let rawBody: unknown
   try {
-    body = await request.json()
+    rawBody = await request.json()
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
   }
 
-  const ticketId = typeof body.ticket_id === "string" ? body.ticket_id : ""
-  const slotsRaw = Array.isArray(body.slots) ? body.slots as SlotInput[] : []
-  if (!ticketId) return NextResponse.json({ error: "ticket_id erforderlich" }, { status: 400 })
+  const parsed = terminVorschlagenSchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Ungültige Eingabe", details: parsed.error.flatten().fieldErrors },
+      { status: 400 },
+    )
+  }
+  const { ticket_id: ticketId, slots, force } = parsed.data
 
-  const slots = slotsRaw
-    .filter(s => typeof s.datum === "string" && typeof s.von === "string" && typeof s.bis === "string")
-    .map(s => ({
-      datum: s.datum as string,
-      von: s.von as string,
-      bis: s.bis as string,
-    }))
-  if (slots.length < 2) {
-    return NextResponse.json({ error: "Mindestens 2 Termine vorschlagen." }, { status: 400 })
-  }
-  if (slots.length > 3) {
-    return NextResponse.json({ error: "Maximal 3 Termine pro Vorschlag." }, { status: 400 })
-  }
+  // Bis-nach-Von-Prüfung: business logic, nicht per Zod abdeckbar ohne superRefine
   for (const s of slots) {
     const [vh, vm] = s.von.split(":").map(Number)
     const [bh, bm] = s.bis.split(":").map(Number)
-    if (!isFinite(vh) || !isFinite(vm) || !isFinite(bh) || !isFinite(bm)) {
-      return NextResponse.json({ error: "Ungültiges Zeitformat" }, { status: 400 })
-    }
     if (bh * 60 + bm <= vh * 60 + vm) {
       return NextResponse.json({ error: "Bis muss nach Von liegen" }, { status: 400 })
     }
@@ -94,7 +79,6 @@ export async function POST(request: NextRequest) {
   // privaten Termine. Bei Konflikt: 422 mit konflikt-Liste, der HW
   // korrigiert dann im UI. Wenn HW nicht verbunden → kein Check.
   // Body-Param `force=true` umgeht den Check (HW weiß was er tut).
-  const force = (body as { force?: unknown }).force === true
   if (!force) {
     const konflikte: Array<{ datum: string; von: string; bis: string }> = []
     for (const s of slots) {

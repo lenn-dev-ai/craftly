@@ -3,6 +3,7 @@ import { createServiceRoleClient } from "@/lib/supabase-server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 import { nachtragEingereichtEmail } from "@/lib/email/templates"
+import { nachtragEinreichenSchema } from "@/lib/schemas"
 
 // POST /api/nachtraege/einreichen
 // Body: { ticket_id, nachtrag_betrag, begruendung, fotos?: string[] }
@@ -17,25 +18,21 @@ import { nachtragEingereichtEmail } from "@/lib/email/templates"
 //   ≤ 25 % → wesentlich  → status='offen', Verwalter-Mail
 //   > 25 % → erheblich   → status='offen', Verwalter-Mail
 export async function POST(request: NextRequest) {
-  let body: {
-    ticket_id?: string
-    nachtrag_betrag?: number
-    begruendung?: string
-    fotos?: string[]
-  }
+  let rawBody: unknown
   try {
-    body = await request.json()
+    rawBody = await request.json()
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
   }
 
-  const { ticket_id: ticketId, nachtrag_betrag, begruendung, fotos } = body
-  if (!ticketId || !begruendung?.trim()) {
-    return NextResponse.json({ error: "ticket_id und begruendung erforderlich" }, { status: 400 })
+  const parsed = nachtragEinreichenSchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Ungültige Eingabe", details: parsed.error.flatten().fieldErrors },
+      { status: 400 },
+    )
   }
-  if (!nachtrag_betrag || nachtrag_betrag <= 0) {
-    return NextResponse.json({ error: "nachtrag_betrag muss > 0 sein" }, { status: 400 })
-  }
+  const { ticket_id: ticketId, nachtrag_betrag, begruendung, fotos } = parsed.data
 
   const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

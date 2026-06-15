@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { sendEmailFireAndForget } from "@/lib/email/send"
+import { feedbackSchema } from "@/lib/schemas"
 
 // POST /api/feedback
 //
@@ -23,22 +24,21 @@ export async function POST(request: NextRequest) {
   const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  let body: { message?: unknown; kontext_url?: unknown }
+  let rawBody: unknown
   try {
-    body = await request.json()
+    rawBody = await request.json()
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
   }
 
-  const message = typeof body.message === "string" ? body.message.trim() : ""
-  if (!message) {
-    return NextResponse.json({ error: "Nachricht ist leer." }, { status: 400 })
+  const parsed = feedbackSchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Ungültige Eingabe", details: parsed.error.flatten().fieldErrors },
+      { status: 400 },
+    )
   }
-  if (message.length > 5000) {
-    return NextResponse.json({ error: "Nachricht zu lang (max 5000 Zeichen)." }, { status: 400 })
-  }
-
-  const kontextRaw = typeof body.kontext_url === "string" ? body.kontext_url.slice(0, 500) : null
+  const { message, kontext_url: kontextRaw } = parsed.data
 
   const { data: profile } = await supabase
     .from("profiles")

@@ -3,6 +3,7 @@ import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { reScoreTicket } from "@/lib/auction/scoring-pipeline"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 import { neuesAngebotEmail } from "@/lib/email/templates"
+import { angebotAnnehmenSchema } from "@/lib/schemas"
 
 // POST /api/auftraege/annehmen (H2: vorher /api/auction/bid)
 // Body: { ticket_id, preis, fruehester_termin?, geschaetzte_dauer?, nachricht? }
@@ -11,27 +12,21 @@ import { neuesAngebotEmail } from "@/lib/email/templates"
 //       Schreibt Angebot, triggert Smart-Score-Recompute für alle Bids des
 //       Tickets.
 export async function POST(request: NextRequest) {
-  let body: {
-    ticket_id?: string
-    preis?: number
-    fruehester_termin?: string
-    geschaetzte_dauer?: string
-    nachricht?: string
-  }
+  let rawBody: unknown
   try {
-    body = await request.json()
+    rawBody = await request.json()
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
   }
 
-  const ticketId = body.ticket_id
-  const preis = Number(body.preis)
-  if (!ticketId) {
-    return NextResponse.json({ error: "ticket_id erforderlich" }, { status: 400 })
+  const parsed = angebotAnnehmenSchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Ungültige Eingabe", details: parsed.error.flatten().fieldErrors },
+      { status: 400 },
+    )
   }
-  if (!isFinite(preis) || preis <= 0) {
-    return NextResponse.json({ error: "preis muss > 0 sein" }, { status: 400 })
-  }
+  const { ticket_id: ticketId, preis, fruehester_termin, geschaetzte_dauer, nachricht } = parsed.data
 
   const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -93,9 +88,9 @@ export async function POST(request: NextRequest) {
       ticket_id: ticketId,
       handwerker_id: user.id,
       preis,
-      fruehester_termin: body.fruehester_termin || null,
-      geschaetzte_dauer: body.geschaetzte_dauer || null,
-      nachricht: body.nachricht || null,
+      fruehester_termin: fruehester_termin || null,
+      geschaetzte_dauer: geschaetzte_dauer || null,
+      nachricht: nachricht || null,
       status: "eingereicht",
     },
     { onConflict: "ticket_id,handwerker_id" },

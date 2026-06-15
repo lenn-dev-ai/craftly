@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
+import { ticketCreateByVerwalterSchema } from "@/lib/schemas"
 
 // POST /api/tickets/create-by-verwalter (Sprint G)
 // Verwalter erstellt Ticket telefonisch via Wizard. Body enthält Anrufer-
@@ -10,43 +11,29 @@ import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 // Auth: nur Verwalter (rolle = 'verwalter'). Setzt
 // eingetragen_von_verwalter = true für das Badge in der Ticket-Liste.
 
-type Body = {
-  mieter_name?: string
-  mieter_telefon?: string | null
-  titel?: string
-  beschreibung?: string
-  gewerk?: string
-  einsatzort_adresse?: string
-  einsatzort_lat?: number | null
-  einsatzort_lng?: number | null
-  wohnung?: string | null
-  prioritaet?: string
-}
-
-const ERLAUBTE_PRIO = new Set(["planbar", "zeitnah", "notfall"])
-
 export async function POST(request: NextRequest) {
-  let body: Body
+  let rawBody: unknown
   try {
-    body = await request.json()
+    rawBody = await request.json()
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
   }
 
-  const mieterName = body.mieter_name?.trim()
-  const titel = body.titel?.trim()
-  const beschreibung = body.beschreibung?.trim()
-  const adresse = body.einsatzort_adresse?.trim()
-  const prioritaet = body.prioritaet ?? "planbar"
-  const gewerk = body.gewerk?.trim() || "allgemein"
-
-  if (!mieterName) return NextResponse.json({ error: "mieter_name erforderlich" }, { status: 400 })
-  if (!titel) return NextResponse.json({ error: "titel erforderlich" }, { status: 400 })
-  if (!beschreibung) return NextResponse.json({ error: "beschreibung erforderlich" }, { status: 400 })
-  if (!adresse) return NextResponse.json({ error: "einsatzort_adresse erforderlich" }, { status: 400 })
-  if (!ERLAUBTE_PRIO.has(prioritaet)) {
-    return NextResponse.json({ error: "prioritaet muss planbar|zeitnah|notfall sein" }, { status: 400 })
+  const parsed = ticketCreateByVerwalterSchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Ungültige Eingabe", details: parsed.error.flatten().fieldErrors },
+      { status: 400 },
+    )
   }
+  const body = parsed.data
+
+  const mieterName = body.mieter_name
+  const titel = body.titel
+  const beschreibung = body.beschreibung
+  const adresse = body.einsatzort_adresse
+  const prioritaet = body.prioritaet
+  const gewerk = body.gewerk?.trim() || "allgemein"
 
   const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

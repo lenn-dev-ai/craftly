@@ -81,3 +81,63 @@ export const passwortZuruecksetzenSchema = z
     path: ["passwordConfirm"],
   })
 export type PasswortZuruecksetzenInput = z.infer<typeof passwortZuruecksetzenSchema>
+
+// ── Mutierende API-Routes (Sprint AT) ────────────────────────────────────────
+
+// POST /api/tickets/create-by-verwalter
+export const ticketCreateByVerwalterSchema = z.object({
+  mieter_name: z.string().trim().min(1, "mieter_name erforderlich").max(200),
+  mieter_telefon: z.string().max(50).nullable().optional(),
+  titel: z.string().trim().min(1, "titel erforderlich").max(200),
+  beschreibung: z.string().trim().min(1, "beschreibung erforderlich").max(2000),
+  gewerk: z.string().trim().max(100).optional(),
+  einsatzort_adresse: z.string().trim().min(1, "einsatzort_adresse erforderlich").max(300),
+  einsatzort_lat: z.number().nullable().optional(),
+  einsatzort_lng: z.number().nullable().optional(),
+  wohnung: z.string().trim().max(100).nullable().optional(),
+  prioritaet: z.enum(["planbar", "zeitnah", "notfall"]).default("planbar"),
+})
+export type TicketCreateByVerwalterInput = z.infer<typeof ticketCreateByVerwalterSchema>
+
+// POST /api/auftraege/annehmen
+// z.coerce.number() statt z.number() damit "125.00" als String toleriert wird.
+export const angebotAnnehmenSchema = z.object({
+  ticket_id: z.string().uuid("ticket_id muss eine gültige UUID sein"),
+  preis: z.coerce.number().positive("preis muss > 0 sein").max(50000, "preis max 50.000 €"),
+  fruehester_termin: z.string().max(100).optional(),
+  geschaetzte_dauer: z.string().max(200).optional(),
+  nachricht: z.string().max(2000).optional(),
+})
+export type AngebotAnnehmenInput = z.infer<typeof angebotAnnehmenSchema>
+
+// POST /api/nachtraege/einreichen
+export const nachtragEinreichenSchema = z.object({
+  ticket_id: z.string().uuid("ticket_id muss eine gültige UUID sein"),
+  nachtrag_betrag: z.coerce.number().positive("nachtrag_betrag muss > 0 sein").max(50000),
+  begruendung: z.string().trim().min(1, "begruendung erforderlich").max(2000),
+  fotos: z.array(z.string().max(500)).max(10).optional(),
+})
+export type NachtragEinreichenInput = z.infer<typeof nachtragEinreichenSchema>
+
+// POST /api/termine/vorschlagen
+const terminSlotSchema = z.object({
+  datum: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Datum muss im Format YYYY-MM-DD sein"),
+  von: z.string().regex(/^\d{2}:\d{2}$/, "Zeit muss im Format HH:MM sein"),
+  bis: z.string().regex(/^\d{2}:\d{2}$/, "Zeit muss im Format HH:MM sein"),
+})
+export const terminVorschlagenSchema = z.object({
+  ticket_id: z.string().uuid("ticket_id muss eine gültige UUID sein"),
+  slots: z
+    .array(terminSlotSchema)
+    .min(2, "Mindestens 2 Termine vorschlagen.")
+    .max(3, "Maximal 3 Termine pro Vorschlag."),
+  force: z.boolean().optional(),
+})
+export type TerminVorschlagenInput = z.infer<typeof terminVorschlagenSchema>
+
+// POST /api/feedback
+export const feedbackSchema = z.object({
+  message: z.string().trim().min(1, "Nachricht ist leer.").max(5000, "Nachricht zu lang (max 5000 Zeichen)."),
+  kontext_url: z.string().max(500).nullable().optional(),
+})
+export type FeedbackInput = z.infer<typeof feedbackSchema>
