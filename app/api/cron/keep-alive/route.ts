@@ -6,29 +6,27 @@ import { createServiceRoleClient } from "@/lib/supabase-server"
 // Login-Spinner). Dieser Cron pingt täglich die DB an, um das zu verhindern.
 //
 // Netlify Scheduled Function: netlify/functions/keep-alive.mts → 06:00 UTC
-// Auth: x-cron-secret-Header (CRON_SECRET env). Fallback: offen (read-only,
-// harmloser Health-Ping ohne sensible Daten).
+// Auth: x-cron-secret-Header (CRON_SECRET env). CRON_SECRET MUSS gesetzt sein —
+// fehlt die Env-Var, antwortet der Endpoint mit 503 statt offen zu laufen.
 
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
-  if (cronSecret) {
-    const authViaSecret = request.headers.get("x-cron-secret") === cronSecret
-    if (!authViaSecret) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+  if (!cronSecret) {
+    return NextResponse.json({ error: "Endpoint not configured — CRON_SECRET missing" }, { status: 503 })
+  }
+  if (request.headers.get("x-cron-secret") !== cronSecret) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  try {
-    const supabase = createServiceRoleClient()
-    const { error } = await supabase.from("profiles").select("id").limit(1)
-    if (error) throw error
-
-    console.log("[keep-alive] Supabase ping OK", new Date().toISOString())
-    return NextResponse.json({ ok: true, ts: new Date().toISOString() })
-  } catch (err) {
-    console.error("[keep-alive] Supabase ping FAILED", err)
-    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 })
+  const supabase = createServiceRoleClient()
+  const { error } = await supabase.from("profiles").select("id").limit(1)
+  if (error) {
+    console.error("[keep-alive] Supabase ping FAILED", error)
+    return NextResponse.json({ ok: false, error: String(error) }, { status: 500 })
   }
+
+  console.log("[keep-alive] Supabase ping OK", new Date().toISOString())
+  return NextResponse.json({ ok: true, ts: new Date().toISOString() })
 }
 
 export async function POST(request: NextRequest) {

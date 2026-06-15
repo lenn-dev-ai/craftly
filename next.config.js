@@ -4,13 +4,13 @@ const nextConfig = {
   // Webpack-Transpile-Liste hinzufügen, sonst kippt der Netlify-
   // Production-Build mit "Cannot use import statement outside a module".
   transpilePackages: ['react-map-gl', 'mapbox-gl'],
-  // Security headers
+  // Security headers — X-Frame-Options wird von netlify.toml (SAMEORIGIN) gesetzt,
+  // daher hier nur die remaining Headers ohne X-Frame-Options.
   async headers() {
     return [
       {
         source: '/(.*)',
         headers: [
-          { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },

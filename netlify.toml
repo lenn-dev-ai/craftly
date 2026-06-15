@@ -18,7 +18,7 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(self), camera=(), microphone=(), payment=()"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://photon.komoot.io; frame-ancestors 'self'; base-uri 'self'; form-action 'self';"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.supabase.co https://api.mapbox.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://photon.komoot.io https://api.stripe.com https://*.mapbox.com https://events.mapbox.com https://*.sentry.io https://browser.sentry-cdn.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';"
 
 # Static assets können länger gecached werden
 [[headers]]

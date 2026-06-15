@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServiceRoleClient } from "@/lib/supabase-server"
+import { createServerSupabaseClient } from "@/lib/supabase-server"
 
 // GET /api/melden/pills?wohnung_id=<uuid>
 //
@@ -118,10 +118,12 @@ export async function GET(req: NextRequest) {
     scores[key] = DEFAULT_TOP5.includes(key) ? 1.0 : 0.3
   }
 
-  // Wenn wohnung_id mitgegeben: versuche Verwalter-Statistik
+  // Wenn wohnung_id mitgegeben: versuche Verwalter-Statistik.
+  // createServerSupabaseClient() nutzt den aufrufenden User-Kontext (RLS).
+  // Anonyme Requests landen als anon-Key → RLS blockiert → stiller Fallback.
   if (wohnungId) {
     try {
-      const supabase = createServiceRoleClient()
+      const supabase = createServerSupabaseClient()
       const { data: wohnung } = await supabase
         .from("wohnungen")
         .select("verwalter_id")
