@@ -66,11 +66,15 @@ function ValueScoreRing({ score }: { score: number }) {
 // ("Handwerker wird gesucht" / "Fertig"), Verwalter/Handwerker behalten
 // die Geschäfts-Begriffe ("Auktion" / "Erledigt") — analog zu PIPELINE_STEPS
 // in app/dashboard-mieter/page.tsx (Audit-R5).
-const PHASEN: { key: string; label: string; labelMieter: string }[] = [
-  { key: "offen",          label: "Gemeldet",  labelMieter: "Gemeldet" },
-  { key: "auktion",        label: "Auktion",   labelMieter: "Handwerker wird gesucht" },
-  { key: "in_bearbeitung", label: "Reparatur", labelMieter: "Reparatur" },
-  { key: "erledigt",       label: "Erledigt",  labelMieter: "Fertig" },
+const PHASEN: { key: string; label: string; labelDirekt: string; labelMieter: string }[] = [
+  { key: "offen",          label: "Gemeldet",  labelDirekt: "Gemeldet", labelMieter: "Gemeldet" },
+  // Sprint AU-Fix: Bei Direktvergabe (vergabemodus === "direkt") wurde nie
+  // eine Auktion gestartet — die Phase heißt dann "Vergabe" statt "Auktion",
+  // sonst wirkt der Indikator bei Sofort-Vergabe-Tickets widersprüchlich
+  // ("Modus: Sofort-Vergabe" + Phasenleiste zeigt "Auktion").
+  { key: "auktion",        label: "Auktion",   labelDirekt: "Vergabe",  labelMieter: "Handwerker wird gesucht" },
+  { key: "in_bearbeitung", label: "Reparatur", labelDirekt: "Reparatur", labelMieter: "Reparatur" },
+  { key: "erledigt",       label: "Erledigt",  labelDirekt: "Erledigt", labelMieter: "Fertig" },
 ]
 function phasenIndex(status: string): number {
   // Sprint AL: "fertiggestellt_hw" ist ein Zwischenstatus innerhalb der
@@ -80,7 +84,7 @@ function phasenIndex(status: string): number {
   const idx = PHASEN.findIndex(p => p.key === status)
   return idx < 0 ? 0 : idx
 }
-function PhasenIndikator({ status, mieterSicht = false }: { status: string; mieterSicht?: boolean }) {
+function PhasenIndikator({ status, mieterSicht = false, vergabemodus }: { status: string; mieterSicht?: boolean; vergabemodus?: string }) {
   const aktiv = phasenIndex(status)
   return (
     <div className="mt-4 pt-4 border-t border-line">
@@ -94,7 +98,7 @@ function PhasenIndikator({ status, mieterSicht = false }: { status: string; miet
       <div className="flex justify-between text-[10px]">
         {PHASEN.map((p, i) => (
           <span key={p.key} className={i <= aktiv ? "text-accent font-medium" : "text-ink-muted"}>
-            {mieterSicht ? p.labelMieter : p.label}
+            {mieterSicht ? p.labelMieter : vergabemodus === "direkt" ? p.labelDirekt : p.label}
           </span>
         ))}
       </div>
@@ -639,7 +643,7 @@ export default function TicketDetailView() {
               Projekt-Tickets bekommen die ausführlichere DiagnosePipeline
               weiter unten. Phasen orientieren sich am Mieter-Dashboard. */}
           {(!ticket.ticket_typ || ticket.ticket_typ === "standard") && (
-            <PhasenIndikator status={ticket.status} mieterSicht={istMieter} />
+            <PhasenIndikator status={ticket.status} mieterSicht={istMieter} vergabemodus={ticket.vergabemodus} />
           )}
 
           {/* Ticket meta */}
