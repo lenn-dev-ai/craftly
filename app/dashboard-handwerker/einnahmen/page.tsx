@@ -4,41 +4,40 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase"
-import { UserProfile, Zeitslot, ZeitslotGebot } from "@/types"
-import { berechneEinnahmenPrognose, GEWERK_BASIS_PREISE } from "@/lib/yield-management"
-import { formatZeit } from "@/lib/format"
-import { useToast } from "@/components/Toast"
+import { formatGewerk } from "@/types"
 
-export default function EinnahmenDashboard() {
+type EinnahmenTicket = {
+  id: string
+  titel: string
+  gewerk: string | null
+  status: string
+  kosten_final: number | null
+  created_at: string
+  hw_abschluss_am: string | null
+  objekte: { name: string; adresse: string }[] | null
+}
+
+function formatEuro(value: number | null | undefined): string {
+  if (!value) return "–"
+  return value.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €"
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  in_bearbeitung: "In Arbeit",
+  fertiggestellt_hw: "Abzunehmen",
+  erledigt: "Erledigt",
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  in_bearbeitung: "bg-accent/10 text-accent border-accent/20",
+  fertiggestellt_hw: "bg-warm/10 text-warm border-warm/20",
+  erledigt: "bg-line text-ink-muted border-line",
+}
+
+export default function EinnahmenPage() {
   const router = useRouter()
-  const { confirm } = useToast()
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [slots, setSlots] = useState<Zeitslot[]>([])
-  const [gebote, setGebote] = useState<ZeitslotGebot[]>([])
+  const [tickets, setTickets] = useState<EinnahmenTicket[]>([])
   const [loading, setLoading] = useState(true)
-  const [toast, setToast] = useState("")
-
-  async function handleGebot(gebotId: string, action: "angenommen" | "abgelehnt") {
-    const label = action === "angenommen" ? "annehmen" : "ablehnen"
-    if (!await confirm(`Anfrage wirklich ${label}?`)) return
-    const supabase = createClient()
-    const { error } = await supabase.from("zeitslot_gebote").update({ status: action }).eq("id", gebotId)
-    if (error) {
-      setToast("Fehler: " + error.message)
-    } else {
-      setToast(action === "angenommen" ? "Anfrage angenommen!" : "Anfrage abgelehnt.")
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const [{ data: mySlots }, { data: myGebote }] = await Promise.all([
-          supabase.from("zeitslots").select("*, gebote:zeitslot_gebote(*)").eq("handwerker_id", user.id).order("datum"),
-          supabase.from("zeitslot_gebote").select("*, zeitslot:zeitslots(*)").eq("zeitslots.handwerker_id", user.id),
-        ])
-        setSlots(mySlots || [])
-        setGebote(myGebote || [])
-      }
-    }
-    setTimeout(() => setToast(""), 3000)
-  }
 
   useEffect(() => {
     async function load() {
@@ -46,15 +45,14 @@ export default function EinnahmenDashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push("/login"); return }
 
-      const [{ data: prof }, { data: mySlots }, { data: myGebote }] = await Promise.all([
-        supabase.from("profiles").select("id, email, name, rolle, gewerk, basis_preis, created_at").eq("id", user.id).single(),
-        supabase.from("zeitslots").select("*, gebote:zeitslot_gebote(*)").eq("handwerker_id", user.id).order("datum"),
-        supabase.from("zeitslot_gebote").select("*, zeitslot:zeitslots(*)").eq("zeitslots.handwerker_id", user.id),
-      ])
+      const { data } = await supabase
+        .from("tickets")
+        .select("id, titel, gewerk, status, kosten_final, created_at, hw_abschluss_am, objekte(name, adresse)")
+        .eq("zugewiesener_hw", user.id)
+        .in("status", ["in_bearbeitung", "fertiggestellt_hw", "erledigt"])
+        .order("created_at", { ascending: false })
 
-      setProfile(prof)
-      setSlots(mySlots || [])
-      setGebote(myGebote || [])
+      setTickets((data as EinnahmenTicket[]) || [])
       setLoading(false)
     }
     load()
@@ -64,267 +62,178 @@ export default function EinnahmenDashboard() {
     <div className="flex items-center justify-center h-64">
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-2 border-accent/30 border-t-[#3D8B7A] rounded-full animate-spin" />
-        <span className="text-sm text-ink-muted">Einnahmen werden berechnet...</span>
+        <span className="text-sm text-ink-muted">Aufträge werden geladen...</span>
       </div>
     </div>
   )
 
-  const prognose = berechneEinnahmenPrognose(slots, gebote)
-  const offeneGebote = gebote.filter(g => g.status === "offen")
-  const basisPreis = profile?.basis_preis || GEWERK_BASIS_PREISE[profile?.gewerk || "allgemein"] || 50
+  const vor30Tagen = new Date(Date.now() - 30 * 86400_000)
+  const vor7Tagen = new Date(Date.now() - 7 * 86400_000)
 
-  const heute = new Date()
-  const in7Tagen = new Date(heute)
-  in7Tagen.setDate(heute.getDate() + 7)
-  const naechsteSlots = slots
-    .filter(s => {
-      const d = new Date(s.datum)
-      return d >= heute && d <= in7Tagen
-    })
-    .sort((a, b) => a.datum.localeCompare(b.datum) || a.von.localeCompare(b.von))
+  const erledigt = tickets.filter(t => t.status === "erledigt")
+  const laufend = tickets.filter(t => t.status === "in_bearbeitung" || t.status === "fertiggestellt_hw")
+  const erledigtLetzte30d = erledigt.filter(t => new Date(t.created_at) >= vor30Tagen)
+  const erledigtLetzte7d = erledigt.filter(t => new Date(t.created_at) >= vor7Tagen)
 
-  const vergebeneSlots = slots.filter(s => s.status === "vergeben")
-  const verfuegbareSlots = slots.filter(s => s.status === "verfuegbar")
-  const avgStundensatz = vergebeneSlots.length > 0
-    ? Math.round(vergebeneSlots.reduce((s, sl) => s + (sl.dynamischer_preis || sl.basis_preis_stunde), 0) / vergebeneSlots.length)
-    : basisPreis
+  const sumLetzte7d = erledigtLetzte7d.reduce((s, t) => s + (t.kosten_final ?? 0), 0)
+  const sumLetzte30d = erledigtLetzte30d.reduce((s, t) => s + (t.kosten_final ?? 0), 0)
+  const sumGesamt = erledigt.reduce((s, t) => s + (t.kosten_final ?? 0), 0)
+  const avgProAuftrag = erledigt.length > 0 ? sumGesamt / erledigt.length : 0
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto pt-16 md:pt-8">
-      {/* Toast */}
-      {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-white border border-accent/30 text-ink text-sm px-4 py-3 rounded-xl shadow-lg">
-          {toast}
-        </div>
-      )}
-
-      {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-ink">Meine Einnahmen</h1>
-        <p className="text-sm text-ink-muted mt-1">Yield Management — Deine Zeit, dein Preis</p>
+        <h1 className="text-2xl font-bold text-ink">Meine Aufträge & Einnahmen</h1>
+        <p className="text-sm text-ink-muted mt-1">Alle dir zugewiesenen Aufträge auf einen Blick</p>
       </div>
 
-      {/* Sprint AK Stufe 3 (27.05.): Hinweis-Banner — alter Slot-Marktplatz
-          ist abgekündigt, diese Übersicht zeigt nur noch Historie. Neue
-          Einnahmen-Logik bindet an Tickets (Sprint AL).
-          Wenn weder Slots noch Gebote vorhanden → Banner kommentarlos weglassen
-          (für neue HW gibt's keine alte Historie). */}
-      {(slots.length > 0 || gebote.length > 0) && (
-        <div className="mb-6 p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
-          <strong>Übergangs-Hinweis:</strong> Diese Übersicht basiert noch auf dem
-          alten Slot-Marktplatz, der schrittweise abgelöst wird (Mieter-First-Workflow).
-          Neue Aufträge laufen direkt über Tickets — der neue Einnahmen-View kommt
-          in einem kommenden Sprint. Bestehende Slots und Gebote bleiben für die
-          Historie erhalten.
-        </div>
-      )}
-
-      {/* 100%-Banner: Klarstellung über Provisions-Modell */}
+      {/* 100%-Provisions-Banner */}
       <div className="mb-6 p-4 rounded-2xl bg-accent/8 border border-accent/25 flex items-center gap-3">
         <div className="w-12 h-12 rounded-xl bg-accent text-white flex items-center justify-center flex-shrink-0 font-bold text-sm">
           100%
         </div>
         <div className="flex-1">
-          <div className="text-sm font-semibold text-ink">
-            Du bekommst den vollen Auftragswert
-          </div>
+          <div className="text-sm font-semibold text-ink">Du bekommst den vollen Auftragswert</div>
           <div className="text-xs text-ink-secondary mt-0.5">
             Reparo finanziert sich über eine Provision der Verwalter — bei dir wird nichts abgezogen.
-            Wenn du 50 €/h bietest und der Auftrag 4 Std dauert, bekommst du 200 €.
           </div>
         </div>
       </div>
 
-      {/* HERO: Einnahmen-Übersicht */}
-      <div className="bg-white rounded-2xl border border-line p-6 mb-6 shadow-sm">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div>
-            <div className="text-xs text-ink-muted font-medium mb-1">Diese Woche verdient</div>
-            <div className="text-3xl font-bold text-accent">
-              {prognose.dieseWoche > 0 ? prognose.dieseWoche.toLocaleString("de") : "0"} <span className="text-base font-medium">€</span>
-            </div>
-          </div>
-          <div>
-            <div className="text-xs text-ink-muted font-medium mb-1">Nächste Woche geplant</div>
-            <div className="text-3xl font-bold text-ink">
-              {prognose.naechsteWoche > 0 ? prognose.naechsteWoche.toLocaleString("de") : "0"} <span className="text-base font-medium">€</span>
-            </div>
-          </div>
-          <div>
-            <div className="text-xs text-ink-muted font-medium mb-1">Offenes Potenzial</div>
-            <div className="text-3xl font-bold text-warm">
-              +{prognose.potenzialNaechsteWoche.toLocaleString("de")} <span className="text-base font-medium">€</span>
-            </div>
-            <div className="text-xs text-ink-muted mt-0.5">{prognose.offeneSlots} offene Slots</div>
-          </div>
-        </div>
-
-        {/* KI-Tipp */}
-        <div className="mt-5 bg-surface rounded-xl p-4 flex items-start gap-3 border border-line">
-          <span className="text-xs bg-warm/15 text-warm px-2 py-0.5 rounded-full font-bold flex-shrink-0">AI</span>
-          <div className="text-sm text-ink-secondary flex-1">{prognose.tipp}</div>
-        </div>
-      </div>
-
-      {/* KPIs */}
+      {/* KPI-Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <div className="bg-white rounded-xl border border-line p-4">
-          <div className="text-xs text-ink-muted mb-1">Ø Stundensatz</div>
-          <div className="text-2xl font-bold text-ink">{avgStundensatz} €</div>
-          <div className="text-xs text-accent">Markt: {basisPreis} €</div>
+          <div className="text-xs text-ink-muted mb-1">Diese Woche</div>
+          <div className="text-2xl font-bold text-accent">
+            {sumLetzte7d > 0 ? sumLetzte7d.toLocaleString("de") + " €" : "0 €"}
+          </div>
+          <div className="text-xs text-ink-muted">Abgeschlossen</div>
         </div>
         <div className="bg-white rounded-xl border border-line p-4">
-          <div className="text-xs text-ink-muted mb-1">Aktive Slots</div>
-          <div className="text-2xl font-bold text-accent">{verfuegbareSlots.length}</div>
-          <div className="text-xs text-ink-muted">Online sichtbar</div>
+          <div className="text-xs text-ink-muted mb-1">Letzte 30 Tage</div>
+          <div className="text-2xl font-bold text-ink">
+            {sumLetzte30d > 0 ? sumLetzte30d.toLocaleString("de") + " €" : "0 €"}
+          </div>
+          <div className="text-xs text-ink-muted">{erledigtLetzte30d.length} Aufträge</div>
         </div>
         <div className="bg-white rounded-xl border border-line p-4">
-          <div className="text-xs text-ink-muted mb-1">Offene Anfragen</div>
-          <div className="text-2xl font-bold text-warm">{offeneGebote.length}</div>
-          <div className="text-xs text-ink-muted">Warten auf Antwort</div>
+          <div className="text-xs text-ink-muted mb-1">In Arbeit</div>
+          <div className="text-2xl font-bold text-warm">{laufend.length}</div>
+          <div className="text-xs text-ink-muted">
+            {laufend.length === 0 ? "Keine laufenden" : laufend.length === 1 ? "Auftrag" : "Aufträge"}
+          </div>
         </div>
         <div className="bg-white rounded-xl border border-line p-4">
-          <div className="text-xs text-ink-muted mb-1">Vergeben</div>
-          <div className="text-2xl font-bold text-ink">{vergebeneSlots.length}</div>
-          <div className="text-xs text-ink-muted">Gebuchte Aufträge</div>
+          <div className="text-xs text-ink-muted mb-1">Ø pro Auftrag</div>
+          <div className="text-2xl font-bold text-ink">
+            {avgProAuftrag > 0 ? Math.round(avgProAuftrag).toLocaleString("de") + " €" : "–"}
+          </div>
+          <div className="text-xs text-ink-muted">{erledigt.length} abgeschlossen</div>
         </div>
       </div>
 
-      {/* Loop-28 (Feedback 8e382074): "+ Zeitslot erstellen"-CTA entfernt —
-          widersprach dem Übergangs-Hinweis direkt darüber (alter
-          Slot-Marktplatz wird abgelöst, neue Aufträge laufen über Tickets).
-          CTA hätte aktiv zum Ausbau des abgekündigten Systems aufgefordert. */}
-
-      {/* Offene Gebote */}
-      {offeneGebote.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-sm font-semibold text-ink mb-3">Offene Anfragen ({offeneGebote.length})</h2>
-          <div className="flex flex-col gap-2">
-            {offeneGebote.map(g => (
-              <div key={g.id} className="bg-white border border-warm/20 rounded-xl p-4">
-                {(g as any).zeitslot && (
-                  <div className="flex items-center gap-2 mb-3 pb-2 border-b border-line">
-                    <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full font-medium">Zeitslot</span>
-                    <span className="text-xs text-ink-secondary font-medium">{(g as any).zeitslot.titel}</span>
-                    <span className="text-xs text-ink-muted">
-                      {new Date((g as any).zeitslot.datum).toLocaleDateString("de", { weekday: "short", day: "numeric", month: "short" })}
-                      {" · "}{(g as any).zeitslot.von} – {(g as any).zeitslot.bis}
-                    </span>
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-medium text-ink">{g.verwalter?.firma || g.verwalter?.name || "Hausverwaltung"}</div>
-                    <div className="text-xs text-ink-muted mt-1">
-                      {g.wunsch_stunden ? `${g.wunsch_stunden}h gewünscht` : ""}
-                      {g.nachricht && ` — "${g.nachricht}"`}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xl font-bold text-accent">{g.gebotener_preis} €</div>
-                    <div className="text-xs text-ink-muted">Geboten</div>
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-3">
-                  <button
-                    onClick={() => handleGebot(g.id, "angenommen")}
-                    className="flex-1 text-xs font-semibold bg-accent text-white py-2.5 rounded-lg hover:bg-accent-hover transition-colors"
-                  >
-                    Annehmen
-                  </button>
-                  <button
-                    onClick={() => handleGebot(g.id, "abgelehnt")}
-                    className="text-xs text-ink-secondary border border-line px-4 py-2.5 rounded-lg hover:bg-surface-muted transition-colors"
-                  >
-                    Ablehnen
-                  </button>
-                </div>
-              </div>
-            ))}
+      {tickets.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-line p-12 text-center">
+          <div className="text-3xl mb-3">🔧</div>
+          <div className="text-sm font-medium text-ink mb-1">Noch keine Aufträge</div>
+          <div className="text-xs text-ink-muted mb-4">
+            Offene Direktanfragen findest du auf deinem Dashboard.
           </div>
-        </div>
-      )}
-
-      {/* Nächste Slots Timeline */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-ink">Nächste 7 Tage</h2>
           <Link
-            href="/dashboard-handwerker/zeitslots"
-            className="text-xs text-accent hover:text-[#2D7A6A] transition-colors font-medium"
+            href="/dashboard-handwerker"
+            className="inline-block text-xs text-accent border border-accent/20 px-4 py-2 rounded-lg hover:bg-accent/5 transition-colors"
           >
-            Alle verwalten →
+            Zum Dashboard →
           </Link>
         </div>
-        {naechsteSlots.length === 0 ? (
-          <div className="bg-white rounded-xl border border-line p-8 text-center">
-            <div className="text-2xl mb-2">&#128197;</div>
-            <div className="text-sm text-ink-secondary">Keine Slots für die nächsten 7 Tage</div>
-            <Link
-              href="/dashboard-handwerker/zeitslots"
-              className="mt-3 inline-block text-xs text-accent border border-accent/20 px-4 py-2 rounded-lg hover:bg-accent/5 transition-colors"
-            >
-              Jetzt Zeitslots erstellen
-            </Link>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {naechsteSlots.map(s => {
-              const preis = s.dynamischer_preis || s.basis_preis_stunde
-              const gebotsCount = (s.gebote as any[])?.length || 0
-              const statusColors: Record<string, string> = {
-                verfuegbar: "bg-accent/8 text-accent border-accent/15",
-                reserviert: "bg-warm/10 text-warm border-warm/15",
-                vergeben: "bg-[#2D2A26]/8 text-ink border-[#2D2A26]/15",
-                abgelaufen: "bg-line text-ink-muted border-line",
-              }
-              const statusLabels: Record<string, string> = {
-                verfuegbar: "Online", reserviert: "Reserviert",
-                vergeben: "Gebucht", abgelaufen: "Abgelaufen",
-              }
-
-              return (
-                <div key={s.id} className="bg-white rounded-xl border border-line p-4 hover:border-accent/20 hover:shadow-sm transition-all">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="text-center min-w-[50px]">
-                        <div className="text-xs text-ink-muted">
-                          {new Date(s.datum).toLocaleDateString("de", { weekday: "short" })}
+      ) : (
+        <>
+          {/* Laufende Aufträge */}
+          {laufend.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold text-ink mb-3">Laufende Aufträge ({laufend.length})</h2>
+              <div className="flex flex-col gap-2">
+                {laufend.map(t => (
+                  <Link
+                    key={t.id}
+                    href={`/dashboard-handwerker/angebot/${t.id}`}
+                    className="bg-white rounded-xl border border-accent/20 p-4 hover:border-accent/40 hover:shadow-sm transition-all block"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${STATUS_COLORS[t.status] ?? "bg-line text-ink-muted border-line"}`}>
+                            {STATUS_LABELS[t.status] ?? t.status}
+                          </span>
+                          {t.gewerk && (
+                            <span className="text-xs text-ink-muted">{formatGewerk(t.gewerk)}</span>
+                          )}
                         </div>
-                        <div className="text-lg font-bold text-ink">
-                          {new Date(s.datum).getDate()}.{new Date(s.datum).getMonth() + 1}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-ink">{s.titel}</div>
-                        <div className="text-xs text-ink-muted">{formatZeit(s.von)} – {formatZeit(s.bis)} ({s.stunden}h)</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {gebotsCount > 0 && (
-                        <span className="text-xs bg-warm/10 text-warm px-2 py-0.5 rounded-full font-medium">
-                          {gebotsCount} {gebotsCount === 1 ? "Anfrage" : "Anfragen"}
-                        </span>
-                      )}
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-accent">{preis} €/h</div>
-                        {s.preisfaktor > 1.0 && (
-                          <div className="text-xs text-warm">
-                            ×{s.preisfaktor} Surge
-                          </div>
+                        <div className="text-sm font-medium text-ink truncate">{t.titel}</div>
+                        {t.objekte?.[0] && (
+                          <div className="text-xs text-ink-muted mt-0.5">{t.objekte[0].name}</div>
                         )}
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium border ${statusColors[s.status]}`}>
-                        {statusLabels[s.status]}
-                      </span>
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-lg font-bold text-accent">{formatEuro(t.kosten_final)}</div>
+                        <div className="text-xs text-ink-muted">
+                          {new Date(t.created_at).toLocaleDateString("de", { day: "numeric", month: "short" })}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Erledigte Aufträge */}
+          {erledigt.length > 0 && (
+            <div>
+              <h2 className="text-sm font-semibold text-ink mb-3">
+                Abgeschlossen ({erledigt.length})
+                {sumGesamt > 0 && (
+                  <span className="ml-2 text-xs font-normal text-ink-muted">
+                    — gesamt {formatEuro(sumGesamt)}
+                  </span>
+                )}
+              </h2>
+              <div className="flex flex-col gap-2">
+                {erledigt.map(t => (
+                  <Link
+                    key={t.id}
+                    href={`/dashboard-handwerker/angebot/${t.id}`}
+                    className="bg-white rounded-xl border border-line p-4 hover:border-accent/20 hover:shadow-sm transition-all block"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium border bg-line text-ink-muted border-line">
+                            Erledigt
+                          </span>
+                          {t.gewerk && (
+                            <span className="text-xs text-ink-muted">{formatGewerk(t.gewerk)}</span>
+                          )}
+                        </div>
+                        <div className="text-sm font-medium text-ink truncate">{t.titel}</div>
+                        {t.objekte?.[0] && (
+                          <div className="text-xs text-ink-muted mt-0.5">{t.objekte[0].name}</div>
+                        )}
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-lg font-bold text-ink">{formatEuro(t.kosten_final)}</div>
+                        <div className="text-xs text-ink-muted">
+                          {new Date(t.hw_abschluss_am ?? t.created_at).toLocaleDateString("de", { day: "numeric", month: "short", year: "numeric" })}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }

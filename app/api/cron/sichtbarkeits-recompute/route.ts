@@ -6,12 +6,18 @@ import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 //
 // Recomputed für jeden Handwerker den verfuegbarkeit_score (0..100) und
 // daraus die sichtbarkeit_stufe (bronze/silber/gold). Diese Stufe fließt
-// als Multiplier in den Smart-Score (siehe lib/auction/smart-score.ts).
+// als Multiplier in den Smart-Score (lib/auction/smart-score.ts):
+//   gold ×1.10 | silber ×1.05 | bronze ×1.00
 //
-// Komponenten (Summe = 100):
-//   - 30 Punkte: Zeitslot-Verfügbarkeit in nächsten 14 Tagen
-//   - 50 Punkte: bewertung_avg (linear 0..5 → 0..50)
-//   - 20 Punkte: Angebots-Aktivität (Anzahl Bids letzte 30 Tage)
+// Komponenten (Summe = 100) — Sprint AP (V2):
+//   - 15 Punkte: Google-Cal verbunden (Row in hw_google_oauth)
+//   - 15 Punkte: Antwort-Rate auf Direktanfragen (letzte 30 Tage)
+//               einladungen.status!='offen' + stamm_anfragen.status!='gesendet'
+//               / Gesamtanzahl Direktanfragen → prorated 0..15
+//   - 50 Punkte: bewertung_avg (linear 0..5 → 0..50, Neuling-Default: 30)
+//   - 20 Punkte: Direktvergabe-Aktivität letzte 30 Tage
+//               (einladungen.status='angebot' + stamm_anfragen.status='angenommen')
+//               → prorated 0..20 (Ziel: 5 Vergaben/Monat = 20 Punkte)
 //
 // Stufe-Mapping:
 //   ≥ 75 Punkte → gold
@@ -20,15 +26,8 @@ import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 //
 // Bei 100-1000 HW noch eine Update pro HW akzeptabel (≤ 2s Latenz).
 // Bei mehr: SQL-Function wäre nächster Schritt.
-//
-// Sprint AK Stufe 3 (27.05.2026) — DEPRECATED-MARKIERUNG:
-// Komponente 1 (Zeitslot-Verfügbarkeit) liefert ab jetzt für neue HW immer 0,
-// weil das Slot-Konzept abgekündigt ist (siehe Konzept-Memo). Score wird
-// dadurch zu sehr von Bewertung dominiert. Sprint AL ersetzt Komponente 1
-// durch "Google-Cal verbunden + Antwort-Rate auf Einladungen".
 
-const ZIEL_SLOTS = 20      // bei diesem Wert volle 30 Punkte
-const ZIEL_BIDS_30D = 10   // bei diesem Wert volle 20 Punkte
+const ZIEL_VERGABEN_30D = 5    // bei diesem Wert volle 20 Punkte
 
 export async function POST(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
@@ -43,9 +42,7 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createServiceRoleClient()
-  const jetzt = new Date()
-  const in14Tagen = new Date(jetzt.getTime() + 14 * 86400_000).toISOString().slice(0, 10)
-  const vor30Tagen = new Date(jetzt.getTime() - 30 * 86400_000).toISOString()
+  const vor30Tagen = new Date(Date.now() - 30 * 86400_000).toISOString()
 
   const { data: hws, error } = await admin
     .from("profiles")
@@ -64,30 +61,53 @@ export async function POST(request: NextRequest) {
   const stufenWechsel: Array<{ id: string; alt: string; neu: string }> = []
 
   for (const hw of hws ?? []) {
-    // Komponente 1: Zeitslots verfügbar
-    const { count: slots } = await admin
-      .from("zeitslots")
-      .select("id", { count: "exact", head: true })
-      .eq("handwerker_id", hw.id)
-      .eq("status", "verfuegbar")
-      .gte("datum", jetzt.toISOString().slice(0, 10))
-      .lte("datum", in14Tagen)
-    const slotPunkte = Math.min(30, Math.round(((slots ?? 0) / ZIEL_SLOTS) * 30))
+    // Komponente 1a: Google-Cal verbunden (15 Punkte)
+    const { count: googleCalCount } = await admin
+      .from("hw_google_oauth")
+      .select("user_id", { count: "exact", head: true })
+      .eq("user_id", hw.id)
+    const googleCalPunkte = (googleCalCount ?? 0) > 0 ? 15 : 0
 
-    // Komponente 2: Bewertung
+    // Komponente 1b: Antwort-Rate letzte 30 Tage (15 Punkte)
+    const [
+      { count: einlGesamt },
+      { count: einlBeantwortet },
+      { count: stammGesamt },
+      { count: stammBeantwortet },
+    ] = await Promise.all([
+      admin.from("einladungen").select("id", { count: "exact", head: true })
+        .eq("handwerker_id", hw.id).gte("created_at", vor30Tagen),
+      admin.from("einladungen").select("id", { count: "exact", head: true })
+        .eq("handwerker_id", hw.id).gte("created_at", vor30Tagen).neq("status", "offen"),
+      admin.from("stamm_anfragen").select("id", { count: "exact", head: true })
+        .eq("handwerker_id", hw.id).gte("created_at", vor30Tagen),
+      admin.from("stamm_anfragen").select("id", { count: "exact", head: true })
+        .eq("handwerker_id", hw.id).gte("created_at", vor30Tagen).neq("status", "gesendet"),
+    ])
+    const totalAnfragen = (einlGesamt ?? 0) + (stammGesamt ?? 0)
+    const totalBeantwortet = (einlBeantwortet ?? 0) + (stammBeantwortet ?? 0)
+    const antwortRate = totalAnfragen > 0 ? totalBeantwortet / totalAnfragen : 1.0
+    const antwortPunkte = Math.round(antwortRate * 15)
+
+    // Komponente 2: Bewertung (50 Punkte)
     const bewertungPunkte = hw.bewertung_avg
       ? Math.min(50, Math.round((hw.bewertung_avg / 5) * 50))
       : 30 // Neuling-Default (entspricht ~3.0 / 5)
 
-    // Komponente 3: Angebots-Aktivität
-    const { count: bids } = await admin
-      .from("angebote")
-      .select("id", { count: "exact", head: true })
-      .eq("handwerker_id", hw.id)
-      .gte("created_at", vor30Tagen)
-    const aktivitaetPunkte = Math.min(20, Math.round(((bids ?? 0) / ZIEL_BIDS_30D) * 20))
+    // Komponente 3: Direktvergabe-Aktivität letzte 30 Tage (20 Punkte)
+    const [
+      { count: einlAngenommen },
+      { count: stammAngenommen },
+    ] = await Promise.all([
+      admin.from("einladungen").select("id", { count: "exact", head: true })
+        .eq("handwerker_id", hw.id).eq("status", "angebot").gte("created_at", vor30Tagen),
+      admin.from("stamm_anfragen").select("id", { count: "exact", head: true })
+        .eq("handwerker_id", hw.id).eq("status", "angenommen").gte("created_at", vor30Tagen),
+    ])
+    const vergaben = (einlAngenommen ?? 0) + (stammAngenommen ?? 0)
+    const aktivitaetPunkte = Math.min(20, Math.round((vergaben / ZIEL_VERGABEN_30D) * 20))
 
-    const score = slotPunkte + bewertungPunkte + aktivitaetPunkte
+    const score = googleCalPunkte + antwortPunkte + bewertungPunkte + aktivitaetPunkte
     const stufe: "gold" | "silber" | "bronze" =
       score >= 75 ? "gold" : score >= 50 ? "silber" : "bronze"
 
@@ -113,6 +133,6 @@ export async function POST(request: NextRequest) {
     updated,
     stufenVerteilung,
     stufenWechselAnzahl: stufenWechsel.length,
-    stufenWechsel: stufenWechsel.slice(0, 20), // first 20 für Log
+    stufenWechsel: stufenWechsel.slice(0, 20),
   })
 }
