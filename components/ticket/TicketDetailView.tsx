@@ -19,7 +19,7 @@ function berechneValueScore(angebot: Angebot, alleAngebote: Angebot[]): number {
   const maxPreis = Math.max(...preise)
   const preisRange = maxPreis - minPreis || 1
   const preisScore = 1 - ((angebot.preis - minPreis) / preisRange)
-  const bewertung = (angebot.handwerker as any)?.bewertung_avg || 3
+  const bewertung = angebot.handwerker?.bewertung_avg || 3
   const qualScore = Math.min(bewertung / 5, 1)
   let terminScore = 0.5
   if (angebot.fruehester_termin) {
@@ -963,10 +963,10 @@ export default function TicketDetailView() {
               if (!hw) return null
               return (
                 <div className="flex items-center gap-3">
-                  <Avatar name={(hw.handwerker as any)?.name || "?"} size="md" />
+                  <Avatar name={hw.handwerker?.name || "?"} size="md" />
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-ink">{(hw.handwerker as any)?.name}</div>
-                    <div className="text-xs text-ink-muted">{(hw.handwerker as any)?.firma}</div>
+                    <div className="text-sm font-medium text-ink">{hw.handwerker?.name}</div>
+                    <div className="text-xs text-ink-muted">{hw.handwerker?.firma}</div>
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-bold text-accent">{hw.preis} EUR</div>
@@ -1102,7 +1102,7 @@ export default function TicketDetailView() {
             <div className="space-y-4">
               {sortiertAngebote.map((a, idx) => {
                 const rank = idx + 1
-                const hw = a.handwerker as any
+                const hw = a.handwerker
                 const isTop = rank === 1 && sortiertAngebote.length > 1
                 const isAngenommen = a.status === "angenommen"
                 const isAbgelehnt = a.status === "abgelehnt"
@@ -1127,8 +1127,8 @@ export default function TicketDetailView() {
                             <div className="text-xs text-ink-muted">{hw?.firma || "Firma"}</div>
                             <div className="flex items-center gap-3 mt-1">
                               <StarRating rating={hw?.bewertung_avg || 0} />
-                              {hw?.auftraege_anzahl > 0 && (
-                                <span className="text-[10px] text-ink-muted">{hw.auftraege_anzahl} Aufträge</span>
+                              {(hw?.auftraege_anzahl ?? 0) > 0 && (
+                                <span className="text-[10px] text-ink-muted">{hw!.auftraege_anzahl} Aufträge</span>
                               )}
                             </div>
                           </div>
@@ -1150,7 +1150,7 @@ export default function TicketDetailView() {
                         </div>
                         <div className="bg-surface rounded-xl p-3">
                           <div className="text-[10px] text-ink-muted mb-1">Geschätzte Dauer</div>
-                          <div className="text-sm font-medium text-ink">{(a as any).geschaetzte_dauer ? (a as any).geschaetzte_dauer + " Tage" : "—"}</div>
+                          <div className="text-sm font-medium text-ink">{a.geschaetzte_dauer ? a.geschaetzte_dauer + " Tage" : "—"}</div>
                         </div>
                       </div>
 

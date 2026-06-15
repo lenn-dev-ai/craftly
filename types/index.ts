@@ -137,6 +137,7 @@ export interface Angebot {
   entfernung_km?: number | null
   fahrzeit_min?: number | null
   ist_routen_bonus?: boolean | null
+  geschaetzte_dauer?: string | null
 }
 
 export interface Einladung {
