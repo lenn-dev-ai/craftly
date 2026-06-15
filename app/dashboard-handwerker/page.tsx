@@ -7,6 +7,7 @@ import { Ticket, UserProfile, formatGewerk } from "@/types"
 import DistanceBadge from "@/components/DistanceBadge"
 import { Timer } from "@/components/ui/Timer"
 import { haversineKm } from "@/lib/distance"
+import DirektanfragenInbox from "@/components/handwerker/DirektanfragenInbox"
 
 type Dringlichkeit = "notfall" | "zeitnah" | "planbar"
 
@@ -23,6 +24,7 @@ export default function HandwerkerDashboard() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [zeigeAusserhalb, setZeigeAusserhalb] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [offeneAnfragenCount, setOffeneAnfragenCount] = useState(0)
 
   const load = useCallback(async () => {
     const supabase = createClient()
@@ -98,28 +100,28 @@ export default function HandwerkerDashboard() {
     return stammGewerke.includes(tg)
   }
 
-  // Im-Radius-Filter: ohne Standort zeigen wir alles
-  const imRadiusListe = standortGesetzt
-    ? auktionen.filter(t => distanzVon(t) <= radiusKm)
-    : auktionen
-  const imRadius = imRadiusListe.length
-  const ausserhalb = auktionen.length - imRadius
+  // Sprint AN: Auktionen sind jetzt die "Fallback läuft"-Sektion (sekundär,
+  // siehe SPRINT-AN-SPEC.md). Wir berechnen zuerst alle Tickets, die zu den
+  // Stamm-Gewerken des HW passen — die Sektion erscheint nur, wenn davon
+  // überhaupt etwas existiert. Radius-Filter/Toggle bleibt innerhalb der
+  // Sektion erhalten.
+  const auktionenGewerkMatch = hatStammGewerke ? auktionen.filter(passtZumGewerk) : []
+  const imRadiusGewerkMatch = standortGesetzt
+    ? auktionenGewerkMatch.filter(t => distanzVon(t) <= radiusKm)
+    : auktionenGewerkMatch
+  const ausserhalbGewerkMatch = auktionenGewerkMatch.length - imRadiusGewerkMatch.length
 
-  // Anzeige-Liste: standardmäßig Im-Radius + Gewerk-Match, optional alle
-  const sichtbareAuktionen = (standortGesetzt && !zeigeAusserhalb
-    ? imRadiusListe
-    : auktionen
-  ).filter(passtZumGewerk)
-  const ausgeblendetWegenGewerk =
-    (standortGesetzt && !zeigeAusserhalb ? imRadiusListe : auktionen).length -
-    sichtbareAuktionen.length
+  // Anzeige-Liste: standardmäßig Im-Radius, optional alle (Toggle)
+  const sichtbareFallback = standortGesetzt && !zeigeAusserhalb
+    ? imRadiusGewerkMatch
+    : auktionenGewerkMatch
 
   // Sortierung:
   //  Primär: Smart-Score absteigend (wenn der Handwerker schon ein Bid hat)
   //  Sekundär: Distanz aufsteigend
   // Smart-Score-Vorgriff: liegt nur am eigenen Bid vor — falls noch keiner
   // existiert, sortieren wir reine Distanz.
-  const auktionenSortiert = [...sichtbareAuktionen].sort((a, b) => {
+  const fallbackSortiert = [...sichtbareFallback].sort((a, b) => {
     const aBid = a.angebote?.find(x => x.handwerker_id === profile?.id)
     const bBid = b.angebote?.find(x => x.handwerker_id === profile?.id)
     const sa = aBid?.smart_score ?? null
@@ -198,32 +200,26 @@ export default function HandwerkerDashboard() {
 
       {/* Hero Metric: Verdienst-Potenzial */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        {/* H5: KPI-Kachel "Verfügbar im Radius" jetzt klickbar →
-            scrollt zur Ausschreibungs-Liste weiter unten (gleicher
-            Page-Anchor). Pattern wie Verwalter-F9 (29626eb), aber
-            statt Route-Filter ein In-Page-Anchor, weil die Liste
-            ohnehin direkt darunter steht.
-            Loop-25-Fix (27.05., Feedback 55302a76): Kachel zeigt jetzt
-            sichtbareAuktionen.length (= mit Gewerk-Filter), damit
-            Hero-Zahl IMMER zur Liste passt. Zusatz-Hinweis wenn HW im
-            Radius hat, die aber per Gewerk ausgeblendet sind — sonst
-            wirkt es wie ein Bug ("1" steht da aber Liste leer). */}
+        {/* Sprint AN: Kachel 1 zeigt jetzt die Anzahl offener
+            Direktanfragen (stamm_anfragen, status='gesendet') statt
+            der Auktionen-Anzahl — das ist der eigentliche
+            Sprint-AM-Kernmoment ("Dir wurde Auftrag X automatisch
+            vorgeschlagen"). Anchor verweist auf die neue
+            #direktanfragen-Sektion. */}
         <a
-          href="#ausschreibungen"
+          href="#direktanfragen"
           className="block bg-gradient-to-br from-[#3D8B7A] to-[#2D6B5A] rounded-2xl p-5 text-white sm:col-span-1 hover:shadow-md hover:brightness-105 transition-all cursor-pointer"
         >
           <div className="text-xs font-medium text-white/80 mb-1 uppercase tracking-wide">
-            Verfügbar im Radius
+            Offene Anfragen
           </div>
-          <div className="text-4xl font-bold tabular-nums">{sichtbareAuktionen.length}</div>
+          <div className="text-4xl font-bold tabular-nums">{offeneAnfragenCount}</div>
           <div className="text-xs text-white/70 mt-2">
-            {sichtbareAuktionen.length === 1 ? "offene Ausschreibung" : "offene Ausschreibungen"}
-            {ausgeblendetWegenGewerk > 0 && (
-              <span className="block mt-0.5">+{ausgeblendetWegenGewerk} anderes Gewerk</span>
-            )}
-            {standortGesetzt && imRadius < auktionen.length && (
-              <span className="block mt-0.5">+{auktionen.length - imRadius} außerhalb</span>
-            )}
+            {offeneAnfragenCount === 0
+              ? "Aktuell keine offenen Anfragen"
+              : offeneAnfragenCount === 1
+              ? "wartet auf deine Antwort"
+              : "warten auf deine Antwort"}
           </div>
         </a>
         <div className="bg-white rounded-2xl border border-line p-5">
@@ -255,31 +251,18 @@ export default function HandwerkerDashboard() {
         <QuickAction href="/dashboard-handwerker/profil" label="Profil" icon="◎" />
       </div>
 
-      {/* Auktionen — der Hauptcontent */}
-      <div id="ausschreibungen" className="mb-10 scroll-mt-6">
+      {/* Direktanfragen — der neue Hauptcontent (Sprint AN). Zeigt die
+          offenen 1:1-Stamm-Anfragen (Sprint-AM-Kernmoment: "Dir wurde
+          Auftrag X automatisch vorgeschlagen — Annehmen/Ablehnen mit
+          Frist"), siehe SPRINT-AN-SPEC.md. */}
+      <div id="direktanfragen" className="mb-10 scroll-mt-6">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <h2 className="text-lg font-semibold text-ink">Aktuelle Ausschreibungen</h2>
-          <div className="flex items-center gap-3 text-xs">
-            {standortGesetzt && (
-              zeigeAusserhalb ? (
-                <button
-                  onClick={() => setZeigeAusserhalb(false)}
-                  className="text-accent hover:underline font-medium"
-                >
-                  Nur im Radius zeigen ({imRadius})
-                </button>
-              ) : ausserhalb > 0 ? (
-                <button
-                  onClick={() => setZeigeAusserhalb(true)}
-                  className="text-ink-muted hover:text-ink font-medium"
-                >
-                  + {ausserhalb} außerhalb anzeigen
-                </button>
-              ) : (
-                <span className="text-ink-muted">Nach Smart-Score sortiert</span>
-              )
-            )}
-          </div>
+          <h2 className="text-lg font-semibold text-ink">Direktanfragen</h2>
+          {hatStammGewerke && offeneAnfragenCount > 5 && (
+            <Link href="/dashboard-handwerker/stamm-anfragen" className="text-sm text-accent hover:text-[#2D6B5A] font-medium">
+              Alle anzeigen →
+            </Link>
+          )}
         </div>
 
         {!hatStammGewerke ? (
@@ -291,8 +274,8 @@ export default function HandwerkerDashboard() {
               Setze zuerst deine Gewerke
             </div>
             <div className="text-sm text-ink-secondary max-w-sm mx-auto mb-4">
-              Du siehst Tickets erst, wenn du 1-3 Stamm-Gewerke im Profil hinterlegst.
-              So zeigen wir dir nur Aufträge, die wirklich zu dir passen.
+              Du siehst Aufträge erst, wenn du 1-3 Stamm-Gewerke im Profil hinterlegst.
+              So zeigen wir dir nur Direktanfragen und Aufträge, die wirklich zu dir passen.
             </div>
             <Link
               href="/dashboard-handwerker/profil"
@@ -301,28 +284,62 @@ export default function HandwerkerDashboard() {
               Gewerke einstellen →
             </Link>
           </div>
-        ) : auktionenSortiert.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-line p-12 text-center">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-surface flex items-center justify-center mb-3">
-              <span className="text-2xl opacity-60">📋</span>
-            </div>
-            <div className="text-base font-semibold text-ink mb-1">Aktuell keine Ausschreibungen</div>
-            <div className="text-sm text-ink-muted max-w-sm mx-auto">
-              Sobald Verwalter neue Aufträge ausschreiben, erscheinen sie hier — du wirst auch per E-Mail informiert.
-            </div>
-            {ausgeblendetWegenGewerk > 0 && (
-              <div className="text-xs text-ink-muted mt-4">
-                {ausgeblendetWegenGewerk} weitere Auktion(en) passen nicht zu deinen Gewerken
-                ({stammGewerke.map(g => formatGewerk(g)).join(", ")}).
-                <Link href="/dashboard-handwerker/profil" className="ml-1 text-accent hover:underline">
-                  Gewerke ändern
-                </Link>
-              </div>
-            )}
-          </div>
         ) : (
+          <DirektanfragenInbox
+            limit={5}
+            onCountChange={setOffeneAnfragenCount}
+            emptyState={
+              <div className="bg-white rounded-2xl border border-line p-12 text-center">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-surface flex items-center justify-center mb-3">
+                  <span className="text-2xl opacity-60">📋</span>
+                </div>
+                <div className="text-base font-semibold text-ink mb-1">Aktuell keine offenen Anfragen</div>
+                <div className="text-sm text-ink-muted max-w-sm mx-auto">
+                  Sobald ein Verwalter dir einen Auftrag direkt vorschlägt, erscheint er hier automatisch —
+                  mit Frist zum Annehmen oder Ablehnen. Du wirst auch per E-Mail informiert.
+                </div>
+              </div>
+            }
+          />
+        )}
+      </div>
+
+      {/* Fallback läuft — sekundäre Sektion (vormals #ausschreibungen).
+          Nur sichtbar, wenn tatsächlich zum Gewerk passende Auktionen
+          existieren — macht den Fallback-Charakter explizit (Audit-Befund:
+          aktuell wirkt die Auktion wie der Normalfall). */}
+      {auktionenGewerkMatch.length > 0 && (
+        <div id="fallback" className="mb-10 scroll-mt-6">
+          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+            <h2 className="text-lg font-semibold text-ink">Fallback läuft</h2>
+            <div className="flex items-center gap-3 text-xs">
+              {standortGesetzt && (
+                zeigeAusserhalb ? (
+                  <button
+                    onClick={() => setZeigeAusserhalb(false)}
+                    className="text-accent hover:underline font-medium"
+                  >
+                    Nur im Radius zeigen ({imRadiusGewerkMatch.length})
+                  </button>
+                ) : ausserhalbGewerkMatch > 0 ? (
+                  <button
+                    onClick={() => setZeigeAusserhalb(true)}
+                    className="text-ink-muted hover:text-ink font-medium"
+                  >
+                    + {ausserhalbGewerkMatch} außerhalb anzeigen
+                  </button>
+                ) : (
+                  <span className="text-ink-muted">Nach Smart-Score sortiert</span>
+                )
+              )}
+            </div>
+          </div>
+          <p className="text-sm text-ink-muted mb-4">
+            Diese Aufträge konnten nicht direkt vergeben werden und stehen offen zur Bewerbung —
+            wer zuerst kommt, bekommt den Auftrag.
+          </p>
           <div className="flex flex-col gap-3">
-            {auktionenSortiert.map((t, i) => {
+            {fallbackSortiert.map((t, i) => {
               const angeboteCount = (t.angebote as { id: string }[] | undefined)?.length || 0
               return (
                 <div
@@ -390,8 +407,8 @@ export default function HandwerkerDashboard() {
               )
             })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Meine Aufträge */}
       {meineAuftraege.length > 0 && (
