@@ -28,9 +28,14 @@ export default function AngebotAbgeben() {
 
   // F11: Vollkalkulation — kein freier Festpreis mehr. Der HW bekommt den
   // vom System berechneten empfohlener_preis aus seiner einladungen-Zeile
-  // angezeigt und nimmt an oder lehnt ab. Bis die echte Reject-API gebaut
-  // ist, ist "Annehmen" der einzige Aktions-Pfad.
+  // angezeigt und nimmt an oder lehnt ab.
   const [systemPreis, setSystemPreis] = useState<number | null>(null)
+  // Sprint AO: Einladungs-ID für Ablehnen-Route + direktvergabe-Annehmen-Route.
+  // null = auktion-Ticket (kein direktvergabe-Pfad aktiv).
+  const [einladungId, setEinladungId] = useState<string | null>(null)
+  const [ablehnen, setAblehnen] = useState(false)
+  const [ablehnGrund, setAblehnGrund] = useState("")
+  const [ablehnError, setAblehnError] = useState("")
   const [fruehesterTermin, setFruehesterTermin] = useState("")
   const [nachricht, setNachricht] = useState("")
 
@@ -58,7 +63,7 @@ export default function AngebotAbgeben() {
         *,
         objekte:objekt_id(*),
         angebote(id),
-        einladungen(empfohlener_preis, status, handwerker_id)
+        einladungen(id, empfohlener_preis, status, handwerker_id)
       `)
       .eq("id", id)
       .single()
@@ -73,10 +78,14 @@ export default function AngebotAbgeben() {
     // Eigene Einladung suchen, um den System-Vorschlag-Preis zu zeigen.
     // Admin-Fallback: falls kein eigener Eintrag (z.B. beim Testen als Admin),
     // ersten verfügbaren empfohlener_preis nehmen.
-    type EinladungMini = { handwerker_id: string; empfohlener_preis: number | null; status: string | null }
+    type EinladungMini = { id: string; handwerker_id: string; empfohlener_preis: number | null; status: string | null }
     const alle = (data.einladungen as EinladungMini[] | null) || []
     const meine = alle.find(e => e.handwerker_id === user.id) ?? alle[0]
     setSystemPreis(meine?.empfohlener_preis ?? null)
+    // Sprint AO: Einladungs-ID für Ablehnen-Route speichern.
+    // Nur setzen, wenn die Einladung noch 'offen' ist — damit der Button
+    // nach Ablehnen/Annehmen nicht mehr erscheint (stale state).
+    setEinladungId(meine?.status === "offen" ? (meine?.id ?? null) : null)
 
     setLoading(false)
   }, [id, supabase, router])
@@ -97,18 +106,23 @@ export default function AngebotAbgeben() {
       return
     }
 
-    // API-Route nutzen: schreibt Bid, markiert Einladung, triggert
-    // Smart-Score-Recompute. Direct-Insert würde den Score überspringen.
-    const res = await authFetch("/api/auftraege/annehmen", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ticket_id: id,
-        preis: systemPreis,
-        fruehester_termin: fruehesterTermin || null,
-        nachricht: nachricht || null,
-      }),
-    })
+    // Sprint AO: Direktvergabe-Tickets (einladungId gesetzt, ticket.status='offen')
+    // nutzen /api/einladungen/[id]/annehmen — 1:1-Vergabe ohne spätere Verwalter-
+    // Zustimmung. Auktion-Tickets (status='auktion') gehen weiter über
+    // /api/auftraege/annehmen (Angebot in Auktion, Verwalter vergibt später).
+    const isDirektvergabe = einladungId !== null && ticket?.status === "offen"
+    const res = await authFetch(
+      isDirektvergabe
+        ? `/api/einladungen/${einladungId}/annehmen`
+        : "/api/auftraege/annehmen",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: isDirektvergabe
+          ? JSON.stringify({ fruehester_termin: fruehesterTermin || null, nachricht: nachricht || null })
+          : JSON.stringify({ ticket_id: id, preis: systemPreis, fruehester_termin: fruehesterTermin || null, nachricht: nachricht || null }),
+      },
+    )
     if (!res.ok) {
       const { error: msg } = await res.json().catch(() => ({ error: "Unbekannter Fehler" }))
       setError("Fehler beim Senden: " + msg)
@@ -124,6 +138,28 @@ export default function AngebotAbgeben() {
     if (fruehesterTermin) {
       setSlotEntries(prev => prev.map((s, i) => i === 0 ? { ...s, datum: fruehesterTermin } : s))
     }
+  }
+
+  // Sprint AO: Ablehnen-Flow für Direktvergabe-Einladungen.
+  async function handleAblehnen(e: React.FormEvent) {
+    e.preventDefault()
+    if (!einladungId) return
+    setSubmitting(true)
+    setAblehnError("")
+    const res = await authFetch(`/api/einladungen/${einladungId}/ablehnen`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ grund: ablehnGrund || undefined }),
+    })
+    if (!res.ok) {
+      const { error: msg } = await res.json().catch(() => ({ error: "Unbekannter Fehler" }))
+      setAblehnError("Fehler: " + msg)
+      setSubmitting(false)
+      return
+    }
+    setSubmitting(false)
+    // Direkt zurück — kein "Termine vorgeschlagen"-Screen, kein slots-Step.
+    router.push("/dashboard-handwerker")
   }
 
   async function handleSlotsSubmit(e: React.FormEvent) {
@@ -452,6 +488,56 @@ export default function AngebotAbgeben() {
             )}
           </button>
         </form>
+
+        {/* Sprint AO: Ablehnen-Bereich — nur für Direktvergabe-Einladungen
+            (einladungId gesetzt = HW hat eine offene einladungen-Zeile). */}
+        {einladungId && (
+          <div className="border-t border-line pt-4">
+            {!ablehnen ? (
+              <button
+                type="button"
+                onClick={() => setAblehnen(true)}
+                className="w-full py-2.5 rounded-xl text-sm font-medium border border-line text-ink-muted hover:border-danger/40 hover:text-danger transition-all"
+              >
+                Anfrage ablehnen
+              </button>
+            ) : (
+              <form onSubmit={handleAblehnen} className="space-y-3">
+                <p className="text-sm text-ink-secondary">
+                  Die Anfrage wird abgelehnt und der Auftrag geht automatisch an den nächsten Kandidaten.
+                </p>
+                <textarea
+                  rows={2}
+                  value={ablehnGrund}
+                  onChange={e => setAblehnGrund(e.target.value)}
+                  placeholder="Grund (optional)…"
+                  className="w-full bg-surface border border-line rounded-xl px-4 py-3 text-ink text-sm placeholder:text-gray-500 focus:outline-none focus:border-danger/40 resize-none"
+                />
+                {ablehnError && (
+                  <div className="bg-danger/10 border border-danger/20 rounded-xl px-4 py-3 text-danger text-sm">
+                    {ablehnError}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setAblehnen(false); setAblehnGrund(""); setAblehnError("") }}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-line text-ink-muted hover:bg-surface transition-all"
+                  >
+                    Zurück
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 disabled:opacity-40 transition-all"
+                  >
+                    {submitting ? "Wird abgelehnt…" : "Anfrage ablehnen"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
 
         {/* H3: vorheriges Disclaimer "bis zum Ablauf der Auktion" passt nicht
             mehr — Vollkalkulations-Modell, kein Auktionsfenster. */}
