@@ -2,16 +2,16 @@
 
 > **Zweck**: Zeitliche Lage. Was sich pro Session ändert.
 > Für die langlebige Konstitution → `REPARO_OPERATING_SYSTEM.md`.
-> **Letzte Review:** 09.06.2026, Health-Fix-Sprint
+> **Letzte Review:** 15.06.2026, Audit-Umsetzung (Recherche-Runde + Reklamations-Transparenz + Quick-Wins)
 
 ---
 
 ## TL;DR für die nächste Session
 
-- **Letzter Loop:** Loop-27 (Health-Fix-Sprint, 5 Feedbacks vom 27.05. triagiert) — siehe `LOOP-ITERATION-27-2026-06-09.md`
-- **Letzte Aktion:** Supabase-Projekt war 13 Tage pausiert (Free-Tier Auto-Pause) → reaktiviert. Anti-Pause-Cron jetzt eingebaut.
-- **Nächster geplanter Sprint:** AL (Sichtbarkeits-Score V2 + Einnahmen-Seite ohne zeitslots + Marktplatz-Erklärtext + Wohneinheit-Feld)
-- **Größter offener Blocker:** Pricing-Konflikt (3 widersprüchliche Modelle live) — Lennart muss Option A/B/C/D wählen
+- **Letzter Stand:** Sprint AU (Direktvergabe-First Showcase-Daten) + Fix "Vergabe statt Auktion bei Direktvergabe" sind live (commit `a1b6141`).
+- **Danach (diese Session, Audit-Umsetzung):** Aus dem finalen Audit-Report (#212/#264) wurden alle 4 vom Lennart ausgewählten Bereiche umgesetzt — Recherche-Runde, Reklamations-Transparenz im Mieter-Dashboard, 3 Quick-Wins (geocode Rate-Limit, Sichtbarkeits-Score auf /einnahmen, "0 Tickets"-Flackern). **Code ist fertig, aber noch NICHT committed/gepusht** (Cowork hat keinen Git-Push-Zugriff) — siehe „Lokale Änderungen (ungepusht)" unten. **Erste Aktion der nächsten Session: diese 6 Dateien + 4 neuen Dateien committen/pushen lassen (CC oder Lennart).**
+- **Pricing:** Quick-Win 1 (#213, erledigt) hat den Provisionssatz bereits auf 5 % / 5,5 % vereinheitlicht — der alte "3 widersprüchliche Modelle"-Blocker aus `CRITICAL-Pricing-Konflikt-2026-05-24.md` ist damit gelöst. Diese Datei ist OBSOLET.
+- **Größter offener Punkt:** Kein harter Blocker mehr. Offene Themen sind eher "nice to have" (Voice-AI V2, Smoke-Test Google-Login, Wohneinheits-Referenz-UI) plus die extern blockierten Infra-Themen (#4/#8/#12).
 
 ---
 
@@ -35,73 +35,77 @@ Network-Tab zeigt `503` auf `/auth/v1/token?grant_type=refresh_token`.
 
 ---
 
+## Lokale Änderungen (ungepusht) — Stand 15.06.2026
+
+Diese Session hat folgende Dateien geändert/erstellt, aber **noch nicht
+committed/gepusht** (Collab-Pattern: Cowork code, CC/Lennart pusht):
+
+**Geändert:**
+- `app/api/geocode/route.ts` — Rate-Limit (60/Tag) via `try_consume_geocode_quota`
+- `app/dashboard-handwerker/einnahmen/page.tsx` — Sichtbarkeits-Score/Partner-Status-Badge eingebaut
+- `app/dashboard-handwerker/page.tsx` — `SichtbarkeitsBadge` als shared Component extrahiert (Import statt Inline)
+- `app/dashboard-verwalter/tickets/page.tsx` — Loading-Skeleton für Header/Filter-Pills (kein "0 Tickets"-Flackern mehr)
+- `components/ticket/ReklamationButton.tsx` — Reklamations-Transparenz
+- `components/ticket/TicketDetailView.tsx` — Reklamations-Status-Anzeige für Mieter
+
+**Neu:**
+- `components/handwerker/SichtbarkeitsBadge.tsx` — extrahierte shared Component (Score-Badge)
+- `components/ticket/ReklamationStatusBox.tsx` — Status-Box für Mieter-Dashboard
+- `supabase/migrations/20260615100080_geocode_rate_limit.sql` — neue Migration (try_consume_geocode_quota), **muss noch auf Production angewendet werden**
+- `Reparo-Audit-Strategische-Analyse-2026-06-15.docx` — finaler Audit-Report als Word-Dokument
+
+`npx tsc --noEmit` lief nach allen Änderungen fehlerfrei durch.
+
+---
+
 ## Aktuelle Sprint-Lage
 
-### Zuletzt abgeschlossen
-| Sprint/Loop | Was | Status |
+### Zuletzt abgeschlossen (Auswahl, 27.05.–15.06.2026 — 34 Commits)
+| Sprint/Thema | Was | Status |
 |---|---|---|
-| Sprint AK | zeitslots-Cleanup + Marktplatz-Rebuild + Pool-Endpoint | ✅ live |
-| Loop-26 | `auction/start` legt `einladungen`-Zeilen mit Preis an | ✅ live (commit `aff1032`) |
-| Hotfix | Admin-Fallback auf Angebot-Seite (erster verfügbarer `empfohlener_preis` statt null) | ✅ live (commit `7186097`) |
-| Loop-27 / Health-Fix | Supabase reaktiviert + Anti-Pause-Cron, Demo-HW-Profile (Gewerk/Stundensatz/Koordinaten), Landing-Page Festpreis-Sprache, Resend-Health-Check mit `reason` | ✅ live |
+| Sprint AM (1–3) | Preisformel (Fahrtweg + Auslastung), generalisierte Direktvergabe, Direktvergabe-First-UI für Verwalter | ✅ live |
+| Sprint AN | HW-Dashboard → Direktanfragen-Inbox als primärer Content | ✅ live |
+| Sprint AO | Ablehnen-Button + Einladungs-Inbox für Direktvergabe-Pfad | ✅ live |
+| Audit 2.0 (#241–245) | Code/DB-Inventar, Entschlackungs-Report, sichere Cleanups | ✅ live |
+| A11Y-Cleanup | aria-invalid/describedby, Focus-Trap, Kontrast-Fixes | ✅ live |
+| Sprint AP | Einnahmen-V2 + Sichtbarkeits-Score V2 + Routen-Cleanup | ✅ live |
+| Sprint AQ | P0 Security-Fixes (keep-alive Auth, CSP, X-Frame-Options) | ✅ live |
+| Sprint AR (+follow-up) | Performance/RLS-Härtung, diagnose_preise Helper, profiles Column-Scoping | ✅ live |
+| Sprint AS | Cleanup (toter Code, zeitslot_gebote, Anon-Client, profiles_public) | ✅ live |
+| Sprint AT | Zod-Validation + Lighthouse-CI-Grundgerüst | ✅ live |
+| Sprint AU | Demo-Reset + Showcase-Daten Direktvergabe-First (7 Tickets) | ✅ live |
+| Fix | Phasen-Indikator "Vergabe" statt "Auktion" bei Direktvergabe-Tickets | ✅ live (commit `a1b6141`) |
+| Audit 3.0 (#260–264) | Live-Walkthrough alle 4 Rollen, Code/Feature-Review, strategischer Report (docx) | ✅ erstellt |
+| Recherche-Runde (#265) | Mail-Trigger, Score-Kalibrierung, Admin-Bereich gegen Audit-Empfehlungen geprüft | ✅ erledigt |
+| Reklamations-Transparenz (#266) | Mieter sieht Reklamations-Status im Dashboard | ✅ Code fertig, **ungepusht** |
+| Quick-Wins (#267) | geocode Rate-Limit, Score auf /einnahmen, "0 Tickets"-Loading-Fix | ✅ Code fertig, **ungepusht** |
 
 ### Offen / Nächste Prioritäten
-1. **Sprint AL** — Sichtbarkeits-Score V2 (Google-Cal-Verbindung + Antwort-Rate, nicht mehr Slots)
-2. **Sprint AL** — Einnahmen-Seite auf `tickets`-Basis (zeitslots raus)
-3. **Loop-23 Feature** — Wohneinheits-Referenz im Verwalter-Ticket-Detail anzeigen (Migration live, UI fehlt)
-4. **HW-Reject-Flow** — Handwerker kann Auftrag ablehnen (Angebot-Seite hat nur Annehmen)
-5. **Voice-AI V2** — Outbound-Rückruf bei lückenhaften Tickets (Vapi-Account live, Spec ausstehend)
-6. **Loop-28** — Marktplatz-Erklärtext Stamm-HW vs. Pool-HW (aus Loop-27-Triage)
+1. **Commit & Push** der 10 Dateien aus „Lokale Änderungen" (siehe oben) + neue Migration auf Production anwenden
+2. **Voice-AI V2** — Outbound-Rückruf bei lückenhaften Tickets (Vapi-Account live, Spec/Umsetzung ausstehend)
+3. **Wohneinheits-Referenz-UI** — Migration ist live (#188), aber im Verwalter-Ticket-Detail noch nicht angezeigt
+4. **Smoke-Test Google-Login** (#162/#225) — Phase 1+2 sind live, Lennart-Test in Inkognito steht noch aus
+5. Weitere Audit-3.0-Empfehlungen, die über die 4 ausgewählten Bereiche hinausgehen, ggf. in neuem Sprint aufgreifen (siehe Audit-Report)
 
 ### Pending (extern blockiert)
 - `#4` Netlify-ENVs Impressum → Lennart einpflegen
-- `#8` Resend Domain-Verifikation → reparo-app.de
+- `#8` Resend Domain-Verifikation → reparo-app.de (Domain existiert noch nicht)
 - `#12` HIBP-Toggle → Supabase Pro erforderlich
-- `#83–86` B2B-Sales-Material → LinkedIn-DMs, Email-Templates, Demo-Video, MSA
+- `#83–86` B2B-Sales-Material (LinkedIn-DMs, Email-Templates, Demo-Video-Skript, MSA) — **erledigt** (#229), nur Versand/Aufnahme noch bei Lennart
 
 ---
 
 ## Offene Entscheidungen für Lennart
 
-### 🚨 Pricing-Modell (kritisch, blockt Outreach)
-3 Modelle gleichzeitig live (Landing-Page, Sales-Material, Startseite-FAQ).
-Vollständige Analyse: `CRITICAL-Pricing-Konflikt-2026-05-24.md`.
-
-| Option | Modell | Cowork-Bewertung |
-|---|---|---|
-| A | Pauschal (49/149 €/Mon) | Einfach, aber regressiv |
-| B | Per Wohnung (1,29/0,89 €) | **Cowork-Empfehlung** |
-| C | Hybrid (Pauschale + variabel) | Beste Marge, höchste Komplexität |
-| D | Provision-only (0 € Grundgebühr) | Cowork warnt davor |
-
-→ **Bis entschieden: kein Cold-Outreach.**
+### Pricing-Modell — gelöst ✅
+Quick-Win 1 (#213) hat den Provisionssatz auf **5 % (Direktvergabe) / 5,5 %
+(Auktion)** über Landing-Page, Sales-Material und FAQ vereinheitlicht.
+`CRITICAL-Pricing-Konflikt-2026-05-24.md` ist damit **obsolet** und kann ins
+Archiv verschoben werden. Cold-Outreach ist nicht mehr durch Pricing blockiert.
 
 ### Pivot-Frage „Mieter raus"
-**BEANTWORTET 25.05.2026: NEIN.** Mieter bleibt, Voice-AI klärt Lücken. `KONZEPT-pivot-mieter-raus-b2b-fokus.md` ist OBSOLET.
-
----
-
-## Loop-Status
-
-| Counter | Letzte Feedback-ID | Datum | Status |
-|---|---|---|---|
-| Loop-22 | siehe `LOOP-ITERATION-22-2026-05-25.md` | 25.05. | ✅ |
-| Loop-23 | siehe `LOOP-ITERATION-23-2026-05-27.md` | 27.05. | ✅ Migration live, UI offen |
-| Loop-24 | siehe `LOOP-ITERATION-24-2026-05-27.md` | 27.05. | ✅ |
-| **Loop-26** | `d3495b20` | 27.05. | ✅ gefixt + deployed |
-| **Loop-27** | siehe `LOOP-ITERATION-27-2026-06-09.md` (5 Feedbacks vom 27.05., Supabase-Pause) | 09.06. | ✅ alle triagiert |
-
-→ **Nächster Loop = 28.** Cowork startet mit Query auf `feedback WHERE viewed = false`.
-
----
-
-## Smoke-Test-Status (post-Deploy Loop-26)
-
-Geprüft via Supabase-MCP, Ticket-Auswahl post-Deploy:
-- **Wasserschaden** (heizung_sanitaer, auction_start 19:19:07 UTC): 1 einladung mit `empfohlener_preis = 121,00 €` ✓ Fix wirkt.
-- **Elektroproblem** (elektro, ~19:18 UTC): 0 einladungen — vermutlich kein Elektro-HW im Radius, nicht durch Fix verursacht. **Noch nicht final verifiziert.**
-
-Constraint `einladungen_ticket_id_handwerker_id_key` (UNIQUE ticket_id+handwerker_id) ✓ existiert, UPSERT funktioniert ohne Migration.
+**BEANTWORTET 25.05.2026: NEIN.** Mieter bleibt, Voice-AI klärt Lücken.
+`KONZEPT-pivot-mieter-raus-b2b-fokus.md` ist OBSOLET.
 
 ---
 
@@ -109,11 +113,13 @@ Constraint `einladungen_ticket_id_handwerker_id_key` (UNIQUE ticket_id+handwerke
 
 | # | Wo | Was | Priorität |
 |---|---|---|---|
-| 1 | Landing vs. Sales-Material vs. FAQ | 3 Pricing-Modelle live | 🚨 hoch (blockt Outreach) |
-| 2 | Angebot-Seite | Kein Reject-Flow für HW | mittel |
-| 3 | Verwalter-Ticket-Detail | Wohneinheits-Referenz nicht angezeigt (DB-Spalte da) | mittel |
-| 4 | Sprint G UI | Verwalter-Wizard ist obsolet (Mieter-First), aber noch sichtbar | niedrig |
-| 5 | `zeitslots`-Tabelle | Deprecated für HW-Slots, nur noch Privat-Blöcke | niedrig (cleanup-fähig nach Sprint AL) |
+| 1 | Verwalter-Ticket-Detail | Wohneinheits-Referenz nicht angezeigt (DB-Spalte + Migration da, #188) | mittel |
+| 2 | Sprint G UI | Alter Verwalter-Wizard ist obsolet (Mieter-First), evtl. noch erreichbar | niedrig |
+| 3 | `CRITICAL-Pricing-Konflikt-2026-05-24.md` | Obsolet seit Quick-Win 1, sollte archiviert werden | niedrig |
+
+*(Entfernt gegenüber letzter Version: HW-Reject-Flow → gelöst via Sprint AO
+Einladungs-Inbox; zeitslots-Cleanup → gelöst via Sprint AK Stufe 3 + AS;
+3-Pricing-Modelle → gelöst via Quick-Win 1.)*
 
 ---
 
@@ -129,11 +135,17 @@ Constraint `einladungen_ticket_id_handwerker_id_key` (UNIQUE ticket_id+handwerke
 
 ## Was die nächste Session als erstes tun sollte
 
-1. `git pull` in `~/Desktop/Reparo` (Cowork-Commits könnten parallel reingekommen sein)
-2. `feedback WHERE viewed = false`-Query → Loop-27 öffnen falls neue Einträge
-3. Pricing-Entscheidung bei Lennart einholen (falls nicht zwischenzeitlich beantwortet)
-4. Sprint AL spec finalisieren wenn Pricing geklärt
+1. `git status` / `git pull` in `~/Desktop/Reparo` prüfen — die 10 Dateien aus
+   „Lokale Änderungen (ungepusht)" sollten von CC committed/gepusht worden
+   sein. Falls nicht: Push anstoßen.
+2. Migration `20260615100080_geocode_rate_limit.sql` auf Production
+   anwenden (falls noch nicht passiert) und kurz smoke-testen
+   (`/api/geocode` mit gültigem Token aufrufen).
+3. Reklamations-Transparenz + Score-auf-/einnahmen + "0 Tickets"-Fix nach
+   Deploy kurz live verifizieren (3 kleine Smoke-Checks).
+4. Danach: nächste Priorität aus „Offen / Nächste Prioritäten" wählen
+   (Voice-AI V2 oder Wohneinheits-Referenz-UI sind die größten Brocken).
 
 ---
 
-*Handoff-Stand: 27.05.2026 · Nächste Review nach Loop-27*
+*Handoff-Stand: 15.06.2026 · Nächste Review nach dem Commit/Push-Zyklus dieser Session*

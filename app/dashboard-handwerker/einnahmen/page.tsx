@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase"
-import { formatGewerk } from "@/types"
+import { formatGewerk, UserProfile } from "@/types"
+import { SichtbarkeitsBadge } from "@/components/handwerker/SichtbarkeitsBadge"
 
 type EinnahmenTicket = {
   id: string
@@ -37,6 +38,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function EinnahmenPage() {
   const router = useRouter()
   const [tickets, setTickets] = useState<EinnahmenTicket[]>([])
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -45,14 +47,24 @@ export default function EinnahmenPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push("/login"); return }
 
-      const { data } = await supabase
-        .from("tickets")
-        .select("id, titel, gewerk, status, kosten_final, created_at, hw_abschluss_am, objekte(name, adresse)")
-        .eq("zugewiesener_hw", user.id)
-        .in("status", ["in_bearbeitung", "fertiggestellt_hw", "erledigt"])
-        .order("created_at", { ascending: false })
+      const [{ data }, { data: prof }] = await Promise.all([
+        supabase
+          .from("tickets")
+          .select("id, titel, gewerk, status, kosten_final, created_at, hw_abschluss_am, objekte(name, adresse)")
+          .eq("zugewiesener_hw", user.id)
+          .in("status", ["in_bearbeitung", "fertiggestellt_hw", "erledigt"])
+          .order("created_at", { ascending: false }),
+        // Audit-Fix (2026-06-15, Quick-Win): Partner-Status/Score auch hier
+        // anzeigen (siehe SichtbarkeitsBadge), nicht nur auf dem Dashboard-Start.
+        supabase
+          .from("profiles")
+          .select("id, email, name, rolle, firma, gewerk, handwerker_gewerke, startort_lat, startort_lng, radius_km, bewertung_avg, auftraege_anzahl, sichtbarkeit_stufe, verfuegbarkeit_score, angebotstreue, created_at")
+          .eq("id", user.id)
+          .single(),
+      ])
 
       setTickets((data as EinnahmenTicket[]) || [])
+      setProfile((prof as UserProfile) || null)
       setLoading(false)
     }
     load()
@@ -86,6 +98,8 @@ export default function EinnahmenPage() {
         <h1 className="text-2xl font-bold text-ink">Meine Aufträge & Einnahmen</h1>
         <p className="text-sm text-ink-muted mt-1">Alle dir zugewiesenen Aufträge auf einen Blick</p>
       </div>
+
+      <SichtbarkeitsBadge profile={profile} />
 
       {/* 100%-Provisions-Banner */}
       <div className="mb-6 p-4 rounded-2xl bg-accent/8 border border-accent/25 flex items-center gap-3">

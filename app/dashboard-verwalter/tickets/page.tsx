@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Ticket, TicketStatus } from "@/types"
 import { Badge, TypBadge, StatusDot, EmptyState } from "@/components/ui"
-import { CardListSkeleton } from "@/components/ui/Skeleton"
+import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
 
 type StatusFilter = TicketStatus | "alle"
 type TypFilter = "alle" | "standard" | "diagnose" | "projekt"
@@ -80,6 +80,19 @@ export default function TicketsPage() {
 
   const typCount = (val: TypFilter) =>
     val === "alle" ? tickets.length : tickets.filter(t => (t.ticket_typ ?? "standard") === val).length
+
+  // Audit-Fix (2026-06-15, Quick-Win): vor dem ersten Laden flackerte kurz
+  // "0 Tickets insgesamt" + "0" in allen Filter-Pills auf, bevor die echten
+  // Zahlen da waren. Jetzt zeigt der gesamte Header-Bereich ein Skeleton,
+  // bis `tickets` geladen ist (analog zu /dashboard-verwalter).
+  if (loading) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto pt-16 md:pt-6">
+        <PageHeaderSkeleton />
+        <CardListSkeleton count={4} rows={2} />
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 max-w-4xl mx-auto pt-16 md:pt-6">
@@ -165,9 +178,7 @@ export default function TicketsPage() {
         </select>
       </div>
 
-      {loading ? (
-        <CardListSkeleton count={4} rows={2} />
-      ) : shown.length === 0 ? (
+      {shown.length === 0 ? (
         (() => {
           const hatFilter = statusFilter !== "alle" || typFilter !== "alle"
           const titel = hatFilter

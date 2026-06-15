@@ -8,6 +8,7 @@ import PreisAufschluesselung from "@/components/pricing/PreisAufschluesselung"
 import DiagnosePipeline from "@/components/ticket/DiagnosePipeline"
 import NachtragsBox from "@/components/ticket/NachtragsBox"
 import { ReklamationButton } from "@/components/ticket/ReklamationButton"
+import { ReklamationStatusBox } from "@/components/ticket/ReklamationStatusBox"
 import { useToast } from "@/components/Toast"
 import { useActiveRole } from "@/lib/context/ActiveRoleContext"
 import { authFetch } from "@/lib/auth/clientFetch"
@@ -81,6 +82,11 @@ function phasenIndex(status: string): number {
   // Reparatur-Phase (HW fertig, Verwalter prüft noch) — visuell bleibt die
   // Phasen-Anzeige auf "Reparatur", erst "erledigt" springt weiter.
   if (status === "fertiggestellt_hw") return PHASEN.findIndex(p => p.key === "in_bearbeitung")
+  // Audit-Fix (Reklamations-Transparenz, 2026-06-15): "reklamiert" ist ein
+  // Folgestatus von "erledigt" (Mieter hat nach Abnahme reklamiert) — die
+  // Phasenleiste soll dabei NICHT auf "Gemeldet" zurückspringen, sondern
+  // wie "erledigt" auf der letzten Stufe bleiben.
+  if (status === "reklamiert") return PHASEN.findIndex(p => p.key === "erledigt")
   const idx = PHASEN.findIndex(p => p.key === status)
   return idx < 0 ? 0 : idx
 }
@@ -890,8 +896,10 @@ export default function TicketDetailView() {
           </Card>
         )}
 
-        {/* Erledigte Ticket Info */}
-        {ticket.status === "erledigt" && (
+        {/* Erledigte Ticket Info — Audit-Fix: bleibt auch nach "reklamiert" sichtbar,
+            da der Auftrag selbst weiterhin abgeschlossen ist (Reklamation betrifft
+            die Qualität, nicht den Status der Beauftragung). */}
+        {(ticket.status === "erledigt" || ticket.status === "reklamiert") && (
           <div className="bg-accent/5 border border-accent/20 rounded-2xl p-6 mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold">✓</div>
@@ -907,7 +915,7 @@ export default function TicketDetailView() {
         {isVerwalter
           && ticket.kosten_final != null
           && ticket.kosten_final > 0
-          && (ticket.status === "in_bearbeitung" || ticket.status === "erledigt") && (
+          && (ticket.status === "in_bearbeitung" || ticket.status === "erledigt" || ticket.status === "reklamiert") && (
           <div className="mb-6">
             <PreisAufschluesselung
               auftragswert={ticket.kosten_final}
@@ -937,6 +945,17 @@ export default function TicketDetailView() {
         {ticket.status === "erledigt"
           && currentUser?.id === ticket.erstellt_von && (
           <ReklamationButton ticketId={ticket.id} />
+        )}
+
+        {/* Reklamations-Transparenz (Audit-Fix 2026-06-15): zeigt Grund, Details,
+            Status und nächsten Schritt — für Mieter UND Verwalter, sobald eine
+            Reklamation zu diesem Ticket existiert. Die Box lädt sich selbst und
+            rendert nichts, falls (noch) keine Reklamation vorliegt — daher reicht
+            ein grobes Status-Gate (erledigt | reklamiert). Verwalter erhalten
+            zusätzlich Steuerelemente zum Status-Update. */}
+        {(ticket.status === "erledigt" || ticket.status === "reklamiert")
+          && (currentUser?.id === ticket.erstellt_von || isVerwalter) && (
+          <ReklamationStatusBox ticketId={ticket.id} canManage={isVerwalter} />
         )}
 
         {/* Bewertung-Bestätigung wenn bereits abgegeben */}

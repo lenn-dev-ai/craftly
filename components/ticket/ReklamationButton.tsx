@@ -49,14 +49,11 @@ export function ReklamationButton({ ticketId, onSuccess }: ReklamationButtonProp
 
   if (!loaded) return null
 
-  if (existingReklamationId) {
-    return (
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 text-sm text-amber-900">
-        <div className="font-semibold">⚠️ Reklamation läuft</div>
-        <div className="text-xs mt-1">Deine Reklamation wurde an die Verwaltung weitergeleitet. Du wirst kontaktiert.</div>
-      </div>
-    )
-  }
+  // Audit-Fix (Reklamations-Transparenz, 2026-06-15): Der frühere Hinweis
+  // "Reklamation läuft" ist jetzt Aufgabe der <ReklamationStatusBox> (zeigt
+  // Grund, Details, Status und nächsten Schritt). Hier nur noch ausblenden,
+  // damit nicht erneut eine Reklamation eingereicht werden kann.
+  if (existingReklamationId) return null
 
   async function submit() {
     setSubmitting(true)
