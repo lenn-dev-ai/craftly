@@ -516,7 +516,7 @@ export function welcomeEmail(params: {
       title: "Erste Schritte als Handwerker",
       bullets: [
         "Pflege Gewerk, Einzugsgebiet und Stundensatz im Profil — wir matchen damit Aufträge.",
-        "Lege Zeitslots an, damit der Kalender deine Verfügbarkeit kennt.",
+        "Verbinde deinen Google-Kalender und hinterlege deine Arbeitszeiten — so weiß das System, wann du verfügbar bist.",
         "Verbinde Stripe (optional), damit künftige Auszahlungen und Penalty-Verrechnungen sauber laufen.",
       ],
       cta: { label: "Zum Handwerker-Dashboard", href: `${SITE_URL}/dashboard-handwerker` },

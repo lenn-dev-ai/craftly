@@ -18,8 +18,8 @@ import { useFocusTrap } from "@/lib/use-focus-trap"
 //   Tab 2 "Meine Handwerker" — Stamm-HW-Liste mit Live-Verfügbarkeits-Badge
 //                              aus Google-Cal.
 //
-// Backup der alten Page liegt unter /app/dashboard-verwalter/marktplatz-archiv/
-// für Notfall-Rollback, kann nach 1-2 Wochen weg.
+// Backup der alten Page (marktplatz-archiv) wurde nach Audit 2.0 (#245)
+// entfernt — Rollback-Frist abgelaufen, Stufe-2-Konzept ist etabliert.
 
 type Tab = "tickets" | "handwerker"
 
