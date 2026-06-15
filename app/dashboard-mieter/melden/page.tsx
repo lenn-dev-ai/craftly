@@ -936,7 +936,7 @@ export default function MeldenPage() {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-ink-muted">
                   <div className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[8px] text-accent font-bold">3</div>
-                  Passende Handwerker-Stunden werden auf dem Marktplatz gebucht
+                  Wir berechnen automatisch den besten Preis und fragen den passendsten Handwerker für dich an
                 </div>
                 <div className="flex items-center gap-2 text-xs text-ink-muted">
                   <div className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[8px] text-accent font-bold">4</div>

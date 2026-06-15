@@ -156,13 +156,43 @@ Backend-Teil bereits erledigt ist:
 
 **Gesamt: ~1 Tag.**
 
-## 5. Offene Fragen
+## 5. Offene Fragen — beantwortet bei Umsetzung
 
-- Soll der Restzeit-Hinweis (Abschnitt 2A) als absolute Uhrzeit oder
-  relative Dauer ("noch ca. X Std.") angezeigt werden? Empfehlung: relative
-  Dauer (sprachlich einfacher, keine Zeitzonen-Fallstricke im UI).
-- Gibt es bereits eine "Handwerker manuell einladen"-Funktion im
-  Marktplatz, auf die der 0-Kandidaten-Hinweis (Abschnitt 2C) verlinken
-  kann, oder müsste diese erst gebaut werden? Falls nicht vorhanden, reicht
-  für Phase 3 ein reiner Hinweistext ohne Aktion — die Funktion selbst wäre
-  dann ein separater Backlog-Eintrag.
+- **Restzeit**: Relative Dauer ("noch ca. X Std.") umgesetzt via
+  `formatDirektTimeout()`. Absolutes Datum wäre genauer, aber die Differenz
+  ist für eine Anzeige ohne Live-Polling irrelevant.
+- **Manuell einladen**: Bereits vorhanden — "HW einladen"-Button in der
+  Ticket-Karte öffnet den Einladen-Drawer. Der 0-Kandidaten-Hinweis nennt
+  diese Aktion explizit ("HW manuell einladen").
+
+## 6. Umgesetzt (Sprint mit Sprint AN/AO)
+
+### A: Marktplatz Live-Status ✅
+- `OffenesTicket` um direktvergabe-Felder erweitert.
+- `formatDirektTimeout()`: relative Restzeit aus `angefragt_am + timeout_min`.
+- HW-Namen: Batch-Query auf `profiles` nach Ticket-Load, Map `hw_id → name`.
+- Ticket-Karte zeigt: "🔄 wird automatisch vergeben — voraussichtlich an {HW}
+  zu {Preis} €" + Restzeit, wenn direktvergabe aktiv.
+- Auktion-Badge umbenannt zu "Auktion (Fallback)" + Erklärtext.
+
+### B: Copy-Fixes ✅
+- B1: AuctionStartOption "Zeitnah" und "Planbar" auf Direktvergabe-Sprache
+  umgestellt. Notfall-Text unverändert (war bereits korrekt).
+- B2: Mieter-Wizard Schritt 5/5 geändert auf "Wir berechnen automatisch den
+  besten Preis und fragen den passendsten Handwerker für dich an".
+
+### C: 0-Kandidaten-Edge-Case ✅
+- Warnhinweis wenn `status='auktion'` UND `einladungen(count) === 0`.
+- Text: "Keine passenden Handwerker im Umkreis gefunden … HW manuell einladen."
+
+### D: dashboard-verwalter/page.tsx (Bonus, nicht in Scope — passt in diesen Sprint) ✅
+- `direktvergabe_kandidaten` + `direktvergabe_index` zum tickets-Select.
+- `vergabeAktiv`: Tickets mit aktiver Direktvergabe (status='offen', Kandidaten gesetzt).
+- KPI "Laufende Auktionen" → "Vergabe läuft" (zählt `vergabeAktiv + marktplatz`).
+- Sektion "Laufende Auktionen" → "Vergabe läuft" mit getrennten Karten-Styles
+  (direktvergabe = accent-border, auktion = warm).
+- Pipeline-Item "Auktion abgelaufen" → "Kein HW gefunden".
+
+### Supabase Migration (audit2_drop_unused_tables)
+Bereits auf Produktion angewendet (Version `20260615073403` in `list_migrations`).
+Keine erneute Anwendung nötig.

@@ -118,6 +118,11 @@ export interface Ticket {
   // Sprint AL: Handwerker-Self-Service-Abschluss (Status fertiggestellt_hw)
   hw_abschluss_kommentar?: string | null
   hw_abschluss_am?: string | null
+  // Sprint AM Phase 2: sequenzielle Direktvergabe-Felder
+  direktvergabe_kandidaten?: Array<{ hw_id: string; score: number; preis: number }> | null
+  direktvergabe_index?: number | null
+  direktvergabe_angefragt_am?: string | null
+  direktvergabe_timeout_min?: number | null
 }
 
 export interface Angebot {

@@ -65,7 +65,7 @@ export default function VerwalterDashboard() {
     const [{ data: ts }, { data: ns }] = await Promise.all([
       supabase
         .from("tickets")
-        .select("*, angebote(preis)")
+        .select("*, angebote(preis), direktvergabe_kandidaten, direktvergabe_index")
         .eq("verwalter_id", user.id)
         .order("created_at", { ascending: false }),
       supabase
@@ -143,6 +143,12 @@ export default function VerwalterDashboard() {
   const offene = tickets.filter(t => t.status === "offen")
   const marktplatz = tickets.filter(t => t.status === "auktion")
   const inArbeit = tickets.filter(t => t.status === "in_bearbeitung")
+  // Sprint AM Phase 3: Tickets in aktiver Direktvergabe (status='offen',
+  // aber Direktvergabe-Kandidaten-Liste gesetzt). Diese erscheinen im "Neue
+  // Meldungen"-Block, brauchen aber eine eigene KPI-Zählung.
+  const vergabeAktiv = offene.filter(
+    t => Array.isArray(t.direktvergabe_kandidaten) && t.direktvergabe_kandidaten.length > 0
+  )
   const erledigt = tickets.filter(t => t.status === "erledigt")
   const monatsKosten = tickets
     .filter(t => t.kosten_final && new Date(t.created_at).getMonth() === new Date().getMonth())
@@ -315,7 +321,7 @@ export default function VerwalterDashboard() {
           <span className="text-2xl" aria-hidden="true">🎉</span>
           <div className="flex-1 text-sm text-ink">
             <span className="font-semibold">Pipeline ist sauber.</span>
-            {" "}Keine offenen Befunde, keine Nachträge, keine abgelaufenen Auktionen.
+            {" "}Keine offenen Befunde, keine Nachträge, keine abgelaufenen Vergaben.
           </div>
         </section>
       )}
@@ -367,11 +373,11 @@ export default function VerwalterDashboard() {
               >
                 <div className="flex items-center gap-2 mb-2">
                   <Clock size={16} className="text-danger" />
-                  <span className="text-[10px] font-bold text-danger uppercase tracking-wider">Auktion abgelaufen</span>
+                  <span className="text-[10px] font-bold text-danger uppercase tracking-wider">Kein HW gefunden</span>
                 </div>
                 <div className="text-3xl font-bold text-ink tabular-nums">{auktionenAbgelaufen.length}</div>
                 <div className="text-xs text-ink-secondary mt-1 flex items-center gap-1">
-                  ohne Vergabe
+                  Auktion ohne Vergabe
                   <ArrowRight size={11} className="ml-0.5" />
                 </div>
               </button>
@@ -395,11 +401,11 @@ export default function VerwalterDashboard() {
           href="/dashboard-verwalter/tickets?status=offen"
         />
         <Kpi
-          label="Laufende Auktionen"
-          value={marktplatz.length}
+          label="Vergabe läuft"
+          value={marktplatz.length + vergabeAktiv.length}
           accent="primary"
-          sub="warten auf Angebote"
-          href="/dashboard-verwalter/tickets?status=auktion"
+          sub={marktplatz.length > 0 ? `${vergabeAktiv.length} direkt · ${marktplatz.length} Auktion` : "direkt per System"}
+          href="/dashboard-verwalter/marktplatz"
         />
         <Kpi
           label="In Arbeit"
@@ -489,18 +495,18 @@ export default function VerwalterDashboard() {
         </section>
       )}
 
-      {/* Laufende Auktionen */}
-      {marktplatz.length > 0 && (
+      {/* Vergabe läuft — direktvergabe + auktion (Sprint AM Phase 3) */}
+      {(marktplatz.length > 0 || vergabeAktiv.length > 0) && (
         <section className="mb-10">
           <h2 className="text-sm font-semibold text-ink uppercase tracking-wide mb-4">
-            Laufende Auktionen <span className="text-ink-muted font-normal">({marktplatz.length})</span>
+            Vergabe läuft <span className="text-ink-muted font-normal">({marktplatz.length + vergabeAktiv.length})</span>
           </h2>
           <div className="flex flex-col gap-2">
-            {marktplatz.map(t => (
+            {vergabeAktiv.map(t => (
               <button
                 key={t.id}
                 onClick={() => router.push(`/dashboard-verwalter/ticket/${t.id}`)}
-                className="text-left bg-white rounded-xl border border-line p-4 hover:border-accent/30 hover:shadow-sm transition-all"
+                className="text-left bg-white rounded-xl border border-accent/20 p-4 hover:border-accent/40 hover:shadow-sm transition-all"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-accent animate-pulse flex-shrink-0" />
@@ -512,7 +518,28 @@ export default function VerwalterDashboard() {
                     </div>
                   </div>
                   <span className="text-xs text-accent font-medium flex-shrink-0">
-                    Wartet auf Angebote
+                    Direktvergabe läuft
+                  </span>
+                </div>
+              </button>
+            ))}
+            {marktplatz.map(t => (
+              <button
+                key={t.id}
+                onClick={() => router.push(`/dashboard-verwalter/ticket/${t.id}`)}
+                className="text-left bg-white rounded-xl border border-line p-4 hover:border-warm/30 hover:shadow-sm transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-warm flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-ink truncate">{t.titel}</div>
+                    <div className="text-xs text-ink-muted truncate">
+                      {t.wohnung && `${t.wohnung} · `}
+                      {t.einsatzort_adresse}
+                    </div>
+                  </div>
+                  <span className="text-xs text-warm-dark font-medium flex-shrink-0">
+                    Auktion (Fallback)
                   </span>
                 </div>
               </button>

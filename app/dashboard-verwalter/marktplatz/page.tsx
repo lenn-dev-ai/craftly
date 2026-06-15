@@ -35,6 +35,11 @@ interface OffenesTicket {
   erstellt_von: string | null
   einladungen?: { count: number }[]
   angebote?: { count: number }[]
+  // Sprint AM Phase 3: Direktvergabe-Live-Status
+  direktvergabe_kandidaten: Array<{ hw_id: string; score: number; preis: number }> | null
+  direktvergabe_index: number | null
+  direktvergabe_angefragt_am: string | null
+  direktvergabe_timeout_min: number | null
 }
 
 interface StammHwEintrag {
@@ -72,6 +77,18 @@ type HwStatus = "frei" | "belegt" | "nicht_verbunden" | "fehler" | "laedt"
 
 type Dringlichkeit = "notfall" | "zeitnah" | "planbar"
 
+// Sprint AM Phase 3: Restzeit-Countdown für laufende Direktvergabe.
+function formatDirektTimeout(angefragt_am: string | null, timeout_min: number | null): string {
+  if (!angefragt_am || timeout_min == null) return ""
+  const endMs = new Date(angefragt_am).getTime() + timeout_min * 60_000
+  const ms = endMs - Date.now()
+  if (ms <= 0) return "Frist abgelaufen"
+  const h = Math.floor(ms / 3_600_000)
+  const m = Math.floor((ms % 3_600_000) / 60_000)
+  if (h >= 1) return `noch ca. ${h} Std.`
+  return `noch ca. ${m} Min.`
+}
+
 function relativAlter(isoDate: string): string {
   const ms = Date.now() - new Date(isoDate).getTime()
   const m = Math.floor(ms / 60000)
@@ -91,6 +108,8 @@ export default function MarktplatzPage() {
   const [tab, setTab] = useState<Tab>(initialTab)
 
   const [tickets, setTickets] = useState<OffenesTicket[]>([])
+  // Sprint AM Phase 3: HW-Namen für den aktuell angefragten Direktvergabe-Kandidaten.
+  const [hwNames, setHwNames] = useState<Record<string, string>>({})
   const [hws, setHws] = useState<StammHwEintrag[]>([])
   const [poolHws, setPoolHws] = useState<PoolHw[]>([])
   const [poolLoading, setPoolLoading] = useState(false)
@@ -134,7 +153,7 @@ export default function MarktplatzPage() {
     const [{ data: t }, { data: h }] = await Promise.all([
       supabase
         .from("tickets")
-        .select("id, titel, gewerk, ticket_typ, prioritaet, einsatzort_adresse, created_at, status, erstellt_von, einladungen(count), angebote(count)")
+        .select("id, titel, gewerk, ticket_typ, prioritaet, einsatzort_adresse, created_at, status, erstellt_von, einladungen(count), angebote(count), direktvergabe_kandidaten, direktvergabe_index, direktvergabe_angefragt_am, direktvergabe_timeout_min")
         .eq("verwalter_id", user.id)
         .is("zugewiesener_hw", null)
         .not("status", "in", "(geschlossen,storniert,erledigt)")
@@ -145,8 +164,33 @@ export default function MarktplatzPage() {
         .eq("verwalter_id", user.id)
         .order("prio", { ascending: false }),
     ])
-    setTickets((t ?? []) as OffenesTicket[])
+    const ticketList = (t ?? []) as OffenesTicket[]
+    setTickets(ticketList)
     setHws((h ?? []) as unknown as StammHwEintrag[])
+
+    // Sprint AM Phase 3: HW-Namen für alle aktuellen Direktvergabe-Kandidaten batched laden.
+    const aktivIds = ticketList
+      .filter(tk => Array.isArray(tk.direktvergabe_kandidaten) && tk.direktvergabe_index != null)
+      .map(tk => tk.direktvergabe_kandidaten![tk.direktvergabe_index!]?.hw_id)
+      .filter((id): id is string => Boolean(id))
+    const uniqueIds = Array.from(new Set(aktivIds))
+    if (uniqueIds.length > 0) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, name, firma")
+        .in("id", uniqueIds)
+      const nameMap: Record<string, string> = {}
+      for (const p of (profs ?? [])) {
+        nameMap[(p as { id: string; name: string | null; firma: string | null }).id] =
+          (p as { id: string; name: string | null; firma: string | null }).firma ||
+          (p as { id: string; name: string | null; firma: string | null }).name ||
+          "Unbekannt"
+      }
+      setHwNames(nameMap)
+    } else {
+      setHwNames({})
+    }
+
     setLoading(false)
   }, [router])
 
@@ -415,7 +459,21 @@ export default function MarktplatzPage() {
             />
           ) : (
             <ul className="space-y-2">
-              {tickets.map(t => (
+              {tickets.map(t => {
+                // Sprint AM Phase 3: aktueller Direktvergabe-Kandidat (wenn läuft)
+                const dvAktiv = t.status === "offen"
+                  && Array.isArray(t.direktvergabe_kandidaten)
+                  && t.direktvergabe_kandidaten.length > 0
+                  && t.direktvergabe_index != null
+                const dvKandidat = dvAktiv ? t.direktvergabe_kandidaten![t.direktvergabe_index!] : null
+                const dvHwName = dvKandidat ? (hwNames[dvKandidat.hw_id] ?? "…") : null
+                const dvRestzeit = dvAktiv
+                  ? formatDirektTimeout(t.direktvergabe_angefragt_am, t.direktvergabe_timeout_min)
+                  : ""
+                // C: 0-Kandidaten-Edge-Case
+                const nullKandidaten = t.status === "auktion" && (t.einladungen?.[0]?.count ?? 0) === 0
+
+                return (
                 <li
                   key={t.id}
                   className="bg-white border border-line rounded-2xl px-4 py-3 flex items-start gap-3 hover:border-accent/30 transition-colors"
@@ -427,7 +485,13 @@ export default function MarktplatzPage() {
                         <span className="text-[10px] font-semibold uppercase tracking-wide bg-red-100 text-red-800 border border-red-200 px-1.5 py-px rounded">Notfall</span>
                       )}
                       {t.status === "auktion" && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wide bg-warm-light text-warm-dark border border-warm/30 px-1.5 py-px rounded">Auktion</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wide bg-warm-light text-warm-dark border border-warm/30 px-1.5 py-px rounded">Auktion (Fallback)</span>
+                      )}
+                      {dvAktiv && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wide bg-accent/10 text-accent border border-accent/20 px-1.5 py-px rounded inline-flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                          Direktvergabe läuft
+                        </span>
                       )}
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-xs text-ink-muted flex-wrap">
@@ -448,6 +512,29 @@ export default function MarktplatzPage() {
                         <span className="text-accent">· {t.angebote![0].count} Angebot{t.angebote![0].count === 1 ? "" : "e"}</span>
                       )}
                     </div>
+                    {/* Sprint AM Phase 3 — A: Live-Status für laufende Direktvergabe */}
+                    {dvAktiv && dvKandidat && (
+                      <div className="mt-2 text-xs text-accent bg-accent/5 border border-accent/15 rounded-lg px-3 py-1.5 inline-flex flex-wrap gap-x-2 gap-y-0.5">
+                        <span>🔄 wird automatisch vergeben — voraussichtlich an <strong>{dvHwName}</strong> zu <strong>{dvKandidat.preis.toLocaleString("de")} €</strong></span>
+                        {dvRestzeit && <span className="text-ink-muted">· {dvRestzeit}</span>}
+                      </div>
+                    )}
+                    {/* Sprint AM Phase 3 — A: Auktion als Fallback kennzeichnen */}
+                    {t.status === "auktion" && !nullKandidaten && (
+                      <div className="mt-1.5 text-[11px] text-warm-dark">
+                        Direktvergabe an {(t.einladungen?.[0]?.count ?? 0)} Handwerker ohne Antwort — jetzt offene Bieter-Auktion.
+                      </div>
+                    )}
+                    {/* Sprint AM Phase 3 — C: 0-Kandidaten-Edge-Case */}
+                    {nullKandidaten && (
+                      <div className="mt-2 text-xs text-danger bg-danger/5 border border-danger/20 rounded-lg px-3 py-1.5 flex items-start gap-2">
+                        <AlertCircle size={13} className="flex-shrink-0 mt-0.5" />
+                        <span>
+                          Keine passenden Handwerker im Umkreis gefunden ({t.gewerk ? formatGewerk(t.gewerk) : "Gewerk unbekannt"}).
+                          Auktion läuft, aber noch niemand eingeladen — bitte Gewerk und Radius prüfen oder HW manuell einladen.
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
                     <button
@@ -475,7 +562,8 @@ export default function MarktplatzPage() {
                     </button>
                   </div>
                 </li>
-              ))}
+              )
+              })}
             </ul>
           )
         ) : (
@@ -760,13 +848,13 @@ export default function MarktplatzPage() {
                 />
                 <AuctionStartOption
                   label="🟡 Zeitnah"
-                  text="6 Stunden Auction-Fenster, mittlerer Radius. HW bieten ab — du pickst das beste."
+                  text="System berechnet den besten Preis und fragt automatisch den passendsten Handwerker an (Antwortfrist ca. 2 Std.). Erst bei wiederholter Absage öffnet sich eine breitere Auktion."
                   disabled={auctionLaeuft}
                   onClick={() => void starteAuction(auctionStarten, "zeitnah")}
                 />
                 <AuctionStartOption
                   label="🟢 Planbar"
-                  text="72 Stunden Auction-Fenster, voller Radius — maximale HW-Auswahl."
+                  text="System berechnet den besten Preis und fragt automatisch den passendsten Handwerker an (Antwortfrist ca. 24 Std.). Erst bei wiederholter Absage öffnet sich eine breitere Auktion."
                   disabled={auctionLaeuft}
                   onClick={() => void starteAuction(auctionStarten, "planbar")}
                 />
