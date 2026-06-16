@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Clock, CheckCircle2, XCircle } from "lucide-react"
+import { formatGewerk } from "@/types"
 
 // Sprint AN — geteilte Inbox-Komponente für offene 1:1-Direktanfragen.
 // Deckt zwei Pfade ab (Sprint AO):
@@ -257,7 +258,7 @@ export default function DirektanfragenInbox({ limit, emptyState, onCountChange }
                   </p>
                 )}
                 <div className="mt-2 text-xs text-ink-muted flex flex-wrap gap-x-3 gap-y-1">
-                  {a.ticket?.gewerk && <span>Gewerk: {a.ticket.gewerk}</span>}
+                  {a.ticket?.gewerk && <span>Gewerk: {formatGewerk(a.ticket.gewerk)}</span>}
                   {a.ticket?.einsatzort_adresse && <span>📍 {a.ticket.einsatzort_adresse}</span>}
                   {a.ticket?.prioritaet && <span>Priorität: {a.ticket.prioritaet}</span>}
                 </div>
@@ -309,7 +310,7 @@ export default function DirektanfragenInbox({ limit, emptyState, onCountChange }
                   </p>
                 )}
                 <div className="mt-2 text-xs text-ink-muted flex flex-wrap gap-x-3 gap-y-1">
-                  {e.ticket?.gewerk && <span>Gewerk: {e.ticket.gewerk}</span>}
+                  {e.ticket?.gewerk && <span>Gewerk: {formatGewerk(e.ticket.gewerk)}</span>}
                   {e.ticket?.einsatzort_adresse && <span>📍 {e.ticket.einsatzort_adresse}</span>}
                   {e.ticket?.prioritaet && <span>Priorität: {e.ticket.prioritaet}</span>}
                   {preis != null && (

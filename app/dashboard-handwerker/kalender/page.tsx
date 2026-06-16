@@ -104,6 +104,18 @@ function fmtTime(t: string): string {
   return t.slice(0, 5)
 }
 
+// B2-Fix: Google-Cal-API gibt HTML-Entities zurück (z.B. &amp;, &lt;).
+// Hier dekodieren wir die häufigsten, ohne einen DOM-Parse zu brauchen.
+function decodeHtml(s: string): string {
+  return s
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+}
+
 function timeToMinutes(t: string): number {
   const [h, m] = t.split(":").map(Number)
   return h * 60 + m
@@ -601,17 +613,18 @@ export default function KalenderPage() {
                         />
                         <div className="absolute left-0 right-0 top-0 z-10 flex flex-col gap-0.5 p-1">
                           {tagAllDay.map(a => (
-                            <a
+                            <div
                               key={a.id}
-                              href={a.htmlLink || "https://calendar.google.com"}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block rounded-md bg-blue-100 border border-blue-200 text-blue-900 px-2 py-0.5 hover:bg-blue-200 transition-colors truncate text-[10px] font-medium"
-                              title={`Ganztägig: ${a.summary}`}
+                              role={a.htmlLink ? "button" : undefined}
+                              tabIndex={a.htmlLink ? 0 : undefined}
+                              onClick={() => a.htmlLink && window.open(a.htmlLink, "_blank", "noopener,noreferrer")}
+                              onKeyDown={e => e.key === "Enter" && a.htmlLink && window.open(a.htmlLink, "_blank", "noopener,noreferrer")}
+                              className={`block rounded-md bg-blue-100 border border-blue-200 text-blue-900 px-2 py-0.5 transition-colors truncate text-[10px] font-medium ${a.htmlLink ? "cursor-pointer hover:bg-blue-200" : "cursor-default"}`}
+                              title={`Ganztägig: ${decodeHtml(a.summary)}`}
                             >
                               <span className="text-blue-700 font-semibold mr-1">Google</span>
-                              {a.summary}
-                            </a>
+                              {decodeHtml(a.summary)}
+                            </div>
                           ))}
                         </div>
                       </>
@@ -666,24 +679,27 @@ export default function KalenderPage() {
                     ))}
 
                     {/* Sprint AE Phase 3 — Google-Cal-Events (Read-Only, links eingerückt) */}
+                    {/* B3-Fix: <a> → <div role="button"> verhindert blank-tab bei Klick.
+                        B2-Fix: decodeHtml() dekodiert &amp; u.a. aus Google-API. */}
                     {tagGoogle.map(g => (
-                      <a
+                      <div
                         key={g.id}
-                        href={g.htmlLink || "https://calendar.google.com"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="absolute left-1 right-1 rounded-md bg-blue-50 border border-blue-200 text-blue-900 px-2 py-1 hover:bg-blue-100 transition-colors block"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => g.htmlLink && window.open(g.htmlLink, "_blank", "noopener,noreferrer")}
+                        onKeyDown={e => e.key === "Enter" && g.htmlLink && window.open(g.htmlLink, "_blank", "noopener,noreferrer")}
+                        className="absolute left-1 right-1 rounded-md bg-blue-50 border border-blue-200 text-blue-900 px-2 py-1 hover:bg-blue-100 transition-colors cursor-pointer"
                         style={{
                           top: offsetTop(g.von) + 2,
                           height: eventHeight(g.von, g.bis) - 4,
                           opacity: 0.85,
                         }}
-                        title={`Google: ${g.summary} (${fmtTime(g.von)}–${fmtTime(g.bis)})`}
+                        title={`Google: ${decodeHtml(g.summary)} (${fmtTime(g.von)}–${fmtTime(g.bis)})`}
                       >
                         <div className="text-[10px] font-semibold uppercase tracking-wide text-blue-700">Google</div>
-                        <div className="text-[10px] truncate text-blue-900">{g.summary}</div>
+                        <div className="text-[10px] truncate text-blue-900">{decodeHtml(g.summary)}</div>
                         <div className="text-[10px] text-blue-800/70 truncate">{fmtTime(g.von)}–{fmtTime(g.bis)}</div>
-                      </a>
+                      </div>
                     ))}
 
                     {/* Termin-Layer */}
