@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase"
+import { formatStatus } from "@/types"
 
 /* KI: Trend-Analyse */
 function kiTrend(timeline: any[]): { trend: string; text: string } {
@@ -170,7 +171,9 @@ export default function AktivitaetPage() {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-ink truncate">{a.title}</div>
                   <div className="text-[11px] text-gray-500">
-                    {cfg.label}{a.detail ? ` · ${a.detail}` : (a.type === "user" ? " · (keine Rolle)" : "")}
+                    {cfg.label}{a.detail
+                      ? ` · ${a.type === "ticket" ? formatStatus(a.detail) : a.detail}`
+                      : (a.type === "user" ? " · (keine Rolle)" : "")}
                   </div>
                 </div>
                 <span className="text-[11px] text-gray-500 flex-shrink-0">{new Date(a.date).toLocaleDateString("de")}</span>

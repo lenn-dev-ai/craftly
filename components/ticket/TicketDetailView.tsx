@@ -857,8 +857,10 @@ export default function TicketDetailView() {
         )}
 
         {/* === AUCTION HERO === Audit-R5: Mieter-Sicht zeigt
-            "Handwerker wird gesucht" statt "Auktion läuft" */}
-        {ticket.status === "auktion" && ticket.auktion_ende && (
+            "Handwerker wird gesucht" statt "Auktion läuft".
+            Sprint AU F9: bei Direktvergabe kein AuktionCountdown — HW
+            wurde direkt angefragt, kein offener Bietermarkt. */}
+        {ticket.status === "auktion" && ticket.auktion_ende && !ticket.direktvergabe_gestartet && (
           <div className="mb-6">
             <AuktionCountdown end={ticket.auktion_ende} mieterSicht={istMieter} />
             {/* Auction Stats */}

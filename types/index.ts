@@ -44,6 +44,23 @@ export function formatGewerk(gewerk: string | null | undefined): string {
   return GEWERK_LABELS[key] ?? gewerk
 }
 
+export const STATUS_LABELS: Record<string, string> = {
+  gemeldet:           "Gemeldet",
+  offen:              "Offen",
+  rueckfrage:         "Rückfrage",
+  auktion:            "Auktion",
+  angebote_da:        "Angebote da",
+  in_bearbeitung:     "In Arbeit",
+  fertiggestellt_hw:  "Wird geprüft",
+  erledigt:           "Erledigt",
+  reklamiert:         "Reklamiert",
+}
+
+export function formatStatus(status: string | null | undefined): string {
+  if (!status) return "Unbekannt"
+  return STATUS_LABELS[status] ?? status
+}
+
 export interface UserProfile {
   id: string; email: string; name: string; rolle: Rolle
   telefon?: string; firma?: string; gewerk?: string; plz_bereich?: string
@@ -116,6 +133,8 @@ export interface Ticket {
   hw_abschluss_kommentar?: string | null
   hw_abschluss_am?: string | null
   // Sprint AM Phase 2: sequenzielle Direktvergabe-Felder
+  direktvergabe_gestartet?: string | null   // timestamp — gesetzt wenn Direktvergabe läuft
+  direktvergabe_stufe?: number | null
   direktvergabe_kandidaten?: Array<{ hw_id: string; score: number; preis: number }> | null
   direktvergabe_index?: number | null
   direktvergabe_angefragt_am?: string | null

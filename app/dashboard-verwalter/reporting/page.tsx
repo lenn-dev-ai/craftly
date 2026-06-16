@@ -80,9 +80,18 @@ export default function ReportingPage() {
     : provisionen
   const erledigt = ticketsImZeitraum.filter(t => t.status === "erledigt")
 
-  // Aggregat aus DB-Snapshots — autoritative Quelle
-  const auftragswertImZeitraum = provisionenImZeitraum.reduce((s, p) => s + Number(p.auftragswert || 0), 0)
-  const provisionImZeitraum = provisionenImZeitraum.reduce((s, p) => s + Number(p.provision_betrag || 0), 0)
+  // Aggregat aus DB-Snapshots — autoritative Quelle.
+  // Sprint AU F12: Fallback auf angebote(status=angenommen) wenn provisionen-Tabelle leer
+  // (passiert bei Demo-Accounts und Früh-Adoptern ohne abgerechnete Aufträge).
+  const angeboteAngenommenImZeitraum = ticketsImZeitraum
+    .flatMap(t => (t.angebote || []).filter((a: any) => a.status === "angenommen"))
+  const auftragswertImZeitraum = provisionenImZeitraum.length > 0
+    ? provisionenImZeitraum.reduce((s, p) => s + Number(p.auftragswert || 0), 0)
+    : angeboteAngenommenImZeitraum.reduce((s: number, a: any) => s + Number(a.preis || 0), 0)
+  const istEarlyAdopter = isEarlyAdopter(profile)
+  const provisionImZeitraum = provisionenImZeitraum.length > 0
+    ? provisionenImZeitraum.reduce((s, p) => s + Number(p.provision_betrag || 0), 0)
+    : istEarlyAdopter ? 0 : Math.round(auftragswertImZeitraum * 0.05)
   const zeitraumLabel = ZEITRAEUME.find(z => z.key === zeitraum)?.label ?? "Gesamt"
 
   // Ersparnis durch Auktion (vs. teuerstes Angebot)
@@ -92,7 +101,6 @@ export default function ReportingPage() {
     return s + (Math.max(...preise) - Math.min(...preise))
   }, 0)
 
-  const istEarlyAdopter = isEarlyAdopter(profile)
   const tageVerbleibend = profile?.early_adopter_bis
     ? Math.max(0, Math.ceil((new Date(profile.early_adopter_bis).getTime() - Date.now()) / 86_400_000))
     : 0

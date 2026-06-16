@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase"
-import { formatGewerk } from "@/types"
+import { formatGewerk, formatStatus } from "@/types"
 
 /* KI: System-Health Bewertung */
 function kiSystemHealth(data: any): { score: number; checks: { name: string; ok: boolean; text: string }[] } {
@@ -83,8 +83,11 @@ export default function SystemPage() {
 
   const health = kiSystemHealth(data)
   const tipps = kiOptimierung(data)
-  const statusColors: Record<string, string> = { offen: "#FF6363", auktion: "#00B4D8", in_bearbeitung: "#F59E0B", erledigt: "#3D8B7A" }
-  const statusLabels: Record<string, string> = { offen: "Offen", auktion: "Auktion", in_bearbeitung: "In Arbeit", erledigt: "Erledigt" }
+  const statusColors: Record<string, string> = {
+    gemeldet: "#94A3B8", offen: "#FF6363", rueckfrage: "#A855F7",
+    auktion: "#00B4D8", angebote_da: "#3B82F6", in_bearbeitung: "#F59E0B",
+    fertiggestellt_hw: "#10B981", erledigt: "#3D8B7A", reklamiert: "#EF4444",
+  }
 
   return (
     <div className="p-8 max-w-6xl mx-auto pt-16 md:pt-8">
@@ -156,7 +159,7 @@ export default function SystemPage() {
               return (
                 <div key={status}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-gray-300">{statusLabels[status] || status}</span>
+                    <span className="text-sm text-gray-300">{formatStatus(status)}</span>
                     <span className="text-sm font-semibold text-ink">{count} ({pct}%)</span>
                   </div>
                   <div className="w-full h-2 bg-surface rounded-full overflow-hidden">

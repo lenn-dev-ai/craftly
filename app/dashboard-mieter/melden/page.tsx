@@ -951,7 +951,7 @@ export default function MeldenPage() {
               <Button onClick={handleSubmit} disabled={loading} className="flex-1 justify-center">
                 {loading ? "Wird gesendet..." : "Meldung absenden"}
               </Button>
-              <button onClick={() => setStep("details")} className="text-sm text-ink-muted hover:text-ink px-4">Zurueck</button>
+              <button onClick={() => setStep("details")} className="text-sm text-ink-muted hover:text-ink px-4">Zurück</button>
             </div>
           </div>
         )}
