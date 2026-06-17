@@ -3,6 +3,7 @@ import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { createServiceRoleClient } from "@/lib/supabase-server"
 import Anthropic from "@anthropic-ai/sdk"
 import { haversineKm, schaetzeFahrzeitMin } from "@/lib/distance"
+import { listEventsForUser } from "@/lib/google-cal/events"
 
 // GET /api/hw/tages-briefing?datum=2026-06-16
 // Sprint AV — KI-Assistent für Handwerker.
@@ -195,6 +196,41 @@ export async function GET(request: NextRequest) {
     lng: t.einsatzort_lng,
     ticketId: t.ticket_id,
   }))
+
+  // 4b. Google-Cal-Events für heute einbinden (silent fail)
+  // Ganztages-Events werden ignoriert (kein konkreter Zeitslot).
+  try {
+    const tagStart = new Date(`${datum}T00:00:00`)
+    const tagEnd   = new Date(`${datum}T23:59:59`)
+    const gcalEvents = await listEventsForUser(userId, tagStart, tagEnd)
+    for (const ev of gcalEvents) {
+      if (ev.allDay) continue  // Ganztags-Events nicht als Termin-Stop
+      const evStart = new Date(ev.start)
+      const evEnd   = new Date(ev.end)
+      // Nur Events, die wirklich heute stattfinden
+      const evDatum = evStart.toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" })
+      if (evDatum !== datum) continue
+      const vonStr = evStart.toLocaleTimeString("de", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })
+      const bisStr = evEnd.toLocaleTimeString("de",   { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })
+      // Duplikat-Check: Reparo-Termin mit selber Zeit überschreibt nicht
+      const duplikat = termine.some(t => t.von.slice(0, 5) === vonStr && t.bis.slice(0, 5) === bisStr)
+      if (!duplikat) {
+        termine.push({
+          id: `gcal-${ev.id}`,
+          titel: ev.summary || "Google-Termin",
+          datum: evDatum,
+          von: vonStr,
+          bis: bisStr,
+          adresse: null,
+          lat: null,
+          lng: null,
+          ticketId: null,
+        })
+      }
+    }
+  } catch {
+    // Google-Cal nicht verbunden oder Fehler — kein Problem, Reparo-Termine reichen
+  }
 
   // 5a. Route optimieren
   const sortiert = optimiereReihenfolge(termine, startLat, startLng)
