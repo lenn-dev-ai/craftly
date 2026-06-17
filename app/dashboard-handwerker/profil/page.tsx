@@ -29,6 +29,10 @@ type FormState = {
   // im Kalender. Defaults DB-seitig 7-20.
   arbeitszeit_von: number
   arbeitszeit_bis: number
+  // Sprint AX — Agent-Präferenzen
+  agent_max_radius_km: number | null
+  agent_auto_accept: boolean
+  agent_min_auftragswert: number | null
 }
 
 const GEWERK_AUSWAHL = [
@@ -54,6 +58,10 @@ export default function ProfilPage() {
     basis_stundensatz: null, mindest_stundensatz: null, fahrtkosten_pro_km: 0.5,
     startort_adresse: "", startort_lat: null, startort_lng: null,
     arbeitszeit_von: 7, arbeitszeit_bis: 20,
+    // Sprint AX — Agent-Präferenzen
+    agent_max_radius_km: null,
+    agent_auto_accept: false,
+    agent_min_auftragswert: null,
   })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -66,7 +74,7 @@ export default function ProfilPage() {
       if (!user) { router.push("/login"); return }
       const { data } = await supabase
         .from("profiles")
-        .select("id, email, name, rolle, telefon, firma, gewerk, handwerker_gewerke, plz_bereich, radius_km, basis_stundensatz, mindest_stundensatz, fahrtkosten_pro_km, startort_adresse, startort_lat, startort_lng, arbeitszeit_von, arbeitszeit_bis, bewertung_avg, auftraege_anzahl, created_at")
+        .select("id, email, name, rolle, telefon, firma, gewerk, handwerker_gewerke, plz_bereich, radius_km, basis_stundensatz, mindest_stundensatz, fahrtkosten_pro_km, startort_adresse, startort_lat, startort_lng, arbeitszeit_von, arbeitszeit_bis, bewertung_avg, auftraege_anzahl, created_at, agent_max_radius_km, agent_auto_accept, agent_min_auftragswert")
         .eq("id", user.id)
         .single()
       if (data) {
@@ -96,6 +104,10 @@ export default function ProfilPage() {
           arbeitszeit_bis: typeof (data as { arbeitszeit_bis?: number | null }).arbeitszeit_bis === "number"
             ? (data as { arbeitszeit_bis: number }).arbeitszeit_bis
             : 20,
+          // Sprint AX — Agent-Präferenzen
+          agent_max_radius_km: (data as { agent_max_radius_km?: number | null }).agent_max_radius_km ?? null,
+          agent_auto_accept: (data as { agent_auto_accept?: boolean }).agent_auto_accept ?? false,
+          agent_min_auftragswert: (data as { agent_min_auftragswert?: number | null }).agent_min_auftragswert ?? null,
         })
       }
     }
@@ -147,6 +159,12 @@ export default function ProfilPage() {
         const { arbeitszeit_von: _av, arbeitszeit_bis: _ab, ...ohneArb } = payload
         void _av; void _ab
         updateErr = (await supabase.from("profiles").update(ohneArb).eq("id", user.id)).error
+      }
+      // Sprint AX: Falls Migration noch nicht angewandt, retry ohne agent-Felder.
+      if (updateErr && /agent_(max_radius_km|auto_accept|min_auftragswert)|column.*does not exist/i.test(updateErr.message)) {
+        const { agent_max_radius_km: _amr, agent_auto_accept: _aaa, agent_min_auftragswert: _ama, ...ohneAgent } = payload
+        void _amr; void _aaa; void _ama
+        updateErr = (await supabase.from("profiles").update(ohneAgent).eq("id", user.id)).error
       }
       if (updateErr) {
         show("Speichern fehlgeschlagen: " + updateErr.message, "error")
@@ -524,6 +542,99 @@ export default function ProfilPage() {
         <p className="text-[11px] text-ink-muted mt-3">
           Beispiele: Frühdienst <span className="tabular-nums">5–15</span> · Standard <span className="tabular-nums">7–20</span> · Notdienst <span className="tabular-nums">8–24</span>
         </p>
+      </div>
+
+      {/* Sprint AX — Agent-Einstellungen ---------------------------------------- */}
+      <div className="bg-white rounded-2xl border border-line p-6 mt-4">
+        <div className="mb-4">
+          <h2 className="text-base font-semibold text-ink flex items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D8B7A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
+              <path d="M12 16v-4M12 8h.01"/>
+            </svg>
+            Agent-Einstellungen
+          </h2>
+          <p className="text-xs text-ink-muted mt-1">
+            Der Agent bewertet eingehende Direktvergaben und empfiehlt dir Annehmen oder Ablehnen.
+          </p>
+        </div>
+
+        <div className="space-y-5">
+          {/* Radius-Override */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-ink">Agent-Radius</label>
+              <span className="text-2xl font-bold text-accent tabular-nums">
+                {form.agent_max_radius_km ?? form.radius_km}<span className="text-sm font-normal text-ink-muted ml-1">km</span>
+              </span>
+            </div>
+            <input
+              type="range" min="5" max="100" step="5"
+              value={form.agent_max_radius_km ?? form.radius_km}
+              onChange={e => setForm(f => ({ ...f, agent_max_radius_km: Number(e.target.value) }))}
+              className="w-full accent-[#3D8B7A] cursor-pointer"
+              aria-label="Agent-Radius in Kilometern"
+            />
+            <div className="flex justify-between text-xs text-ink-muted mt-1">
+              <span>5 km</span><span>50 km</span><span>100 km</span>
+            </div>
+            {form.agent_max_radius_km != null && form.agent_max_radius_km !== form.radius_km && (
+              <p className="text-xs text-ink-muted mt-1">
+                Abweichend vom Profil-Radius ({form.radius_km} km) —{" "}
+                <button
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, agent_max_radius_km: null }))}
+                  className="text-accent hover:text-accent-hover font-medium"
+                >
+                  zurücksetzen
+                </button>
+              </p>
+            )}
+          </div>
+
+          {/* Mindest-Auftragswert */}
+          <NumField
+            label="Mindest-Auftragswert"
+            unit="€"
+            value={form.agent_min_auftragswert}
+            onChange={v => setForm(f => ({ ...f, agent_min_auftragswert: v }))}
+            placeholder="z.B. 100"
+            help="Anfragen unter diesem Wert bewertet der Agent negativ"
+          />
+
+          {/* Auto-Accept Toggle */}
+          <div className="rounded-xl border border-line p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-ink">Auto-Accept</p>
+                <p className="text-xs text-ink-muted mt-0.5">
+                  Agent nimmt Anfragen automatisch an — nur wenn Gewerk, Radius und Mindestpreis passen.
+                  Du kannst jederzeit deaktivieren.
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.agent_auto_accept}
+                onClick={() => setForm(f => ({ ...f, agent_auto_accept: !f.agent_auto_accept }))}
+                className={`flex-shrink-0 w-11 h-6 rounded-full transition-colors relative ${
+                  form.agent_auto_accept ? "bg-accent" : "bg-line"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                    form.agent_auto_accept ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+            {form.agent_auto_accept && (
+              <p className="text-xs text-accent bg-accent/8 rounded-lg px-3 py-2 mt-3">
+                ✓ Auto-Accept ist aktiv — passende Aufträge werden ohne dein Zutun angenommen.
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Sprint AE — Google-Kalender-Sync (OAuth-Flow live, ENVs evtl. noch nicht gesetzt). */}

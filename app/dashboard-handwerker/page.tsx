@@ -10,6 +10,8 @@ import { haversineKm } from "@/lib/distance"
 import DirektanfragenInbox from "@/components/handwerker/DirektanfragenInbox"
 import { SichtbarkeitsBadge } from "@/components/handwerker/SichtbarkeitsBadge"
 import MorgenBriefing from "@/components/handwerker/MorgenBriefing"
+import AgentPanel from "@/components/handwerker/AgentPanel"
+import type { HwPreferences } from "@/lib/agent/score-einladung"
 
 type Dringlichkeit = "notfall" | "zeitnah" | "planbar"
 
@@ -34,7 +36,7 @@ export default function HandwerkerDashboard() {
     if (!user) { router.push("/login"); return }
 
     const [{ data: prof }, { data: offene }, { data: meine }] = await Promise.all([
-      supabase.from("profiles").select("id, email, name, rolle, firma, gewerk, handwerker_gewerke, startort_lat, startort_lng, radius_km, bewertung_avg, auftraege_anzahl, sichtbarkeit_stufe, verfuegbarkeit_score, angebotstreue, created_at").eq("id", user.id).single(),
+      supabase.from("profiles").select("id, email, name, rolle, firma, gewerk, handwerker_gewerke, startort_lat, startort_lng, radius_km, bewertung_avg, auftraege_anzahl, sichtbarkeit_stufe, verfuegbarkeit_score, angebotstreue, created_at, agent_max_radius_km, agent_auto_accept, agent_min_auftragswert, mindest_stundensatz").eq("id", user.id).single(),
       supabase.from("tickets").select("*, angebote(*)").eq("status", "auktion")
         .gt("auktion_ende", new Date().toISOString()).order("auktion_ende"),
       supabase.from("tickets").select("*").eq("zugewiesener_hw", user.id)
@@ -178,6 +180,26 @@ export default function HandwerkerDashboard() {
       {/* Sprint AV — KI Tages-Briefing: zeigt heute's Termine in optimierter
           Reihenfolge + KI-generierten Text. Lädt async, fällt bei Fehler still. */}
       <MorgenBriefing />
+
+      {/* Sprint AX — Agent-Panel: zeigt offene Direktvergaben mit Empfehlung.
+          Nur wenn Standort bekannt, damit Entfernung berechnet werden kann. */}
+      {profile && (
+        <AgentPanel
+          hwId={profile.id}
+          hwPreferences={{
+            handwerker_gewerke: (profile as unknown as { handwerker_gewerke?: string[] }).handwerker_gewerke ?? null,
+            gewerk: profile.gewerk ?? null,
+            radius_km: profile.radius_km ?? null,
+            agent_max_radius_km: (profile as unknown as { agent_max_radius_km?: number | null }).agent_max_radius_km ?? null,
+            agent_auto_accept: (profile as unknown as { agent_auto_accept?: boolean }).agent_auto_accept ?? false,
+            agent_min_auftragswert: (profile as unknown as { agent_min_auftragswert?: number | null }).agent_min_auftragswert ?? null,
+            startort_lat: profile.startort_lat ?? null,
+            startort_lng: profile.startort_lng ?? null,
+            mindest_stundensatz: (profile as unknown as { mindest_stundensatz?: number | null }).mindest_stundensatz ?? null,
+          } satisfies HwPreferences}
+          onChanged={load}
+        />
+      )}
 
       {/* Standort-Setup-Banner wenn nicht konfiguriert. Audit-R9: nur
           zeigen wenn Gewerke schon gesetzt sind — sonst hat der HW

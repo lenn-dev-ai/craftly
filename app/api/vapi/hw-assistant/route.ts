@@ -1,6 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase-server"
 import { verifyVapiSignature } from "@/lib/sms/verify-vapi-signature"
+import {
+  scoreEinladung,
+  scoreZuSprache,
+  type EinladungInput,
+  type HwPreferences,
+} from "@/lib/agent/score-einladung"
 
 // POST /api/vapi/hw-assistant
 // Sprint AW — Voice-AI Assistent für Handwerker.
@@ -101,6 +107,84 @@ async function getBriefingText(hwId: string): Promise<string> {
   return `Du hast heute ${termine.length} Termin${termine.length === 1 ? "" : "e"}. ${stopsText}`
 }
 
+/** Sprint AX Phase 4 — Neue Anfragen mit Agent-Empfehlung (gesprochener String). */
+async function getNeuAnfragenMitEmpfehlungText(hwId: string): Promise<string> {
+  const admin = createServiceRoleClient()
+
+  // HW-Präferenzen laden (brauchen wir für Score)
+  const { data: hwData } = await admin
+    .from("profiles")
+    .select("handwerker_gewerke, gewerk, radius_km, agent_max_radius_km, agent_auto_accept, agent_min_auftragswert, startort_lat, startort_lng, mindest_stundensatz")
+    .eq("id", hwId)
+    .single()
+
+  if (!hwData) return "Ich konnte deine Einstellungen nicht laden."
+
+  const hwPrefs: HwPreferences = {
+    handwerker_gewerke: (hwData as { handwerker_gewerke?: string[] | null }).handwerker_gewerke ?? null,
+    gewerk: (hwData as { gewerk?: string | null }).gewerk ?? null,
+    radius_km: (hwData as { radius_km?: number | null }).radius_km ?? null,
+    agent_max_radius_km: (hwData as { agent_max_radius_km?: number | null }).agent_max_radius_km ?? null,
+    agent_auto_accept: (hwData as { agent_auto_accept?: boolean }).agent_auto_accept ?? false,
+    agent_min_auftragswert: (hwData as { agent_min_auftragswert?: number | null }).agent_min_auftragswert ?? null,
+    startort_lat: (hwData as { startort_lat?: number | null }).startort_lat ?? null,
+    startort_lng: (hwData as { startort_lng?: number | null }).startort_lng ?? null,
+    mindest_stundensatz: (hwData as { mindest_stundensatz?: number | null }).mindest_stundensatz ?? null,
+  }
+
+  // Offene Einladungen laden (max 5 für Voice-Briefing)
+  interface RawEinladung {
+    id: string
+    ticket_id: string
+    tickets: {
+      titel: string
+      gewerk: string | null
+      einsatzort_adresse: string | null
+      einsatzort_lat: number | null
+      einsatzort_lng: number | null
+      kosten_final: number | null
+      dringlichkeit: string | null
+    } | null
+  }
+
+  const { data: einladungen } = await admin
+    .from("einladungen")
+    .select("id, ticket_id, tickets (titel, gewerk, einsatzort_adresse, einsatzort_lat, einsatzort_lng, kosten_final, dringlichkeit)")
+    .eq("handwerker_id", hwId)
+    .eq("status", "offen")
+    .order("erstellt_am", { ascending: false })
+    .limit(5)
+    .returns<RawEinladung[]>()
+
+  if (!einladungen || einladungen.length === 0) {
+    return "Du hast aktuell keine neuen Anfragen. Alles erledigt!"
+  }
+
+  // Jede Anfrage bewerten
+  const scored = einladungen.map(e => {
+    const t = e.tickets
+    const input: EinladungInput = {
+      id: e.id,
+      ticket_id: e.ticket_id,
+      titel: t?.titel ?? "Auftrag",
+      gewerk: t?.gewerk ?? null,
+      einsatzort_adresse: t?.einsatzort_adresse ?? null,
+      einsatzort_lat: t?.einsatzort_lat ?? null,
+      einsatzort_lng: t?.einsatzort_lng ?? null,
+      kosten_final: t?.kosten_final ?? null,
+      dringlichkeit: t?.dringlichkeit ?? null,
+    }
+    return { input, score: scoreEinladung(input, hwPrefs) }
+  })
+
+  // Beste zuerst
+  scored.sort((a, b) => b.score.score - a.score.score)
+
+  const texte = scored.map(({ input, score }) => scoreZuSprache(input, score))
+  const intro = `Du hast ${einladungen.length} neue Anfrage${einladungen.length === 1 ? "" : "n"}. `
+  return intro + texte.join(" Als Nächstes: ") + " Schau in Reparo für Details."
+}
+
 /** Offene Einladungen/Anfragen als gesprochener String. */
 async function getOffeneAnfragenText(hwId: string): Promise<string> {
   const admin = createServiceRoleClient()
@@ -149,6 +233,7 @@ function buildAssistantConfig(hw: HwProfile | null) {
 Du kannst Folgendes beantworten:
 - Heutige Termine und Route (Tool: get_heutiges_briefing)
 - Offene Anfragen und wartende Terminbestätigungen (Tool: get_offene_anfragen)
+- Neue Anfragen mit Agent-Empfehlung (Tool: get_neue_anfragen_mit_empfehlung)
 
 Regeln:
 - Antworte immer kurz und klar — der Handwerker ist oft unterwegs oder im Auto.
@@ -175,6 +260,15 @@ Regeln:
             name: "get_offene_anfragen",
             description:
               "Gibt die Anzahl offener Auftragsanfragen und ausstehender Terminbestätigungen zurück.",
+            parameters: { type: "object", properties: {}, required: [] },
+          },
+        },
+        {
+          type: "function",
+          function: {
+            name: "get_neue_anfragen_mit_empfehlung",
+            description:
+              "Sprint AX: Listet neue Direktvergabe-Anfragen mit Agent-Empfehlung (annehmen/ablehnen/prüfen) auf. Aufrufen wenn der HW fragt 'Was empfiehlst du mir?', 'Was sind neue Anfragen?' oder 'Welche Aufträge lohnen sich?'.",
             parameters: { type: "object", properties: {}, required: [] },
           },
         },
@@ -268,6 +362,8 @@ export async function POST(request: NextRequest) {
           result = await getBriefingText(hw.id)
         } else if (tc.function.name === "get_offene_anfragen") {
           result = await getOffeneAnfragenText(hw.id)
+        } else if (tc.function.name === "get_neue_anfragen_mit_empfehlung") {
+          result = await getNeuAnfragenMitEmpfehlungText(hw.id)
         }
 
         return { toolCallId: tc.id, result }
