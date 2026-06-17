@@ -216,7 +216,9 @@ export default function KarteView() {
     () => stops.filter(s => s.datum === datum),
     [stops, datum],
   )
-  const sichtbar = zeigeAlle ? stops : tagesStops
+  // Tickets ohne Termin-Datum: immer anzeigen (unabhängig vom Datum-Filter)
+  const noDateStops = useMemo(() => stops.filter(s => !s.datum), [stops])
+  const sichtbar = zeigeAlle ? stops : [...tagesStops, ...noDateStops]
 
   const startLat = profilGeo?.startort_lat ?? profilGeo?.lat
   const startLng = profilGeo?.startort_lng ?? profilGeo?.lng
@@ -517,37 +519,47 @@ export default function KarteView() {
               )
             })}
 
-            {/* Tagesroute: echte Straßen wenn Directions-API geliefert, sonst Luftlinie */}
-            {routeGeoJSON && (
-              <Source id="route" type="geojson" data={routeGeoJSON}>
-                {/* Halo für bessere Lesbarkeit auf hellen Kacheln */}
-                <Layer
-                  id="route-line-halo"
-                  type="line"
-                  paint={{
-                    "line-color": "#ffffff",
-                    "line-width": roadRoute?.geometry ? 7 : 5,
-                    "line-opacity": 0.6,
-                  }}
-                />
-                <Layer
-                  id="route-line"
-                  type="line"
-                  paint={{
-                    "line-color": "#3D8B7A",
-                    "line-width": roadRoute?.geometry ? 4 : 3,
-                    "line-opacity": 0.85,
-                    ...(roadRoute?.geometry ? {} : { "line-dasharray": [2, 1.5] }),
-                  }}
-                />
-              </Source>
-            )}
+            {/* Tagesroute: echte Straßen wenn Directions-API geliefert, sonst Luftlinie.
+                Source wird immer gerendert (leere Koordinaten = unsichtbar) damit
+                Mapbox keine Layer-Konflikte beim Mount/Unmount bekommt. */}
+            <Source
+              id="route"
+              type="geojson"
+              data={routeGeoJSON ?? {
+                type: "Feature" as const,
+                properties: {},
+                geometry: { type: "LineString" as const, coordinates: [] as number[][] },
+              }}
+            >
+              <Layer
+                id="route-line-halo"
+                type="line"
+                paint={{
+                  "line-color": "#ffffff",
+                  "line-width": roadRoute?.geometry ? 7 : 5,
+                  "line-opacity": routeGeoJSON ? 0.6 : 0,
+                }}
+              />
+              <Layer
+                id="route-line"
+                type="line"
+                paint={{
+                  "line-color": "#3D8B7A",
+                  "line-width": roadRoute?.geometry ? 4 : 3,
+                  "line-opacity": routeGeoJSON ? 0.85 : 0,
+                  ...(roadRoute?.geometry ? {} : { "line-dasharray": [2, 1.5] }),
+                }}
+              />
+            </Source>
           </MapboxMap>
         </div>
       )}
 
       {/* ─── Wegbeschreibung-Panel ─────────────────────────────── */}
-      {!zeigeAlle && route && route.reihenfolge.length >= 1 && (
+      {/* Zeigen wenn Stops sichtbar sind + Startort hinterlegt.
+          Mit optimierter Route (Tages-Ansicht ≥2 Stops): sortierte Reihenfolge + Fahrzeiten.
+          Ohne Route (Alle-Aufträge-Modus oder <2 Stops heute): einfache Liste mit Navi-Links. */}
+      {sichtbar.length >= 1 && startLat != null && (
         <div className="bg-white border border-line rounded-2xl shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-line">
             <div className="flex items-center gap-2 text-sm font-semibold text-ink">
@@ -579,64 +591,93 @@ export default function KarteView() {
               </div>
             </div>
 
-            {/* Stops in optimierter Reihenfolge */}
-            {route.reihenfolge.map((r, idx) => {
-              const s = sichtbar.find(x => x.ticketId === r.ticketId)
-              if (!s) return null
-              const leg = roadRoute?.legs[idx]
-              const googleUrl = s.adresse
-                ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.adresse)}&travelmode=driving`
-                : null
+            {/* Stops: optimierte Reihenfolge wenn route berechnet, sonst einfache Liste */}
+            {route ? (
+              route.reihenfolge.map((r, idx) => {
+                const s = sichtbar.find(x => x.ticketId === r.ticketId)
+                if (!s) return null
+                const leg = roadRoute?.legs[idx]
+                const googleUrl = s.adresse
+                  ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.adresse)}&travelmode=driving`
+                  : null
 
-              return (
-                <div key={r.ticketId} className="flex items-start gap-3 px-4 py-3">
-                  {/* Fahrt-Info zwischen Stops */}
-                  {leg && (
-                    <div className="absolute ml-[13px] -mt-3 flex flex-col items-center pointer-events-none" style={{ marginLeft: 13 }}>
-                    </div>
-                  )}
-
-                  {/* Nummern-Pin */}
-                  <div
-                    className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold"
-                    style={{ background: FARBE[s.dringlichkeit] }}
-                  >
-                    {idx + 1}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    {/* Fahrstrecke vom Vorgänger */}
-                    {leg && (
-                      <div className="flex items-center gap-1 text-xs text-ink-muted mb-1">
-                        <Clock size={10} />
-                        {leg.durationMin} min · {leg.distanceKm} km
-                      </div>
-                    )}
-                    <div className="text-xs font-semibold text-ink truncate">{s.titel}</div>
-                    {s.adresse && (
-                      <div className="text-xs text-ink-muted truncate">📍 {s.adresse}</div>
-                    )}
-                    {s.von && s.bis && (
-                      <div className="text-xs text-ink-muted">⏰ {s.von}–{s.bis}</div>
-                    )}
-                  </div>
-
-                  {/* Navigation starten */}
-                  {googleUrl && (
-                    <a
-                      href={googleUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-shrink-0 flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-hover px-2 py-1 rounded-lg hover:bg-accent/5 transition-colors"
-                      title="In Google Maps navigieren"
+                return (
+                  <div key={r.ticketId} className="flex items-start gap-3 px-4 py-3">
+                    <div
+                      className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold"
+                      style={{ background: FARBE[s.dringlichkeit] }}
                     >
-                      <Navigation size={12} />
-                      <span className="hidden sm:inline">Navi</span>
-                    </a>
-                  )}
-                </div>
-              )
-            })}
+                      {idx + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {leg && (
+                        <div className="flex items-center gap-1 text-xs text-ink-muted mb-1">
+                          <Clock size={10} />
+                          {leg.durationMin} min · {leg.distanceKm} km
+                        </div>
+                      )}
+                      <div className="text-xs font-semibold text-ink truncate">{s.titel}</div>
+                      {s.adresse && (
+                        <div className="text-xs text-ink-muted truncate">📍 {s.adresse}</div>
+                      )}
+                      {s.von && s.bis && (
+                        <div className="text-xs text-ink-muted">⏰ {s.von}–{s.bis}</div>
+                      )}
+                    </div>
+                    {googleUrl && (
+                      <a
+                        href={googleUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0 flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-hover px-2 py-1 rounded-lg hover:bg-accent/5 transition-colors"
+                        title="In Google Maps navigieren"
+                      >
+                        <Navigation size={12} />
+                        <span className="hidden sm:inline">Navi</span>
+                      </a>
+                    )}
+                  </div>
+                )
+              })
+            ) : (
+              /* Kein optimierter Tagesplan — einfache Liste aller sichtbaren Stops */
+              sichtbar.map((s, idx) => {
+                const googleUrl = s.adresse
+                  ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.adresse)}&travelmode=driving`
+                  : null
+                return (
+                  <div key={s.ticketId} className="flex items-start gap-3 px-4 py-3">
+                    <div
+                      className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold"
+                      style={{ background: FARBE[s.dringlichkeit] }}
+                    >
+                      {idx + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-ink truncate">{s.titel}</div>
+                      {s.adresse && (
+                        <div className="text-xs text-ink-muted truncate">📍 {s.adresse}</div>
+                      )}
+                      {s.von && s.bis && (
+                        <div className="text-xs text-ink-muted">⏰ {s.von}–{s.bis}{s.datum ? ` · ${s.datum}` : ""}</div>
+                      )}
+                    </div>
+                    {googleUrl && (
+                      <a
+                        href={googleUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0 flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-hover px-2 py-1 rounded-lg hover:bg-accent/5 transition-colors"
+                        title="In Google Maps navigieren"
+                      >
+                        <Navigation size={12} />
+                        <span className="hidden sm:inline">Navi</span>
+                      </a>
+                    )}
+                  </div>
+                )
+              })
+            )}
           </div>
         </div>
       )}
