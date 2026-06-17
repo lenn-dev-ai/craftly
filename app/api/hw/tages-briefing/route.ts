@@ -236,21 +236,33 @@ export async function GET(request: NextRequest) {
       ? `Offene Auftragsanfragen: ${offeneAnfragen} (warten auf Antwort)`
       : ""
 
-    const prompt = stops.length === 0
-      ? [
-          `Erstelle eine kurze, freundliche Nachricht (2 Sätze) für Handwerker ${name}. Heute keine geplanten Termine.`,
-          anfragenZeile ? `Hinweis: ${anfragenZeile}` : "Motiviere ihn kurz.",
-          wetterZeile,
-        ].filter(Boolean).join(" ")
-      : `Erstelle eine kurze, professionelle Zusammenfassung (2-3 Sätze) für Handwerker ${name} für heute:
+    // Strikte Regeln für beide Varianten:
+    // - Kein Markdown (keine #-Überschriften, keine **bold**, keine Listen)
+    // - Keine Anrede ("Hallo ...", "Guten Morgen ...")
+    // - Keine Motivationsfloskeln ("Du schaffst das!", "Tolle Arbeit!")
+    // - Nur Fließtext, max. 2-3 kurze Sätze, Ton: sachlich-kollegial
+    const styleRules = `Regeln:
+- Reiner Fließtext ohne Markdown, Überschriften oder Aufzählungen.
+- Keine persönliche Anrede am Anfang.
+- Sachlich und knapp — keine Motivationssprüche, kein übertriebenes Lob.
+- Maximal 2 Sätze.
+- Sprache: Deutsch, du-Form.`
 
+    const prompt = stops.length === 0
+      ? `Formuliere einen nüchternen Tageshinweis für einen Handwerker. Heute keine geplanten Termine.${anfragenZeile ? ` ${anfragenZeile}.` : ""}${wetterZeile ? ` ${wetterZeile}.` : ""}
+
+${styleRules}`
+      : `Formuliere eine sachliche Tages-Zusammenfassung für einen Handwerker.
+
+Termine heute:
 ${stopSummary}
 
 Gesamtfahrzeit: ~${gesamtFahrzeitMin} Minuten, ${gesamtDistanzKm.toFixed(1)} km
 ${wetterZeile}
 ${anfragenZeile}
 
-Schreibe sachlich und direkt. Erwähne Regen nur wenn Wahrscheinlichkeit >40%. Kein übertriebenes Lob.`
+${styleRules}
+Erwähne Regen nur wenn Wahrscheinlichkeit >40%.`
 
     const msg = await anthropic.messages.create({
       model: MODEL,
