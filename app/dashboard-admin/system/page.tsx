@@ -3,6 +3,54 @@ import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase"
 import { formatGewerk, formatStatus } from "@/types"
 
+// Sprint AV — Admin Morgen-Briefing Test-Trigger
+function BriefingTestPanel() {
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
+  const [result, setResult] = useState<string | null>(null)
+
+  async function triggerBriefing() {
+    setStatus("loading")
+    setResult(null)
+    try {
+      const res = await fetch("/api/admin/test-briefing", { method: "POST" })
+      const data = await res.json()
+      if (res.ok) {
+        setStatus("success")
+        setResult(`✅ Briefings verarbeitet: ${data.gesendet} gesendet, ${data.skipped} skipped (Resend ${data.resend_paused ? "pausiert" : "aktiv"})`)
+      } else {
+        setStatus("error")
+        setResult(`❌ Fehler: ${data.error || res.status}`)
+      }
+    } catch (e) {
+      setStatus("error")
+      setResult(`❌ Netzwerk-Fehler: ${String(e)}`)
+    }
+  }
+
+  return (
+    <div className="bg-white border border-white/[0.06] rounded-2xl p-5 mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <span className="text-xs font-bold text-[#3D8B7A] uppercase tracking-wider">Sprint AV — KI Morgen-Briefing</span>
+          <p className="text-sm text-gray-500 mt-1">Sendet KI-Briefing an alle aktiven Handwerker (läuft täglich 07:00 automatisch)</p>
+        </div>
+        <button
+          onClick={triggerBriefing}
+          disabled={status === "loading"}
+          className="px-4 py-2 bg-[#3D8B7A] text-white text-sm font-semibold rounded-xl hover:opacity-90 disabled:opacity-50 transition-opacity shrink-0"
+        >
+          {status === "loading" ? "Läuft…" : "Briefing jetzt senden"}
+        </button>
+      </div>
+      {result && (
+        <div className={`text-sm px-3 py-2 rounded-lg mt-2 ${status === "success" ? "bg-accent/8 text-accent" : "bg-red-50 text-red-600"}`}>
+          {result}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* KI: System-Health Bewertung */
 function kiSystemHealth(data: any): { score: number; checks: { name: string; ok: boolean; text: string }[] } {
   if (!data) return { score: 0, checks: [] }
@@ -97,6 +145,9 @@ export default function SystemPage() {
           <p className="text-sm text-gray-500 mt-1">Detaillierte Plattform-Statistiken</p>
         </div>
       </div>
+
+      {/* Sprint AV — KI Briefing Test-Trigger */}
+      <BriefingTestPanel />
 
       {/* KI System-Health */}
       <div className="bg-white border border-white/[0.06] rounded-2xl p-5 mb-6">

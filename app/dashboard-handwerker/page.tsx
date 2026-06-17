@@ -9,6 +9,7 @@ import { Timer } from "@/components/ui/Timer"
 import { haversineKm } from "@/lib/distance"
 import DirektanfragenInbox from "@/components/handwerker/DirektanfragenInbox"
 import { SichtbarkeitsBadge } from "@/components/handwerker/SichtbarkeitsBadge"
+import MorgenBriefing from "@/components/handwerker/MorgenBriefing"
 
 type Dringlichkeit = "notfall" | "zeitnah" | "planbar"
 
@@ -174,6 +175,9 @@ export default function HandwerkerDashboard() {
       {/* Sichtbarkeits-Stufe — Gamification sichtbar (B2-W3) */}
       <SichtbarkeitsBadge profile={profile} />
 
+      {/* Sprint AV — KI Tages-Briefing: zeigt heute's Termine in optimierter
+          Reihenfolge + KI-generierten Text. Lädt async, fällt bei Fehler still. */}
+      <MorgenBriefing />
 
       {/* Standort-Setup-Banner wenn nicht konfiguriert. Audit-R9: nur
           zeigen wenn Gewerke schon gesetzt sind — sonst hat der HW
