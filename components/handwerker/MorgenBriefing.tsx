@@ -62,14 +62,28 @@ export default function MorgenBriefing() {
   if (loading) return <Skeleton />
   if (error || !data) return null  // Stille Fehler — Widget hat keinen Pflicht-Content
 
-  const { stops, gesamtFahrzeitMin, gesamtDistanzKm, aktiveAuftraege, kiText } = data
+  const { stops, gesamtFahrzeitMin, gesamtDistanzKm, aktiveAuftraege, offeneAnfragen, kiText, wetter } = data
+
+  // Wetter-Emoji anhand WMO-Code-Kategorie
+  function wetterEmoji(beschreibung: string): string {
+    if (!beschreibung) return "🌡️"
+    const b = beschreibung.toLowerCase()
+    if (b.includes("gewitter")) return "⛈️"
+    if (b.includes("schnee")) return "❄️"
+    if (b.includes("hagel")) return "🌨️"
+    if (b.includes("regen") || b.includes("schauer") || b.includes("niesel")) return "🌧️"
+    if (b.includes("nebel")) return "🌫️"
+    if (b.includes("bewölkt") || b.includes("bewoelkt")) return "☁️"
+    if (b.includes("teilweise")) return "⛅"
+    return "☀️"
+  }
 
   return (
     <div className="rounded-2xl border border-accent/25 bg-gradient-to-br from-[#3D8B7A]/6 to-white overflow-hidden mb-6">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-accent/10">
         <div className="flex items-center gap-2.5">
-          {/* KI-Stern — visueller Marker dass das KI-generiert ist */}
+          {/* KI-Stern */}
           <div className="w-8 h-8 rounded-xl bg-[#3D8B7A]/12 flex items-center justify-center shrink-0">
             <span className="text-sm">✦</span>
           </div>
@@ -78,14 +92,26 @@ export default function MorgenBriefing() {
             <div className="text-[10px] text-ink-muted mt-0.5">KI-Assistent · {new Date().toLocaleDateString("de", { weekday: "long", day: "numeric", month: "long" })}</div>
           </div>
         </div>
-        {stops.length > 0 && (
-          <Link
-            href="/dashboard-handwerker/karte"
-            className="text-[11px] font-medium text-accent hover:text-[#2D6B5A] transition-colors shrink-0"
-          >
-            Karte →
-          </Link>
-        )}
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Wetter-Pill */}
+          {wetter && (
+            <span className="text-[11px] text-ink-muted flex items-center gap-1">
+              <span>{wetterEmoji(wetter.beschreibung)}</span>
+              <span className="font-medium text-ink">{wetter.temperaturC}°C</span>
+              {wetter.regenWahrscheinlichkeit > 40 && (
+                <span className="text-blue-500">· {wetter.regenWahrscheinlichkeit}%</span>
+              )}
+            </span>
+          )}
+          {stops.length > 0 && (
+            <Link
+              href="/dashboard-handwerker/karte"
+              className="text-[11px] font-medium text-accent hover:text-[#2D6B5A] transition-colors"
+            >
+              Karte →
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* KI Text */}
@@ -99,9 +125,17 @@ export default function MorgenBriefing() {
         /* Freier Tag */
         <div className="px-5 py-4 flex items-center gap-3 text-sm text-ink-muted">
           <span className="text-xl">🌤️</span>
-          <span>Heute keine geplanten Termine.
-            {aktiveAuftraege > 0 && ` Du hast ${aktiveAuftraege} offene ${aktiveAuftraege === 1 ? "Auftrag" : "Aufträge"} — Zeit zum Planen?`}
-          </span>
+          <div>
+            <span>Heute keine geplanten Termine.</span>
+            {(offeneAnfragen ?? 0) > 0 && (
+              <span className="ml-1 text-amber-600 font-medium">
+                {offeneAnfragen} neue {offeneAnfragen === 1 ? "Anfrage" : "Anfragen"} warten auf dich.
+              </span>
+            )}
+            {(offeneAnfragen ?? 0) === 0 && aktiveAuftraege > 0 && (
+              <span className="ml-1">{aktiveAuftraege} offene {aktiveAuftraege === 1 ? "Auftrag" : "Aufträge"} — Zeit zum Planen?</span>
+            )}
+          </div>
         </div>
       ) : (
         /* Stops-Liste */
@@ -149,7 +183,12 @@ export default function MorgenBriefing() {
                   <span className="font-semibold text-ink">{gesamtDistanzKm.toFixed(1)} km</span> Route
                 </span>
               )}
-              {aktiveAuftraege > 0 && (
+              {(offeneAnfragen ?? 0) > 0 && (
+                <span className="ml-auto text-amber-600 font-medium">
+                  {offeneAnfragen} Anfrage{offeneAnfragen === 1 ? "" : "n"}
+                </span>
+              )}
+              {(offeneAnfragen ?? 0) === 0 && aktiveAuftraege > 0 && (
                 <span className="ml-auto">
                   {aktiveAuftraege} Auftr. offen
                 </span>

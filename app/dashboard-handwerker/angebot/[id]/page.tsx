@@ -51,6 +51,8 @@ export default function AngebotAbgeben() {
   ])
   const [slotsSaving, setSlotsSaving] = useState(false)
   const [slotsError, setSlotsError] = useState("")
+  // Sprint AW Phase 3 — KI-Slot-Vorschlag (fire-and-forget, silent fail)
+  const [kiVorschlagLoading, setKiVorschlagLoading] = useState(false)
 
   const loadTicket = useCallback(async () => {
     setLoading(true)
@@ -279,6 +281,48 @@ export default function AngebotAbgeben() {
               einen aus, die anderen verfallen automatisch.
             </p>
           </div>
+
+          {/* Sprint AW Phase 3 — KI schlägt freie Slots vor */}
+          <button
+            type="button"
+            onClick={async () => {
+              setKiVorschlagLoading(true)
+              try {
+                const res = await authFetch(`/api/hw/slot-vorschlag?ticket_id=${id}`)
+                if (res.ok) {
+                  const json = await res.json() as { vorschlaege?: Array<{ datum: string; von: string; bis: string }> }
+                  if (json.vorschlaege && json.vorschlaege.length > 0) {
+                    setSlotEntries(prev => prev.map((s, i) =>
+                      json.vorschlaege![i]
+                        ? { datum: json.vorschlaege![i].datum, von: json.vorschlaege![i].von, bis: json.vorschlaege![i].bis }
+                        : s
+                    ))
+                  }
+                }
+              } catch {
+                // silent fail — HW kann Slots weiterhin manuell eingeben
+              } finally {
+                setKiVorschlagLoading(false)
+              }
+            }}
+            disabled={kiVorschlagLoading}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border border-accent/30 text-accent bg-accent/5 hover:bg-accent/10 transition-colors disabled:opacity-50"
+          >
+            {kiVorschlagLoading ? (
+              <>
+                <svg className="animate-spin w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                KI sucht freie Zeiten…
+              </>
+            ) : (
+              <>
+                <span>✦</span>
+                KI-Vorschläge laden
+              </>
+            )}
+          </button>
 
           <form onSubmit={handleSlotsSubmit} className="space-y-3">
             {slotEntries.map((slot, idx) => (

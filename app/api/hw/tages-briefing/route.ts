@@ -35,14 +35,55 @@ interface BriefingStop extends TerminStop {
   distanzVorherKm: number
 }
 
+export interface WetterInfo {
+  temperaturC: number
+  beschreibung: string           // "Sonnig", "Bewölkt", "Regen" etc.
+  regenWahrscheinlichkeit: number // % (Max über die nächsten 8h)
+}
+
 export interface TagesBriefingResponse {
   datum: string
   stops: BriefingStop[]
   gesamtFahrzeitMin: number
   gesamtDistanzKm: number
-  aktiveAuftraege: number  // offene Tickets ohne Termin heute
-  kiText: string           // KI-generierter Kurztext
+  aktiveAuftraege: number   // offene Tickets ohne Termin heute
+  offeneAnfragen: number    // Sprint AW Phase 2 — wartende Einladungen
+  kiText: string            // KI-generierter Kurztext
   startortAdresse: string | null
+  wetter: WetterInfo | null // Open-Meteo — kostenlos, kein API-Key nötig
+}
+
+// ---------------------------------------------------------------------------
+// Open-Meteo Wetter (kostenlos, kein API-Key)
+// ---------------------------------------------------------------------------
+
+const WMO_BESCHREIBUNG: Record<number, string> = {
+  0: "Klar", 1: "Überwiegend klar", 2: "Teilweise bewölkt", 3: "Bewölkt",
+  45: "Nebel", 48: "Nebel", 51: "Leichter Nieselregen", 53: "Nieselregen",
+  55: "Starker Nieselregen", 61: "Leichter Regen", 63: "Regen",
+  65: "Starker Regen", 71: "Leichter Schnee", 73: "Schnee", 75: "Starker Schnee",
+  80: "Regenschauer", 81: "Regenschauer", 82: "Starke Schauer",
+  95: "Gewitter", 96: "Gewitter mit Hagel", 99: "Schweres Gewitter",
+}
+
+async function fetchWetter(lat: number, lng: number): Promise<WetterInfo | null> {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weathercode&hourly=precipitation_probability&timezone=Europe%2FBerlin&forecast_days=1`
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000) })
+    if (!res.ok) return null
+    const data = await res.json() as {
+      current: { temperature_2m: number; weathercode: number }
+      hourly: { precipitation_probability: number[] }
+    }
+    const regenMax = Math.max(...(data.hourly.precipitation_probability?.slice(0, 10) ?? [0]))
+    return {
+      temperaturC: Math.round(data.current.temperature_2m),
+      beschreibung: WMO_BESCHREIBUNG[data.current.weathercode] ?? "Unbekannt",
+      regenWahrscheinlichkeit: regenMax,
+    }
+  } catch {
+    return null
+  }
 }
 
 // Greedy Nearest-Neighbor-Heuristik: sortiert Stops so, dass die
@@ -120,12 +161,28 @@ export async function GET(request: NextRequest) {
     .neq("status", "abgelehnt")
     .order("von")
 
-  // 3. Aktive Aufträge gesamt (für Kontext im Briefing)
-  const { count: aktiveAuftraege } = await supabase
-    .from("tickets")
-    .select("id", { count: "exact", head: true })
-    .eq("zugewiesener_hw", userId)
-    .neq("status", "erledigt")
+  // 3. Aktive Aufträge + offene Anfragen parallel laden
+  const [{ count: aktiveAuftraege }, { count: offeneAnfragen }] = await Promise.all([
+    supabase
+      .from("tickets")
+      .select("id", { count: "exact", head: true })
+      .eq("zugewiesener_hw", userId)
+      .neq("status", "erledigt"),
+    supabase
+      .from("einladungen")
+      .select("id", { count: "exact", head: true })
+      .eq("handwerker_id", userId)
+      .eq("status", "offen"),
+  ])
+
+  // 4. Koordinaten + Wetter — startLat/Lng zuerst, dann parallel fetchWetter
+  const startLat = (profil as { startort_lat?: number | null } | null)?.startort_lat ?? null
+  const startLng = (profil as { startort_lng?: number | null } | null)?.startort_lng ?? null
+  const startortAdresse = (profil as { startort_adresse?: string | null } | null)?.startort_adresse ?? null
+
+  const wetter = await (startLat != null && startLng != null
+    ? fetchWetter(startLat, startLng)
+    : Promise.resolve(null))
 
   const termine: TerminStop[] = (termineRaw ?? []).map(t => ({
     id: t.id,
@@ -139,11 +196,7 @@ export async function GET(request: NextRequest) {
     ticketId: t.ticket_id,
   }))
 
-  // 4. Route optimieren
-  const startLat = (profil as { startort_lat?: number | null } | null)?.startort_lat ?? null
-  const startLng = (profil as { startort_lng?: number | null } | null)?.startort_lng ?? null
-  const startortAdresse = (profil as { startort_adresse?: string | null } | null)?.startort_adresse ?? null
-
+  // 5a. Route optimieren
   const sortiert = optimiereReihenfolge(termine, startLat, startLng)
 
   // 5. Fahrzeiten berechnen
@@ -176,15 +229,28 @@ export async function GET(request: NextRequest) {
       `Stop ${i + 1}: ${s.titel}${s.adresse ? ` (${s.adresse})` : ""} ${s.von.slice(0, 5)}–${s.bis.slice(0, 5)}${s.fahrzeitVorher > 0 ? `, ~${s.fahrzeitVorher} Min Fahrt` : ""}`
     ).join("\n")
 
+    const wetterZeile = wetter
+      ? `Wetter: ${wetter.beschreibung}, ${wetter.temperaturC}°C${wetter.regenWahrscheinlichkeit > 40 ? `, Regenwahrscheinlichkeit ${wetter.regenWahrscheinlichkeit}%` : ""}`
+      : ""
+    const anfragenZeile = (offeneAnfragen ?? 0) > 0
+      ? `Offene Auftragsanfragen: ${offeneAnfragen} (warten auf Antwort)`
+      : ""
+
     const prompt = stops.length === 0
-      ? `Erstelle eine kurze, freundliche Nachricht (2 Sätze) für Handwerker ${name}. Heute keine geplanten Termine. Motiviere ihn kurz.`
+      ? [
+          `Erstelle eine kurze, freundliche Nachricht (2 Sätze) für Handwerker ${name}. Heute keine geplanten Termine.`,
+          anfragenZeile ? `Hinweis: ${anfragenZeile}` : "Motiviere ihn kurz.",
+          wetterZeile,
+        ].filter(Boolean).join(" ")
       : `Erstelle eine kurze, professionelle Zusammenfassung (2-3 Sätze) für Handwerker ${name} für heute:
 
 ${stopSummary}
 
 Gesamtfahrzeit: ~${gesamtFahrzeitMin} Minuten, ${gesamtDistanzKm.toFixed(1)} km
+${wetterZeile}
+${anfragenZeile}
 
-Schreibe sachlich und direkt. Hebe hervor was wichtig ist. Kein übertriebenes Lob.`
+Schreibe sachlich und direkt. Erwähne Regen nur wenn Wahrscheinlichkeit >40%. Kein übertriebenes Lob.`
 
     const msg = await anthropic.messages.create({
       model: MODEL,
@@ -205,8 +271,10 @@ Schreibe sachlich und direkt. Hebe hervor was wichtig ist. Kein übertriebenes L
     gesamtFahrzeitMin,
     gesamtDistanzKm: Math.round(gesamtDistanzKm * 10) / 10,
     aktiveAuftraege: aktiveAuftraege ?? 0,
+    offeneAnfragen: offeneAnfragen ?? 0,
     kiText,
     startortAdresse,
+    wetter,
   }
 
   return NextResponse.json(response)
