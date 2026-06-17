@@ -4,7 +4,7 @@ import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 import { createCalendarEvent } from "@/lib/google-cal/write"
 import { hasCalendarWriteScope } from "@/lib/google-cal/oauth"
-import { hasGoogleEventInRange } from "@/lib/google-cal/events"
+import { hasGoogleEventInRange, parseBerlinTime } from "@/lib/google-cal/events"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://reparo-app.netlify.app"
 
@@ -83,10 +83,13 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // HW-Daten für die Email-Benachrichtigung
-  const hwId = gruppe[0]
-    ? (await admin.from("termine").select("handwerker_id, datum, von, bis").eq("id", gruppe[0].id).single<{ handwerker_id: string; datum: string; von: string; bis: string }>()).data
-    : null
+  // HW-Daten für Email + Cal-Write — direkt aus gruppe[0] (bereits im Select enthalten)
+  const hwId = gruppe[0] ? {
+    handwerker_id: gruppe[0].handwerker_id as string,
+    datum: gruppe[0].datum as string,
+    von: gruppe[0].von as string,
+    bis: gruppe[0].bis as string,
+  } : null
 
   if (action === "select") {
     const treffer = gruppe.find(t => t.id === terminId)
@@ -105,8 +108,10 @@ export async function POST(request: NextRequest) {
     const terminBis   = (treffer as { bis?: string | null }).bis
     if (terminHwId && terminDatum && terminVon && terminBis) {
       try {
-        const von = new Date(`${terminDatum}T${terminVon.slice(0, 5)}:00`)
-        const bis = new Date(`${terminDatum}T${terminBis.slice(0, 5)}:00`)
+        // parseBerlinTime: Netlify läuft in UTC, ohne explizite TZ würde
+        // "09:00" als 09:00 UTC statt 09:00 Berlin (= 07:00 UTC) interpretiert.
+        const von = parseBerlinTime(terminDatum, terminVon)
+        const bis = parseBerlinTime(terminDatum, terminBis)
         const konflikt = await hasGoogleEventInRange(terminHwId, von, bis)
         if (konflikt) {
           return NextResponse.json({

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { sendEmailFireAndForget } from "@/lib/email/send"
-import { hasGoogleEventInRange } from "@/lib/google-cal/events"
+import { hasGoogleEventInRange, parseBerlinTime } from "@/lib/google-cal/events"
 import { terminVorschlagenSchema } from "@/lib/schemas"
 
 // K1.3a: HW schickt 2-3 Termin-Vorschläge an den Mieter.
@@ -82,8 +82,10 @@ export async function POST(request: NextRequest) {
   if (!force) {
     const konflikte: Array<{ datum: string; von: string; bis: string }> = []
     for (const s of slots) {
-      const von = new Date(`${s.datum}T${s.von}:00`)
-      const bis = new Date(`${s.datum}T${s.bis}:00`)
+      // parseBerlinTime stellt sicher dass die Slot-Zeiten als Berlin-Lokalzeit
+      // (nicht UTC) interpretiert werden — wichtig auf Netlify (TZ=UTC).
+      const von = parseBerlinTime(s.datum, s.von)
+      const bis = parseBerlinTime(s.datum, s.bis)
       try {
         if (await hasGoogleEventInRange(user.id, von, bis)) {
           konflikte.push(s)

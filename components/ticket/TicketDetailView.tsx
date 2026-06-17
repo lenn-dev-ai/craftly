@@ -581,9 +581,14 @@ export default function TicketDetailView() {
           termin_id: terminId,
         }),
       })
-      const body = await res.json().catch(() => ({}))
+      const body = await res.json().catch(() => ({})) as { error?: string; message?: string }
       if (!res.ok) {
-        setSlotChoiceError(body.error || "Aktion fehlgeschlagen.")
+        // slot_conflict → lesbare Meldung aus .message (analog zum HW-seitigen google_conflict)
+        setSlotChoiceError(
+          body.error === "slot_conflict"
+            ? (body.message ?? "Dieser Zeitslot ist beim Handwerker nicht mehr verfügbar. Bitte wähle 'Keiner passt' und bitte um neue Vorschläge.")
+            : (body.error || "Aktion fehlgeschlagen.")
+        )
       } else {
         show(action === "select" ? "Termin bestätigt." : "Vorschläge abgelehnt — HW wird informiert.", "success")
         await load()

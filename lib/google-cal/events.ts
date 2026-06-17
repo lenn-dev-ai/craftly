@@ -106,3 +106,31 @@ export async function hasGoogleEventInRange(
   // er auch für 2h-Notfall-Slot nicht verfügbar.
   return events.length > 0
 }
+
+/**
+ * Konvertiert Berlin-Lokalzeit (datum "YYYY-MM-DD", zeit "HH:MM" oder "HH:MM:SS")
+ * in ein UTC-Date-Objekt. Berücksichtigt automatisch CET (UTC+1) / CEST (UTC+2).
+ *
+ * Hintergrund: Netlify-Functions laufen in UTC (TZ=UTC). Ein naives
+ * `new Date("2026-06-20T09:00:00")` wird als 09:00 UTC interpretiert,
+ * nicht als 09:00 Berlin (= 07:00 UTC in CEST). Diese Funktion korrigiert
+ * das und stellt sicher dass Google-Cal-Queries im richtigen Fenster suchen.
+ */
+export function parseBerlinTime(datum: string, zeit: string): Date {
+  // Midday UTC on the given date — safe anchor to determine DST offset
+  const anchor = new Date(`${datum}T12:00:00Z`)
+  const berlinHour = parseInt(
+    new Intl.DateTimeFormat("en", {
+      timeZone: "Europe/Berlin",
+      hour: "2-digit",
+      hour12: false,
+    }).format(anchor),
+    10,
+  )
+  // Berlin offset in hours relative to UTC (e.g. 14 - 12 = +2 for CEST)
+  const offsetHours = berlinHour - 12
+  const z = zeit.slice(0, 5) // "HH:MM"
+  // Parse as UTC literal, then shift by Berlin offset to get true UTC
+  const asUtcLiteral = new Date(`${datum}T${z}:00Z`)
+  return new Date(asUtcLiteral.getTime() - offsetHours * 60 * 60 * 1000)
+}
