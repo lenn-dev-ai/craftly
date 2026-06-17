@@ -13,7 +13,7 @@ import MapboxMap, {
 import "mapbox-gl/dist/mapbox-gl.css"
 import { createClient } from "@/lib/supabase"
 import { optimiereRoute } from "@/lib/auction/route-bundling"
-import { Map as MapIcon, AlertCircle } from "lucide-react"
+import { Map as MapIcon, Navigation, Clock, ExternalLink } from "lucide-react"
 import { formatGewerk } from "@/types"
 
 // ============================================================
@@ -124,6 +124,12 @@ export default function KarteView() {
   const [datum, setDatum] = useState<string>(() => new Date().toISOString().slice(0, 10))
   const [zeigeAlle, setZeigeAlle] = useState(false)
   const [openPopup, setOpenPopup] = useState<string | null>(null)
+  // Mapbox Directions API: echte Straßenroute + Fahrzeiten
+  const [roadRoute, setRoadRoute] = useState<{
+    geometry: GeoJSON.LineString | null
+    legs: Array<{ distanceKm: number; durationMin: number }>
+  } | null>(null)
+  const [routeLoading, setRouteLoading] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -225,8 +231,17 @@ export default function KarteView() {
   }, [tagesStops, zeigeAlle, startLat, startLng])
 
   // Mapbox erwartet [lng, lat] (im Gegensatz zu Leaflets [lat, lng])
+  // Priorität: echte Straßenroute (Directions API) > Luftlinie-Fallback
   const routeGeoJSON = useMemo(() => {
     if (!route || startLat == null || startLng == null) return null
+    if (roadRoute?.geometry) {
+      return {
+        type: "Feature" as const,
+        properties: {},
+        geometry: roadRoute.geometry,
+      }
+    }
+    // Fallback: Luftlinie
     const coords: Array<[number, number]> = [[startLng, startLat]]
     for (const r of route.reihenfolge) coords.push([r.longitude, r.latitude])
     return {
@@ -234,7 +249,7 @@ export default function KarteView() {
       properties: {},
       geometry: { type: "LineString" as const, coordinates: coords },
     }
-  }, [route, startLat, startLng])
+  }, [route, roadRoute, startLat, startLng])
 
   const reihenfolgeIndex = useMemo(() => {
     if (!route) return null
@@ -242,6 +257,50 @@ export default function KarteView() {
     route.reihenfolge.forEach((r, i) => map.set(r.ticketId, i + 1))
     return map
   }, [route])
+
+  // ----------------------------------------------------------------
+  // Mapbox Directions API — echte Straßenroute für Tages-Stops
+  // Wird ausgelöst wenn sich die optimierte Reihenfolge ändert.
+  // Fehler werden ignoriert (Fallback auf Luftlinie-GeoJSON).
+  // ----------------------------------------------------------------
+  useEffect(() => {
+    if (!route || !MAPBOX_TOKEN || startLat == null || startLng == null) {
+      setRoadRoute(null)
+      return
+    }
+    const waypoints: Array<[number, number]> = [
+      [startLng, startLat],
+      ...route.reihenfolge.map(r => [r.longitude, r.latitude] as [number, number]),
+    ]
+    // Directions API max 25 Waypoints — für Demo ausreichend
+    if (waypoints.length < 2) { setRoadRoute(null); return }
+
+    const coords = waypoints.map(([lng, lat]) => `${lng},${lat}`).join(";")
+    setRouteLoading(true)
+    fetch(
+      `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}` +
+      `?geometries=geojson&overview=full&steps=false&access_token=${MAPBOX_TOKEN}`,
+    )
+      .then(r => r.json())
+      .then((data: {
+        routes?: Array<{
+          geometry: GeoJSON.LineString
+          legs: Array<{ distance: number; duration: number }>
+        }>
+      }) => {
+        const r0 = data.routes?.[0]
+        if (!r0) { setRoadRoute(null); return }
+        setRoadRoute({
+          geometry: r0.geometry,
+          legs: r0.legs.map(l => ({
+            distanceKm: Math.round(l.distance / 100) / 10,
+            durationMin: Math.round(l.duration / 60),
+          })),
+        })
+      })
+      .catch(() => setRoadRoute(null))
+      .finally(() => setRouteLoading(false))
+  }, [route, startLat, startLng])
 
   // FitBounds: Mapbox-Variante via mapRef
   useEffect(() => {
@@ -433,28 +492,52 @@ export default function KarteView() {
                     {s.von && s.bis && (
                       <div className="text-ink-secondary">⏰ {s.von}–{s.bis} {s.datum && `· ${s.datum}`}</div>
                     )}
-                    <button
-                      onClick={() => router.push(`/dashboard-handwerker/ticket/${s.ticketId}`)}
-                      className="mt-2 text-accent hover:underline font-medium"
-                    >
-                      Auftrag öffnen →
-                    </button>
+                    <div className="mt-2 flex flex-col gap-1">
+                      <button
+                        onClick={() => router.push(`/dashboard-handwerker/ticket/${s.ticketId}`)}
+                        className="text-accent hover:underline font-medium text-left"
+                      >
+                        Auftrag öffnen →
+                      </button>
+                      {s.adresse && (
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.adresse)}&travelmode=driving`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-ink-secondary hover:text-accent font-medium"
+                        >
+                          <Navigation size={11} />
+                          Navigation starten
+                          <ExternalLink size={10} />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </Popup>
               )
             })}
 
-            {/* Optimierte Tagesroute */}
+            {/* Tagesroute: echte Straßen wenn Directions-API geliefert, sonst Luftlinie */}
             {routeGeoJSON && (
               <Source id="route" type="geojson" data={routeGeoJSON}>
+                {/* Halo für bessere Lesbarkeit auf hellen Kacheln */}
+                <Layer
+                  id="route-line-halo"
+                  type="line"
+                  paint={{
+                    "line-color": "#ffffff",
+                    "line-width": roadRoute?.geometry ? 7 : 5,
+                    "line-opacity": 0.6,
+                  }}
+                />
                 <Layer
                   id="route-line"
                   type="line"
                   paint={{
                     "line-color": "#3D8B7A",
-                    "line-width": 3,
-                    "line-opacity": 0.7,
-                    "line-dasharray": [2, 1.5],
+                    "line-width": roadRoute?.geometry ? 4 : 3,
+                    "line-opacity": 0.85,
+                    ...(roadRoute?.geometry ? {} : { "line-dasharray": [2, 1.5] }),
                   }}
                 />
               </Source>
@@ -463,14 +546,98 @@ export default function KarteView() {
         </div>
       )}
 
-      {/* Info zu Routen-Vorschau */}
-      {!zeigeAlle && tagesStops.length >= 2 && route && (
-        <div className="bg-white border border-line rounded-2xl p-4 shadow-sm text-xs text-ink-secondary flex items-start gap-2">
-          <AlertCircle size={14} className="text-rolle-mieter flex-shrink-0 mt-0.5" />
-          <span>
-            Die gestrichelte Linie zeigt die optimierte Tagesroute (Nearest-Neighbor, Luftlinie).
-            Stops sind nummeriert in der Reihenfolge, in der sie angefahren werden sollten.
-          </span>
+      {/* ─── Wegbeschreibung-Panel ─────────────────────────────── */}
+      {!zeigeAlle && route && route.reihenfolge.length >= 1 && (
+        <div className="bg-white border border-line rounded-2xl shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-line">
+            <div className="flex items-center gap-2 text-sm font-semibold text-ink">
+              <Navigation size={15} className="text-accent" />
+              Wegbeschreibung
+              {routeLoading && (
+                <span className="text-xs font-normal text-ink-muted animate-pulse">berechnet…</span>
+              )}
+            </div>
+            {roadRoute && (
+              <span className="text-xs text-ink-muted">
+                {roadRoute.legs.reduce((s, l) => s + l.distanceKm, 0).toFixed(1)} km ·{" "}
+                {roadRoute.legs.reduce((s, l) => s + l.durationMin, 0)} min gesamt
+              </span>
+            )}
+          </div>
+
+          <div className="divide-y divide-line/60">
+            {/* Startort */}
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="w-7 h-7 rounded-full bg-accent/10 border-2 border-accent flex-shrink-0 flex items-center justify-center">
+                <div className="w-3 h-3 rounded-full bg-accent" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-ink">Startort</div>
+                {profilGeo?.startort_adresse && (
+                  <div className="text-xs text-ink-muted truncate">{profilGeo.startort_adresse}</div>
+                )}
+              </div>
+            </div>
+
+            {/* Stops in optimierter Reihenfolge */}
+            {route.reihenfolge.map((r, idx) => {
+              const s = sichtbar.find(x => x.ticketId === r.ticketId)
+              if (!s) return null
+              const leg = roadRoute?.legs[idx]
+              const googleUrl = s.adresse
+                ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.adresse)}&travelmode=driving`
+                : null
+
+              return (
+                <div key={r.ticketId} className="flex items-start gap-3 px-4 py-3">
+                  {/* Fahrt-Info zwischen Stops */}
+                  {leg && (
+                    <div className="absolute ml-[13px] -mt-3 flex flex-col items-center pointer-events-none" style={{ marginLeft: 13 }}>
+                    </div>
+                  )}
+
+                  {/* Nummern-Pin */}
+                  <div
+                    className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold"
+                    style={{ background: FARBE[s.dringlichkeit] }}
+                  >
+                    {idx + 1}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    {/* Fahrstrecke vom Vorgänger */}
+                    {leg && (
+                      <div className="flex items-center gap-1 text-xs text-ink-muted mb-1">
+                        <Clock size={10} />
+                        {leg.durationMin} min · {leg.distanceKm} km
+                      </div>
+                    )}
+                    <div className="text-xs font-semibold text-ink truncate">{s.titel}</div>
+                    {s.adresse && (
+                      <div className="text-xs text-ink-muted truncate">📍 {s.adresse}</div>
+                    )}
+                    {s.von && s.bis && (
+                      <div className="text-xs text-ink-muted">⏰ {s.von}–{s.bis}</div>
+                    )}
+                  </div>
+
+                  {/* Navigation starten */}
+                  {googleUrl && (
+                    <a
+                      href={googleUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-shrink-0 flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-hover px-2 py-1 rounded-lg hover:bg-accent/5 transition-colors"
+                      title="In Google Maps navigieren"
+                    >
+                      <Navigation size={12} />
+                      <span className="hidden sm:inline">Navi</span>
+                    </a>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>
