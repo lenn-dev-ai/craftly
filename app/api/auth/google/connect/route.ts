@@ -17,10 +17,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  // Sprint AV Phase 2: ?write=true → calendar.events Scope (Schreib-Sync)
+  const wantsWrite = new URL(request.url).searchParams.get("write") === "true"
+
   try {
     const nonce = crypto.randomUUID()
     const state = `${user.id}:${nonce}`
-    const redirectUrl = buildAuthUrl(state)
+    const redirectUrl = buildAuthUrl(state, wantsWrite)
     const res = NextResponse.json({ redirectUrl })
     res.cookies.set("g_oauth_state", state, {
       httpOnly: true,

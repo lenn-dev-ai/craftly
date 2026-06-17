@@ -24,7 +24,8 @@ export function GoogleCalBanner() {
   // "broken" = OAuth-Zeile existiert, aber Token-Refresh hat zuletzt
   // gefailt (last_error gesetzt durch lib/google-cal/oauth.ts). HW muss
   // neu verbinden, sonst bleibt der Layer leer ohne sichtbaren Grund.
-  const [status, setStatus] = useState<"loading" | "connected" | "disconnected" | "broken">("loading")
+  // Sprint AV Phase 2: connected_readonly = verbunden aber ohne Schreib-Scope
+  const [status, setStatus] = useState<"loading" | "connected" | "connected_readonly" | "disconnected" | "broken">("loading")
   const [oauthRow, setOauthRow] = useState<OauthRow | null>(null)
   const [userEmail, setUserEmail] = useState<string>("")
   const [dismissed, setDismissed] = useState(false)
@@ -50,20 +51,23 @@ export function GoogleCalBanner() {
         setOauthRow(data ?? null)
         if (!data) setStatus("disconnected")
         else if (data.last_error) setStatus("broken")
-        else setStatus("connected")
+        // Sprint AV Phase 2: Scope-Check — calendar.events = Schreib-Sync aktiv
+        else if (data.scope?.includes("calendar.events")) setStatus("connected")
+        else setStatus("connected_readonly")
       }
     })()
     return () => { aktiv = false }
   }, [])
 
-  async function connect() {
+  async function connect(writeScope = false) {
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.access_token) {
       window.location.href = "/login"
       return
     }
-    const res = await fetch("/api/auth/google/connect", {
+    const url = `/api/auth/google/connect${writeScope ? "?write=true" : ""}`
+    const res = await fetch(url, {
       headers: { authorization: `Bearer ${session.access_token}` },
     })
     if (!res.ok) {
@@ -72,6 +76,46 @@ export function GoogleCalBanner() {
     }
     const data = await res.json() as { redirectUrl?: string }
     if (data.redirectUrl) window.location.href = data.redirectUrl
+  }
+
+  // Sprint AV Phase 2 — Readonly verbunden: Schreib-Sync noch nicht aktiviert.
+  // Zeigt einmalig einen Info-Banner mit CTA "Termin-Sync aktivieren".
+  // Wird nicht angezeigt wenn der User ihn schon dismisst hat.
+  const writeUpgradeDismissKey = "googleCalWriteUpgradeDismissed"
+  const [writeUpgradeDismissed, setWriteUpgradeDismissed] = useState(() =>
+    typeof window !== "undefined" && localStorage.getItem(writeUpgradeDismissKey) === "1"
+  )
+  if (status === "connected_readonly" && !writeUpgradeDismissed) {
+    return (
+      <div className="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 mb-4 flex items-center gap-3">
+        <div className="text-xl flex-shrink-0">✨</div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold text-blue-900">Termin-Sync aktivieren</div>
+          <div className="text-xs text-blue-700 mt-0.5">
+            Bestätigte Aufträge automatisch in deinen Google-Kalender eintragen lassen.
+            Einmalig neu verbinden — danach läuft alles automatisch.
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => connect(true)}
+          className="text-xs font-semibold bg-blue-600 text-white px-3 py-2 rounded-xl hover:bg-blue-700 transition-colors whitespace-nowrap"
+        >
+          Aktivieren
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== "undefined") localStorage.setItem(writeUpgradeDismissKey, "1")
+            setWriteUpgradeDismissed(true)
+          }}
+          aria-label="Hinweis schließen"
+          className="p-1 text-blue-400 hover:text-blue-700"
+        >
+          <X size={14} />
+        </button>
+      </div>
+    )
   }
 
   // Audit-Fix #5 — broken: Token-Refresh ist gefailt, HW muss neu verbinden.
@@ -89,7 +133,7 @@ export function GoogleCalBanner() {
         </div>
         <button
           type="button"
-          onClick={connect}
+          onClick={() => connect(false)}
           className="text-xs font-semibold bg-amber-600 text-white px-3 py-2 rounded-xl hover:bg-amber-700 transition-colors whitespace-nowrap"
         >
           Neu verbinden
@@ -147,7 +191,7 @@ export function GoogleCalBanner() {
       </div>
       <button
         type="button"
-        onClick={connect}
+        onClick={() => connect(false)}
         className="text-xs font-semibold bg-accent text-white px-4 py-2 rounded-xl hover:bg-accent-hover transition-colors whitespace-nowrap"
       >
         Verbinden

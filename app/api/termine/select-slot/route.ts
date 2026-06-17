@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase-server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { sendEmailFireAndForget } from "@/lib/email/send"
+import { createCalendarEvent } from "@/lib/google-cal/write"
+import { hasCalendarWriteScope } from "@/lib/google-cal/oauth"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://reparo-app.netlify.app"
 
@@ -101,6 +103,54 @@ export async function POST(request: NextRequest) {
       .eq("vorschlag_gruppe_id", gruppeId)
       .neq("id", terminId!)
     if (e2) return NextResponse.json({ error: e2.message }, { status: 500 })
+
+    // Sprint AV Phase 2 — Google-Cal Write-Sync (fire-and-forget).
+    // Nur wenn der HW den calendar.events Scope erteilt hat.
+    // Fehler loggen aber Request nicht abbrechen — Termin ist trotzdem bestätigt.
+    if (hwId?.handwerker_id) {
+      void (async () => {
+        try {
+          const canWrite = await hasCalendarWriteScope(hwId.handwerker_id)
+          if (!canWrite) return
+
+          // Bestätigten Termin laden (mit allen Feldern die für Cal-Event nötig sind)
+          const { data: terminDetails } = await admin
+            .from("termine")
+            .select("datum, von, bis, titel, einsatzort_adresse, ticket_id")
+            .eq("id", terminId!)
+            .maybeSingle<{ datum: string; von: string; bis: string; titel: string; einsatzort_adresse: string | null; ticket_id: string | null }>()
+          if (!terminDetails) return
+
+          const { data: ticketDetails } = await admin
+            .from("tickets")
+            .select("beschreibung")
+            .eq("id", ticketId)
+            .maybeSingle<{ beschreibung: string | null }>()
+
+          const result = await createCalendarEvent(hwId.handwerker_id, {
+            titel: terminDetails.titel,
+            datum: terminDetails.datum,
+            von: terminDetails.von,
+            bis: terminDetails.bis,
+            adresse: terminDetails.einsatzort_adresse,
+            ticketId: ticketId,
+            beschreibung: ticketDetails?.beschreibung ?? null,
+          })
+
+          if (result.googleEventId) {
+            // google_event_id in termine speichern (für spätere Updates/Deletes)
+            await admin
+              .from("termine")
+              .update({ google_event_id: result.googleEventId })
+              .eq("id", terminId!)
+          } else if (result.error) {
+            console.warn("[select-slot] Google-Cal-Write fehlgeschlagen:", result.error)
+          }
+        } catch (calErr) {
+          console.warn("[select-slot] Google-Cal-Write Exception:", calErr)
+        }
+      })()
+    }
 
     // K1.3b: HW-Email — "Mieter hat einen Termin bestätigt"
     if (hwId?.handwerker_id) {

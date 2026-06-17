@@ -13,14 +13,24 @@ import { createServiceRoleClient } from "@/lib/supabase-server"
 const AUTH_URL  = "https://accounts.google.com/o/oauth2/v2/auth"
 const TOKEN_URL = "https://oauth2.googleapis.com/token"
 
-// Read-only bis Reparo→Google-Write-Sync gebaut ist. Sonst signt der HW
-// einen Schreib-Scope für ein Lese-Feature — DSGVO/Trust + Google-Verification-
-// Hürde. Bei Bedarf Write-Scope zusätzlich + erneuten Consent triggern.
-const SCOPES = [
+// Read-only Scope — für HW ohne Kalender-Schreib-Sync.
+const SCOPES_READ = [
   "https://www.googleapis.com/auth/calendar.readonly",
   "openid",
   "email",
 ].join(" ")
+
+// Sprint AV Phase 2 — Write-Scope. calendar.events ist Obermenge von
+// calendar.readonly: lesen + schreiben. Erfordert erneuten Consent-Dialog
+// bei bestehenden Nutzern die bisher nur calendar.readonly haben.
+const SCOPES_WRITE = [
+  "https://www.googleapis.com/auth/calendar.events",
+  "openid",
+  "email",
+].join(" ")
+
+// Rückwärtskompatibel: Default bleibt Read (neuer Connect ohne ?write=true)
+const SCOPES = SCOPES_READ
 
 export function getClientId(): string {
   const id = process.env.GOOGLE_OAUTH_CLIENT_ID
@@ -38,17 +48,30 @@ export function getRedirectUri(): string {
   return uri
 }
 
-export function buildAuthUrl(state: string): string {
+export function buildAuthUrl(state: string, writeScope = false): string {
   const params = new URLSearchParams({
     client_id: getClientId(),
     redirect_uri: getRedirectUri(),
     response_type: "code",
-    scope: SCOPES,
+    scope: writeScope ? SCOPES_WRITE : SCOPES,
     access_type: "offline",
-    prompt: "consent",
+    prompt: "consent",  // immer consent → stellt sicher dass refresh_token kommt
     state,
   })
   return `${AUTH_URL}?${params.toString()}`
+}
+
+// Sprint AV Phase 2 — prüft ob der User den Schreib-Scope erteilt hat.
+// Liest scope-Feld aus hw_google_oauth (gespeichert vom Callback).
+export async function hasCalendarWriteScope(userId: string): Promise<boolean> {
+  const admin = createServiceRoleClient()
+  const { data } = await admin
+    .from("hw_google_oauth")
+    .select("scope")
+    .eq("user_id", userId)
+    .maybeSingle<{ scope: string | null }>()
+  if (!data?.scope) return false
+  return data.scope.includes("calendar.events")
 }
 
 export interface GoogleTokenResponse {
