@@ -12,6 +12,7 @@ export interface GoogleCalEvent {
   end: string
   allDay: boolean
   htmlLink?: string
+  reparoTicketId?: string  // gesetzt wenn Event von Reparo erstellt wurde → Duplikat-Filter
 }
 
 interface GoogleApiEvent {
@@ -21,6 +22,7 @@ interface GoogleApiEvent {
   start?: { dateTime?: string; date?: string }
   end?: { dateTime?: string; date?: string }
   htmlLink?: string
+  extendedProperties?: { private?: { reparo_ticket_id?: string } }
 }
 
 /**
@@ -73,6 +75,7 @@ export async function listEventsForUser(
           end: endDateTime ?? endDate ?? "",
           allDay: !startDateTime,
           htmlLink: e.htmlLink,
+          reparoTicketId: e.extendedProperties?.private?.reparo_ticket_id,
         }
       })
       .filter((e): e is GoogleCalEvent => e !== null)

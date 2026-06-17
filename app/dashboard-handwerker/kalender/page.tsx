@@ -250,11 +250,13 @@ export default function KalenderPage() {
           { headers: { authorization: `Bearer ${session.access_token}` } },
         )
         if (res.ok) {
-          const json = await res.json() as { events?: Array<{ id: string; summary: string; start: string; end: string; allDay: boolean; htmlLink?: string }> }
+          const json = await res.json() as { events?: Array<{ id: string; summary: string; start: string; end: string; allDay: boolean; htmlLink?: string; reparoTicketId?: string }> }
           // Events pro Tag clippen — Google liefert ISO mit Datum+Zeit
           const perDay: GoogleEventTag[] = []
           const allDay: GoogleAllDayTag[] = []
-          for (const ev of json.events ?? []) {
+          for (const ev of (json.events ?? []).filter(e => !e.reparoTicketId)) {
+            // ^ Reparo-erstellte Events (via write.ts) werden schon als Reparo-Termin
+            // angezeigt — hier überspringen, sonst doppelter Eintrag im Kalender.
             if (ev.allDay) {
               // Google end.date ist EXKLUSIV (z.B. start=Mo, end=Di = nur Mo).
               const sd = new Date(ev.start + "T00:00:00")

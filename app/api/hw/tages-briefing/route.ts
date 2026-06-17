@@ -204,7 +204,8 @@ export async function GET(request: NextRequest) {
     const tagEnd   = new Date(`${datum}T23:59:59`)
     const gcalEvents = await listEventsForUser(userId, tagStart, tagEnd)
     for (const ev of gcalEvents) {
-      if (ev.allDay) continue  // Ganztags-Events nicht als Termin-Stop
+      if (ev.allDay) continue           // Ganztags-Events nicht als Termin-Stop
+      if (ev.reparoTicketId) continue   // Von Reparo selbst erstellt → schon als Reparo-Termin oben dabei
       const evStart = new Date(ev.start)
       const evEnd   = new Date(ev.end)
       // Nur Events, die wirklich heute stattfinden
