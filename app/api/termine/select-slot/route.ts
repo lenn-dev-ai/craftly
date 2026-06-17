@@ -4,6 +4,7 @@ import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 import { createCalendarEvent } from "@/lib/google-cal/write"
 import { hasCalendarWriteScope } from "@/lib/google-cal/oauth"
+import { hasGoogleEventInRange } from "@/lib/google-cal/events"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://reparo-app.netlify.app"
 
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
   const admin = createServiceRoleClient()
   const { data: gruppe, error: gErr } = await admin
     .from("termine")
-    .select("id, ticket_id, status, vorschlag_gruppe_id")
+    .select("id, ticket_id, status, vorschlag_gruppe_id, datum, von, bis, handwerker_id")
     .eq("vorschlag_gruppe_id", gruppeId)
   if (gErr) return NextResponse.json({ error: gErr.message }, { status: 500 })
   if (!gruppe || gruppe.length === 0) {
@@ -92,6 +93,32 @@ export async function POST(request: NextRequest) {
     if (!treffer) {
       return NextResponse.json({ error: "Gewählter Termin gehört nicht zur Gruppe" }, { status: 400 })
     }
+
+    // Google-Cal-Konflikt-Check beim Bestätigen (Sprint AW — "beide Richtungen").
+    // Zwischen HW-Vorschlag und Mieter-Bestätigung können Tage liegen; der HW
+    // könnte inzwischen einen privaten Termin eingetragen haben.
+    // Nur prüfen wenn HW Google verbunden (hasGoogleEventInRange gibt false zurück
+    // wenn kein Token → kein falsches Blockieren).
+    const terminHwId = (treffer as { handwerker_id?: string | null }).handwerker_id
+    const terminDatum = (treffer as { datum?: string | null }).datum
+    const terminVon   = (treffer as { von?: string | null }).von
+    const terminBis   = (treffer as { bis?: string | null }).bis
+    if (terminHwId && terminDatum && terminVon && terminBis) {
+      try {
+        const von = new Date(`${terminDatum}T${terminVon.slice(0, 5)}:00`)
+        const bis = new Date(`${terminDatum}T${terminBis.slice(0, 5)}:00`)
+        const konflikt = await hasGoogleEventInRange(terminHwId, von, bis)
+        if (konflikt) {
+          return NextResponse.json({
+            error: "slot_conflict",
+            message: "Dieser Zeitslot ist beim Handwerker leider nicht mehr verfügbar (Kalender-Konflikt). Bitte wähle 'Keiner passt' und bitte um neue Vorschläge.",
+          }, { status: 409 })
+        }
+      } catch {
+        // GCal-API-Fehler → nicht blockieren, Termin trotzdem bestätigen
+      }
+    }
+
     const { error: e1 } = await admin
       .from("termine")
       .update({ status: "bestaetigt" })

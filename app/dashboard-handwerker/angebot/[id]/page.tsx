@@ -196,9 +196,14 @@ export default function AngebotAbgeben() {
       },
       body: JSON.stringify({ ticket_id: id, slots: filled }),
     })
-    const respBody = await res.json().catch(() => ({}))
+    const respBody = await res.json().catch(() => ({})) as { error?: string; message?: string }
     if (!res.ok) {
-      setSlotsError(respBody.error || "Konnte Termine nicht speichern")
+      // google_conflict → lesbare Fehlermeldung aus .message statt des technischen Keys
+      setSlotsError(
+        respBody.error === "google_conflict"
+          ? (respBody.message ?? "Einige Slots überlappen mit deinem Google-Kalender. Wähle andere Zeiten.")
+          : (respBody.error || "Konnte Termine nicht speichern")
+      )
       setSlotsSaving(false)
       return
     }
