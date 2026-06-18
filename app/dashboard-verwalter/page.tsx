@@ -284,7 +284,7 @@ export default function VerwalterDashboard() {
               >
                 <div>
                   <div className="text-sm font-semibold text-ink">Handwerker-Marktplatz</div>
-                  <div className="text-xs text-ink-muted">Stundenslots buchen, Auktionen starten</div>
+                  <div className="text-xs text-ink-muted">Direktanfragen freigeben, HW auswählen</div>
                 </div>
                 <span className="text-accent text-lg">→</span>
               </Link>
@@ -377,7 +377,7 @@ export default function VerwalterDashboard() {
                 </div>
                 <div className="text-3xl font-bold text-ink tabular-nums">{auktionenAbgelaufen.length}</div>
                 <div className="text-xs text-ink-secondary mt-1 flex items-center gap-1">
-                  Auktion ohne Vergabe
+                  Keine Vergabe — erneut ausschreiben
                   <ArrowRight size={11} className="ml-0.5" />
                 </div>
               </button>
@@ -404,7 +404,7 @@ export default function VerwalterDashboard() {
           label="Vergabe läuft"
           value={marktplatz.length + vergabeAktiv.length}
           accent="primary"
-          sub={marktplatz.length > 0 ? `${vergabeAktiv.length} direkt · ${marktplatz.length} Auktion` : "direkt per System"}
+          sub={marktplatz.length > 0 ? `${vergabeAktiv.length} direkt · ${marktplatz.length} Marktplatz` : "direkt per System"}
           href="/dashboard-verwalter/marktplatz"
         />
         <Kpi
@@ -539,7 +539,7 @@ export default function VerwalterDashboard() {
                     </div>
                   </div>
                   <span className="text-xs text-warm-dark font-medium flex-shrink-0">
-                    Auktion (Fallback)
+                    Marktplatz (Fallback)
                   </span>
                 </div>
               </button>
@@ -718,10 +718,10 @@ function ErsparnisWidget({ data }: { data: ErsparnisAggregat }) {
           </div>
           <div>
             <div className="text-[10px] font-bold uppercase tracking-wider text-accent">
-              Auktions-Ersparnis
+              System-Ersparnis
             </div>
             <div className="text-xs text-ink-secondary mt-0.5">
-              Versus höchstes abgegebenes Gebot · {data.eligibleCount} Ticket{data.eligibleCount === 1 ? "" : "s"}
+              Versus höchster Marktpreis · {data.eligibleCount} Ticket{data.eligibleCount === 1 ? "" : "s"}
             </div>
           </div>
         </div>

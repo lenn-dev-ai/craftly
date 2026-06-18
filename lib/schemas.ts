@@ -104,9 +104,9 @@ export type TicketCreateByVerwalterInput = z.infer<typeof ticketCreateByVerwalte
 export const angebotAnnehmenSchema = z.object({
   ticket_id: z.string().uuid("ticket_id muss eine gültige UUID sein"),
   preis: z.coerce.number().positive("preis muss > 0 sein").max(50000, "preis max 50.000 €"),
-  fruehester_termin: z.string().max(100).optional(),
-  geschaetzte_dauer: z.string().max(200).optional(),
-  nachricht: z.string().max(2000).optional(),
+  fruehester_termin: z.string().max(100).nullable().optional(),
+  geschaetzte_dauer: z.string().max(200).nullable().optional(),
+  nachricht: z.string().max(2000).nullable().optional(),
 })
 export type AngebotAnnehmenInput = z.infer<typeof angebotAnnehmenSchema>
 

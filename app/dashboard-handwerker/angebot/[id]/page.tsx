@@ -220,18 +220,6 @@ export default function AngebotAbgeben() {
   // Calculate minimum date (today)
   const today = new Date().toISOString().split("T")[0]
 
-  // Countdown for auction
-  function timeLeft() {
-    if (!ticket?.auktion_ende) return null
-    const end = new Date(ticket.auktion_ende).getTime()
-    const now = Date.now()
-    const diff = end - now
-    if (diff <= 0) return "Abgelaufen"
-    const h = Math.floor(diff / 3600000)
-    const m = Math.floor((diff % 3600000) / 60000)
-    return `${h}h ${m}m verbleibend`
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
@@ -395,8 +383,6 @@ export default function AngebotAbgeben() {
     )
   }
 
-  const tl = timeLeft()
-
   return (
     <div className="min-h-screen bg-surface text-ink">
       {/* Header — Sprint R Phase 15 (Regression-Smoke): pl-14 pr-4
@@ -430,14 +416,6 @@ export default function AngebotAbgeben() {
             )}
             {ticket.objekte && (
               <span className="bg-surface text-gray-300 px-2 py-0.5 rounded-full">{(ticket.objekte as any).name}</span>
-            )}
-            {tl && (
-              <span className="bg-rolle-mieter/10 text-rolle-mieter px-2 py-0.5 rounded-full flex items-center gap-1">
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {tl}
-              </span>
             )}
           </div>
         </div>
