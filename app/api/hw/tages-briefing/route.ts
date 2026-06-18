@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { createServiceRoleClient } from "@/lib/supabase-server"
 import Anthropic from "@anthropic-ai/sdk"
-import { haversineKm, schaetzeFahrzeitMin } from "@/lib/distance"
+import { haversineKm, schaetzeFahrzeitMin, fetchMapboxRoute } from "@/lib/distance"
 import { listEventsForUser } from "@/lib/google-cal/events"
 
 // GET /api/hw/tages-briefing?datum=2026-06-16
@@ -240,22 +240,50 @@ export async function GET(request: NextRequest) {
   // 5a. Route optimieren
   const sortiert = optimiereReihenfolge(termine, startLat, startLng)
 
-  // 5. Fahrzeiten berechnen
-  let curLat = startLat
-  let curLng = startLng
+  // 5. Fahrzeiten berechnen — Sprint BC: echte Mapbox-Routen (Fallback: Haversine)
+  // Alle Segmente parallel fetchen um API-Latenz zu minimieren.
+  const segmente: Array<{
+    from: { lat: number; lng: number } | null
+    to: { lat: number; lng: number } | null
+    haversineKm: number
+  }> = []
+
+  {
+    let curLat = startLat
+    let curLng = startLng
+    for (const t of sortiert) {
+      if (curLat != null && curLng != null && t.lat != null && t.lng != null) {
+        segmente.push({
+          from: { lat: curLat, lng: curLng },
+          to: { lat: t.lat!, lng: t.lng! },
+          haversineKm: Math.round(haversineKm(curLat, curLng, t.lat, t.lng) * 10) / 10,
+        })
+      } else {
+        segmente.push({ from: null, to: null, haversineKm: 0 })
+      }
+      if (t.lat != null) { curLat = t.lat; curLng = t.lng }
+    }
+  }
+
+  // Mapbox-Routen parallel fetchen (silent fail → Haversine-Fallback)
+  const mapboxRouten = await Promise.all(
+    segmente.map(seg =>
+      seg.from && seg.to
+        ? fetchMapboxRoute(seg.from, seg.to).catch(() => null)
+        : Promise.resolve(null)
+    )
+  )
+
   let gesamtFahrzeitMin = 0
   let gesamtDistanzKm = 0
 
   const stops: BriefingStop[] = sortiert.map((t, idx) => {
-    let fahrzeitVorher = 0
-    let distanzVorherKm = 0
-    if (curLat != null && curLng != null && t.lat != null && t.lng != null) {
-      distanzVorherKm = Math.round(haversineKm(curLat, curLng, t.lat, t.lng) * 10) / 10
-      fahrzeitVorher = schaetzeFahrzeitMin(distanzVorherKm)
-    }
+    const seg = segmente[idx]
+    const mapbox = mapboxRouten[idx]
+    const distanzVorherKm = mapbox?.distanzKm ?? seg.haversineKm
+    const fahrzeitVorher = mapbox?.fahrzeitMin ?? schaetzeFahrzeitMin(seg.haversineKm)
     gesamtFahrzeitMin += fahrzeitVorher
     gesamtDistanzKm += distanzVorherKm
-    if (t.lat != null) { curLat = t.lat; curLng = t.lng }
     return { ...t, reihenfolge: idx + 1, fahrzeitVorher, distanzVorherKm }
   })
 

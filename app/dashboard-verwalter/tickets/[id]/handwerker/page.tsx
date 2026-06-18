@@ -36,6 +36,13 @@ export default function HandwerkerAuswahlPage() {
   const [sortKey, setSortKey] = useState<SortKey>("effektiv")
   const [dringlichkeit, setDringlichkeit] = useState<Dringlichkeit>("planbar")
 
+  // Sprint BB — KI-HW-Empfehlung
+  const [kiEmpfehlung, setKiEmpfehlung] = useState<{
+    kiText: string
+    top3: { hwId: string; rang: number; begruendung: string }[]
+  } | null>(null)
+  const [kiLaed, setKiLaed] = useState(false)
+
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(""), 3000) }
 
   useEffect(() => {
@@ -223,6 +230,51 @@ export default function HandwerkerAuswahlPage() {
     setHandwerker(prev => prev.map(hw => ({ ...hw, selected: true })))
   }
 
+  // Sprint BB — KI-Empfehlung abrufen
+  async function ladeKiEmpfehlung() {
+    if (!ticket || sortiert.length === 0) return
+    setKiLaed(true)
+    setKiEmpfehlung(null)
+    try {
+      const res = await fetch("/api/verwalter/ki-hw-empfehlung", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ticket: {
+            titel: ticket.titel,
+            gewerk: ticket.gewerk,
+            beschreibung: (ticket as { beschreibung?: string | null }).beschreibung ?? null,
+            dringlichkeit,
+            einsatzort_adresse: (ticket as { einsatzort_adresse?: string | null }).einsatzort_adresse ?? null,
+          },
+          kandidaten: sortiert.slice(0, 10).map(hw => ({
+            id: hw.id,
+            name: hw.name,
+            firma: hw.firma,
+            gewerk: hw.gewerk,
+            distanzKm: hw.distanzKm,
+            fahrzeitMin: hw.fahrzeitMin,
+            routenScore: hw.routenScore,
+            effektivPreisFinal: hw.effektivPreisFinal,
+            basis_stundensatz: hw.basis_stundensatz,
+            basis_preis: hw.basis_preis,
+            bewertung_avg: hw.bewertung_avg,
+            auftraege_anzahl: hw.auftraege_anzahl,
+            istFavorit: hw.istFavorit,
+          })),
+        }),
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const data = await res.json()
+      setKiEmpfehlung(data)
+    } catch (e) {
+      console.error("[ki-hw-empfehlung]", e)
+      showToast("KI-Empfehlung fehlgeschlagen – bitte erneut versuchen.")
+    } finally {
+      setKiLaed(false)
+    }
+  }
+
   async function sendeEinladungen() {
     const selected = handwerker.filter(hw => hw.selected)
     if (selected.length === 0) { showToast("Bitte mindestens einen Handwerker auswählen."); return }
@@ -395,6 +447,61 @@ export default function HandwerkerAuswahlPage() {
         </div>
       </div>
 
+      {/* Sprint BB — KI-Empfehlung */}
+      <div className="mb-3">
+        {!kiEmpfehlung ? (
+          <button
+            onClick={ladeKiEmpfehlung}
+            disabled={kiLaed || sortiert.length === 0}
+            className="w-full flex items-center justify-center gap-2 text-sm font-medium bg-white border border-line rounded-xl px-4 py-3 hover:border-accent/40 hover:bg-accent/5 transition-all disabled:opacity-50"
+          >
+            {kiLaed ? (
+              <>
+                <svg className="animate-spin w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                <span className="text-ink-secondary">KI analysiert …</span>
+              </>
+            ) : (
+              <>
+                <span>🤖</span>
+                <span className="text-ink-secondary">KI-Empfehlung anzeigen</span>
+              </>
+            )}
+          </button>
+        ) : (
+          <div className="bg-accent/5 border border-accent/20 rounded-xl p-4">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🤖</span>
+                <span className="text-sm font-semibold text-ink">KI-Empfehlung</span>
+              </div>
+              <button
+                onClick={() => setKiEmpfehlung(null)}
+                className="text-ink-muted hover:text-ink text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-xs text-ink-secondary leading-relaxed mb-3">{kiEmpfehlung.kiText}</p>
+            <div className="flex flex-wrap gap-2">
+              {kiEmpfehlung.top3.map(t => {
+                const hw = sortiert.find(h => h.id === t.hwId)
+                if (!hw) return null
+                return (
+                  <div key={t.hwId} className="flex items-center gap-1.5 bg-white border border-accent/20 rounded-lg px-2.5 py-1.5">
+                    <span className="text-xs font-bold text-accent">{t.rang}.</span>
+                    <span className="text-xs font-medium text-ink">{hw.firma || hw.name}</span>
+                    <span className="text-[10px] text-ink-muted">· {t.begruendung}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Handwerker-Liste */}
       {sortiert.length === 0 ? (
         <div className="bg-white rounded-2xl border border-line p-8 text-center">
@@ -412,6 +519,7 @@ export default function HandwerkerAuswahlPage() {
             const stundensatz = hw.basis_stundensatz ?? hw.basis_preis
             const farben = hw.routenScore != null ? routenFarbe(hw.routenScore) : null
             const label = hw.routenScore != null ? routenLabel(hw.routenScore) : null
+            const kiRang = kiEmpfehlung?.top3.find(t => t.hwId === hw.id)
 
             return (
               <button
@@ -419,7 +527,9 @@ export default function HandwerkerAuswahlPage() {
                 onClick={() => toggleHW(hw.id)}
                 aria-pressed={hw.selected}
                 className={`text-left bg-white rounded-2xl border p-5 transition-all ${
-                  hw.selected
+                  kiRang && !hw.selected
+                    ? "border-accent/40 shadow-sm"
+                    : hw.selected
                     ? "border-[#3D8B7A] bg-accent/5 shadow-sm"
                     : "border-line hover:border-accent/30 hover:shadow-sm"
                 }`}
@@ -435,12 +545,24 @@ export default function HandwerkerAuswahlPage() {
                     {/* Header: Name + Bewertung */}
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
-                        <div className="text-base font-semibold text-ink">{hw.firma || hw.name}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-semibold text-ink">{hw.firma || hw.name}</span>
+                          {kiRang && (
+                            <span className="text-[10px] font-bold bg-accent text-white rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
+                              {kiRang.rang}
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-ink-muted mt-0.5">
                           {hw.bewertung_avg ? <span className="text-warm">★ {hw.bewertung_avg}</span> : "Neu"}
                           {" · "}{hw.auftraege_anzahl || 0} Aufträge
                           {hw.gewerk && (" · " + formatGewerk(hw.gewerk))}
                         </div>
+                        {kiRang && (
+                          <div className="text-[10px] text-accent mt-1 font-medium">
+                            🤖 {kiRang.begruendung}
+                          </div>
+                        )}
                       </div>
                       {label && farben && (
                         <span className={`text-[10px] uppercase tracking-wide font-bold px-2 py-1 rounded border whitespace-nowrap ${farben.bg} ${farben.text} ${farben.border}`}>
