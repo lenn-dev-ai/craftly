@@ -107,6 +107,7 @@ export default function MeldenPage() {
   const [loading, setLoading] = useState(false)
   const [analyseProgress, setAnalyseProgress] = useState(0)
   const [error, setError] = useState("")
+  const [rückrufInitiert, setRückrufInitiert] = useState<boolean | null>(null)
   // Foto-Upload State — UX-1: bis zu 5 Fotos
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [fotoFiles, setFotoFiles] = useState<File[]>([])
@@ -413,23 +414,37 @@ export default function MeldenPage() {
       ki_schadensart: kiSchadensart,
     }
 
-    let dbError = (await supabase.from("tickets").insert(mitKi)).error
-    if (dbError && /ki_confidence|ki_schadensart/i.test(dbError.message)) {
-      // KI-Spalten fehlen → ohne sie retry
-      dbError = (await supabase.from("tickets").insert(basisPayload)).error
+    type InsertResult = { id: string }
+    let r = await supabase.from("tickets").insert(mitKi).select("id").single<InsertResult>()
+    if (r.error && /ki_confidence|ki_schadensart/i.test(r.error.message)) {
+      r = await supabase.from("tickets").insert(basisPayload).select("id").single<InsertResult>()
     }
-    if (dbError && /foto_urls/i.test(dbError.message)) {
-      // foto_urls-Migration noch nicht in Live-DB → ohne sie retry
-      const { foto_urls: _ignored, ...ohneFotos } = basisPayload
-      void _ignored
-      dbError = (await supabase.from("tickets").insert(ohneFotos)).error
+    if (r.error && /foto_urls/i.test(r.error.message)) {
+      const { foto_urls: _ignored, ...ohneFotos } = basisPayload; void _ignored
+      r = await supabase.from("tickets").insert(ohneFotos).select("id").single<InsertResult>()
     }
-    if (dbError && /ticket_typ/i.test(dbError.message)) {
-      const { ticket_typ: _ignored, ...ohneTicketTyp } = basisPayload
-      void _ignored
-      dbError = (await supabase.from("tickets").insert(ohneTicketTyp)).error
+    if (r.error && /ticket_typ/i.test(r.error.message)) {
+      const { ticket_typ: _ignored, ...ohneTicketTyp } = basisPayload; void _ignored
+      r = await supabase.from("tickets").insert(ohneTicketTyp).select("id").single<InsertResult>()
     }
-    if (dbError) { setError("Fehler: " + dbError.message); setLoading(false); return }
+    if (r.error) { setError("Fehler: " + r.error.message); setLoading(false); return }
+
+    // Voice-AI V2: Outbound-Rückruf bei lückenhaftem Ticket (fire-and-forget)
+    let rückruf = false
+    if (r.data?.id) {
+      try {
+        const res = await authFetch("/api/vapi/trigger-rueckruf", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ticket_id: r.data.id }),
+        })
+        if (res.ok) {
+          const json = await res.json() as { initiated?: boolean }
+          rückruf = json.initiated === true
+        }
+      } catch { /* Best-effort — Rückruf-Fehler blockiert Ticket-Meldung nicht */ }
+    }
+    setRückrufInitiert(rückruf)
     setStep("gesendet")
     setLoading(false)
   }
@@ -1095,10 +1110,18 @@ export default function MeldenPage() {
               <span className="text-3xl text-accent">✓</span>
             </div>
             <h2 className="text-xl font-semibold mb-2">Schaden erfolgreich gemeldet</h2>
-            <p className="text-sm text-ink-muted mb-8 max-w-sm mx-auto">
+            <p className="text-sm text-ink-muted mb-4 max-w-sm mx-auto">
               Deine Hausverwaltung prüft die Meldung und meldet sich bei dir.
               Status-Updates findest du in &bdquo;Meine Meldungen&ldquo;.
             </p>
+            {rückrufInitiert && (
+              <div className="bg-accent/8 border border-accent/20 rounded-xl px-4 py-3 mb-6 max-w-sm mx-auto text-left">
+                <div className="text-xs font-medium text-accent mb-1">Kurzer Rückruf geplant</div>
+                <div className="text-xs text-ink-muted">
+                  Wir rufen dich gleich an, um noch 1–2 Details zu klären — dauert unter 2 Minuten.
+                </div>
+              </div>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button onClick={() => router.push("/dashboard-mieter")}>Meine Meldungen</Button>
@@ -1109,6 +1132,7 @@ export default function MeldenPage() {
                 setFotoFiles([])
                 fotoPreviewUrls.forEach(u => URL.revokeObjectURL(u))
                 setFotoPreviewUrls([])
+                setRückrufInitiert(null)
                 setForm({ titel: "", beschreibung: "", wohnung: "", wohneinheit_referenz: "", prioritaet: "planbar", gewerk: "allgemein", einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null })
               }}>
                 Weiteren Schaden melden
