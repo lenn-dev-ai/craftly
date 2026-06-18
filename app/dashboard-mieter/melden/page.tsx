@@ -127,6 +127,19 @@ export default function MeldenPage() {
   const [profilWohnung, setProfilWohnung] = useState<{ adresse: string; lat: number | null; lng: number | null } | null>(null)
   const [nutzeProfilWohnung, setNutzeProfilWohnung] = useState(true)
 
+  // Sprint BA: Wohneinheiten aus wohnungen-Tabelle (verlinkt via mieter_id)
+  interface WohnungMini {
+    id: string
+    whg_bezeichnung: string | null
+    strasse: string
+    hausnummer: string
+    plz: string
+    ort: string
+  }
+  const [meineWohnungen, setMeineWohnungen] = useState<WohnungMini[]>([])
+  const [gewaehltWohnungId, setGewaehltWohnungId] = useState<string | null>(null)
+  const gewaehltWohnung = meineWohnungen.find(w => w.id === gewaehltWohnungId) ?? null
+
   // Sprint AF Phase 1: Pills werden dynamisch vom Server geholt (saisonal
   // + Verwalter-spezifisch). Fallback auf statische Liste wenn API fehlt.
   type PillItem = { key: string; label: string; icon: string; startText: string; gewerkHint: string }
@@ -177,27 +190,55 @@ export default function MeldenPage() {
     return () => { aktiv = false }
   }, [fotoFiles])
 
-  // Profil-Adresse laden — beim Mount, damit beim Wechsel auf Step "ort"
-  // schon vorbefüllt ist.
+  // Profil-Adresse + verknüpfte Wohneinheiten laden — beim Mount, damit
+  // beim Wechsel auf Step "ort" schon vorbefüllt ist.
   useEffect(() => {
     let aktiv = true
     void (async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+
+      // Profil-Adresse (Fallback wenn keine wohnungen-Zeile vorhanden)
       const { data: prof } = await supabase
         .from("profiles")
         .select("adresse, lat, lng")
         .eq("id", user.id)
         .maybeSingle<{ adresse: string | null; lat: number | null; lng: number | null }>()
-      if (!aktiv || !prof?.adresse) return
-      setProfilWohnung({ adresse: prof.adresse, lat: prof.lat, lng: prof.lng })
-      setForm(f => f.einsatzort_adresse ? f : ({
-        ...f,
-        einsatzort_adresse: prof.adresse!,
-        einsatzort_lat: prof.lat,
-        einsatzort_lng: prof.lng,
-      }))
+      if (aktiv && prof?.adresse) {
+        setProfilWohnung({ adresse: prof.adresse, lat: prof.lat, lng: prof.lng })
+        setForm(f => f.einsatzort_adresse ? f : ({
+          ...f,
+          einsatzort_adresse: prof.adresse!,
+          einsatzort_lat: prof.lat,
+          einsatzort_lng: prof.lng,
+        }))
+      }
+
+      // Sprint BA: Verknüpfte Wohneinheiten (wohnungen.mieter_id = user.id)
+      // RLS-Policy "wohnungen_mieter_select" nötig (Migration sprint_ba_...).
+      const { data: wohnungenData } = await supabase
+        .from("wohnungen")
+        .select("id, whg_bezeichnung, strasse, hausnummer, plz, ort")
+        .eq("mieter_id", user.id)
+      if (!aktiv) return
+      if (wohnungenData && wohnungenData.length > 0) {
+        setMeineWohnungen(wohnungenData as WohnungMini[])
+        // Genau eine Wohnung → sofort vorauswählen und Felder befüllen
+        if (wohnungenData.length === 1) {
+          const w = wohnungenData[0] as WohnungMini
+          const adresse = `${w.strasse} ${w.hausnummer}, ${w.plz} ${w.ort}`
+          setGewaehltWohnungId(w.id)
+          setForm(f => ({
+            ...f,
+            einsatzort_adresse: adresse,
+            einsatzort_lat: null,
+            einsatzort_lng: null,
+            wohneinheit_referenz: w.id,
+            wohnung: w.whg_bezeichnung ?? f.wohnung,
+          }))
+        }
+      }
     })()
     return () => { aktiv = false }
   }, [])
@@ -736,8 +777,93 @@ export default function MeldenPage() {
             <h2 className="text-lg font-semibold mb-2">Wo ist das Problem?</h2>
             <p className="text-sm text-ink-muted mb-6">Adresse und Raum angeben — damit der Handwerker dich findet.</p>
 
-            {/* F2: Default-Wohnung aus Profil, falls hinterlegt. */}
-            {profilWohnung && nutzeProfilWohnung ? (
+            {/* Sprint BA: Wohneinheit aus wohnungen-Tabelle (Picker) — Prio vor profilWohnung */}
+            {meineWohnungen.length > 0 && nutzeProfilWohnung ? (
+              <div className="mb-5">
+                {gewaehltWohnung ? (
+                  /* Ausgewählte Wohnung — Pill analog zum profilWohnung-Design */
+                  <div className="bg-accent/5 border border-accent/30 rounded-xl p-4">
+                    <div className="text-[10px] uppercase tracking-wider text-accent font-bold mb-1">Meine Wohnung</div>
+                    <div className="text-sm text-ink leading-snug flex items-start gap-2">
+                      <span aria-hidden>📍</span>
+                      <div>
+                        <div>{gewaehltWohnung.strasse} {gewaehltWohnung.hausnummer}, {gewaehltWohnung.plz} {gewaehltWohnung.ort}</div>
+                        {gewaehltWohnung.whg_bezeichnung && (
+                          <div className="text-xs text-ink-muted mt-0.5">{gewaehltWohnung.whg_bezeichnung}</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-4 mt-3">
+                      {meineWohnungen.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setGewaehltWohnungId(null)
+                            setForm(f => ({ ...f, einsatzort_adresse: "", wohneinheit_referenz: "", wohnung: "" }))
+                          }}
+                          className="text-xs text-ink-muted hover:text-ink underline underline-offset-2"
+                        >
+                          Andere Wohnung wählen
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNutzeProfilWohnung(false)
+                          setGewaehltWohnungId(null)
+                          setForm(f => ({ ...f, einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null, wohneinheit_referenz: "", wohnung: "" }))
+                        }}
+                        className="text-xs text-ink-muted hover:text-ink underline underline-offset-2"
+                      >
+                        Andere Adresse eingeben
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Picker — mehrere Wohnungen zur Auswahl */
+                  <div>
+                    <p className="text-sm text-ink-muted mb-3">Wähle deine Wohneinheit:</p>
+                    <div className="flex flex-col gap-2">
+                      {meineWohnungen.map(w => {
+                        const adresse = `${w.strasse} ${w.hausnummer}, ${w.plz} ${w.ort}`
+                        return (
+                          <button
+                            key={w.id}
+                            type="button"
+                            onClick={() => {
+                              setGewaehltWohnungId(w.id)
+                              setForm(f => ({
+                                ...f,
+                                einsatzort_adresse: adresse,
+                                einsatzort_lat: null,
+                                einsatzort_lng: null,
+                                wohneinheit_referenz: w.id,
+                                wohnung: w.whg_bezeichnung ?? f.wohnung,
+                              }))
+                            }}
+                            className="w-full text-left bg-white border border-line rounded-xl px-4 py-3 hover:border-accent/50 hover:bg-accent/5 transition-colors"
+                          >
+                            <div className="text-sm font-medium text-ink">{adresse}</div>
+                            {w.whg_bezeichnung && <div className="text-xs text-ink-muted mt-0.5">{w.whg_bezeichnung}</div>}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNutzeProfilWohnung(false)
+                        setForm(f => ({ ...f, einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null }))
+                      }}
+                      className="mt-3 text-xs text-ink-muted hover:text-ink underline underline-offset-2"
+                    >
+                      Andere Adresse eingeben
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : profilWohnung && nutzeProfilWohnung ? (
+              /* F2: Fallback — profilWohnung aus profiles.adresse (kein wohnungen-Eintrag) */
               <div className="mb-5">
                 <div className="bg-accent/5 border border-accent/30 rounded-xl p-4">
                   <div className="text-[10px] uppercase tracking-wider text-accent font-bold mb-1">Meine Wohnung</div>
@@ -758,6 +884,7 @@ export default function MeldenPage() {
                 </div>
               </div>
             ) : (
+              /* Manuelle Adresseingabe */
               <div className="mb-5">
                 <AddressAutocomplete
                   label="Adresse des Gebäudes"
@@ -772,17 +899,19 @@ export default function MeldenPage() {
                     }))
                   }
                 />
-                {profilWohnung ? (
+                {(meineWohnungen.length > 0 || profilWohnung) ? (
                   <button
                     type="button"
                     onClick={() => {
                       setNutzeProfilWohnung(true)
-                      setForm(f => ({
-                        ...f,
-                        einsatzort_adresse: profilWohnung.adresse,
-                        einsatzort_lat: profilWohnung.lat,
-                        einsatzort_lng: profilWohnung.lng,
-                      }))
+                      if (meineWohnungen.length === 1) {
+                        const w = meineWohnungen[0]
+                        const adresse = `${w.strasse} ${w.hausnummer}, ${w.plz} ${w.ort}`
+                        setGewaehltWohnungId(w.id)
+                        setForm(f => ({ ...f, einsatzort_adresse: adresse, einsatzort_lat: null, einsatzort_lng: null, wohneinheit_referenz: w.id, wohnung: w.whg_bezeichnung ?? f.wohnung }))
+                      } else if (profilWohnung) {
+                        setForm(f => ({ ...f, einsatzort_adresse: profilWohnung.adresse, einsatzort_lat: profilWohnung.lat, einsatzort_lng: profilWohnung.lng }))
+                      }
                     }}
                     className="mt-2 text-xs text-accent hover:text-[#2D6B5A] underline underline-offset-2"
                   >
@@ -817,22 +946,24 @@ export default function MeldenPage() {
             </div>
 
             {/* Loop-23 (27.05.): Mieter-/Wohneinheits-Nummer als eindeutiger
-                Identifier für die Verwaltung. Hilft besonders bei großen
-                Beständen, Tickets sofort zu matchen. */}
-            <div className="mb-4">
-              <label className="text-xs text-ink-muted mb-1.5 block font-medium">
-                Mieter-Nr. / Wohneinheits-Nr. <span className="text-ink-muted font-normal">(falls bekannt)</span>
-              </label>
-              <input
-                value={form.wohneinheit_referenz}
-                onChange={e => setForm(f => ({ ...f, wohneinheit_referenz: e.target.value }))}
-                placeholder="z.B. M-1234 oder WE-12-A — steht meistens im Mietvertrag"
-                className="w-full bg-white border border-line rounded-xl px-4 py-3 text-sm text-ink placeholder-[#B5AEA4] focus:outline-none focus:border-accent/50"
-              />
-              <p className="text-[11px] text-ink-muted mt-1">
-                Wenn deine Verwaltung mit Nummern arbeitet, kann sie deine Meldung damit sofort zuordnen.
-              </p>
-            </div>
+                Identifier für die Verwaltung. Wird automatisch gesetzt wenn
+                eine Wohneinheit aus dem Picker gewählt wurde (Sprint BA). */}
+            {!gewaehltWohnungId && (
+              <div className="mb-4">
+                <label className="text-xs text-ink-muted mb-1.5 block font-medium">
+                  Mieter-Nr. / Wohneinheits-Nr. <span className="text-ink-muted font-normal">(falls bekannt)</span>
+                </label>
+                <input
+                  value={form.wohneinheit_referenz}
+                  onChange={e => setForm(f => ({ ...f, wohneinheit_referenz: e.target.value }))}
+                  placeholder="z.B. M-1234 oder WE-12-A — steht meistens im Mietvertrag"
+                  className="w-full bg-white border border-line rounded-xl px-4 py-3 text-sm text-ink placeholder-[#B5AEA4] focus:outline-none focus:border-accent/50"
+                />
+                <p className="text-[11px] text-ink-muted mt-1">
+                  Wenn deine Verwaltung mit Nummern arbeitet, kann sie deine Meldung damit sofort zuordnen.
+                </p>
+              </div>
+            )}
 
             <div className="mb-6">
               <p className="text-xs text-ink-muted mb-2">Schnellauswahl Raum (optional):</p>
