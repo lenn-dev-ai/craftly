@@ -69,16 +69,20 @@ const WMO_BESCHREIBUNG: Record<number, string> = {
 
 async function fetchWetter(lat: number, lng: number): Promise<WetterInfo | null> {
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weathercode&hourly=precipitation_probability&timezone=Europe%2FBerlin&forecast_days=1`
+    // daily.temperature_2m_max gibt den Tageshöchstwert — das ist was Nutzer
+    // erwarten wenn sie "heute 29°C" sagen. current.temperature_2m wäre nur
+    // der Momentanwert zum Abruf-Zeitpunkt (abends z.B. nur 22°C).
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=weathercode&daily=temperature_2m_max&hourly=precipitation_probability&timezone=Europe%2FBerlin&forecast_days=1`
     const res = await fetch(url, { signal: AbortSignal.timeout(4000) })
     if (!res.ok) return null
     const data = await res.json() as {
-      current: { temperature_2m: number; weathercode: number }
+      current: { weathercode: number }
+      daily: { temperature_2m_max: number[] }
       hourly: { precipitation_probability: number[] }
     }
     const regenMax = Math.max(...(data.hourly.precipitation_probability?.slice(0, 10) ?? [0]))
     return {
-      temperaturC: Math.round(data.current.temperature_2m),
+      temperaturC: Math.round(data.daily.temperature_2m_max[0]),
       beschreibung: WMO_BESCHREIBUNG[data.current.weathercode] ?? "Unbekannt",
       regenWahrscheinlichkeit: regenMax,
     }
