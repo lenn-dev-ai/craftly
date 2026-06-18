@@ -1,5 +1,5 @@
 # Session-Status — 18. Juni 2026
-> Sprint AX abgeschlossen · Sprint AY Fixes committed · Loop-28 triagiert
+> Sprint AX · AY · AZ · BA · BB · BC abgeschlossen · Loop-28 alle needdecision erledigt
 
 ---
 
@@ -30,35 +30,45 @@ Alle 3 Fixes committed, warten auf `git push`:
 
 ## Nächste Schritte (Priorität)
 
-### 🔴 SOFORT: Push ausstehender Commits
+### 🔴 SOFORT: Commits pushen (AZ + BA)
 ```bash
 cd ~/Desktop/Reparo
-git add -A
-git commit -m "fix(sprint-ay): Zod-null-Fix + Countdown-Remove + Verwalter-Wording"
 git push
 ```
-→ Netlify deployt automatisch
+→ Commits `cd38c32` (AZ Wetter-Fix) + `0e41163` (BA Wohneinheit-Picker) deployen automatisch
 
-### 🟡 Danach: Smoke-Test
-1. Auf `reparo-app.netlify.app` als Demo-Handwerker-1 einloggen
-2. `/dashboard-handwerker/angebot/{ticket-id}` aufrufen
-3. **Auftrag annehmen** klicken → sollte kein "Ungültige Eingabe" mehr geben
-4. Verwalter-Dashboard öffnen → "Direktanfragen freigeben" statt "Auktionen starten" sehen
+### ✅ Smoke-Tests GRÜN
+- **AY-1 P0**: "Ungültige Eingabe" weg ✅
+- **AY-2**: Kein Countdown-Badge auf Angebot-Page ✅
+- **AY-3**: Verwalter-Wording → Direktvergabe ✅
+- **AZ**: Wetter zeigt Tageshöchstwert statt Momentantemperatur ✅
+- **Demo-Ticket**: `b0000001-...-002` auf `status='offen'` gesetzt ✅
 
-### 🟡 Wetter-Bug untersuchen (590006f1, medium)
-Demo-HW-1 hat `startort_lat`/`startort_lng` in DB? → Supabase-SQL:
-```sql
-SELECT id, name, startort_lat, startort_lng, startort_adresse
-FROM profiles WHERE name ILIKE '%demo%handwerker%';
-```
-Wenn NULL → Wetter-API bekommt keine Koordinaten → Bug.
+### ✅ Sprint BA: Wohneinheit-Picker (Commit `0e41163`)
+- RLS-Policy `wohnungen_mieter_select` auf Production
+- Mieter mit 1 Wohnung → automatisch vorausgewählt, kein Klick nötig
+- Mehrere Wohnungen → Picker mit klickbaren Karten
+- `wohneinheit_referenz` wird auf Wohnungs-UUID gesetzt (automatisch)
+- Fallback auf profilWohnung / manuelle Eingabe wenn kein Eintrag in `wohnungen`
 
-### 🟡 Demo-Ticket b0000001-...-002 reparieren
-Ticket `b0000001-0000-4000-8000-000000000002` hat `status='auktion'` aber eine
-offene Einladung für Demo-HW. Das sollte `offen` sein (Direktvergabe):
-```sql
-UPDATE tickets SET status='offen' WHERE id='b0000001-0000-4000-8000-000000000002';
-```
+### ✅ Loop-28 needdecision — alle 5 erledigt
+- `54e2df6d`/`b1ad8083` — "Manuell ist Adoption-Blocker": übersprungen (unklar)
+- `37f6be65` — Wohneinheit-Picker: **DONE** Sprint BA
+- `ee101390` — HW + Termin inline: **DONE** bereits live
+- `c78feaae` — Doctolib Festpreise: **DONE** Sprint AM deckt das ab
+- `fbbf6c70` — KI-Schnellauswahl: **DONE** bleibt as-is (AF+AF2 vollständig)
+
+### ✅ Sprint BB: KI-HW-Empfehlung für Verwalter (Commit `1725387`)
+- POST `/api/verwalter/ki-hw-empfehlung` — Claude Haiku analysiert bis zu 10 Kandidaten, gibt Top-3 + Begründungen zurück
+- `handwerker/page.tsx` — 🤖-Button zwischen Sort-Bar und HW-Liste; Banner mit kiText + Pill-Chips
+- Rang-Badge (1/2/3) in jeder KI-empfohlenen HW-Karte, Begründungszeile direkt unterm Namen
+- Accent-Border auf Top-3 Karten auch ohne Selektion
+
+### ✅ Sprint BC: Mapbox Directions (Commit `1725387`)
+- `lib/distance.ts` — `fetchMapboxRoute()`: echte Fahrstrecke + Fahrzeit via Mapbox Driving-API
+- Fallback auf Haversine + 40 km/h wenn Token fehlt oder API nicht antwortet
+- `tages-briefing/route.ts` — alle Segmente parallel via `Promise.all()` gefetcht (kein N+1)
+- Kalender-Briefing zeigt jetzt echte Fahrzeiten statt Luftlinien-Schätzung
 
 ### ⏳ Pending Tasks
 - **#225** — Smoke-Test Google-Login Phase 1+2 (Lennart inkognito)
