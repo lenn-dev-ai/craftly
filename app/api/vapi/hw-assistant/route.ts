@@ -275,7 +275,7 @@ Regeln:
       ]
     : []
 
-  return {
+  const config: Record<string, unknown> = {
     firstMessage: greeting,
     transcriber: {
       provider: "deepgram",
@@ -293,18 +293,23 @@ Regeln:
       provider: "11labs",
       voiceId: "FUfBrNit0NNZAwb58KWH",  // Dt. Stimme — gleiche wie Lead Follow-up Agent (DE)
       model: "eleven_turbo_v2_5",
-      language: "de",
     },
-    serverUrl: `${SITE_URL}/api/vapi/hw-assistant`,
-    serverMessages: ["tool-calls"],
-    tools,
     endCallMessage: "Alles klar. Bis bald und einen guten Tag!",
     endCallPhrases: ["tschüss", "auf wiedersehen", "danke tschüss", "ciao", "bye", "tschau"],
     maxDurationSeconds: 300,  // 5 Minuten max — Schutz vor versehentlich offenem Anruf
-    backgroundSound: "off",
     silenceTimeoutSeconds: 30,
     responseDelaySeconds: 0.4,  // kurze Pause vor Antwort wirkt natürlicher
   }
+
+  // Tools nur setzen wenn vorhanden — leeres Array kann Vapi verwirren
+  if (tools.length > 0) {
+    config.tools = tools
+    // serverUrl + serverMessages nur wenn tools aktiv sind (für tool-calls nötig)
+    config.serverUrl = `${SITE_URL}/api/vapi/hw-assistant`
+    config.serverMessages = ["tool-calls"]
+  }
+
+  return config
 }
 
 // ---------------------------------------------------------------------------
