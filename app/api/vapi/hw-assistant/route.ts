@@ -295,9 +295,9 @@ Regeln:
       messages: [{ role: "system", content: systemPrompt }],
     },
     voice: {
-      provider: "11labs",
-      voiceId: "FUfBrNit0NNZAwb58KWH",  // Dt. Stimme — gleiche wie Lead Follow-up Agent (DE)
-      model: "eleven_turbo_v2_5",
+      provider: "openai",
+      voiceId: "nova",  // OpenAI TTS — kein API-Key nötig, spricht Deutsch
+      // 11labs: voiceId "FUfBrNit0NNZAwb58KWH" erst aktivierbar wenn ElevenLabs-Key in Vapi-Integrations eingetragen
     },
     endCallMessage: "Alles klar. Bis bald und einen guten Tag!",
     endCallPhrases: ["tschüss", "auf wiedersehen", "danke tschüss", "ciao", "bye", "tschau"],
