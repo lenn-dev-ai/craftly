@@ -279,7 +279,7 @@ Regeln:
     firstMessage: greeting,
     model: {
       provider: "anthropic",
-      model: "claude-haiku-4-5",
+      model: "claude-haiku-4-5-20251001",
       temperature: 0.3,
       systemPrompt,
       maxTokens: 200,
