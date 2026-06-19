@@ -277,16 +277,23 @@ Regeln:
 
   return {
     firstMessage: greeting,
+    transcriber: {
+      provider: "deepgram",
+      model: "nova-3",
+      language: "de",
+    },
     model: {
       provider: "anthropic",
       model: "claude-haiku-4-5-20251001",
       temperature: 0.3,
-      systemPrompt,
+      messages: [{ role: "system", content: systemPrompt }],
       maxTokens: 200,
     },
     voice: {
-      provider: "azure",
-      voiceId: "de-DE-ConradNeural",  // Männliche deutsche Stimme (alternativ: de-DE-KatjaNeural)
+      provider: "11labs",
+      voiceId: "FUfBrNit0NNZAwb58KWH",  // Dt. Stimme — gleiche wie Lead Follow-up Agent (DE)
+      model: "eleven_turbo_v2_5",
+      language: "de",
     },
     serverUrl: `${SITE_URL}/api/vapi/hw-assistant`,
     serverMessages: ["tool-calls"],
