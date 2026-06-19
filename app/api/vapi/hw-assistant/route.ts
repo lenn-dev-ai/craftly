@@ -285,7 +285,7 @@ Regeln:
     firstMessage: greeting,
     transcriber: {
       provider: "deepgram",
-      model: "nova-3",
+      model: "nova-2-phonecall",  // nova-3 ist nicht in Vapis Whitelist → stille Validation-Failure
       language: "de",
     },
     model: {
