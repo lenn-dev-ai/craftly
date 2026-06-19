@@ -281,35 +281,36 @@ Regeln:
       ]
     : []
 
+  // FIX: CreateAssistantDto hat KEIN top-level 'tools'-Feld!
+  // Tools müssen INNERHALB von model.tools stehen — unbekannte Felder auf
+  // Assistant-Ebene führen bei Vapi zu stiller Ablehnung (assistant = null).
+  const modelConfig: Record<string, unknown> = {
+    provider: "anthropic",
+    model: "claude-3-5-haiku-20241022",
+    temperature: 0.3,
+    messages: [{ role: "system", content: systemPrompt }],
+  }
+  if (tools.length > 0) {
+    modelConfig.tools = tools
+  }
+
   const config: Record<string, unknown> = {
     firstMessage: greeting,
     transcriber: {
       provider: "deepgram",
-      model: "nova-2-phonecall",  // nova-3 ist nicht in Vapis Whitelist → stille Validation-Failure
+      model: "nova-2-phonecall",
       language: "de",
     },
-    model: {
-      provider: "anthropic",
-      model: "claude-3-5-haiku-20241022",  // Vapi: claude-3-5-haiku-20241022 ist der korrekte String
-      temperature: 0.3,
-      messages: [{ role: "system", content: systemPrompt }],
-    },
+    model: modelConfig,
     voice: {
       provider: "openai",
       voiceId: "nova",  // OpenAI TTS — kein API-Key nötig, spricht Deutsch
-      // 11labs: voiceId "FUfBrNit0NNZAwb58KWH" erst aktivierbar wenn ElevenLabs-Key in Vapi-Integrations eingetragen
     },
     endCallMessage: "Alles klar. Bis bald und einen guten Tag!",
     endCallPhrases: ["tschüss", "auf wiedersehen", "danke tschüss", "ciao", "bye", "tschau"],
-    maxDurationSeconds: 300,  // 5 Minuten max — Schutz vor versehentlich offenem Anruf
+    maxDurationSeconds: 300,
     silenceTimeoutSeconds: 30,
-    responseDelaySeconds: 0.4,  // kurze Pause vor Antwort wirkt natürlicher
-  }
-
-  // Tools nur setzen wenn vorhanden — leeres Array kann Vapi verwirren
-  // server-URL ist jetzt IN jedem Tool (Vapi-Schema), nicht mehr auf Assistant-Ebene
-  if (tools.length > 0) {
-    config.tools = tools
+    responseDelaySeconds: 0.4,
   }
 
   return config
