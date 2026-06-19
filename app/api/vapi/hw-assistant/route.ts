@@ -256,7 +256,7 @@ Regeln:
               "Gibt die heutigen bestätigten Termine mit Uhrzeit und Ort zurück. Aufrufen wenn der HW nach seinen Terminen oder seinem Tagesplan fragt.",
             parameters: { type: "object", properties: {}, required: [] },
           },
-          server: { url: toolServerUrl, timeoutSeconds: 20 },
+          server: { url: toolServerUrl },
         },
         {
           type: "function",
@@ -266,7 +266,7 @@ Regeln:
               "Gibt die Anzahl offener Auftragsanfragen und ausstehender Terminbestätigungen zurück.",
             parameters: { type: "object", properties: {}, required: [] },
           },
-          server: { url: toolServerUrl, timeoutSeconds: 20 },
+          server: { url: toolServerUrl },
         },
         {
           type: "function",
@@ -276,7 +276,7 @@ Regeln:
               "Sprint AX: Listet neue Direktvergabe-Anfragen mit Agent-Empfehlung (annehmen/ablehnen/prüfen) auf. Aufrufen wenn der HW fragt 'Was empfiehlst du mir?', 'Was sind neue Anfragen?' oder 'Welche Aufträge lohnen sich?'.",
             parameters: { type: "object", properties: {}, required: [] },
           },
-          server: { url: toolServerUrl, timeoutSeconds: 20 },
+          server: { url: toolServerUrl },
         },
       ]
     : []
@@ -290,10 +290,9 @@ Regeln:
     },
     model: {
       provider: "anthropic",
-      model: "claude-haiku-4-5",  // Vapi-interner Name — OHNE Datum-Suffix!
+      model: "claude-3-5-haiku-20241022",  // Vapi: claude-3-5-haiku-20241022 ist der korrekte String
       temperature: 0.3,
       messages: [{ role: "system", content: systemPrompt }],
-      maxTokens: 200,
     },
     voice: {
       provider: "11labs",
