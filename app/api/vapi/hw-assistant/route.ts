@@ -243,6 +243,9 @@ Regeln:
 - Frag maximal eine Folgefrage pro Antwort.`
     : "Du bist der Reparo-Assistent. Die Handynummer des Anrufers ist nicht in Reparo hinterlegt. Bitte erklär das freundlich und beende das Gespräch."
 
+  // Vapi Tool-Format: server-URL INNERHALB jedes Tools (nicht auf Assistant-Ebene)
+  const toolServerUrl = `${SITE_URL}/api/vapi/hw-assistant`
+
   const tools = hw
     ? [
         {
@@ -253,6 +256,7 @@ Regeln:
               "Gibt die heutigen bestätigten Termine mit Uhrzeit und Ort zurück. Aufrufen wenn der HW nach seinen Terminen oder seinem Tagesplan fragt.",
             parameters: { type: "object", properties: {}, required: [] },
           },
+          server: { url: toolServerUrl, timeoutSeconds: 20 },
         },
         {
           type: "function",
@@ -262,6 +266,7 @@ Regeln:
               "Gibt die Anzahl offener Auftragsanfragen und ausstehender Terminbestätigungen zurück.",
             parameters: { type: "object", properties: {}, required: [] },
           },
+          server: { url: toolServerUrl, timeoutSeconds: 20 },
         },
         {
           type: "function",
@@ -271,6 +276,7 @@ Regeln:
               "Sprint AX: Listet neue Direktvergabe-Anfragen mit Agent-Empfehlung (annehmen/ablehnen/prüfen) auf. Aufrufen wenn der HW fragt 'Was empfiehlst du mir?', 'Was sind neue Anfragen?' oder 'Welche Aufträge lohnen sich?'.",
             parameters: { type: "object", properties: {}, required: [] },
           },
+          server: { url: toolServerUrl, timeoutSeconds: 20 },
         },
       ]
     : []
@@ -284,7 +290,7 @@ Regeln:
     },
     model: {
       provider: "anthropic",
-      model: "claude-haiku-4-5-20251001",
+      model: "claude-haiku-4-5",  // Vapi-interner Name — OHNE Datum-Suffix!
       temperature: 0.3,
       messages: [{ role: "system", content: systemPrompt }],
       maxTokens: 200,
@@ -302,11 +308,9 @@ Regeln:
   }
 
   // Tools nur setzen wenn vorhanden — leeres Array kann Vapi verwirren
+  // server-URL ist jetzt IN jedem Tool (Vapi-Schema), nicht mehr auf Assistant-Ebene
   if (tools.length > 0) {
     config.tools = tools
-    // serverUrl + serverMessages nur wenn tools aktiv sind (für tool-calls nötig)
-    config.serverUrl = `${SITE_URL}/api/vapi/hw-assistant`
-    config.serverMessages = ["tool-calls"]
   }
 
   return config
