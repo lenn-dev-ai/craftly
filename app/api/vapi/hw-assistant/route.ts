@@ -309,8 +309,10 @@ Regeln:
     endCallMessage: "Alles klar. Bis bald und einen guten Tag!",
     endCallPhrases: ["tschüss", "auf wiedersehen", "danke tschüss", "ciao", "bye", "tschau"],
     maxDurationSeconds: 300,
-    silenceTimeoutSeconds: 30,
-    responseDelaySeconds: 0.4,
+    // silenceTimeoutSeconds + responseDelaySeconds sind deprecated/entfernt in Vapi v2
+    // → lösen stille Ablehnung (assistant = null) aus
+    // startSpeakingPlan.waitSeconds ist der korrekte Ersatz für responseDelay
+    startSpeakingPlan: { waitSeconds: 0.4 },
   }
 
   return config
