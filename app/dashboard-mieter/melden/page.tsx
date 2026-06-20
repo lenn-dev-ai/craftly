@@ -429,6 +429,16 @@ export default function MeldenPage() {
     }
     if (r.error) { setError("Fehler: " + r.error.message); setLoading(false); return }
 
+    // Sprint BD — Auto-Vergabe: KI startet die Vergabe-Engine direkt nach
+    // der Meldung (Sicherheitsnetz: aus dem Mieter-Kontext startet nur ein
+    // Notfall sofort, zeitnah/planbar warten auf Verwalter-Freigabe).
+    // Best-effort — blockiert die Meldung nicht.
+    if (r.data?.id) {
+      try {
+        await authFetch(`/api/tickets/${r.data.id}/auto-vergabe`, { method: "POST" })
+      } catch { /* Best-effort — Vergabe-Fehler blockiert die Meldung nicht */ }
+    }
+
     // Voice-AI V2: Outbound-Rückruf bei lückenhaftem Ticket (fire-and-forget)
     let rückruf = false
     if (r.data?.id) {

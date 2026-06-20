@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button, Card, Input, Select, Textarea } from "@/components/ui"
 import AddressAutocomplete from "@/components/AddressAutocomplete"
 import { authFetch } from "@/lib/auth/clientFetch"
-import { Phone, Home, Wrench, MapPin, Camera, Check, ChevronRight, ChevronLeft, X } from "lucide-react"
+import { Phone, Home, Wrench, MapPin, Camera, Check, ChevronRight, ChevronLeft, X, Zap } from "lucide-react"
 
 // Sprint G — Verwalter-Wizard. Pre-Pivot-Investition (P2):
 // Verwalter telefoniert mit Mieter, tippt Schaden selbst ein.
@@ -66,6 +66,7 @@ export default function NeuesTicketPage() {
   const [step, setStep] = useState<Step>("anrufer")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
+  const [vergabeInfo, setVergabeInfo] = useState<string | null>(null)
 
   // Step 1 — Anrufer
   const [mieterName, setMieterName] = useState("")
@@ -122,10 +123,11 @@ export default function NeuesTicketPage() {
           prioritaet,
         }),
       })
+      const body = await res.json().catch(() => ({}))
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
         throw new Error(body.error || `HTTP ${res.status}`)
       }
+      setVergabeInfo(vergabeStatusText(body?.vergabe?.modus))
       setStep("gesendet")
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unbekannter Fehler beim Speichern.")
@@ -307,6 +309,12 @@ export default function NeuesTicketPage() {
             <p className="text-sm text-ink-muted">
               Das Ticket erscheint jetzt in deiner Ticket-Liste mit dem Badge &bdquo;📞 telefonisch&ldquo;.
             </p>
+            {vergabeInfo && (
+              <div className="mx-auto max-w-sm text-sm text-accent bg-accent/5 border border-accent/15 rounded-xl px-4 py-2.5 flex items-start gap-2">
+                <Zap className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>{vergabeInfo}</span>
+              </div>
+            )}
             <div className="flex gap-3 justify-center">
               <Button variant="secondary" onClick={() => {
                 setStep("anrufer")
@@ -344,6 +352,23 @@ export default function NeuesTicketPage() {
       </Card>
     </div>
   )
+}
+
+// Sprint BD — übersetzt das Ergebnis der Auto-Vergabe in eine
+// verständliche Statuszeile für den Erfolgs-Screen.
+function vergabeStatusText(modus: string | undefined): string | null {
+  switch (modus) {
+    case "stamm_anfrage":
+      return "Dein Stamm-Handwerker wurde automatisch angefragt — du wirst informiert, sobald er zusagt."
+    case "direktvergabe":
+      return "Die KI hat automatisch den passendsten Handwerker angefragt. Antwortet er nicht rechtzeitig, wird der nächste angefragt — du musst nichts tun."
+    case "auktion":
+      return "Kein direkt passender Handwerker im Umkreis — die KI hat automatisch eine Marktplatz-Auktion geöffnet."
+    case "uebersprungen":
+      return "Ticket angelegt. Die automatische Vergabe wurde nicht gestartet (z. B. fehlender Einsatzort) — du kannst im Marktplatz manuell eingreifen."
+    default:
+      return null
+  }
 }
 
 function StepIndicator({ current }: { current: Step }) {

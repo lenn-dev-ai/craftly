@@ -110,6 +110,9 @@ export default function MarktplatzPage() {
   const [tickets, setTickets] = useState<OffenesTicket[]>([])
   // Sprint AM Phase 3: HW-Namen für den aktuell angefragten Direktvergabe-Kandidaten.
   const [hwNames, setHwNames] = useState<Record<string, string>>({})
+  // Sprint BD: Ticket-IDs mit aktiver Stamm-Anfrage (Stamm-HW wurde 1:1
+  // angefragt, Ticket bleibt 'offen' ohne Direktvergabe-Kandidaten).
+  const [stammAnfrageIds, setStammAnfrageIds] = useState<Set<string>>(new Set())
   const [hws, setHws] = useState<StammHwEintrag[]>([])
   const [poolHws, setPoolHws] = useState<PoolHw[]>([])
   const [poolLoading, setPoolLoading] = useState(false)
@@ -126,6 +129,9 @@ export default function MarktplatzPage() {
   const [stammHinzu, setStammHinzu] = useState<string | null>(null)
   const [auctionStarten, setAuctionStarten] = useState<OffenesTicket | null>(null)
   const [auctionLaeuft, setAuctionLaeuft] = useState(false)
+  // Sprint BD — Monitoring-Umbau: "Eingreifen"-Fallback-Sheet + One-Click-Start
+  const [eingreifenTicket, setEingreifenTicket] = useState<OffenesTicket | null>(null)
+  const [direktStartId, setDirektStartId] = useState<string | null>(null)
 
   // A11Y-Cleanup (Audit #82): Focus-Trap für die beiden Modals dieser Seite
   // (Einladen-Drawer + Auction-Start-Modal).
@@ -189,6 +195,28 @@ export default function MarktplatzPage() {
       setHwNames(nameMap)
     } else {
       setHwNames({})
+    }
+
+    // Sprint BD: aktive Stamm-Anfragen für die sichtbaren Tickets laden.
+    // Eine Stamm-Anfrage lässt das Ticket 'offen' ohne Direktvergabe-
+    // Kandidaten — ohne dieses Flag würde der Marktplatz fälschlich
+    // "Wartet auf Vergabe" anzeigen, obwohl der Stamm-HW schon angefragt
+    // ist. Status 'angenommen' weist das Ticket zu (fällt dann aus der
+    // Liste), daher genügt es, abgelehnte/abgelaufene auszuschließen.
+    const offeneTicketIds = ticketList.map(tk => tk.id)
+    if (offeneTicketIds.length > 0) {
+      const { data: anfragen } = await supabase
+        .from("stamm_anfragen")
+        .select("ticket_id, status")
+        .in("ticket_id", offeneTicketIds)
+        .not("status", "in", "(abgelehnt,abgelaufen)")
+      const ids = new Set<string>()
+      for (const a of (anfragen ?? []) as Array<{ ticket_id: string | null }>) {
+        if (a.ticket_id) ids.add(a.ticket_id)
+      }
+      setStammAnfrageIds(ids)
+    } else {
+      setStammAnfrageIds(new Set())
     }
 
     setLoading(false)
@@ -338,6 +366,45 @@ export default function MarktplatzPage() {
     }
   }
 
+  // Sprint BD — One-Click-Start der KI-Vergabe für ein wartendes Ticket.
+  // Nutzt die im Ticket hinterlegte Priorität als Dringlichkeit, ohne den
+  // Verwalter erst durch das Dringlichkeits-Modal zu schicken. Die manuelle
+  // Dringlichkeits-Wahl bleibt unter "Eingreifen" verfügbar.
+  async function startVergabeDirekt(ticket: OffenesTicket) {
+    const dringlichkeit: Dringlichkeit =
+      ticket.prioritaet === "notfall" || ticket.prioritaet === "zeitnah"
+        ? ticket.prioritaet
+        : "planbar"
+    setDirektStartId(ticket.id)
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) { setDirektStartId(null); return }
+    try {
+      const res = await fetch("/api/auction/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ ticket_id: ticket.id, dringlichkeit }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (res.ok) {
+        setToast(
+          json.modus === "stamm_anfrage" ? "Stamm-Handwerker automatisch angefragt."
+          : json.modus === "direktvergabe" ? "KI hat den passendsten Handwerker angefragt."
+          : json.modus === "notfall-direkt" ? "Notfall direkt vergeben — Handwerker informiert."
+          : "Marktplatz-Auktion geöffnet — kein direkt passender Handwerker im Umkreis.",
+        )
+        await loadData()
+      } else {
+        setToast("Fehler: " + (json.error ?? `HTTP ${res.status}`))
+      }
+    } catch (e) {
+      setToast("Netzwerk-Fehler: " + (e instanceof Error ? e.message : "fetch_error"))
+    } finally {
+      setDirektStartId(null)
+      setTimeout(() => setToast(""), 4000)
+    }
+  }
+
   async function einladen(ticket: OffenesTicket, hwId: string, hwName: string) {
     if (!await confirm(`„${ticket.titel}" an ${hwName} einladen?`)) return
     setEinlade(hwId)
@@ -417,7 +484,7 @@ export default function MarktplatzPage() {
         <div className="max-w-6xl mx-auto pl-14 pr-4 md:px-6 py-4 flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h1 className="text-lg font-semibold text-ink">Marktplatz</h1>
-            <p className="text-xs text-ink-muted">Offene Tickets &amp; verfügbare Handwerker</p>
+            <p className="text-xs text-ink-muted">Die KI vergibt automatisch — hier behältst du den Überblick</p>
           </div>
           <button
             type="button"
@@ -472,6 +539,11 @@ export default function MarktplatzPage() {
                   : ""
                 // C: 0-Kandidaten-Edge-Case
                 const nullKandidaten = t.status === "auktion" && (t.einladungen?.[0]?.count ?? 0) === 0
+                // Sprint BD — Monitoring: bearbeitet die KI dieses Ticket bereits
+                // aktiv? Dann ist die Karte ein Statusboard, keine Aktionszentrale.
+                // (nullKandidaten = Auktion ohne Treffer → echter Eingriff nötig)
+                const hatStammAnfrage = stammAnfrageIds.has(t.id)
+                const wirdBearbeitet = dvAktiv || hatStammAnfrage || (t.status === "auktion" && !nullKandidaten)
 
                 return (
                 <li
@@ -519,10 +591,25 @@ export default function MarktplatzPage() {
                         {dvRestzeit && <span className="text-ink-muted">· {dvRestzeit}</span>}
                       </div>
                     )}
+                    {/* Sprint BD — A: Live-Status für aktive Stamm-Anfrage */}
+                    {hatStammAnfrage && !dvAktiv && (
+                      <div className="mt-2 text-xs text-accent bg-accent/5 border border-accent/15 rounded-lg px-3 py-1.5 inline-flex flex-wrap gap-x-2 gap-y-0.5">
+                        <span>⭐ Stamm-Handwerker automatisch angefragt — wartet auf Antwort.</span>
+                      </div>
+                    )}
                     {/* Sprint AM Phase 3 — A: Auktion als Fallback kennzeichnen */}
                     {t.status === "auktion" && !nullKandidaten && (
                       <div className="mt-1.5 text-[11px] text-warm-dark">
                         Direktvergabe an {(t.einladungen?.[0]?.count ?? 0)} Handwerker ohne Antwort — jetzt offene Bieter-Auktion.
+                      </div>
+                    )}
+                    {/* Sprint BD — wartet auf Vergabe-Start (z.B. Mieter-Ticket
+                        zeitnah/planbar, das auf Freigabe wartet, oder Ticket
+                        ohne automatischen Start). Klarer Hinweis statt stiller
+                        Buttons. */}
+                    {!wirdBearbeitet && !nullKandidaten && (
+                      <div className="mt-2 text-xs text-ink-secondary bg-surface-muted border border-line rounded-lg px-3 py-1.5 inline-flex flex-wrap gap-x-2 gap-y-0.5">
+                        <span>⏳ Wartet auf Vergabe — mit „Vergabe starten" übergibst du das Ticket der KI.</span>
                       </div>
                     )}
                     {/* Sprint AM Phase 3 — C: 0-Kandidaten-Edge-Case */}
@@ -537,29 +624,58 @@ export default function MarktplatzPage() {
                     )}
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/dashboard-verwalter/tickets/${t.id}`)}
-                      className="text-xs px-3 py-2 rounded-lg border border-line hover:bg-surface-muted text-ink-secondary"
-                    >
-                      Details
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEinladenDrawer(t)}
-                      className="text-xs px-3 py-2 rounded-lg border border-line hover:bg-surface-muted text-ink-secondary"
-                      title="Einzelnen HW aus deinem Stamm einladen"
-                    >
-                      HW einladen
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAuctionStarten(t)}
-                      className="text-xs font-semibold px-3 py-2 rounded-lg bg-accent text-white hover:bg-accent-hover"
-                      title="Auction starten — System findet passende HW im Radius und sendet Einladungen automatisch"
-                    >
-                      Auction
-                    </button>
+                    {wirdBearbeitet ? (
+                      // Monitoring-Modus: die KI bearbeitet das Ticket bereits.
+                      // Der Verwalter beobachtet nur — manuelle Eingriffe sind
+                      // ein dezenter Fallback, kein Primär-Call-to-Action.
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/dashboard-verwalter/tickets/${t.id}`)}
+                          className="text-xs px-3 py-2 rounded-lg border border-line hover:bg-surface-muted text-ink-secondary"
+                        >
+                          Details
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEingreifenTicket(t)}
+                          className="text-xs px-3 py-2 rounded-lg text-ink-muted hover:bg-surface-muted hover:text-ink-secondary"
+                          title="Manuell eingreifen (Fallback) — nur nötig, wenn du die automatische Vergabe übersteuern willst"
+                        >
+                          Eingreifen
+                        </button>
+                      </>
+                    ) : (
+                      // Wartet auf Start: ein Klick übergibt das Ticket der
+                      // KI-Vergabe (nutzt die Priorität des Tickets als
+                      // Dringlichkeit). Manuelle Auswahl bleibt als Fallback.
+                      <>
+                        <button
+                          type="button"
+                          disabled={direktStartId === t.id}
+                          onClick={() => void startVergabeDirekt(t)}
+                          className="text-xs font-semibold px-3 py-2 rounded-lg bg-accent text-white hover:bg-accent-hover disabled:opacity-50"
+                          title="KI-Vergabe starten — System sucht und fragt automatisch den passendsten Handwerker an"
+                        >
+                          {direktStartId === t.id ? "Startet …" : "Vergabe starten"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/dashboard-verwalter/tickets/${t.id}`)}
+                          className="text-xs px-3 py-2 rounded-lg border border-line hover:bg-surface-muted text-ink-secondary"
+                        >
+                          Details
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEingreifenTicket(t)}
+                          className="text-xs px-3 py-2 rounded-lg text-ink-muted hover:bg-surface-muted hover:text-ink-secondary"
+                          title="Manuell eingreifen statt automatischer Vergabe"
+                        >
+                          Manuell
+                        </button>
+                      </>
+                    )}
                   </div>
                 </li>
               )
@@ -869,6 +985,58 @@ export default function MarktplatzPage() {
                   Abbrechen
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sprint BD — "Eingreifen"-Fallback-Sheet: manuelle Aktionen sind
+          bewusst hinter einem Schritt versteckt, damit die automatische
+          Vergabe der Default-Weg bleibt. */}
+      {eingreifenTicket && (
+        <div
+          className="fixed inset-0 z-50 bg-ink/40 flex items-end md:items-center justify-center p-4"
+          onClick={() => setEingreifenTicket(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-2xl shadow-xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-line">
+              <h2 className="text-base font-semibold text-ink">Manuell eingreifen</h2>
+              <p className="text-xs text-ink-muted mt-1">
+                Normalerweise erledigt die KI die Vergabe automatisch. Diese Optionen
+                sind nur für Ausnahmen gedacht.
+              </p>
+            </div>
+            <div className="p-4 space-y-2">
+              <button
+                type="button"
+                onClick={() => { const t = eingreifenTicket; setEingreifenTicket(null); setEinladenDrawer(t) }}
+                className="w-full text-left px-3 py-2.5 rounded-lg border border-line hover:border-accent/40 hover:bg-accent/5 transition-colors"
+              >
+                <div className="text-sm font-semibold text-ink">Einzelnen Handwerker einladen</div>
+                <div className="text-xs text-ink-muted mt-0.5">Aus deinem Stamm — du wählst selbst aus.</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => { const t = eingreifenTicket; setEingreifenTicket(null); setAuctionStarten(t) }}
+                className="w-full text-left px-3 py-2.5 rounded-lg border border-line hover:border-accent/40 hover:bg-accent/5 transition-colors"
+              >
+                <div className="text-sm font-semibold text-ink">Vergabe mit anderer Dringlichkeit starten</div>
+                <div className="text-xs text-ink-muted mt-0.5">Dringlichkeit manuell wählen statt der Ticket-Priorität.</div>
+              </button>
+            </div>
+            <div className="px-5 py-3 border-t border-line text-right">
+              <button
+                type="button"
+                onClick={() => setEingreifenTicket(null)}
+                className="text-xs px-3 py-2 rounded-lg text-ink-secondary hover:bg-surface-muted"
+              >
+                Abbrechen
+              </button>
             </div>
           </div>
         </div>

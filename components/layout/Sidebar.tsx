@@ -12,7 +12,7 @@ import {
   Euro, Calendar, Briefcase, MapPin, CalendarCheck, UserCircle,
   Plus, FileText, ShieldCheck, LogOut, Map, CalendarRange,
   Calculator, AlertTriangle, MessageSquare, Home,
-  Users, Activity, Heart, Tag,
+  Users, Activity, Heart, Tag, SlidersHorizontal,
   type LucideProps,
 } from "lucide-react"
 
@@ -37,6 +37,7 @@ const menus: Record<Rolle, MenuItem[]> = {
     // Sonderfälle (Mieter ruft Verwalter direkt an), aber gruppiert
     // in "Mein Bereich" statt prominent als Top-Item.
     { href: "/dashboard-verwalter/neues-ticket", label: "Ticket telefonisch", Icon: Plus, gruppe: "selten" },
+    { href: "/dashboard-verwalter/einstellungen", label: "KI-Vergabe", Icon: SlidersHorizontal, gruppe: "selten" },
   ],
   handwerker: [
     // K2: Top-4 — was der HW täglich anfasst.

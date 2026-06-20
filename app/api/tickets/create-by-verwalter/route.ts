@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { ticketCreateByVerwalterSchema } from "@/lib/schemas"
+import { vergebeTicketAutomatisch } from "@/lib/auction/auto-vergabe"
 
 // POST /api/tickets/create-by-verwalter (Sprint G)
 // Verwalter erstellt Ticket telefonisch via Wizard. Body enthält Anrufer-
@@ -80,5 +81,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: insertErr.message }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, ticket_id: ticket.id }, { status: 201 })
+  // Sprint BD — Auto-Vergabe: die KI startet die Vergabe-Engine sofort,
+  // ohne dass der Verwalter im Marktplatz manuell "Auction" klicken muss.
+  // Best-effort (wirft nie) — schlägt sie fehl, bleibt das Ticket offen
+  // und der Verwalter kann manuell eingreifen.
+  const vergabe = await vergebeTicketAutomatisch(ticket.id)
+
+  return NextResponse.json(
+    { ok: true, ticket_id: ticket.id, vergabe },
+    { status: 201 },
+  )
 }
