@@ -1,12 +1,14 @@
 import { createServiceRoleClient } from "@/lib/supabase-server"
 import { haversineKm, schaetzeFahrzeitMin } from "@/lib/distance"
 import { berechneSmartScore, type Dringlichkeit } from "@/lib/auction/smart-score"
-import { konfigFuer, berechneAuktionsEnde } from "@/lib/auction/auction-manager"
+import { konfigFuer, berechneAuktionsEnde, effektiveProvisionsRate } from "@/lib/auction/auction-manager"
 import { berechneAuftragswert } from "@/lib/pricing/auftragswert"
+import { calculateCommission } from "@/lib/pricing/commission"
 import { berechneAuslastung } from "@/lib/google-cal/auslastung"
 import { hasGoogleEventInRange } from "@/lib/google-cal/events"
 import { sendEmailFireAndForget } from "@/lib/email/send"
-import { einladungEmail } from "@/lib/email/templates"
+import { einladungEmail, zuschlagEmail, escapeHtml } from "@/lib/email/templates"
+import { logTicketEvent } from "@/lib/audit/logTicketEvent"
 
 // Sprint AM Phase 2 — generalisierte sequenzielle Direktvergabe für
 // zeitnah/planbar ohne Stamm-HW (siehe
@@ -244,7 +246,7 @@ export async function sendeDirektvergabeAnfrage(opts: {
   const admin = createServiceRoleClient()
   const timeoutMin = DIREKTVERGABE_TIMEOUT_MIN[ticket.dringlichkeit]
 
-  const { error: einlErr } = await admin
+  const { data: einladungData, error: einlErr } = await admin
     .from("einladungen")
     .upsert(
       {
@@ -255,6 +257,7 @@ export async function sendeDirektvergabeAnfrage(opts: {
       },
       { onConflict: "ticket_id,handwerker_id" },
     )
+    .select("id")
   if (einlErr) {
     console.error("[direktvergabe] einladungen-upsert fehlgeschlagen:", einlErr.message)
     return { ok: false }
@@ -274,7 +277,16 @@ export async function sendeDirektvergabeAnfrage(opts: {
     return { ok: false }
   }
 
-  // Fire-and-forget: Einladungs-Mail an den Kandidaten.
+  // Sprint BF — Auto-Accept: wenn der HW agent_auto_accept=true hat und der Preis
+  // die Untergrenze erfüllt, wird die Anfrage sofort programmatisch angenommen.
+  const einladungId = (einladungData as Array<{ id: string }> | null)?.[0]?.id
+  const autoAccepted = einladungId
+    ? await pruefeUndFuehreAutoAcceptAus({ admin, ticket, hwId: kandidat.hw_id, einladungId, preis: kandidat.preis })
+    : false
+
+  if (autoAccepted) return { ok: true }
+
+  // Fire-and-forget: Einladungs-Mail an den Kandidaten (nur wenn nicht auto-accepted).
   void (async () => {
     const { data: hw } = await admin
       .from("profiles")
@@ -316,6 +328,180 @@ export async function sendeDirektvergabeAnfrage(opts: {
   })().catch(err => console.error("[direktvergabe] Einladungs-Mail fehlgeschlagen:", err))
 
   return { ok: true }
+}
+
+/**
+ * Sprint BF — Auto-Accept: prüft ob der HW agent_auto_accept=true hat und
+ * der empfohlene Preis >= agent_min_auftragswert (NULL = kein Limit). Wenn
+ * ja, wird die Einladung sofort über dieselbe Service-Role-Logik wie
+ * /api/einladungen/[id]/annehmen angenommen.
+ *
+ * Defensiv gebaut: bei fehlenden Spalten oder Fehlern wird false
+ * zurückgegeben und der normale Einladungs-Flow läuft weiter.
+ */
+async function pruefeUndFuehreAutoAcceptAus(opts: {
+  admin: ReturnType<typeof createServiceRoleClient>
+  ticket: DirektvergabeTicketKontext
+  hwId: string
+  einladungId: string
+  preis: number
+}): Promise<boolean> {
+  const { admin, ticket, hwId, einladungId, preis } = opts
+
+  let autoAccept = false
+  let hwEmail: string | null = null
+  let hwName: string | null = null
+  try {
+    const { data: hw } = await admin
+      .from("profiles")
+      .select("agent_auto_accept, agent_min_auftragswert, email, name")
+      .eq("id", hwId)
+      .single<{
+        agent_auto_accept: boolean | null
+        agent_min_auftragswert: number | null
+        email: string | null
+        name: string | null
+      }>()
+    if (!hw) return false
+    hwEmail = hw.email
+    hwName = hw.name
+    const minWert = hw.agent_min_auftragswert ?? null
+    autoAccept = hw.agent_auto_accept === true && (minWert === null || preis >= minWert)
+  } catch (err) {
+    console.warn("[direktvergabe] auto-accept Profilabfrage fehlgeschlagen (Spalten fehlen?):", err)
+    return false
+  }
+
+  if (!autoAccept) return false
+
+  try {
+    // 1. Einladung "umsetzen" — conditional Update als Lock gegen Race
+    const { data: einlUpdated } = await admin
+      .from("einladungen")
+      .update({ status: "angebot" })
+      .eq("id", einladungId)
+      .eq("status", "offen")
+      .select("id")
+    if (!einlUpdated || einlUpdated.length === 0) {
+      console.warn("[direktvergabe] auto-accept: Einladung bereits bearbeitet", einladungId)
+      return false
+    }
+
+    // 2. Ticket vergeben — conditional als zweite Lock-Schicht
+    const { data: ticketUpdated } = await admin
+      .from("tickets")
+      .update({ status: "in_bearbeitung", zugewiesener_hw: hwId, kosten_final: preis })
+      .eq("id", ticket.id)
+      .eq("status", "offen")
+      .select("id, verwalter_id, surge_faktor")
+    if (!ticketUpdated || ticketUpdated.length === 0) {
+      // Race verloren — Einladung zurückrollen
+      await admin.from("einladungen").update({ status: "offen" }).eq("id", einladungId)
+      console.warn("[direktvergabe] auto-accept: Ticket bereits vergeben (Race)", ticket.id)
+      return false
+    }
+    const ticketRow = ticketUpdated[0] as { id: string; verwalter_id: string | null; surge_faktor: number | null }
+
+    // 3. Synthetisches Angebot
+    await admin.from("angebote").upsert(
+      { ticket_id: ticket.id, handwerker_id: hwId, preis, nachricht: "Auto-Accept durch Handwerker-Agent", status: "angenommen" },
+      { onConflict: "ticket_id,handwerker_id" },
+    )
+
+    // 4. Andere offene Einladungen schließen
+    await admin
+      .from("einladungen")
+      .update({ status: "abgelehnt" })
+      .eq("ticket_id", ticket.id)
+      .eq("status", "offen")
+      .neq("id", einladungId)
+
+    // 5. Provisions-Snapshot
+    const surge = ticketRow.surge_faktor ?? 1.0
+    let isEarlyAdopter = false
+    if (ticketRow.verwalter_id) {
+      const { data: vw } = await admin
+        .from("profiles")
+        .select("early_adopter_bis")
+        .eq("id", ticketRow.verwalter_id)
+        .maybeSingle<{ early_adopter_bis: string | null }>()
+      isEarlyAdopter = !!vw?.early_adopter_bis && new Date(vw.early_adopter_bis).getTime() > Date.now()
+    }
+    const { finalRate } = effektiveProvisionsRate(0.05, surge, isEarlyAdopter)
+    const calc = calculateCommission(preis, finalRate)
+    const provisionRow = {
+      ticket_id: ticket.id,
+      verwalter_id: ticketRow.verwalter_id ?? hwId,
+      handwerker_id: hwId,
+      auftragswert: preis,
+      provision_rate: finalRate,
+      provision_betrag: calc.provisionBetrag,
+      gesamt: calc.gesamt,
+      is_early_adopter: isEarlyAdopter,
+    }
+    let { error: provisionErr } = await admin.from("provisionen").upsert(provisionRow, { onConflict: "ticket_id" })
+    if (provisionErr && /ON CONFLICT|no.*unique|42P10/i.test(provisionErr.message)) {
+      await admin.from("provisionen").delete().eq("ticket_id", ticket.id)
+      const ins = await admin.from("provisionen").insert(provisionRow)
+      provisionErr = ins.error
+    }
+    if (provisionErr) console.error("[direktvergabe] auto-accept Provisions-Snapshot fehlgeschlagen:", provisionErr.message)
+
+    // 6. Audit-Log
+    void logTicketEvent({
+      ticketId: ticket.id,
+      eventType: "vergeben",
+      actorUserId: hwId,
+      actorRole: "handwerker",
+      eventData: { via: "auto_accept", einladung_id: einladungId, preis },
+    })
+
+    // 7. Bestätigungs-Mail an HW + Verwalter-Benachrichtigung (fire-and-forget)
+    void (async () => {
+      const preisFormatiert = preis.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+      if (hwEmail) {
+        const { subject, html } = zuschlagEmail({
+          handwerkerName: hwName || "Handwerker",
+          ticketTitel: ticket.titel,
+          ticketBeschreibung: ticket.beschreibung || "",
+          einsatzort: ticket.einsatzort_adresse || "",
+          angebotPreis: preis,
+          ticketId: ticket.id,
+        })
+        sendEmailFireAndForget({ to: hwEmail, subject, html })
+      }
+
+      if (ticketRow.verwalter_id) {
+        const { data: vwProfile } = await admin
+          .from("profiles")
+          .select("email, name")
+          .eq("id", ticketRow.verwalter_id)
+          .maybeSingle<{ email: string | null; name: string | null }>()
+        if (vwProfile?.email) {
+          const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://reparo-app.netlify.app"
+          sendEmailFireAndForget({
+            to: vwProfile.email,
+            subject: `Direktanfrage automatisch angenommen: ${ticket.titel}`,
+            html: `
+              <p>Hallo ${escapeHtml(vwProfile.name || "")},</p>
+              <p><strong>${escapeHtml(hwName || "Ein Handwerker")}</strong> hat Ihre Direktanfrage für
+              <b>${escapeHtml(ticket.titel)}</b> zum Preis von <b>${preisFormatiert} €</b>
+              automatisch angenommen (Agent-Auto-Accept).</p>
+              <p>Der Auftrag ist damit vergeben und befindet sich in Bearbeitung.</p>
+              <p><a href="${baseUrl}/dashboard-verwalter/tickets/${ticket.id}">Ticket öffnen</a></p>
+            `,
+          })
+        }
+      }
+    })().catch(err => console.error("[direktvergabe] auto-accept Mail fehlgeschlagen:", err))
+
+    console.log(`[direktvergabe] auto-accept: Ticket ${ticket.id} automatisch an HW ${hwId} vergeben (${preis} €)`)
+    return true
+  } catch (err) {
+    console.error("[direktvergabe] auto-accept fehlgeschlagen:", err)
+    return false
+  }
 }
 
 /**
