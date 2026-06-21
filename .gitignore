@@ -22,3 +22,7 @@ playwright-report/
 playwright/.cache/
 # Office lockfiles (LibreOffice/Excel)
 .~lock.*#
+
+# Transiente Claude-Code-Übergabe-Notizen
+CLAUDE-CODE-HANDOFF.md
+OPUS-HANDOFF.md
