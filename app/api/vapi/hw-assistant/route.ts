@@ -297,8 +297,12 @@ Regeln:
   const config: Record<string, unknown> = {
     firstMessage: greeting,
     transcriber: {
+      // WICHTIG: nova-2-phonecall unterstützt NUR Englisch (en/en-US) — mit
+      // language:"de" lehnt Vapi die GESAMTE Assistant-Config still ab
+      // (assistant=null → Anruf bleibt stumm, endet als sip-completed-call).
+      // nova-2 (general) kann Deutsch. Gegen Vapi-Schema verifiziert.
       provider: "deepgram",
-      model: "nova-2-phonecall",
+      model: "nova-2",
       language: "de",
     },
     model: modelConfig,
