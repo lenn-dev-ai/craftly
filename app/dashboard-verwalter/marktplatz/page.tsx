@@ -609,7 +609,7 @@ export default function MarktplatzPage() {
                         Buttons. */}
                     {!wirdBearbeitet && !nullKandidaten && (
                       <div className="mt-2 text-xs text-ink-secondary bg-surface-muted border border-line rounded-lg px-3 py-1.5 inline-flex flex-wrap gap-x-2 gap-y-0.5">
-                        <span>⏳ Wartet auf Vergabe — mit „Vergabe starten" übergibst du das Ticket der KI.</span>
+                        <span>⏳ Wartet auf Vergabe — mit „Vergabe starten“ übergibst du das Ticket der KI.</span>
                       </div>
                     )}
                     {/* Sprint AM Phase 3 — C: 0-Kandidaten-Edge-Case */}
