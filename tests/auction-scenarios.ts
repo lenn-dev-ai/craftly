@@ -283,9 +283,9 @@ console.log("\n=== Auktions-Konfig + Radius-Eskalation ===")
     konfigFuer("zeitnah").auktionsDauerStunden === 48 &&
     konfigFuer("zeitnah").surgeFaktor === 1.10)
 
-  check("Planbar: 25 km, 168 h, kein Surge",
+  check("Planbar: 25 km, 72 h (Cap Iter 11), kein Surge",
     konfigFuer("planbar").radiusKm === 25 &&
-    konfigFuer("planbar").auktionsDauerStunden === 168 &&
+    konfigFuer("planbar").auktionsDauerStunden === 72 &&
     konfigFuer("planbar").surgeFaktor === 1.00)
 
   const eskalation10 = radiusEskalation(10)
