@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServiceRoleClient } from "@/lib/supabase-server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 
 // GET /api/admin/action-items
@@ -19,8 +18,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  const admin = createServiceRoleClient()
-  const { data, error } = await admin.rpc("admin_get_action_items", { p_limit: 50 })
+  // Die RPC ist SECURITY DEFINER und sichert sich selbst per is_admin() ab.
+  // Daher mit dem authentifizierten User-Client aufrufen (nicht Service-Role —
+  // dort ist auth.uid() NULL → is_admin() false → forbidden/500).
+  const { data, error } = await supabase.rpc("admin_get_action_items", { p_limit: 50 })
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

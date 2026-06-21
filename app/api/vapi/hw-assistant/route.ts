@@ -152,7 +152,7 @@ async function getNeuAnfragenMitEmpfehlungText(hwId: string): Promise<string> {
     .select("id, ticket_id, tickets (titel, gewerk, einsatzort_adresse, einsatzort_lat, einsatzort_lng, kosten_final, dringlichkeit)")
     .eq("handwerker_id", hwId)
     .eq("status", "offen")
-    .order("erstellt_am", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(5)
     .returns<RawEinladung[]>()
 

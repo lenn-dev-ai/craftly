@@ -33,10 +33,13 @@ export async function GET(request: NextRequest) {
   ] = await Promise.all([
     admin.from("tickets").select("*", { count: "exact", head: true }).gte("created_at", h24ago),
     admin.from("tickets").select("*", { count: "exact", head: true }).gte("created_at", h48ago).lt("created_at", h24ago),
-    admin.from("tickets").select("*", { count: "exact", head: true }).eq("status", "in_bearbeitung").gte("updated_at", h24ago),
-    admin.from("tickets").select("*", { count: "exact", head: true }).eq("status", "in_bearbeitung").gte("updated_at", h48ago).lt("updated_at", h24ago),
-    admin.from("tickets").select("*", { count: "exact", head: true }).eq("status", "erledigt").gte("updated_at", h24ago),
-    admin.from("tickets").select("*", { count: "exact", head: true }).eq("status", "erledigt").gte("updated_at", h48ago).lt("updated_at", h24ago),
+    // tickets hat kein updated_at — als Vergabe-/Abschluss-Zeitstempel die
+    // tatsächlich vorhandenen Spalten nutzen: direktvergabe_angefragt_am (vergeben)
+    // bzw. hw_abschluss_am (erledigt). Näherung für den Admin-Snapshot.
+    admin.from("tickets").select("*", { count: "exact", head: true }).eq("status", "in_bearbeitung").gte("direktvergabe_angefragt_am", h24ago),
+    admin.from("tickets").select("*", { count: "exact", head: true }).eq("status", "in_bearbeitung").gte("direktvergabe_angefragt_am", h48ago).lt("direktvergabe_angefragt_am", h24ago),
+    admin.from("tickets").select("*", { count: "exact", head: true }).eq("status", "erledigt").gte("hw_abschluss_am", h24ago),
+    admin.from("tickets").select("*", { count: "exact", head: true }).eq("status", "erledigt").gte("hw_abschluss_am", h48ago).lt("hw_abschluss_am", h24ago),
     admin.from("profiles").select("*", { count: "exact", head: true }).eq("rolle", "handwerker").gte("created_at", h24ago),
     admin.from("profiles").select("*", { count: "exact", head: true }).eq("rolle", "handwerker").gte("created_at", h48ago).lt("created_at", h24ago),
   ])
