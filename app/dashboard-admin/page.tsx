@@ -46,6 +46,7 @@ type HealthData = {
   resend: { ok: boolean; reason?: string; paused?: boolean }
   vapi: { ok: boolean }
   mapbox: { ok: boolean }
+  ki: { ok: boolean; reason?: string }
   timestamp: string
 }
 
@@ -161,6 +162,7 @@ export default function AdminDashboard() {
           <HealthDot label="Resend"  ok={health?.resend.ok} reason={health?.resend.reason} paused={health?.resend.paused} />
           <HealthDot label="Vapi"    ok={health?.vapi.ok} />
           <HealthDot label="Mapbox"  ok={health?.mapbox.ok} />
+          <HealthDot label="KI"      ok={health?.ki.ok} reason={health?.ki.reason} />
         </div>
       </section>
 

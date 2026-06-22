@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase-server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
+import { pruefeKiGesundheit } from "@/lib/monitoring/ki-health"
 
 // GET /api/admin/health
 // Sprint AH — System-Status-Bar:
@@ -27,12 +28,18 @@ export async function GET(request: NextRequest) {
   const { error: pingErr } = await admin.from("profiles").select("id", { count: "exact", head: true }).limit(1)
   const dbLatencyMs = Date.now() - t0
 
+  // KI-Health: tiefer Check (Voice/Vapi-Anrufe, LLM-Key, Vergabe-Stalls).
+  // Defensiv — pruefeKiGesundheit wirft nie; im Fehlerfall gibt's einen
+  // roten Befund statt eines API-Crashes.
+  const ki = await pruefeKiGesundheit(admin)
+
   return NextResponse.json(
     {
       db: { ok: !pingErr, latency_ms: dbLatencyMs },
       resend: await checkResend(),
       vapi: { ok: !!process.env.VAPI_API_KEY },
       mapbox: { ok: !!process.env.NEXT_PUBLIC_MAPBOX_TOKEN },
+      ki: { ok: ki.ok, reason: ki.probleme.length > 0 ? ki.probleme.join(" · ") : undefined },
       timestamp: new Date().toISOString(),
     },
     { headers: { "Cache-Control": "no-store" } },
