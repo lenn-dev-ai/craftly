@@ -10,6 +10,7 @@ import { haversineKm } from "@/lib/distance"
 import DirektanfragenInbox from "@/components/handwerker/DirektanfragenInbox"
 import { SichtbarkeitsBadge } from "@/components/handwerker/SichtbarkeitsBadge"
 import MorgenBriefing from "@/components/handwerker/MorgenBriefing"
+import VoiceButton from "@/components/handwerker/VoiceButton"
 import AgentPanel from "@/components/handwerker/AgentPanel"
 import type { HwPreferences } from "@/lib/agent/score-einladung"
 
@@ -176,6 +177,10 @@ export default function HandwerkerDashboard() {
 
       {/* Sichtbarkeits-Stufe — Gamification sichtbar (B2-W3) */}
       <SichtbarkeitsBadge profile={profile} />
+
+      {/* Web-Voice-Button: per Browser-Mikro mit dem Assistenten sprechen
+          (statt US-Telefonnummer, ohne Telefoniekosten). */}
+      <VoiceButton />
 
       {/* Sprint AV — KI Tages-Briefing: zeigt heute's Termine in optimierter
           Reihenfolge + KI-generierten Text. Lädt async, fällt bei Fehler still. */}

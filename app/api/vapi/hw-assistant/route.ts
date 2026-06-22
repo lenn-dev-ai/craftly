@@ -7,6 +7,7 @@ import {
   type EinladungInput,
   type HwPreferences,
 } from "@/lib/agent/score-einladung"
+import { buildAssistantConfig } from "@/lib/vapi/assistant-config"
 
 // POST /api/vapi/hw-assistant
 // Sprint AW — Voice-AI Assistent für Handwerker.
@@ -22,8 +23,6 @@ import {
 // wird in dev-Umgebung durchgelassen (Warnung im Log).
 //
 // Vapi-Docs: https://docs.vapi.ai/server-url
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://reparo-app.netlify.app"
 
 // ---------------------------------------------------------------------------
 // Typen
@@ -73,6 +72,18 @@ async function findHwByPhone(phone: string): Promise<HwProfile | null> {
   return (
     data?.find(p => (p.telefon ?? "").replace(/\D/g, "").slice(-10) === suffix) ?? null
   )
+}
+
+/** Lädt einen HW direkt per id (für Web-Calls, die keine Caller-Nummer haben). */
+async function findHwById(hwId: string): Promise<HwProfile | null> {
+  const admin = createServiceRoleClient()
+  const { data } = await admin
+    .from("profiles")
+    .select("id, name, telefon, startort_adresse")
+    .eq("id", hwId)
+    .eq("rolle", "handwerker")
+    .maybeSingle<HwProfile>()
+  return data ?? null
 }
 
 /** Heutiges Briefing als gesprochener String (kompakt für TTS). */
@@ -217,112 +228,6 @@ async function getOffeneAnfragenText(hwId: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
-// Vapi Assistent-Config
-// ---------------------------------------------------------------------------
-
-function buildAssistantConfig(hw: HwProfile | null) {
-  const vorname = hw?.name?.split(" ")[0] ?? null
-
-  const greeting = vorname
-    ? `Hallo ${vorname}! Ich bin dein Reparo-Assistent. Was kann ich für dich tun?`
-    : "Hallo! Ich bin der Reparo-Assistent. Deine Nummer ist leider nicht in Reparo hinterlegt. Bitte trag sie in deinem Profil nach."
-
-  const systemPrompt = hw
-    ? `Du bist der persönliche Sprachassistent für den Handwerker ${hw.name ?? "dieser Person"} in der Reparo-Plattform.
-
-Du kannst Folgendes beantworten:
-- Heutige Termine und Route (Tool: get_heutiges_briefing)
-- Offene Anfragen und wartende Terminbestätigungen (Tool: get_offene_anfragen)
-- Neue Anfragen mit Agent-Empfehlung (Tool: get_neue_anfragen_mit_empfehlung)
-
-Regeln:
-- Antworte immer kurz und klar — der Handwerker ist oft unterwegs oder im Auto.
-- Kein Fachjargon, kein HTML, keine Markdown-Formatierung.
-- Sprich Deutsch, du-Form.
-- Wenn du etwas nicht weißt, sag es direkt.
-- Frag maximal eine Folgefrage pro Antwort.`
-    : "Du bist der Reparo-Assistent. Die Handynummer des Anrufers ist nicht in Reparo hinterlegt. Bitte erklär das freundlich und beende das Gespräch."
-
-  // Vapi Tool-Format: server-URL INNERHALB jedes Tools (nicht auf Assistant-Ebene)
-  const toolServerUrl = `${SITE_URL}/api/vapi/hw-assistant`
-
-  const tools = hw
-    ? [
-        {
-          type: "function",
-          function: {
-            name: "get_heutiges_briefing",
-            description:
-              "Gibt die heutigen bestätigten Termine mit Uhrzeit und Ort zurück. Aufrufen wenn der HW nach seinen Terminen oder seinem Tagesplan fragt.",
-            parameters: { type: "object", properties: {}, required: [] },
-          },
-          server: { url: toolServerUrl },
-        },
-        {
-          type: "function",
-          function: {
-            name: "get_offene_anfragen",
-            description:
-              "Gibt die Anzahl offener Auftragsanfragen und ausstehender Terminbestätigungen zurück.",
-            parameters: { type: "object", properties: {}, required: [] },
-          },
-          server: { url: toolServerUrl },
-        },
-        {
-          type: "function",
-          function: {
-            name: "get_neue_anfragen_mit_empfehlung",
-            description:
-              "Sprint AX: Listet neue Direktvergabe-Anfragen mit Agent-Empfehlung (annehmen/ablehnen/prüfen) auf. Aufrufen wenn der HW fragt 'Was empfiehlst du mir?', 'Was sind neue Anfragen?' oder 'Welche Aufträge lohnen sich?'.",
-            parameters: { type: "object", properties: {}, required: [] },
-          },
-          server: { url: toolServerUrl },
-        },
-      ]
-    : []
-
-  // FIX: CreateAssistantDto hat KEIN top-level 'tools'-Feld!
-  // Tools müssen INNERHALB von model.tools stehen — unbekannte Felder auf
-  // Assistant-Ebene führen bei Vapi zu stiller Ablehnung (assistant = null).
-  const modelConfig: Record<string, unknown> = {
-    provider: "anthropic",
-    model: "claude-3-5-haiku-20241022",
-    temperature: 0.3,
-    messages: [{ role: "system", content: systemPrompt }],
-  }
-  if (tools.length > 0) {
-    modelConfig.tools = tools
-  }
-
-  const config: Record<string, unknown> = {
-    firstMessage: greeting,
-    transcriber: {
-      // WICHTIG: nova-2-phonecall unterstützt NUR Englisch (en/en-US) — mit
-      // language:"de" lehnt Vapi die GESAMTE Assistant-Config still ab
-      // (assistant=null → Anruf bleibt stumm, endet als sip-completed-call).
-      // nova-2 (general) kann Deutsch. Gegen Vapi-Schema verifiziert.
-      provider: "deepgram",
-      model: "nova-2",
-      language: "de",
-    },
-    model: modelConfig,
-    voice: {
-      provider: "openai",
-      voiceId: "nova",  // OpenAI TTS — kein API-Key nötig, spricht Deutsch
-    },
-    endCallMessage: "Alles klar. Bis bald und einen guten Tag!",
-    endCallPhrases: ["tschüss", "auf wiedersehen", "danke tschüss", "ciao", "bye", "tschau"],
-    maxDurationSeconds: 300,
-    // silenceTimeoutSeconds + responseDelaySeconds sind deprecated/entfernt in Vapi v2
-    // → lösen stille Ablehnung (assistant = null) aus
-    // startSpeakingPlan.waitSeconds ist der korrekte Ersatz für responseDelay
-    startSpeakingPlan: { waitSeconds: 0.4 },
-  }
-
-  return config
-}
-
-// ---------------------------------------------------------------------------
 // Route-Handler
 // ---------------------------------------------------------------------------
 
@@ -369,8 +274,15 @@ export async function POST(request: NextRequest) {
 
   // ---- 2. tool-calls — Daten aus Supabase liefern ----
   if (msg.type === "tool-calls") {
+    // HW-Identifikation: bei Web-Calls (kein Telefon) über den hwId-Query-Param
+    // der Tool-Server-URL; bei Telefon-Calls über die Caller-Nummer.
+    const hwIdParam = request.nextUrl.searchParams.get("hwId")
     const callerPhone = msg.call.customer?.number ?? ""
-    const hw = callerPhone ? await findHwByPhone(callerPhone) : null
+    const hw = hwIdParam
+      ? await findHwById(hwIdParam)
+      : callerPhone
+        ? await findHwByPhone(callerPhone)
+        : null
 
     const results = await Promise.all(
       msg.toolCallList.map(async (tc) => {
