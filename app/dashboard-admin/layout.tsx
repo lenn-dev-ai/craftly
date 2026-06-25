@@ -43,6 +43,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Sidebar bei Routenwechsel auf Mobile schließen
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
+  // Mobile-Schublade wird vom "Mehr"-Button der BottomNav geöffnet
+  // (Custom-Event) — kein schwebender Hamburger mehr.
+  useEffect(() => {
+    const open = () => setMobileOpen(true)
+    window.addEventListener("reparo:open-menu", open)
+    return () => window.removeEventListener("reparo:open-menu", open)
+  }, [])
+
   if (!authorized) return (
     <div className="min-h-screen bg-surface flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-accent/20 border-t-[#3D8B7A] rounded-full animate-spin" />
@@ -102,30 +110,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <ActiveRoleProvider istAdmin={true} defaultRolle="admin">
       <div className="flex min-h-screen bg-surface">
-        {/* Mobile Hamburger — z-[60], damit der ✕-Button über der
-            offenen Sidebar (z-50) klickbar bleibt. Sonst überdeckt die
-            Sidebar (später im DOM, gleicher z-index) den Toggle.
-            Offener Zustand: anderer Hintergrund, sonst weiß-auf-weiß. */}
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className={`md:hidden fixed top-4 left-4 z-[60] w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm ${
-            mobileOpen
-              ? "bg-surface-muted border border-line-strong text-ink"
-              : "bg-white border border-line text-ink hover:bg-surface-muted"
-          }`}
-          aria-label={mobileOpen ? "Admin-Menü schließen" : "Admin-Menü öffnen"}
-          aria-expanded={mobileOpen}
-        >
-          {mobileOpen ? (
-            <span className="text-xl font-bold">✕</span>
-          ) : (
-            <div className="flex flex-col gap-1">
-              <div className="w-4 h-0.5 bg-[#2D2A26] rounded-full" />
-              <div className="w-3 h-0.5 bg-[#8C857B] rounded-full" />
-              <div className="w-4 h-0.5 bg-[#2D2A26] rounded-full" />
-            </div>
-          )}
-        </button>
+        {/* Kein schwebender Hamburger mehr — die Mobile-Schublade öffnet der
+            "Mehr"-Button der BottomNav (Custom-Event reparo:open-menu). */}
 
         {/* Mobile Overlay */}
         {mobileOpen && (
@@ -147,6 +133,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="absolute top-3 right-3 z-10 w-9 h-9 rounded-lg flex items-center justify-center text-ink-muted hover:text-ink hover:bg-surface-muted transition-colors"
+            aria-label="Menü schließen"
+          >
+            <span className="text-lg font-bold">✕</span>
+          </button>
           {sidebarContent}
         </aside>
 
