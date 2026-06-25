@@ -7,12 +7,14 @@ import { Rolle } from "@/types"
 import {
   LayoutDashboard, Briefcase, Stethoscope, Map, UserCircle, CalendarCheck, Euro,
   Plus, FileText, Ticket, Zap, Wrench, BarChart3, Settings, Activity, Users, MessageSquare,
+  Menu,
   type LucideProps,
 } from "lucide-react"
 
-// Mobile-Bottom-Nav — Audit-Punkt 9.
-// 4 Hauptactions pro Rolle direkt erreichbar, ohne Hamburger zu öffnen.
-// Sichtbar nur unter md (sonst sitzt die Sidebar links).
+// Mobile-Bottom-Nav — einziges Mobile-Nav-System (kein schwebender
+// Hamburger mehr). 4 Hauptactions pro Rolle direkt + ein "Mehr"-Eintrag,
+// der die volle Menü-Schublade der Sidebar öffnet (via Custom-Event
+// "reparo:open-menu"). Sichtbar nur unter md (sonst sitzt die Sidebar links).
 
 type LucideIcon = ComponentType<LucideProps>
 
@@ -64,7 +66,7 @@ export default function BottomNav({ rolle }: { rolle: Rolle }) {
       className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-card border-t border-line shadow-lg pb-[env(safe-area-inset-bottom,0px)]"
       aria-label="Hauptnavigation"
     >
-      <div className={`grid ${list.length === 3 ? "grid-cols-3" : "grid-cols-4"}`}>
+      <div className="grid grid-cols-5">
         {list.map(item => {
           const aktiv =
             pathname === item.href ||
@@ -83,6 +85,17 @@ export default function BottomNav({ rolle }: { rolle: Rolle }) {
             </Link>
           )
         })}
+        {/* "Mehr" öffnet die volle Menü-Schublade (Sidebar) — ersetzt den
+            früheren schwebenden Hamburger oben links. */}
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent("reparo:open-menu"))}
+          className="flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium text-ink-muted hover:text-ink transition-colors"
+          aria-label="Mehr — volles Menü öffnen"
+        >
+          <Menu size={20} />
+          <span>Mehr</span>
+        </button>
       </div>
     </nav>
   )

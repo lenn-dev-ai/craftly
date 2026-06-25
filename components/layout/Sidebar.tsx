@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState, type ComponentType } from "react"
+import { useState, useEffect, type ComponentType } from "react"
 import { Rolle } from "@/types"
 import { createClient } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
@@ -107,6 +107,14 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
   const items = menus[rolle] || []
+
+  // Die Mobile-Schublade wird jetzt vom "Mehr"-Button der BottomNav geöffnet
+  // (Custom-Event) — es gibt keinen schwebenden Hamburger mehr.
+  useEffect(() => {
+    const open = () => setMobileOpen(true)
+    window.addEventListener("reparo:open-menu", open)
+    return () => window.removeEventListener("reparo:open-menu", open)
+  }, [])
 
   async function handleLogout() {
     const supabase = createClient()
@@ -219,27 +227,8 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
 
   return (
     <>
-      {/* Mobile Hamburger Button — z-[60] über die Sidebar (z-50). */}
-      <button
-        onClick={() => setMobileOpen(!mobileOpen)}
-        className={`md:hidden fixed top-4 left-4 z-[60] w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm ${
-          mobileOpen
-            ? "bg-surface-muted border border-line-strong text-ink"
-            : "bg-surface-card border border-line text-ink hover:bg-surface-muted"
-        }`}
-        aria-label={mobileOpen ? "Menü schließen" : "Menü öffnen"}
-        aria-expanded={mobileOpen}
-      >
-        {mobileOpen ? (
-          <span className="text-xl font-bold">✕</span>
-        ) : (
-          <div className="flex flex-col gap-1">
-            <div className="w-4 h-0.5 bg-ink rounded-full" />
-            <div className="w-3 h-0.5 bg-ink-muted rounded-full" />
-            <div className="w-4 h-0.5 bg-ink rounded-full" />
-          </div>
-        )}
-      </button>
+      {/* Kein schwebender Hamburger mehr — die Mobile-Schublade öffnet der
+          "Mehr"-Button der BottomNav. */}
 
       {/* Mobile Overlay */}
       {mobileOpen && (
@@ -261,6 +250,13 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="absolute top-3 right-3 z-10 w-9 h-9 rounded-lg flex items-center justify-center text-ink-muted hover:text-ink hover:bg-surface-muted transition-colors"
+          aria-label="Menü schließen"
+        >
+          <span className="text-lg font-bold">✕</span>
+        </button>
         {sidebarContent}
       </aside>
     </>
