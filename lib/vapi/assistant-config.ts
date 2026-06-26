@@ -236,10 +236,11 @@ REGELN:
 
   const modelConfig: Record<string, unknown> = {
     provider: "anthropic",
-    // Aktuelles schnelles Claude (Haiku 4.5) — schneller & fähiger als 3.5-Haiku.
-    // Per ENV überschreibbar als Sicherheitsventil, falls Vapi das Modell mal
-    // nicht akzeptiert (dann z.B. VAPI_HW_MODEL=claude-3-5-haiku-20241022).
-    model: process.env.VAPI_HW_MODEL || "claude-3-5-haiku-20241022",
+    // Claude Haiku 4.5 — schneller & fähiger als 3.5-Haiku. WICHTIG: die
+    // DATIERTE Modell-ID verwenden; den Alias "claude-haiku-4-5" lehnt Vapi
+    // beim transienten Assistant-Start ab. Per ENV überschreibbar (Ventil:
+    // VAPI_HW_MODEL=claude-3-5-haiku-20241022).
+    model: process.env.VAPI_HW_MODEL || "claude-haiku-4-5-20251001",
     temperature: 0.3,
     messages: [{ role: "system", content: systemPrompt }],
   }
@@ -250,21 +251,25 @@ REGELN:
   const config: Record<string, unknown> = {
     firstMessage: greeting,
     transcriber: {
-      // nova-2 (general) kann sicher Deutsch — nachweislich funktionierend.
-      // NICHT nova-*-phonecall verwenden — die können nur en/en-US.
-      // Per ENV umschaltbar (z.B. VAPI_HW_STT=nova-3), siehe Revert-Hinweis.
+      // Nova-3 + language "de" — gegen die funktionierende Vapi-Assistant-
+      // Config verifiziert (schneller/genauer als nova-2). NICHT nova-*-
+      // phonecall (nur en). Per ENV umschaltbar (VAPI_HW_STT=nova-2).
       provider: "deepgram",
-      model: process.env.VAPI_HW_STT || "nova-2",
+      model: process.env.VAPI_HW_STT || "nova-3",
       language: "de",
     },
     model: modelConfig,
-    // Stimme: OpenAI-TTS "nova" — nachweislich funktionierend, kein eigener
-    // Key nötig, spricht Deutsch. Optionaler ElevenLabs-Override per ENV
-    // (VAPI_HW_VOICE_ID gesetzt → 11labs eleven_turbo_v2_5). So lässt sich die
-    // schnellere Stimme gefahrlos testen, ohne den Default zu riskieren.
-    voice: process.env.VAPI_HW_VOICE_ID
-      ? { provider: "11labs", voiceId: process.env.VAPI_HW_VOICE_ID, model: "eleven_turbo_v2_5" }
-      : { provider: "openai", voiceId: "nova" },
+    // Stimme: ElevenLabs Turbo v2.5 (deutsch) — gegen die funktionierende
+    // Vapi-Config verifiziert (inkl. language "de"; das Feld fehlte zuvor).
+    // Fallback auf OpenAI-TTS per ENV VAPI_HW_VOICE=openai.
+    voice: process.env.VAPI_HW_VOICE === "openai"
+      ? { provider: "openai", voiceId: "nova" }
+      : {
+          provider: "11labs",
+          voiceId: process.env.VAPI_HW_VOICE_ID || "FUfBrNit0NNZAwb58KWH",
+          model: "eleven_turbo_v2_5",
+          language: "de",
+        },
     endCallMessage: "Alles klar. Bis bald und einen guten Tag!",
     endCallPhrases: ["tschüss", "auf wiedersehen", "danke tschüss", "ciao", "bye", "tschau"],
     maxDurationSeconds: 300,
