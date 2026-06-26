@@ -8,6 +8,7 @@ import {
   type HwPreferences,
 } from "@/lib/agent/score-einladung"
 import { buildAssistantConfig } from "@/lib/vapi/assistant-config"
+import { annehmenEinladung, ablehnenEinladung } from "@/lib/auction/einladung-aktionen"
 import { formatGewerk } from "@/types"
 
 // POST /api/vapi/hw-assistant
@@ -610,6 +611,112 @@ async function getVerlaufText(hwId: string): Promise<string> {
   return txt
 }
 
+// --- Sprach-Aktionen (Annehmen/Ablehnen) ---
+
+/** Offene Einladungen nach Score sortiert — gleiche Reihenfolge wie das
+ *  Empfehlungs-Briefing, damit "Position 1" das ist, was der HW gehört hat. */
+async function rankOffeneEinladungen(
+  hwId: string,
+): Promise<Array<{ id: string; titel: string; preis: number | null }>> {
+  const admin = createServiceRoleClient()
+
+  const { data: hwData } = await admin
+    .from("profiles")
+    .select("handwerker_gewerke, gewerk, radius_km, agent_max_radius_km, agent_auto_accept, agent_min_auftragswert, startort_lat, startort_lng, mindest_stundensatz")
+    .eq("id", hwId)
+    .single()
+  if (!hwData) return []
+
+  const h = hwData as Record<string, unknown>
+  const hwPrefs: HwPreferences = {
+    handwerker_gewerke: (h.handwerker_gewerke as string[] | null) ?? null,
+    gewerk: (h.gewerk as string | null) ?? null,
+    radius_km: (h.radius_km as number | null) ?? null,
+    agent_max_radius_km: (h.agent_max_radius_km as number | null) ?? null,
+    agent_auto_accept: (h.agent_auto_accept as boolean) ?? false,
+    agent_min_auftragswert: (h.agent_min_auftragswert as number | null) ?? null,
+    startort_lat: (h.startort_lat as number | null) ?? null,
+    startort_lng: (h.startort_lng as number | null) ?? null,
+    mindest_stundensatz: (h.mindest_stundensatz as number | null) ?? null,
+  }
+
+  interface RawEinl {
+    id: string
+    ticket_id: string
+    empfohlener_preis: number | null
+    tickets: {
+      titel: string; gewerk: string | null; einsatzort_adresse: string | null
+      einsatzort_lat: number | null; einsatzort_lng: number | null
+      kosten_final: number | null; dringlichkeit: string | null
+    } | null
+  }
+
+  const { data: einladungen } = await admin
+    .from("einladungen")
+    .select("id, ticket_id, empfohlener_preis, tickets (titel, gewerk, einsatzort_adresse, einsatzort_lat, einsatzort_lng, kosten_final, dringlichkeit)")
+    .eq("handwerker_id", hwId)
+    .eq("status", "offen")
+    .order("created_at", { ascending: false })
+    .limit(5)
+    .returns<RawEinl[]>()
+
+  if (!einladungen || einladungen.length === 0) return []
+
+  const scored = einladungen.map(e => {
+    const t = e.tickets
+    const input: EinladungInput = {
+      id: e.id,
+      ticket_id: e.ticket_id,
+      titel: t?.titel ?? "Auftrag",
+      gewerk: t?.gewerk ?? null,
+      einsatzort_adresse: t?.einsatzort_adresse ?? null,
+      einsatzort_lat: t?.einsatzort_lat ?? null,
+      einsatzort_lng: t?.einsatzort_lng ?? null,
+      kosten_final: t?.kosten_final ?? null,
+      dringlichkeit: t?.dringlichkeit ?? null,
+    }
+    return {
+      e,
+      titel: t?.titel ?? "Auftrag",
+      preis: e.empfohlener_preis ?? t?.kosten_final ?? null,
+      score: scoreEinladung(input, hwPrefs).score,
+    }
+  })
+  scored.sort((a, b) => b.score - a.score)
+  return scored.map(s => ({ id: s.e.id, titel: s.titel, preis: s.preis }))
+}
+
+/** Nimmt die Anfrage an Position N (aus dem Empfehlungs-Ranking) an. */
+async function annehmeAnfrageText(hwId: string, position: number): Promise<string> {
+  const ranked = await rankOffeneEinladungen(hwId)
+  if (ranked.length === 0) return "Du hast aktuell keine offenen Anfragen zum Annehmen."
+  const ziel = ranked[Math.max(1, position) - 1]
+  if (!ziel) {
+    return `Position ${position} gibt es nicht — du hast ${ranked.length} offene ${ranked.length === 1 ? "Anfrage" : "Anfragen"}.`
+  }
+  const r = await annehmenEinladung({ hwId, einladungId: ziel.id, kanal: "voice" })
+  if (!r.ok) {
+    return `Das Annehmen hat nicht geklappt: ${r.error ?? "unbekannter Fehler"}. Bitte versuch es in der App.`
+  }
+  const preis = ziel.preis ? ` für ${euro(ziel.preis)} Euro` : ""
+  return `Erledigt — ich habe den Auftrag ${ziel.titel}${preis} für dich angenommen. Er ist jetzt in Bearbeitung.`
+}
+
+/** Lehnt die Anfrage an Position N ab. */
+async function lehneAnfrageText(hwId: string, position: number): Promise<string> {
+  const ranked = await rankOffeneEinladungen(hwId)
+  if (ranked.length === 0) return "Du hast aktuell keine offenen Anfragen zum Ablehnen."
+  const ziel = ranked[Math.max(1, position) - 1]
+  if (!ziel) {
+    return `Position ${position} gibt es nicht — du hast ${ranked.length} offene ${ranked.length === 1 ? "Anfrage" : "Anfragen"}.`
+  }
+  const r = await ablehnenEinladung({ hwId, einladungId: ziel.id, kanal: "voice" })
+  if (!r.ok) {
+    return `Das Ablehnen hat nicht geklappt: ${r.error ?? "unbekannter Fehler"}. Bitte versuch es in der App.`
+  }
+  return `Alles klar — ich habe die Anfrage ${ziel.titel} für dich abgelehnt.`
+}
+
 // ---------------------------------------------------------------------------
 // Route-Handler
 // ---------------------------------------------------------------------------
@@ -675,6 +782,10 @@ export async function POST(request: NextRequest) {
 
         let result = "Diese Funktion ist momentan nicht verfügbar."
 
+        let args: Record<string, unknown> = {}
+        try { args = JSON.parse(tc.function.arguments || "{}") } catch { /* leer */ }
+        const position = Number(args.position) >= 1 ? Number(args.position) : 1
+
         if (tc.function.name === "get_heutiges_briefing") {
           result = await getBriefingText(hw.id)
         } else if (tc.function.name === "get_offene_anfragen") {
@@ -699,6 +810,10 @@ export async function POST(request: NextRequest) {
           result = await getTopSegmenteText(hw.id)
         } else if (tc.function.name === "get_verlauf") {
           result = await getVerlaufText(hw.id)
+        } else if (tc.function.name === "anfrage_annehmen") {
+          result = await annehmeAnfrageText(hw.id, position)
+        } else if (tc.function.name === "anfrage_ablehnen") {
+          result = await lehneAnfrageText(hw.id, position)
         }
 
         return { toolCallId: tc.id, result }
