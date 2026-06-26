@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { authFetch } from "@/lib/auth/clientFetch"
 
 // Web-Voice-Button: spricht über das Browser-Mikrofon mit dem Reparo-
 // Assistenten (Vapi Web-SDK) — KEINE Telefonie-Minuten, keine Telefonnummer
@@ -58,7 +59,9 @@ export default function VoiceButton() {
     setStatus("connecting")
     try {
       // Config vom Server holen (personalisiert auf den eingeloggten HW).
-      const res = await fetch("/api/vapi/web-call-config", { credentials: "include" })
+      // authFetch hängt den Bearer-Token an — getUserFromRequest braucht ihn
+      // (Cookie-only schlägt wegen @supabase/ssr-Race-Bug fehl → 401).
+      const res = await authFetch("/api/vapi/web-call-config")
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error || `Konfiguration nicht ladbar (HTTP ${res.status})`)
