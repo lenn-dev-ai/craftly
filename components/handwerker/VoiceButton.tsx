@@ -94,6 +94,11 @@ export default function VoiceButton() {
   const aktiv = status === "active"
   const verbindet = status === "connecting"
 
+  // Solange kein Vapi-Public-Key konfiguriert ist (NEXT_PUBLIC_VAPI_PUBLIC_KEY),
+  // gar nichts zeigen — kein toter Button für Beta-Tester. Sobald der Key in
+  // Netlify gesetzt + neu deployt ist, erscheint der Button automatisch.
+  if (!publicKey) return null
+
   return (
     <div className="mb-6 p-4 rounded-2xl border border-line bg-surface">
       <div className="flex items-center gap-3">
