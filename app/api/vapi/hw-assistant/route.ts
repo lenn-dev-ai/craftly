@@ -227,6 +227,103 @@ async function getOffeneAnfragenText(hwId: string): Promise<string> {
   return `Du hast ${parts.join(" und ")}. Schau kurz in Reparo.`
 }
 
+/** Euro-Betrag deutsch formatiert (ganze Euro, für TTS). */
+function euro(n: number): string {
+  return Math.round(n).toLocaleString("de-DE")
+}
+
+/** Verdienst-/Einnahmen-Übersicht als gesprochener String.
+ *  Logik gespiegelt von app/dashboard-handwerker/einnahmen: HW bekommt 100%
+ *  des Auftragswerts (kosten_final) aus erledigten Tickets. */
+async function getVerdienstText(hwId: string): Promise<string> {
+  const admin = createServiceRoleClient()
+
+  const { data: tickets } = await admin
+    .from("tickets")
+    .select("status, kosten_final, hw_abschluss_am, created_at")
+    .eq("zugewiesener_hw", hwId)
+    .in("status", ["in_bearbeitung", "fertiggestellt_hw", "erledigt"])
+    .returns<Array<{ status: string; kosten_final: number | null; hw_abschluss_am: string | null; created_at: string }>>()
+
+  if (!tickets || tickets.length === 0) {
+    return "Du hast noch keine Aufträge über Reparo abgeschlossen, also bisher keinen Verdienst. Sobald du Aufträge erledigst, kannst du hier deine Einnahmen abfragen."
+  }
+
+  const erledigt = tickets.filter(t => t.status === "erledigt")
+  const laufend = tickets.filter(t => t.status === "in_bearbeitung" || t.status === "fertiggestellt_hw")
+
+  const jetzt = Date.now()
+  const vor7Tagen = jetzt - 7 * 86400_000
+  // Monatsanfang (Berlin) als ms-Schwelle.
+  const heute = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" })
+  const monatStart = new Date(`${heute.slice(0, 7)}-01T00:00:00Z`).getTime()
+
+  const abschlussMs = (t: { hw_abschluss_am: string | null; created_at: string }) =>
+    new Date(t.hw_abschluss_am ?? t.created_at).getTime()
+  const summe = (arr: Array<{ kosten_final: number | null }>) =>
+    arr.reduce((s, t) => s + (t.kosten_final ?? 0), 0)
+
+  const woche = summe(erledigt.filter(t => abschlussMs(t) >= vor7Tagen))
+  const monat = summe(erledigt.filter(t => abschlussMs(t) >= monatStart))
+  const gesamt = summe(erledigt)
+  const avg = erledigt.length > 0 ? gesamt / erledigt.length : 0
+
+  if (erledigt.length === 0) {
+    const lauf = laufend.length > 0
+      ? ` Du hast aktuell ${laufend.length} ${laufend.length === 1 ? "Auftrag" : "Aufträge"} in Arbeit — sobald die abgeschlossen sind, zählt der Verdienst.`
+      : ""
+    return `Du hast bisher noch keinen abgeschlossenen Auftrag, also noch keinen Verdienst.${lauf}`
+  }
+
+  let txt = `Dein Verdienst über Reparo: diese Woche ${euro(woche)} Euro, diesen Monat ${euro(monat)} Euro, insgesamt ${euro(gesamt)} Euro aus ${erledigt.length} abgeschlossenen Aufträgen. Das sind im Schnitt ${euro(avg)} Euro pro Auftrag.`
+  if (laufend.length > 0) {
+    txt += ` Aktuell sind noch ${laufend.length} ${laufend.length === 1 ? "Auftrag" : "Aufträge"} in Arbeit.`
+  }
+  txt += " Du bekommst immer den vollen Auftragswert, Reparo zieht dir nichts ab."
+  return txt
+}
+
+/** Leistungs-Auswertung als gesprochener String: abgeschlossene Aufträge,
+ *  wahrgenommene Termine (bestätigt & in der Vergangenheit) und Bewertung. */
+async function getStatistikText(hwId: string): Promise<string> {
+  const admin = createServiceRoleClient()
+  const heute = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" }) // YYYY-MM-DD
+  const monatStart = `${heute.slice(0, 7)}-01`
+
+  const [profilRes, ticketsRes, termineRes] = await Promise.all([
+    admin.from("profiles").select("bewertung_avg, auftraege_anzahl").eq("id", hwId).maybeSingle(),
+    admin.from("tickets").select("hw_abschluss_am").eq("zugewiesener_hw", hwId).eq("status", "erledigt")
+      .returns<Array<{ hw_abschluss_am: string | null }>>(),
+    admin.from("termine").select("datum").eq("handwerker_id", hwId).eq("status", "bestaetigt").lte("datum", heute)
+      .returns<Array<{ datum: string }>>(),
+  ])
+
+  const erledigt = ticketsRes.data ?? []
+  const termine = termineRes.data ?? []
+  const profil = profilRes.data as { bewertung_avg: number | null; auftraege_anzahl: number | null } | null
+
+  const erledigtMonat = erledigt.filter(t => (t.hw_abschluss_am ?? "") >= monatStart).length
+  const termineMonat = termine.filter(t => t.datum >= monatStart).length
+
+  const parts: string[] = []
+  parts.push(
+    `Du hast insgesamt ${erledigt.length} ${erledigt.length === 1 ? "Auftrag" : "Aufträge"} über Reparo abgeschlossen` +
+      (erledigtMonat > 0 ? `, davon ${erledigtMonat} diesen Monat.` : "."),
+  )
+  parts.push(
+    `Wahrgenommene Termine: ${termine.length} insgesamt` +
+      (termineMonat > 0 ? `, ${termineMonat} davon diesen Monat.` : "."),
+  )
+  const avgB = profil?.bewertung_avg
+  if (avgB && avgB > 0) {
+    const sterne = Number(avgB).toFixed(1).replace(".", ",")
+    parts.push(`Deine Durchschnittsbewertung liegt bei ${sterne} von 5 Sternen.`)
+  } else {
+    parts.push("Eine Durchschnittsbewertung hast du noch nicht.")
+  }
+  return parts.join(" ")
+}
+
 // ---------------------------------------------------------------------------
 // Route-Handler
 // ---------------------------------------------------------------------------
@@ -298,6 +395,10 @@ export async function POST(request: NextRequest) {
           result = await getOffeneAnfragenText(hw.id)
         } else if (tc.function.name === "get_neue_anfragen_mit_empfehlung") {
           result = await getNeuAnfragenMitEmpfehlungText(hw.id)
+        } else if (tc.function.name === "get_verdienst") {
+          result = await getVerdienstText(hw.id)
+        } else if (tc.function.name === "get_statistik") {
+          result = await getStatistikText(hw.id)
         }
 
         return { toolCallId: tc.id, result }

@@ -39,10 +39,14 @@ Du kannst Folgendes beantworten:
 - Heutige Termine und Route (Tool: get_heutiges_briefing)
 - Offene Anfragen und wartende Terminbestätigungen (Tool: get_offene_anfragen)
 - Neue Anfragen mit Agent-Empfehlung (Tool: get_neue_anfragen_mit_empfehlung)
+- Verdienst & Einnahmen — diese Woche, diesen Monat, gesamt (Tool: get_verdienst)
+- Leistungs-Auswertung — abgeschlossene Aufträge, wahrgenommene Termine, Durchschnittsbewertung (Tool: get_statistik)
 
 Regeln:
 - Antworte immer kurz und klar — der Handwerker ist oft unterwegs oder im Auto.
-- Kein Fachjargon, kein HTML, keine Markdown-Formatierung.
+- Nutze für jede Frage das passende Tool und antworte mit den echten Zahlen — erfinde nie Werte.
+- Bei zusammengesetzten Fragen ("Wie lief mein Monat?") darfst du mehrere Tools nacheinander nutzen.
+- Kein Fachjargon, kein HTML, keine Markdown-Formatierung. Beträge in Euro aussprechen.
 - Sprich Deutsch, du-Form.
 - Wenn du etwas nicht weißt, sag es direkt.
 - Frag maximal eine Folgefrage pro Antwort.`
@@ -86,12 +90,35 @@ Regeln:
           },
           server: { url: toolServerUrl },
         },
+        {
+          type: "function",
+          function: {
+            name: "get_verdienst",
+            description:
+              "Gibt Verdienst/Einnahmen des Handwerkers zurück: diese Woche, diesen Monat, gesamt, Schnitt pro Auftrag und laufende Aufträge. Aufrufen bei 'Was habe ich verdient?', 'Wie viel diesen Monat?', 'Meine Einnahmen?', 'Wie viel Umsatz?'.",
+            parameters: { type: "object", properties: {}, required: [] },
+          },
+          server: { url: toolServerUrl },
+        },
+        {
+          type: "function",
+          function: {
+            name: "get_statistik",
+            description:
+              "Gibt eine Leistungs-Auswertung zurück: wie viele Aufträge abgeschlossen (gesamt & diesen Monat), wie viele Termine wahrgenommen (gesamt & diesen Monat) und die Durchschnittsbewertung in Sternen. Aufrufen bei 'Wie viele Termine hatte ich?', 'Wie viele Aufträge habe ich gemacht?', 'Wie ist meine Bewertung?', 'Wie läuft es bei mir?', 'Gib mir eine Auswertung'.",
+            parameters: { type: "object", properties: {}, required: [] },
+          },
+          server: { url: toolServerUrl },
+        },
       ]
     : []
 
   const modelConfig: Record<string, unknown> = {
     provider: "anthropic",
-    model: "claude-3-5-haiku-20241022",
+    // Aktuelles schnelles Claude (Haiku 4.5) — schneller & fähiger als 3.5-Haiku.
+    // Per ENV überschreibbar als Sicherheitsventil, falls Vapi das Modell mal
+    // nicht akzeptiert (dann z.B. VAPI_HW_MODEL=claude-3-5-haiku-20241022).
+    model: process.env.VAPI_HW_MODEL || "claude-haiku-4-5",
     temperature: 0.3,
     messages: [{ role: "system", content: systemPrompt }],
   }
@@ -102,9 +129,10 @@ Regeln:
   const config: Record<string, unknown> = {
     firstMessage: greeting,
     transcriber: {
-      // nova-2 (general) kann Deutsch — nova-2-phonecall NICHT (nur en/en-US).
+      // Nova-3 (general) kann Deutsch und ist schneller/genauer als nova-2.
+      // NICHT nova-*-phonecall verwenden — die können nur en/en-US.
       provider: "deepgram",
-      model: "nova-2",
+      model: "nova-3",
       language: "de",
     },
     model: modelConfig,
