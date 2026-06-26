@@ -15,6 +15,9 @@ export const COLORS = {
 }
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://reparo-app.netlify.app"
+// Anzeige-Host (ohne Protokoll) für sichtbaren Link-Text — folgt der Domain
+// automatisch, sobald NEXT_PUBLIC_SITE_URL gesetzt ist.
+export const SITE_HOST = SITE_URL.replace(/^https?:\/\//, "")
 
 export function escapeHtml(s: string): string {
   return s
@@ -49,7 +52,7 @@ export function emailLayout(title: string, content: string): string {
         </td></tr>
         <tr><td style="padding:16px 32px;border-top:1px solid ${COLORS.border};color:${COLORS.textMuted};font-size:12px;line-height:1.6;">
           Diese E-Mail wurde automatisch von Reparo versendet.<br>
-          <a href="${SITE_URL}" style="color:${COLORS.accent};">reparo-app.netlify.app</a> ·
+          <a href="${SITE_URL}" style="color:${COLORS.accent};">${SITE_HOST}</a> ·
           <a href="${SITE_URL}/impressum" style="color:${COLORS.textMuted};">Impressum</a> ·
           <a href="${SITE_URL}/datenschutz" style="color:${COLORS.textMuted};">Datenschutz</a> ·
           <a href="${SITE_URL}/agb" style="color:${COLORS.textMuted};">AGB</a>

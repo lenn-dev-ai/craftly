@@ -171,7 +171,7 @@ export function onboardingReminderEmail(params: {
       </p>
       <p style="margin:0 0 8px;color:${COLORS.text};font-size:14px;line-height:1.6;">
         <strong>„Hab vergessen, wofür's war“</strong> → kurze Erinnerung:
-        <a href="${landingUrl}" style="color:${COLORS.accent};">reparo-app.netlify.app</a>
+        <a href="${landingUrl}" style="color:${COLORS.accent};">${landingUrl.replace(/^https?:\/\//, "")}</a>
       </p>
       <p style="margin:0;color:${COLORS.text};font-size:14px;line-height:1.6;">
         <strong>„Hat mich nicht überzeugt“</strong> → wir nehmen ehrliches Feedback dankbar an, einfach antworten

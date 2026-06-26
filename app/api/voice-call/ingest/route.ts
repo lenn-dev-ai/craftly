@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
 
   // 5. SMS-Bestätigung — fire-and-forget. Wenn Twilio-ENV fehlt
   //    no-op, kein Fehler für den Caller.
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://reparo-app.netlify.app"
+  const appUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://reparo-app.netlify.app"
   const ticketKurz = ticket.id.slice(0, 8)
   void sendSms({
     to: caller,
