@@ -55,6 +55,34 @@ function requiredRoleForPath(pathname: string) {
 }
 
 export async function middleware(request: NextRequest) {
+  // --- Beta-Zugangs-Gate (geschlossene Beta) ---
+  // Ist BETA_PASSWORD gesetzt, ist die GANZE Seite nur per Basic-Auth
+  // erreichbar (User: BETA_USER oder "reparo"). So ist die Seite nicht
+  // öffentlich zugänglich (relevant fürs noch fehlende Impressum).
+  // /api bleibt offen, damit Vapi-Webhook & Crons weiterlaufen. Ohne
+  // gesetztes BETA_PASSWORD greift kein Gate (fail-open).
+  const betaPw = process.env.BETA_PASSWORD
+  if (betaPw && !request.nextUrl.pathname.startsWith("/api")) {
+    const betaUser = process.env.BETA_USER || "reparo"
+    const authHeader = request.headers.get("authorization")
+    let erlaubt = false
+    if (authHeader?.startsWith("Basic ")) {
+      try {
+        const dec = atob(authHeader.slice(6))
+        const i = dec.indexOf(":")
+        erlaubt = dec.slice(0, i) === betaUser && dec.slice(i + 1) === betaPw
+      } catch {
+        /* ungültiger Header → erlaubt bleibt false */
+      }
+    }
+    if (!erlaubt) {
+      return new NextResponse("Reparo – geschlossene Beta. Zugang nur mit Passwort.", {
+        status: 401,
+        headers: { "WWW-Authenticate": 'Basic realm="Reparo Beta", charset="UTF-8"' },
+      })
+    }
+  }
+
   let response = NextResponse.next({ request })
 
   try {
@@ -117,11 +145,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/admin",
-    "/dashboard-:path*",
-    "/admin/:path*",
-    "/ticket/:path*",
-    "/api/:path*",
-  ],
+  // Läuft auf allen Seiten (fürs Beta-Gate) + /api (Cookie-Refresh & Webhook-
+  // Durchlass), außer Next-Internals und statischen Dateien (Pfad mit Punkt).
+  matcher: ["/((?!_next/|.*\\..*).*)"],
 }
