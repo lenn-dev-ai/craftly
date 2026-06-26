@@ -521,6 +521,95 @@ async function getKontaktText(hwId: string): Promise<string> {
   return `Dein nächster Einsatz ist ${t.titel} in ${adresse}.${kontaktSatz}`
 }
 
+/** Top-Segmente: stärkstes Gewerk + ertragreichste Gegend (erledigte Aufträge). */
+async function getTopSegmenteText(hwId: string): Promise<string> {
+  const admin = createServiceRoleClient()
+  const { data: tickets } = await admin
+    .from("tickets")
+    .select("gewerk, kosten_final, einsatzort_adresse")
+    .eq("zugewiesener_hw", hwId)
+    .eq("status", "erledigt")
+    .returns<Array<{ gewerk: string | null; kosten_final: number | null; einsatzort_adresse: string | null }>>()
+
+  if (!tickets || tickets.length === 0) {
+    return "Du hast noch keine abgeschlossenen Aufträge, daher kann ich noch keine stärksten Bereiche auswerten."
+  }
+
+  const top = (keyFn: (t: { gewerk: string | null; einsatzort_adresse: string | null }) => string) => {
+    const m = new Map<string, { sum: number; count: number }>()
+    for (const t of tickets) {
+      const k = keyFn(t)
+      if (!k) continue
+      const e = m.get(k) ?? { sum: 0, count: 0 }
+      e.sum += t.kosten_final ?? 0
+      e.count += 1
+      m.set(k, e)
+    }
+    return Array.from(m.entries()).sort((a, b) => b[1].sum - a[1].sum)[0]
+  }
+
+  const topG = top(t => t.gewerk ?? "")
+  const ortKey = (t: { einsatzort_adresse: string | null }) => {
+    if (!t.einsatzort_adresse) return ""
+    const last = t.einsatzort_adresse.split(",").pop()?.trim() ?? ""
+    return last.replace(/^\d{4,5}\s*/, "").trim() || last
+  }
+  const topO = top(ortKey)
+
+  const parts: string[] = []
+  if (topG) {
+    parts.push(`Dein stärkstes Gewerk ist ${formatGewerk(topG[0])} mit ${euro(topG[1].sum)} Euro aus ${topG[1].count} ${topG[1].count === 1 ? "Auftrag" : "Aufträgen"}.`)
+  }
+  if (topO && topO[0]) {
+    parts.push(`Die meisten Einnahmen kommen aus ${topO[0]} mit ${euro(topO[1].sum)} Euro.`)
+  }
+  return parts.join(" ") || "Ich konnte keine eindeutigen Top-Bereiche ermitteln."
+}
+
+/** Verlauf: Verdienst & Aufträge der letzten 3 Monate + Annahmequote. */
+async function getVerlaufText(hwId: string): Promise<string> {
+  const admin = createServiceRoleClient()
+  const [ticketsRes, einlRes] = await Promise.all([
+    admin.from("tickets").select("kosten_final, hw_abschluss_am, created_at")
+      .eq("zugewiesener_hw", hwId).eq("status", "erledigt")
+      .returns<Array<{ kosten_final: number | null; hw_abschluss_am: string | null; created_at: string }>>(),
+    admin.from("einladungen").select("status").eq("handwerker_id", hwId)
+      .returns<Array<{ status: string }>>(),
+  ])
+  const tickets = ticketsRes.data ?? []
+  const einl = einlRes.data ?? []
+
+  // Letzte 3 Monatsschlüssel (YYYY-MM, Berlin-bezogen).
+  const heuteYM = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" }).slice(0, 7)
+  const [y, m] = heuteYM.split("-").map(Number)
+  const keys: string[] = []
+  for (let i = 2; i >= 0; i--) {
+    const d = new Date(Date.UTC(y, m - 1 - i, 1))
+    keys.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`)
+  }
+  const label = (key: string) =>
+    new Date(`${key}-01T12:00:00Z`).toLocaleDateString("de-DE", { month: "long", timeZone: "Europe/Berlin" })
+
+  const monatsText = keys.map(key => {
+    const rel = tickets.filter(t => (t.hw_abschluss_am ?? t.created_at).slice(0, 7) === key)
+    const sum = rel.reduce((s, t) => s + (t.kosten_final ?? 0), 0)
+    return rel.length === 0
+      ? `im ${label(key)} nichts`
+      : `im ${label(key)} ${euro(sum)} Euro aus ${rel.length} ${rel.length === 1 ? "Auftrag" : "Aufträgen"}`
+  })
+
+  let txt = `Dein Verlauf: ${monatsText.join(", ")}.`
+
+  const angenommen = einl.filter(e => e.status === "angebot").length
+  const abgelehnt = einl.filter(e => e.status === "abgelehnt").length
+  const entschieden = angenommen + abgelehnt
+  if (entschieden > 0) {
+    const quote = Math.round((angenommen / entschieden) * 100)
+    txt += ` Deine Annahmequote liegt bei ${quote} Prozent — du hast ${angenommen} von ${entschieden} beantworteten Anfragen angenommen.`
+  }
+  return txt
+}
+
 // ---------------------------------------------------------------------------
 // Route-Handler
 // ---------------------------------------------------------------------------
@@ -606,6 +695,10 @@ export async function POST(request: NextRequest) {
           result = await getEinstellungenText(hw.id)
         } else if (tc.function.name === "get_kontakt") {
           result = await getKontaktText(hw.id)
+        } else if (tc.function.name === "get_top_segmente") {
+          result = await getTopSegmenteText(hw.id)
+        } else if (tc.function.name === "get_verlauf") {
+          result = await getVerlaufText(hw.id)
         }
 
         return { toolCallId: tc.id, result }

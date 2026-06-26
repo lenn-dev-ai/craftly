@@ -48,6 +48,8 @@ Auswertungen & Finanzen
 - get_verdienst — Einnahmen diese Woche/diesen Monat/gesamt, Schnitt, Vormonatsvergleich
 - get_statistik — abgeschlossene Aufträge, wahrgenommene Termine, Bewertung
 - get_partner_status — Partner-Stufe, Punktzahl, Antwort-Rate, Weg zur nächsten Stufe
+- get_top_segmente — stärkstes Gewerk & ertragreichste Gegend
+- get_verlauf — Verdienst der letzten 3 Monate + Annahmequote
 Profil
 - get_einstellungen — Gewerke, Radius, Auto-Annahme, Stundensatz, Kalender
 
@@ -174,6 +176,26 @@ REGELN:
           },
           server: { url: toolServerUrl },
         },
+        {
+          type: "function",
+          function: {
+            name: "get_top_segmente",
+            description:
+              "Gibt das stärkste Gewerk und die ertragreichste Gegend nach Verdienst zurück. Aufrufen bei 'Was ist mein bestes Gewerk?', 'Wo verdiene ich am meisten?', 'In welcher Gegend läuft es am besten?'.",
+            parameters: { type: "object", properties: {}, required: [] },
+          },
+          server: { url: toolServerUrl },
+        },
+        {
+          type: "function",
+          function: {
+            name: "get_verlauf",
+            description:
+              "Gibt den Verdienst-Verlauf der letzten drei Monate (pro Monat) und die Annahmequote zurück. Aufrufen bei 'Wie war mein Verlauf?', 'Wie liefen die letzten Monate?', 'Werde ich besser?', 'Wie ist meine Annahmequote?'.",
+            parameters: { type: "object", properties: {}, required: [] },
+          },
+          server: { url: toolServerUrl },
+        },
       ]
     : []
 
@@ -201,8 +223,12 @@ REGELN:
     },
     model: modelConfig,
     voice: {
-      provider: "openai",
-      voiceId: "nova", // OpenAI TTS — kein eigener Key nötig, spricht Deutsch
+      // ElevenLabs Turbo v2.5 — deutlich reaktiver als OpenAI-TTS, spricht
+      // Deutsch (im Vapi-Account konfiguriert). VoiceId per ENV überschreibbar;
+      // Fallback wäre { provider: "openai", voiceId: "nova" }.
+      provider: "11labs",
+      voiceId: process.env.VAPI_HW_VOICE_ID || "FUfBrNit0NNZAwb58KWH",
+      model: "eleven_turbo_v2_5",
     },
     endCallMessage: "Alles klar. Bis bald und einen guten Tag!",
     endCallPhrases: ["tschüss", "auf wiedersehen", "danke tschüss", "ciao", "bye", "tschau"],
