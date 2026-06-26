@@ -8,6 +8,7 @@ import {
   type HwPreferences,
 } from "@/lib/agent/score-einladung"
 import { buildAssistantConfig } from "@/lib/vapi/assistant-config"
+import { formatGewerk } from "@/types"
 
 // POST /api/vapi/hw-assistant
 // Sprint AW — Voice-AI Assistent für Handwerker.
@@ -256,7 +257,9 @@ async function getVerdienstText(hwId: string): Promise<string> {
   const vor7Tagen = jetzt - 7 * 86400_000
   // Monatsanfang (Berlin) als ms-Schwelle.
   const heute = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" })
-  const monatStart = new Date(`${heute.slice(0, 7)}-01T00:00:00Z`).getTime()
+  const monatStartDate = new Date(`${heute.slice(0, 7)}-01T00:00:00Z`)
+  const monatStart = monatStartDate.getTime()
+  const vormonatStart = new Date(Date.UTC(monatStartDate.getUTCFullYear(), monatStartDate.getUTCMonth() - 1, 1)).getTime()
 
   const abschlussMs = (t: { hw_abschluss_am: string | null; created_at: string }) =>
     new Date(t.hw_abschluss_am ?? t.created_at).getTime()
@@ -265,6 +268,7 @@ async function getVerdienstText(hwId: string): Promise<string> {
 
   const woche = summe(erledigt.filter(t => abschlussMs(t) >= vor7Tagen))
   const monat = summe(erledigt.filter(t => abschlussMs(t) >= monatStart))
+  const vormonat = summe(erledigt.filter(t => { const ms = abschlussMs(t); return ms >= vormonatStart && ms < monatStart }))
   const gesamt = summe(erledigt)
   const avg = erledigt.length > 0 ? gesamt / erledigt.length : 0
 
@@ -276,6 +280,12 @@ async function getVerdienstText(hwId: string): Promise<string> {
   }
 
   let txt = `Dein Verdienst über Reparo: diese Woche ${euro(woche)} Euro, diesen Monat ${euro(monat)} Euro, insgesamt ${euro(gesamt)} Euro aus ${erledigt.length} abgeschlossenen Aufträgen. Das sind im Schnitt ${euro(avg)} Euro pro Auftrag.`
+  if (vormonat > 0) {
+    const pct = Math.round(((monat - vormonat) / vormonat) * 100)
+    txt += pct >= 0
+      ? ` Das sind ${pct} Prozent mehr als im Vormonat, da waren es ${euro(vormonat)} Euro.`
+      : ` Das sind ${Math.abs(pct)} Prozent weniger als im Vormonat, da waren es ${euro(vormonat)} Euro.`
+  }
   if (laufend.length > 0) {
     txt += ` Aktuell sind noch ${laufend.length} ${laufend.length === 1 ? "Auftrag" : "Aufträge"} in Arbeit.`
   }
@@ -322,6 +332,193 @@ async function getStatistikText(hwId: string): Promise<string> {
     parts.push("Eine Durchschnittsbewertung hast du noch nicht.")
   }
   return parts.join(" ")
+}
+
+/** YYYY-MM-DD → "Montag, 7. Juli" (Berlin). */
+function datumDeutsch(datum: string): string {
+  return new Date(`${datum}T12:00:00Z`).toLocaleDateString("de-DE", {
+    weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Berlin",
+  })
+}
+
+/** Termin-Ausblick: nächster Termin + morgen + nächste 7 Tage. */
+async function getTerminausblickText(hwId: string): Promise<string> {
+  const admin = createServiceRoleClient()
+  const heute = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" })
+  const morgen = new Date(Date.now() + 86400_000).toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" })
+  const in7 = new Date(Date.now() + 7 * 86400_000).toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" })
+
+  const { data: termine } = await admin
+    .from("termine")
+    .select("datum, von, titel, einsatzort_adresse")
+    .eq("handwerker_id", hwId)
+    .eq("status", "bestaetigt")
+    .gte("datum", heute)
+    .order("datum")
+    .order("von")
+    .returns<Array<{ datum: string; von: string; titel: string; einsatzort_adresse: string | null }>>()
+
+  if (!termine || termine.length === 0) {
+    return "Du hast aktuell keine anstehenden bestätigten Termine."
+  }
+
+  const next = termine[0]
+  const ort = next.einsatzort_adresse ? ` in ${next.einsatzort_adresse.split(",")[0]}` : ""
+  const wann = next.datum === heute ? "heute" : next.datum === morgen ? "morgen" : `am ${datumDeutsch(next.datum)}`
+  const vonZeit = next.von?.slice(0, 5) ?? "?"
+  const morgenCount = termine.filter(t => t.datum === morgen).length
+  const wocheCount = termine.filter(t => t.datum <= in7).length
+
+  let txt = `Dein nächster Termin ist ${wann} um ${vonZeit} Uhr: ${next.titel}${ort}.`
+  txt += ` In den nächsten sieben Tagen hast du ${wocheCount} Termin${wocheCount === 1 ? "" : "e"}`
+  txt += morgenCount > 0 ? `, davon ${morgenCount} morgen.` : "."
+  return txt
+}
+
+/** Laufende Aufträge: in Arbeit + auf Abnahme wartend. */
+async function getLaufendeAuftraegeText(hwId: string): Promise<string> {
+  const admin = createServiceRoleClient()
+  const { data: tickets } = await admin
+    .from("tickets")
+    .select("titel, status, kosten_final, einsatzort_adresse")
+    .eq("zugewiesener_hw", hwId)
+    .in("status", ["in_bearbeitung", "fertiggestellt_hw"])
+    .order("created_at", { ascending: false })
+    .returns<Array<{ titel: string; status: string; kosten_final: number | null; einsatzort_adresse: string | null }>>()
+
+  if (!tickets || tickets.length === 0) {
+    return "Du hast aktuell keine laufenden Aufträge."
+  }
+  const inArbeit = tickets.filter(t => t.status === "in_bearbeitung")
+  const abnahme = tickets.filter(t => t.status === "fertiggestellt_hw")
+
+  const parts: string[] = []
+  if (inArbeit.length > 0) {
+    const liste = inArbeit.slice(0, 3).map(t => {
+      const ort = t.einsatzort_adresse ? ` in ${t.einsatzort_adresse.split(",")[0]}` : ""
+      const betrag = t.kosten_final ? ` für ${euro(t.kosten_final)} Euro` : ""
+      return `${t.titel}${ort}${betrag}`
+    }).join("; ")
+    parts.push(`Du hast ${inArbeit.length} ${inArbeit.length === 1 ? "Auftrag" : "Aufträge"} in Arbeit: ${liste}.`)
+  }
+  if (abnahme.length > 0) {
+    parts.push(`${abnahme.length} ${abnahme.length === 1 ? "Auftrag wartet" : "Aufträge warten"} auf die Abnahme durch den Verwalter.`)
+  }
+  return parts.join(" ")
+}
+
+const PARTNER_TITEL: Record<string, string> = {
+  gold: "Premium-Partner", silber: "Top-Partner", bronze: "Vertrauter Partner",
+}
+
+/** Partner-Status: Stufe, Score, Antwort-Rate, Bewertung + Weg zur nächsten Stufe.
+ *  Logik gespiegelt von components/handwerker/SichtbarkeitsBadge. */
+async function getPartnerStatusText(hwId: string): Promise<string> {
+  const admin = createServiceRoleClient()
+  const { data: p } = await admin
+    .from("profiles")
+    .select("sichtbarkeit_stufe, verfuegbarkeit_score, angebotstreue, bewertung_avg, auftraege_anzahl")
+    .eq("id", hwId)
+    .maybeSingle<{
+      sichtbarkeit_stufe: string | null; verfuegbarkeit_score: number | null
+      angebotstreue: number | null; bewertung_avg: number | null; auftraege_anzahl: number | null
+    }>()
+  if (!p) return "Ich konnte deinen Partner-Status nicht laden."
+
+  const stufe = p.sichtbarkeit_stufe ?? "bronze"
+  const titel = PARTNER_TITEL[stufe] ?? "Vertrauter Partner"
+  const score = Number(p.verfuegbarkeit_score ?? 0)
+  const treue = Number(p.angebotstreue ?? 100)
+
+  let txt = `Du bist aktuell ${titel} mit ${score.toFixed(0)} von 100 Punkten. Deine Antwort-Rate liegt bei ${treue.toFixed(0)} Prozent.`
+  if (p.bewertung_avg && p.bewertung_avg > 0) {
+    txt += ` Deine Durchschnittsbewertung ist ${Number(p.bewertung_avg).toFixed(1).replace(".", ",")} Sterne${p.auftraege_anzahl ? ` aus ${p.auftraege_anzahl} Aufträgen` : ""}.`
+  }
+  const naechste = stufe === "bronze" ? { name: "Top-Partner", schwelle: 50 }
+                 : stufe === "silber" ? { name: "Premium-Partner", schwelle: 75 }
+                 : null
+  if (naechste) {
+    const fehlend = Math.max(0, naechste.schwelle - score)
+    txt += fehlend > 0
+      ? ` Dir fehlen noch ${fehlend.toFixed(0)} Punkte bis zum ${naechste.name}. Tipp: schnell auf Einladungen antworten und gute Bewertungen sammeln.`
+      : ` Du hast die Schwelle zum ${naechste.name} erreicht.`
+  } else {
+    txt += " Du hast die höchste Partner-Stufe erreicht — bleib aktiv, um sie zu halten."
+  }
+  return txt
+}
+
+/** Aktuelle Einstellungen: Gewerke, Radius, Auto-Annahme, Stundensatz, Kalender. */
+async function getEinstellungenText(hwId: string): Promise<string> {
+  const admin = createServiceRoleClient()
+  const { data: p } = await admin
+    .from("profiles")
+    .select("handwerker_gewerke, gewerk, radius_km, agent_max_radius_km, agent_auto_accept, agent_min_auftragswert, mindest_stundensatz, startort_adresse, google_calendar_connected")
+    .eq("id", hwId)
+    .maybeSingle()
+  if (!p) return "Ich konnte deine Einstellungen nicht laden."
+
+  const pp = p as Record<string, unknown>
+  const gewerke = (pp.handwerker_gewerke as string[] | null) ?? (pp.gewerk ? [pp.gewerk as string] : [])
+  const gewerkeText = gewerke.length > 0 ? gewerke.map(g => formatGewerk(g)).join(", ") : "keine hinterlegt"
+  const radius = (pp.agent_max_radius_km as number | null) ?? (pp.radius_km as number | null)
+  const auto = pp.agent_auto_accept === true
+  const minWert = pp.agent_min_auftragswert as number | null
+  const stundensatz = pp.mindest_stundensatz as number | null
+  const startort = pp.startort_adresse as string | null
+  const kalender = pp.google_calendar_connected === true
+
+  const parts: string[] = [`Deine Gewerke: ${gewerkeText}.`]
+  if (radius) parts.push(`Dein Aktionsradius ist ${radius} Kilometer.`)
+  parts.push(auto
+    ? `Die automatische Auftragsannahme ist aktiv${minWert ? ` ab ${euro(minWert)} Euro Auftragswert` : ""}.`
+    : "Die automatische Auftragsannahme ist aus — du bestätigst Anfragen selbst.")
+  if (stundensatz) parts.push(`Dein Mindest-Stundensatz ist ${euro(stundensatz)} Euro.`)
+  if (startort) parts.push(`Dein Startort ist ${startort.split(",")[0]}.`)
+  parts.push(kalender ? "Dein Google-Kalender ist verbunden." : "Dein Google-Kalender ist nicht verbunden.")
+  return parts.join(" ")
+}
+
+/** Ansprechpartner/Adresse für den nächsten anstehenden Einsatz (Verwalter). */
+async function getKontaktText(hwId: string): Promise<string> {
+  const admin = createServiceRoleClient()
+  const heute = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" })
+
+  const { data: termine } = await admin
+    .from("termine")
+    .select("titel, einsatzort_adresse, ticket_id")
+    .eq("handwerker_id", hwId)
+    .eq("status", "bestaetigt")
+    .gte("datum", heute)
+    .order("datum")
+    .order("von")
+    .limit(1)
+    .returns<Array<{ titel: string; einsatzort_adresse: string | null; ticket_id: string | null }>>()
+
+  if (!termine || termine.length === 0) {
+    return "Du hast aktuell keinen anstehenden Termin, zu dem ich dir einen Ansprechpartner nennen kann."
+  }
+
+  const t = termine[0]
+  const adresse = t.einsatzort_adresse ?? "Adresse nicht hinterlegt"
+  let kontaktSatz = ""
+  if (t.ticket_id) {
+    const { data: ticket } = await admin
+      .from("tickets").select("verwalter_id").eq("id", t.ticket_id)
+      .maybeSingle<{ verwalter_id: string | null }>()
+    if (ticket?.verwalter_id) {
+      const { data: vw } = await admin
+        .from("profiles").select("name, firma, telefon").eq("id", ticket.verwalter_id)
+        .maybeSingle<{ name: string | null; firma: string | null; telefon: string | null }>()
+      if (vw) {
+        const wer = vw.name ?? vw.firma ?? "dein Ansprechpartner"
+        const firma = vw.firma && vw.name ? ` von ${vw.firma}` : ""
+        const tel = vw.telefon ? `, erreichbar unter ${vw.telefon}` : ""
+        kontaktSatz = ` Ansprechpartner ist ${wer}${firma}${tel}.`
+      }
+    }
+  }
+  return `Dein nächster Einsatz ist ${t.titel} in ${adresse}.${kontaktSatz}`
 }
 
 // ---------------------------------------------------------------------------
@@ -399,6 +596,16 @@ export async function POST(request: NextRequest) {
           result = await getVerdienstText(hw.id)
         } else if (tc.function.name === "get_statistik") {
           result = await getStatistikText(hw.id)
+        } else if (tc.function.name === "get_terminausblick") {
+          result = await getTerminausblickText(hw.id)
+        } else if (tc.function.name === "get_laufende_auftraege") {
+          result = await getLaufendeAuftraegeText(hw.id)
+        } else if (tc.function.name === "get_partner_status") {
+          result = await getPartnerStatusText(hw.id)
+        } else if (tc.function.name === "get_einstellungen") {
+          result = await getEinstellungenText(hw.id)
+        } else if (tc.function.name === "get_kontakt") {
+          result = await getKontaktText(hw.id)
         }
 
         return { toolCallId: tc.id, result }

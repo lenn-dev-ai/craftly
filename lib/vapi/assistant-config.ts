@@ -33,23 +33,37 @@ export function buildAssistantConfig(hw: VapiHwLite | null) {
     : "Hallo! Ich bin der Reparo-Assistent. Deine Nummer ist leider nicht in Reparo hinterlegt. Bitte trag sie in deinem Profil nach."
 
   const systemPrompt = hw
-    ? `Du bist der persönliche Sprachassistent für den Handwerker ${hw.name ?? "dieser Person"} in der Reparo-Plattform.
+    ? `Du bist der persönliche Sprachassistent für den Handwerker ${hw.name ?? "dieser Person"} in der Reparo-Plattform — eine vollwertige Assistenz für seinen Arbeitsalltag.
 
-Du kannst Folgendes beantworten:
-- Heutige Termine und Route (Tool: get_heutiges_briefing)
-- Offene Anfragen und wartende Terminbestätigungen (Tool: get_offene_anfragen)
-- Neue Anfragen mit Agent-Empfehlung (Tool: get_neue_anfragen_mit_empfehlung)
-- Verdienst & Einnahmen — diese Woche, diesen Monat, gesamt (Tool: get_verdienst)
-- Leistungs-Auswertung — abgeschlossene Aufträge, wahrgenommene Termine, Durchschnittsbewertung (Tool: get_statistik)
+WERKZEUGE (nutze immer das passende Tool, mit echten Daten):
+Termine & Planung
+- get_heutiges_briefing — die heutigen bestätigten Termine mit Route
+- get_terminausblick — nächster Termin, morgen, nächste 7 Tage
+- get_kontakt — Adresse & Ansprechpartner für den nächsten Einsatz
+Aufträge & Anfragen
+- get_offene_anfragen — offene Anfragen & wartende Terminbestätigungen
+- get_neue_anfragen_mit_empfehlung — neue Anfragen inklusive Empfehlung (annehmen/prüfen/ablehnen)
+- get_laufende_auftraege — Aufträge in Arbeit und auf Abnahme wartend
+Auswertungen & Finanzen
+- get_verdienst — Einnahmen diese Woche/diesen Monat/gesamt, Schnitt, Vormonatsvergleich
+- get_statistik — abgeschlossene Aufträge, wahrgenommene Termine, Bewertung
+- get_partner_status — Partner-Stufe, Punktzahl, Antwort-Rate, Weg zur nächsten Stufe
+Profil
+- get_einstellungen — Gewerke, Radius, Auto-Annahme, Stundensatz, Kalender
 
-Regeln:
-- Antworte immer kurz und klar — der Handwerker ist oft unterwegs oder im Auto.
-- Nutze für jede Frage das passende Tool und antworte mit den echten Zahlen — erfinde nie Werte.
-- Bei zusammengesetzten Fragen ("Wie lief mein Monat?") darfst du mehrere Tools nacheinander nutzen.
-- Kein Fachjargon, kein HTML, keine Markdown-Formatierung. Beträge in Euro aussprechen.
-- Sprich Deutsch, du-Form.
-- Wenn du etwas nicht weißt, sag es direkt.
-- Frag maximal eine Folgefrage pro Antwort.`
+WISSEN (so funktioniert Reparo — damit kannst du Rückfragen erklären):
+- Direktvergabe: Passende Aufträge werden dir direkt 1:1 angeboten. Wer schnell zusagt, bekommt den Auftrag — schnelles Antworten lohnt sich.
+- Provision: Du bekommst immer 100% des Auftragswerts. Reparo finanziert sich über eine Provision der Verwalter, dir wird nichts abgezogen.
+- Partner-Status: Vertrauter Partner (Bronze), Top-Partner (Silber, ab 50 Punkten), Premium-Partner (Gold, ab 75 Punkten). Höhere Stufe = besserer Sichtbarkeits-Bonus. Punkte steigen durch schnelles Antworten, Zuverlässigkeit und gute Bewertungen.
+- Auto-Annahme: Wenn aktiviert, nimmt dein Agent passende Aufträge automatisch für dich an (nach deinen Kriterien wie Radius und Mindest-Auftragswert).
+
+REGELN:
+- Antworte kurz, klar, gesprochen — der Handwerker ist oft unterwegs oder im Auto.
+- Für jede Frage das passende Tool nutzen und nur echte Werte nennen — niemals Zahlen erfinden.
+- Bei zusammengesetzten Fragen ("Wie lief mein Monat?") ruhig mehrere Tools nacheinander nutzen und die Antwort kurz zusammenfassen.
+- Du gibst Auskunft und Empfehlungen; Aufträge annehmen/ablehnen oder Termine bestätigen macht der Handwerker selbst in der App (das kannst du noch nicht für ihn ausführen — sag das ehrlich).
+- Kein Fachjargon, kein HTML, kein Markdown. Beträge in Euro aussprechen.
+- Sprich Deutsch, du-Form. Wenn du etwas nicht weißt, sag es direkt. Maximal eine Folgefrage pro Antwort.`
     : "Du bist der Reparo-Assistent. Die Person ist nicht in Reparo hinterlegt. Bitte erklär das freundlich und beende das Gespräch."
 
   // Tool-Server-URL trägt den hwId, damit Web-Calls (ohne Caller-Nummer)
@@ -106,6 +120,56 @@ Regeln:
             name: "get_statistik",
             description:
               "Gibt eine Leistungs-Auswertung zurück: wie viele Aufträge abgeschlossen (gesamt & diesen Monat), wie viele Termine wahrgenommen (gesamt & diesen Monat) und die Durchschnittsbewertung in Sternen. Aufrufen bei 'Wie viele Termine hatte ich?', 'Wie viele Aufträge habe ich gemacht?', 'Wie ist meine Bewertung?', 'Wie läuft es bei mir?', 'Gib mir eine Auswertung'.",
+            parameters: { type: "object", properties: {}, required: [] },
+          },
+          server: { url: toolServerUrl },
+        },
+        {
+          type: "function",
+          function: {
+            name: "get_terminausblick",
+            description:
+              "Gibt den Termin-Ausblick zurück: nächster anstehender Termin (Tag, Uhrzeit, Ort) sowie wie viele Termine morgen und in den nächsten 7 Tagen. Aufrufen bei 'Wann ist mein nächster Termin?', 'Was habe ich morgen?', 'Was steht diese Woche an?'.",
+            parameters: { type: "object", properties: {}, required: [] },
+          },
+          server: { url: toolServerUrl },
+        },
+        {
+          type: "function",
+          function: {
+            name: "get_laufende_auftraege",
+            description:
+              "Gibt die aktuell laufenden Aufträge zurück: welche in Arbeit sind (mit Ort und Betrag) und welche auf Abnahme durch den Verwalter warten. Aufrufen bei 'Welche Aufträge habe ich gerade?', 'Was ist in Arbeit?', 'Was muss noch abgenommen werden?'.",
+            parameters: { type: "object", properties: {}, required: [] },
+          },
+          server: { url: toolServerUrl },
+        },
+        {
+          type: "function",
+          function: {
+            name: "get_partner_status",
+            description:
+              "Gibt den Partner-Status zurück: Stufe (Vertrauter/Top/Premium-Partner), Punktzahl von 100, Antwort-Rate, Bewertung und was bis zur nächsten Stufe fehlt. Aufrufen bei 'Wie ist mein Status?', 'Warum bekomme ich wenig Anfragen?', 'Wie werde ich Top-Partner?', 'Wie verbessere ich mich?'.",
+            parameters: { type: "object", properties: {}, required: [] },
+          },
+          server: { url: toolServerUrl },
+        },
+        {
+          type: "function",
+          function: {
+            name: "get_einstellungen",
+            description:
+              "Gibt die aktuellen Einstellungen des Handwerkers zurück: Gewerke, Aktionsradius, ob Auto-Annahme aktiv ist, Mindest-Stundensatz, Startort und ob der Google-Kalender verbunden ist. Aufrufen bei 'Was habe ich eingestellt?', 'Wie groß ist mein Radius?', 'Ist die automatische Annahme an?', 'Welche Gewerke habe ich?'.",
+            parameters: { type: "object", properties: {}, required: [] },
+          },
+          server: { url: toolServerUrl },
+        },
+        {
+          type: "function",
+          function: {
+            name: "get_kontakt",
+            description:
+              "Gibt für den nächsten anstehenden Einsatz die Adresse und den Ansprechpartner (Verwalter mit Telefonnummer) zurück. Aufrufen bei 'Wie erreiche ich den Ansprechpartner?', 'Wo muss ich hin?', 'Wer ist mein Kontakt für den nächsten Termin?'.",
             parameters: { type: "object", properties: {}, required: [] },
           },
           server: { url: toolServerUrl },
