@@ -17,6 +17,7 @@ type Status = "idle" | "connecting" | "active" | "error"
 interface VapiLike {
   start: (assistant: unknown) => Promise<unknown>
   stop: () => void
+  setMuted: (muted: boolean) => void
   on: (event: string, cb: (...args: unknown[]) => void) => void
   removeAllListeners?: () => void
 }
@@ -25,6 +26,7 @@ export default function VoiceButton() {
   const [status, setStatus] = useState<Status>("idle")
   const [fehler, setFehler] = useState<string | null>(null)
   const [assistentSpricht, setAssistentSpricht] = useState(false)
+  const [stumm, setStumm] = useState(false)
   const vapiRef = useRef<VapiLike | null>(null)
 
   const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY
@@ -35,6 +37,19 @@ export default function VoiceButton() {
     } catch {
       /* ignore */
     }
+  }, [])
+
+  // Mikrofon stumm/laut schalten — praktisch, wenn es drumherum laut ist.
+  const stummSchalten = useCallback(() => {
+    setStumm(prev => {
+      const next = !prev
+      try {
+        vapiRef.current?.setMuted(next)
+      } catch {
+        /* ignore */
+      }
+      return next
+    })
   }, [])
 
   // Aufräumen, wenn die Komponente verschwindet (Call nicht weiterlaufen lassen).
@@ -51,6 +66,7 @@ export default function VoiceButton() {
 
   const starten = useCallback(async () => {
     setFehler(null)
+    setStumm(false)
     if (!publicKey) {
       setFehler("Sprach-Assistent ist noch nicht konfiguriert (Public Key fehlt).")
       setStatus("error")
@@ -77,6 +93,7 @@ export default function VoiceButton() {
       vapi.on("call-end", () => {
         setStatus("idle")
         setAssistentSpricht(false)
+        setStumm(false)
       })
       vapi.on("speech-start", () => setAssistentSpricht(true))
       vapi.on("speech-end", () => setAssistentSpricht(false))
@@ -118,9 +135,11 @@ export default function VoiceButton() {
           <div className="text-sm font-semibold text-ink">Sprich mit deinem Reparo-Assistenten</div>
           <div className="text-xs text-ink-secondary mt-0.5">
             {aktiv
-              ? assistentSpricht
-                ? "Assistent spricht …"
-                : "Ich höre zu — frag z. B. „Was sind meine neuen Anfragen?“"
+              ? stumm
+                ? "Mikro ist stumm — der Assistent hört dich gerade nicht."
+                : assistentSpricht
+                  ? "Assistent spricht …"
+                  : "Ich höre zu — frag z. B. „Was sind meine neuen Anfragen?“"
               : verbindet
                 ? "Verbinde …"
                 : "Per Mikrofon, ohne Anruf. Termine, Anfragen & Empfehlungen abfragen."}
@@ -129,14 +148,31 @@ export default function VoiceButton() {
         </div>
 
         {aktiv || verbindet ? (
-          <button
-            type="button"
-            onClick={beenden}
-            disabled={verbindet}
-            className="px-4 py-2 rounded-xl text-sm font-medium bg-danger/10 text-danger hover:bg-danger/20 transition-colors disabled:opacity-50"
-          >
-            {verbindet ? "…" : "Beenden"}
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {aktiv && (
+              <button
+                type="button"
+                onClick={stummSchalten}
+                aria-pressed={stumm}
+                title={stumm ? "Mikrofon wieder anschalten" : "Mikrofon stummschalten"}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                  stumm
+                    ? "bg-accent text-white hover:bg-accent-hover"
+                    : "bg-line/60 text-ink-secondary hover:bg-line"
+                }`}
+              >
+                {stumm ? "🔇 Ton an" : "🎤 Stumm"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={beenden}
+              disabled={verbindet}
+              className="px-4 py-2 rounded-xl text-sm font-medium bg-danger/10 text-danger hover:bg-danger/20 transition-colors disabled:opacity-50"
+            >
+              {verbindet ? "…" : "Beenden"}
+            </button>
+          </div>
         ) : (
           <button
             type="button"
