@@ -44,7 +44,6 @@ Aufträge & Anfragen
 - get_offene_anfragen — offene Anfragen & wartende Terminbestätigungen
 - get_neue_anfragen_mit_empfehlung — neue Anfragen inklusive Empfehlung (annehmen/prüfen/ablehnen)
 - get_laufende_auftraege — Aufträge in Arbeit und auf Abnahme wartend
-- anfrage_annehmen — eine Anfrage verbindlich annehmen (nur nach Bestätigung!)
 - anfrage_ablehnen — eine Anfrage ablehnen (nur nach Bestätigung!)
 Auswertungen & Finanzen
 - get_verdienst — Einnahmen diese Woche/diesen Monat/gesamt, Schnitt, Vormonatsvergleich
@@ -65,8 +64,9 @@ REGELN:
 - Antworte kurz, klar, gesprochen — der Handwerker ist oft unterwegs oder im Auto.
 - Für jede Frage das passende Tool nutzen und nur echte Werte nennen — niemals Zahlen erfinden.
 - Bei zusammengesetzten Fragen ("Wie lief mein Monat?") ruhig mehrere Tools nacheinander nutzen und die Antwort kurz zusammenfassen.
-- Du kannst Anfragen für den Handwerker annehmen (anfrage_annehmen) und ablehnen (anfrage_ablehnen). SICHERHEIT: Vor jeder Annahme/Ablehnung den konkreten Auftrag UND Preis nennen und ausdrücklich bestätigen lassen ("Soll ich den Auftrag X für Y Euro verbindlich annehmen?"). Erst bei einem klaren Ja das Tool aufrufen — niemals ungefragt. Die Position bezieht sich auf die zuletzt vorgelesene Empfehlungsliste (1 = oberste). Wenn unklar ist, welche Anfrage gemeint ist, erst die Liste vorlesen (get_neue_anfragen_mit_empfehlung).
-- Termine bestätigen, Verfügbarkeit ändern oder Aufträge abschließen macht der Handwerker derzeit noch selbst in der App — sag das ehrlich, wenn er danach fragt.
+- Anfragen ANNEHMEN kannst du NICHT — eine verbindliche Auftragsannahme macht der Handwerker immer selbst in der App. Wenn er dich bittet anzunehmen, erklär freundlich, dass er das aus Sicherheitsgründen selbst in der App bestätigen muss; du kannst ihm die Anfrage aber vorlesen und eine Empfehlung geben.
+- Anfragen ABLEHNEN kannst du (anfrage_ablehnen). SICHERHEIT: vorher kurz bestätigen lassen, welche Anfrage gemeint ist; erst bei klarem Ja aufrufen. Die Position bezieht sich auf die zuletzt vorgelesene Empfehlungsliste (1 = oberste).
+- Termine bestätigen, Verfügbarkeit ändern oder Aufträge abschließen macht der Handwerker ebenfalls selbst in der App — sag das ehrlich, wenn er danach fragt.
 - Kein Fachjargon, kein HTML, kein Markdown. Beträge in Euro aussprechen.
 - Sprich Deutsch, du-Form. Wenn du etwas nicht weißt, sag es direkt. Maximal eine Folgefrage pro Antwort.`
     : "Du bist der Reparo-Assistent. Die Person ist nicht in Reparo hinterlegt. Bitte erklär das freundlich und beende das Gespräch."
@@ -196,22 +196,6 @@ REGELN:
             description:
               "Gibt den Verdienst-Verlauf der letzten drei Monate (pro Monat) und die Annahmequote zurück. Aufrufen bei 'Wie war mein Verlauf?', 'Wie liefen die letzten Monate?', 'Werde ich besser?', 'Wie ist meine Annahmequote?'.",
             parameters: { type: "object", properties: {}, required: [] },
-          },
-          server: { url: toolServerUrl },
-        },
-        {
-          type: "function",
-          function: {
-            name: "anfrage_annehmen",
-            description:
-              "Nimmt eine offene Direktvergabe-Anfrage VERBINDLICH an — der Auftrag wird damit dem Handwerker vergeben. PFLICHT: Vorher den konkreten Auftrag und Preis nennen und ausdrücklich bestätigen lassen ('Soll ich … für … Euro verbindlich annehmen?'). Erst bei klarem Ja aufrufen. 'position' bezieht sich auf die zuletzt vorgelesene Empfehlungsliste (1 = oberste/empfohlene).",
-            parameters: {
-              type: "object",
-              properties: {
-                position: { type: "integer", minimum: 1, description: "Position in der Empfehlungsliste, 1 = oberste. Standard 1." },
-              },
-              required: [],
-            },
           },
           server: { url: toolServerUrl },
         },

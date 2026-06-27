@@ -8,7 +8,7 @@ import {
   type HwPreferences,
 } from "@/lib/agent/score-einladung"
 import { buildAssistantConfig } from "@/lib/vapi/assistant-config"
-import { annehmenEinladung, ablehnenEinladung } from "@/lib/auction/einladung-aktionen"
+import { ablehnenEinladung } from "@/lib/auction/einladung-aktionen"
 import { formatGewerk } from "@/types"
 
 // POST /api/vapi/hw-assistant
@@ -686,22 +686,6 @@ async function rankOffeneEinladungen(
   return scored.map(s => ({ id: s.e.id, titel: s.titel, preis: s.preis }))
 }
 
-/** Nimmt die Anfrage an Position N (aus dem Empfehlungs-Ranking) an. */
-async function annehmeAnfrageText(hwId: string, position: number): Promise<string> {
-  const ranked = await rankOffeneEinladungen(hwId)
-  if (ranked.length === 0) return "Du hast aktuell keine offenen Anfragen zum Annehmen."
-  const ziel = ranked[Math.max(1, position) - 1]
-  if (!ziel) {
-    return `Position ${position} gibt es nicht — du hast ${ranked.length} offene ${ranked.length === 1 ? "Anfrage" : "Anfragen"}.`
-  }
-  const r = await annehmenEinladung({ hwId, einladungId: ziel.id, kanal: "voice" })
-  if (!r.ok) {
-    return `Das Annehmen hat nicht geklappt: ${r.error ?? "unbekannter Fehler"}. Bitte versuch es in der App.`
-  }
-  const preis = ziel.preis ? ` für ${euro(ziel.preis)} Euro` : ""
-  return `Erledigt — ich habe den Auftrag ${ziel.titel}${preis} für dich angenommen. Er ist jetzt in Bearbeitung.`
-}
-
 /** Lehnt die Anfrage an Position N ab. */
 async function lehneAnfrageText(hwId: string, position: number): Promise<string> {
   const ranked = await rankOffeneEinladungen(hwId)
@@ -810,8 +794,6 @@ export async function POST(request: NextRequest) {
           result = await getTopSegmenteText(hw.id)
         } else if (tc.function.name === "get_verlauf") {
           result = await getVerlaufText(hw.id)
-        } else if (tc.function.name === "anfrage_annehmen") {
-          result = await annehmeAnfrageText(hw.id, position)
         } else if (tc.function.name === "anfrage_ablehnen") {
           result = await lehneAnfrageText(hw.id, position)
         }
