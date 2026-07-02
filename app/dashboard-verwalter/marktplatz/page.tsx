@@ -631,7 +631,7 @@ export default function MarktplatzPage() {
                       <>
                         <button
                           type="button"
-                          onClick={() => router.push(`/dashboard-verwalter/tickets/${t.id}`)}
+                          onClick={() => router.push(`/dashboard-verwalter/ticket/${t.id}`)}
                           className="text-xs px-3 py-2 rounded-lg border border-line hover:bg-surface-muted text-ink-secondary"
                         >
                           Details
@@ -661,7 +661,7 @@ export default function MarktplatzPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => router.push(`/dashboard-verwalter/tickets/${t.id}`)}
+                          onClick={() => router.push(`/dashboard-verwalter/ticket/${t.id}`)}
                           className="text-xs px-3 py-2 rounded-lg border border-line hover:bg-surface-muted text-ink-secondary"
                         >
                           Details

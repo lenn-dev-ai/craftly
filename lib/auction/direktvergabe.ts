@@ -489,7 +489,7 @@ async function pruefeUndFuehreAutoAcceptAus(opts: {
               <b>${escapeHtml(ticket.titel)}</b> zum Preis von <b>${preisFormatiert} €</b>
               automatisch angenommen (Agent-Auto-Accept).</p>
               <p>Der Auftrag ist damit vergeben und befindet sich in Bearbeitung.</p>
-              <p><a href="${baseUrl}/dashboard-verwalter/tickets/${ticket.id}">Ticket öffnen</a></p>
+              <p><a href="${baseUrl}/dashboard-verwalter/ticket/${ticket.id}">Ticket öffnen</a></p>
             `,
           })
         }

@@ -85,7 +85,7 @@ export async function POST(
         <p>Dein Stamm-Handwerker hat das Ticket <b>${ticket.titel}</b> abgelehnt.</p>
         ${grund ? `<p><b>Grund:</b> ${grund}</p>` : ""}
         <p>Du kannst jetzt den Marktplatz öffnen oder das Ticket erneut zuweisen:
-        <a href="${baseUrl}/dashboard-verwalter/tickets/${ticket.id}">Ticket öffnen</a></p>
+        <a href="${baseUrl}/dashboard-verwalter/ticket/${ticket.id}">Ticket öffnen</a></p>
       `,
     })
   })().catch(err => console.warn("[stamm-anfragen/ablehnen] mail failed", err))

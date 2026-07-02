@@ -213,7 +213,7 @@ export async function annehmenEinladung(opts: AnnehmenOpts): Promise<AktionErgeb
         <p><strong>${hw?.name || "Ein Handwerker"}</strong>${hw?.firma ? ` (${hw.firma})` : ""} hat deine Direktanfrage für
         <b>${ticket.titel}</b> zum Preis von <b>${preisFormatiert} €</b> angenommen.</p>
         <p>Der Auftrag ist damit vergeben und wechselt in den Status „In Bearbeitung“.</p>
-        <p><a href="${baseUrl}/dashboard-verwalter/tickets/${ticket.id}">Ticket öffnen</a></p>
+        <p><a href="${baseUrl}/dashboard-verwalter/ticket/${ticket.id}">Ticket öffnen</a></p>
       `,
     })
   })().catch(err => console.error("[einladung-aktionen/annehmen] Mail fehlgeschlagen:", err))
