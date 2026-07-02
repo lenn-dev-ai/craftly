@@ -9,7 +9,22 @@
 // den hwId als Query-Param (`?hwId=...`), den der hw-assistant-Handler beim
 // tool-call ausliest (Fallback bleibt die Caller-Nummer fürs Telefon).
 
+import { createHmac } from "crypto"
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://reparo-app.netlify.app"
+
+// Härtung: Die Tool-URL trägt eine kurzlebige HMAC-Signatur über hwId+exp
+// (Schlüssel: CRON_SECRET — existiert bereits, verlässt nie den Server).
+// Ohne gültige Signatur lehnt hw-assistant Tool-Calls mit hwId ab — niemand
+// kann mit einer erratenen/geleakten hwId Aktionen faken (z.B. ablehnen).
+// Configs sind transient (pro Call frisch gebaut) → 24h Gültigkeit ist üppig.
+function signedToolUrl(hwId: string): string {
+  const secret = process.env.CRON_SECRET
+  if (!secret) return `${SITE_URL}/api/vapi/hw-assistant?hwId=${hwId}`
+  const exp = Date.now() + 24 * 3600_000
+  const sig = createHmac("sha256", secret).update(`${hwId}.${exp}`).digest("hex")
+  return `${SITE_URL}/api/vapi/hw-assistant?hwId=${hwId}&exp=${exp}&sig=${sig}`
+}
 
 export interface VapiHwLite {
   id: string
@@ -71,10 +86,10 @@ REGELN:
 - Sprich Deutsch, du-Form. Wenn du etwas nicht weißt, sag es direkt. Maximal eine Folgefrage pro Antwort.`
     : "Du bist der Reparo-Assistent. Die Person ist nicht in Reparo hinterlegt. Bitte erklär das freundlich und beende das Gespräch."
 
-  // Tool-Server-URL trägt den hwId, damit Web-Calls (ohne Caller-Nummer)
-  // den Handwerker beim tool-call identifizieren können.
+  // Tool-Server-URL trägt den hwId (signiert), damit Web-Calls (ohne
+  // Caller-Nummer) den Handwerker beim tool-call identifizieren können.
   const toolServerUrl = hw
-    ? `${SITE_URL}/api/vapi/hw-assistant?hwId=${hw.id}`
+    ? signedToolUrl(hw.id)
     : `${SITE_URL}/api/vapi/hw-assistant`
 
   const tools = hw

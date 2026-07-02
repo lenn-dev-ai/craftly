@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
+import { createHmac, timingSafeEqual } from "crypto"
 import { createServiceRoleClient } from "@/lib/supabase-server"
 import { verifyVapiSignature } from "@/lib/sms/verify-vapi-signature"
 import {
@@ -751,6 +752,29 @@ export async function POST(request: NextRequest) {
     // HW-Identifikation: bei Web-Calls (kein Telefon) über den hwId-Query-Param
     // der Tool-Server-URL; bei Telefon-Calls über die Caller-Nummer.
     const hwIdParam = request.nextUrl.searchParams.get("hwId")
+
+    // Härtung: hwId-URLs sind HMAC-signiert (siehe signedToolUrl in
+    // lib/vapi/assistant-config) — sonst könnte jeder mit erratener hwId
+    // Tool-Calls faken (inkl. anfrage_ablehnen). Kein CRON_SECRET → nur
+    // warnen (dev), sonst hart ablehnen.
+    if (hwIdParam) {
+      const secret = process.env.CRON_SECRET
+      if (secret) {
+        const exp = request.nextUrl.searchParams.get("exp") ?? ""
+        const sig = request.nextUrl.searchParams.get("sig") ?? ""
+        const erwartet = createHmac("sha256", secret).update(`${hwIdParam}.${exp}`).digest("hex")
+        const sigOk =
+          sig.length === erwartet.length &&
+          timingSafeEqual(Buffer.from(sig), Buffer.from(erwartet))
+        if (!sigOk || !(Number(exp) > Date.now())) {
+          console.warn("[vapi/hw-assistant] Ungültige/abgelaufene hwId-Signatur abgelehnt")
+          return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
+        }
+      } else {
+        console.warn("[vapi/hw-assistant] CRON_SECRET fehlt — hwId-Signatur-Check übersprungen")
+      }
+    }
+
     const callerPhone = msg.call.customer?.number ?? ""
     const hw = hwIdParam
       ? await findHwById(hwIdParam)
