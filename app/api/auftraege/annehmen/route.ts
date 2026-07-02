@@ -21,8 +21,15 @@ export async function POST(request: NextRequest) {
 
   const parsed = angebotAnnehmenSchema.safeParse(rawBody)
   if (!parsed.success) {
+    // Beta-Feedback: "Ungültige Eingabe" allein ist für den Nutzer kryptisch —
+    // die UI zeigt nur error, nicht details. Feldfehler in die Message packen,
+    // damit klar ist WAS ungültig ist (z.B. "preis: preis muss > 0 sein").
+    const fieldErrors = parsed.error.flatten().fieldErrors
+    const detail = Object.entries(fieldErrors)
+      .map(([feld, msgs]) => `${feld}: ${msgs?.[0] ?? "ungültig"}`)
+      .join("; ")
     return NextResponse.json(
-      { error: "Ungültige Eingabe", details: parsed.error.flatten().fieldErrors },
+      { error: detail ? `Ungültige Eingabe — ${detail}` : "Ungültige Eingabe", details: fieldErrors },
       { status: 400 },
     )
   }
