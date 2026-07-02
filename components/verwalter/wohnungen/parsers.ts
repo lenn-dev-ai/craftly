@@ -39,6 +39,28 @@ export const DB_FIELD_LABEL: Record<DbField, string> = {
   qm: "Quadratmeter",
 }
 
+// Beta-Feedback (2026-06-15): Verwalter wollen eine vorgefertigte Liste
+// herunterladen und befüllen → einheitliches Format, das automatisch
+// ausgelesen wird. Die Header sind bewusst so gewählt, dass autoMap() sie
+// garantiert 1:1 zuordnet ("Strasse" statt "Straße" — ß fällt bei der
+// Normalisierung weg; "E-Mail" statt "Mieter-E-Mail" — sonst greift der
+// "mieter"-Hint von mieter_name zuerst).
+export const VORLAGE_DATEINAME = "reparo-wohnungsliste-vorlage.csv"
+
+export function buildVorlageCsv(): string {
+  const kopf = [
+    "Strasse", "Hausnummer", "PLZ", "Ort", "Wohnungs-Bezeichnung",
+    "Mieter-Name", "E-Mail", "Telefon", "Baujahr", "Quadratmeter",
+  ]
+  const beispiele = [
+    ["Schönhauser Allee", "80", "10439", "Berlin", "WE 01 / EG links", "Max Mustermann", "max@beispiel.de", "030 1234567", "1995", "54"],
+    ["Musterstraße", "12a", "10115", "Berlin", "WE 02 / 1. OG rechts", "", "", "", "", ""],
+  ]
+  // Semikolon + BOM: öffnet in deutschem Excel direkt in Spalten mit Umlauten.
+  const zeilen = [kopf, ...beispiele].map(r => r.join(";"))
+  return "\uFEFF" + zeilen.join("\r\n") + "\r\n"
+}
+
 // Auto-Mapping-Heuristik: normalisierter Header-Name → DB-Feld.
 const NORMALIZE = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "")
 

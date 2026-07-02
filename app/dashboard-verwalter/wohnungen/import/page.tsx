@@ -4,11 +4,13 @@ import { useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button, Card, Select, Tooltip } from "@/components/ui"
 import { authFetch } from "@/lib/auth/clientFetch"
-import { Upload, FileSpreadsheet, Check, ChevronRight, ChevronLeft, X, AlertCircle } from "lucide-react"
+import { Upload, FileSpreadsheet, Check, ChevronRight, ChevronLeft, X, AlertCircle, Download } from "lucide-react"
 import {
   parseFile,
   autoMap,
   validateRows,
+  buildVorlageCsv,
+  VORLAGE_DATEINAME,
   DB_FIELDS,
   DB_FIELD_LABEL,
   PFLICHT_FELDER,
@@ -157,6 +159,31 @@ export default function WohnungenImportPage() {
               Auto-Mapping schlägt deutsche und englische Namen vor.
               <Tooltip text="Pflicht-Spalten: Straße, Hausnummer, PLZ, Ort, Wohnungs-Bezeichnung. Optional: Mieter-Name, Mieter-E-Mail, Mieter-Telefon, Baujahr, Quadratmeter. Andere Spalten kannst du im Mapping-Schritt ignorieren." />
             </p>
+
+            {/* Beta-Feedback: vorgefertigte Liste zum Befüllen — einheitliches
+                Format, das das Auto-Mapping garantiert 1:1 erkennt. */}
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-rolle-verwalter/5 border border-rolle-verwalter/15">
+              <div className="flex-1 text-sm text-ink-secondary">
+                Noch keine eigene Liste? Lade die Vorlage herunter, befülle sie
+                (Excel oder beliebiges Tabellen-Programm) und lade sie hier wieder hoch.
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const blob = new Blob([buildVorlageCsv()], { type: "text/csv;charset=utf-8" })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement("a")
+                  a.href = url
+                  a.download = VORLAGE_DATEINAME
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-rolle-verwalter/30 text-rolle-verwalter hover:bg-rolle-verwalter/10 transition-colors flex-shrink-0"
+              >
+                <Download className="w-4 h-4" />
+                Vorlage herunterladen
+              </button>
+            </div>
             <label
               className="block border-2 border-dashed border-line rounded-xl p-8 text-center cursor-pointer hover:border-rolle-verwalter/40 transition"
               onDragOver={e => { e.preventDefault() }}
