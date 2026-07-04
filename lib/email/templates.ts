@@ -566,3 +566,69 @@ export function welcomeEmail(params: {
   `)
   return { subject, html }
 }
+
+// =====================================================================
+// 8. Abwicklungsfrist (Cron abwicklungsfrist) — Warnung + Fristablauf
+// =====================================================================
+
+/** Stufe 1: Frist-Warnung — an HW oder Verwalter (Text rollenspezifisch). */
+export function fristWarnungEmail(params: {
+  name: string
+  fuer: "handwerker" | "verwalter"
+  ticketTitel: string
+  tageBisFrist: number
+  ticketId: string
+}): { subject: string; html: string } {
+  const subject = `Frist läuft ab: „${params.ticketTitel}“ — noch ${params.tageBisFrist} Tage`
+  const istHw = params.fuer === "handwerker"
+  const text = istHw
+    ? `der Auftrag <strong>${escapeHtml(params.ticketTitel)}</strong> ist seit über 10 Tagen in Arbeit.
+       In <strong>${params.tageBisFrist} Tagen</strong> läuft die Abwicklungsfrist ab — danach geht der
+       Auftrag automatisch zurück in die Vergabe und dein Zuverlässigkeits-Score sinkt.
+       Bitte schließe den Auftrag ab oder melde dich bei der Verwaltung, falls es Verzögerungen gibt.`
+    : `beim Auftrag <strong>${escapeHtml(params.ticketTitel)}</strong> läuft in
+       <strong>${params.tageBisFrist} Tagen</strong> die Abwicklungsfrist ab. Der zugewiesene
+       Handwerker wurde erinnert. Passiert bis dahin nichts, geht der Auftrag automatisch
+       zurück in die Vergabe.`
+  const url = istHw
+    ? `${SITE_URL}/dashboard-handwerker/angebot/${params.ticketId}`
+    : `${SITE_URL}/dashboard-verwalter/ticket/${params.ticketId}`
+  const html = emailLayout("Abwicklungsfrist läuft ab", `
+    <p style="margin:0 0 16px;color:${COLORS.text};font-size:16px;line-height:1.6;">
+      Hallo ${escapeHtml(params.name)},<br><br>
+      ${text}
+    </p>
+    ${ctaButton("Auftrag öffnen", url)}
+  `)
+  return { subject, html }
+}
+
+/** Stufe 2: Frist abgelaufen — Ticket zurück in die Vergabe. */
+export function fristAbgelaufenEmail(params: {
+  name: string
+  fuer: "handwerker" | "verwalter"
+  ticketTitel: string
+  ticketId: string
+}): { subject: string; html: string } {
+  const subject = `Frist abgelaufen: „${params.ticketTitel}“`
+  const istHw = params.fuer === "handwerker"
+  const text = istHw
+    ? `die Abwicklungsfrist für <strong>${escapeHtml(params.ticketTitel)}</strong> ist abgelaufen.
+       Der Auftrag wurde dir entzogen und geht zurück in die Vergabe; dein
+       Zuverlässigkeits-Score wurde reduziert. Falls das ein Missverständnis ist,
+       melde dich bitte direkt bei der Verwaltung.`
+    : `die Abwicklungsfrist für <strong>${escapeHtml(params.ticketTitel)}</strong> ist abgelaufen.
+       Der Auftrag wurde dem Handwerker entzogen und ist wieder in der Vergabe —
+       die KI sucht bereits nach dem nächsten passenden Handwerker.`
+  const url = istHw
+    ? `${SITE_URL}/dashboard-handwerker`
+    : `${SITE_URL}/dashboard-verwalter/ticket/${params.ticketId}`
+  const html = emailLayout("Abwicklungsfrist abgelaufen", `
+    <p style="margin:0 0 16px;color:${COLORS.text};font-size:16px;line-height:1.6;">
+      Hallo ${escapeHtml(params.name)},<br><br>
+      ${text}
+    </p>
+    ${ctaButton(istHw ? "Zum Dashboard" : "Ticket öffnen", url)}
+  `)
+  return { subject, html }
+}

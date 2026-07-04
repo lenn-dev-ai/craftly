@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase-server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { PENALTY_AMOUNT_CENTS } from "@/lib/stripe"
+import { sendEmailFireAndForget } from "@/lib/email/send"
+import { fristWarnungEmail, fristAbgelaufenEmail } from "@/lib/email/templates"
 
 // POST /api/cron/abwicklungsfrist
 //
@@ -85,6 +87,31 @@ export async function POST(request: NextRequest) {
     fehler?: string
   }> = []
 
+  // Mails an HW + Verwalter (fire-and-forget). Empfänger best-effort laden —
+  // fehlende E-Mail-Adresse blockiert die Eskalation nicht.
+  async function sendeFristMails(
+    t: UeberfaelligesTicket,
+    hwId: string,
+    stufe: "warnung" | "abgelaufen",
+    tageBisFrist: number,
+  ) {
+    const ids = [hwId, t.verwalter_id].filter(Boolean) as string[]
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("id, name, email")
+      .in("id", ids)
+      .returns<Array<{ id: string; name: string | null; email: string | null }>>()
+
+    for (const p of profile ?? []) {
+      if (!p.email) continue
+      const fuer = p.id === hwId ? "handwerker" as const : "verwalter" as const
+      const tpl = stufe === "warnung"
+        ? fristWarnungEmail({ name: p.name ?? "", fuer, ticketTitel: t.titel, tageBisFrist, ticketId: t.id })
+        : fristAbgelaufenEmail({ name: p.name ?? "", fuer, ticketTitel: t.titel, ticketId: t.id })
+      sendEmailFireAndForget({ to: p.email, subject: tpl.subject, html: tpl.html })
+    }
+  }
+
   for (const t of liste ?? []) {
     if (!t.zugewiesener_hw) continue
     const createdMs = new Date(t.created_at).getTime()
@@ -127,6 +154,9 @@ export async function POST(request: NextRequest) {
         console.warn("[abwicklungsfrist] penalty-mark fail:", penaltyErr.message)
       }
 
+      // Beide Seiten informieren: Auftrag entzogen / zurück in der Vergabe.
+      await sendeFristMails(t, t.zugewiesener_hw, "abgelaufen", 0)
+
       ergebnisse.push({
         ticketId: t.id,
         titel: t.titel,
@@ -155,9 +185,10 @@ export async function POST(request: NextRequest) {
         }
       })
 
-    // TODO: Hier sollte eine Mail an HW + Verwalter raus mit "Frist läuft
-    // in ~4 Tagen". Aktuell nur Marker — Mail-Template kommt in eigenem
-    // Sprint, sobald lib/email/templates die fristAblaufEmail hat.
+    // Warnung an HW + Verwalter: Frist läuft in ~N Tagen ab.
+    const tageBisFrist = Math.max(1, FRIST_TAGE - Math.floor((Date.now() - createdMs) / 86400_000))
+    await sendeFristMails(t, t.zugewiesener_hw, "warnung", tageBisFrist)
+
     ergebnisse.push({
       ticketId: t.id,
       titel: t.titel,
