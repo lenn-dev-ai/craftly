@@ -115,7 +115,7 @@ export function RollenWechsel() {
 
   return (
     <div className="w-full" ref={containerRef}>
-      <div className="text-[9px] font-bold uppercase tracking-wider text-ink-muted mb-1.5 px-1">
+      <div className="text-xs font-bold uppercase tracking-wider text-ink-muted mb-1.5 px-1">
         {istDemo ? "Demo: Rolle wechseln" : "Sicht wechseln"}
       </div>
       <div className="relative">

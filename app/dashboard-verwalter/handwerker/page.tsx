@@ -242,7 +242,7 @@ function Kpi({ label, value, farbe }: { label: string; value: string; farbe: str
         <div className="w-2.5 h-2.5 rounded-full" style={{ background: farbe }} />
       </div>
       <div className="text-2xl font-bold text-ink tabular-nums">{value}</div>
-      <div className="text-[10px] text-ink-muted mt-1 font-medium uppercase tracking-wider">{label}</div>
+      <div className="text-xs text-ink-muted mt-1 font-medium uppercase tracking-wider">{label}</div>
     </div>
   )
 }
@@ -288,7 +288,7 @@ function HandwerkerCard({ h, onContact, onAuftragNeu }: {
           <div className="flex items-center gap-2 flex-wrap">
             <div className="text-sm font-semibold text-ink truncate">{h.firma || h.name || "Unbenannt"}</div>
             {stufe && (
-              <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${stufe.cls}`}>
+              <span className={`text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${stufe.cls}`}>
                 {stufe.label}
               </span>
             )}

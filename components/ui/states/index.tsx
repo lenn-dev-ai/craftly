@@ -224,7 +224,7 @@ export function EscalationMarker({
       <span
         role="alert"
         title={reason}
-        className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-danger bg-danger/10 border border-danger/20 px-1.5 py-0.5 rounded"
+        className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-danger bg-danger/10 border border-danger/20 px-1.5 py-0.5 rounded"
       >
         <AlertTriangle className="w-3 h-3" aria-hidden="true" /> Eskaliert
       </span>

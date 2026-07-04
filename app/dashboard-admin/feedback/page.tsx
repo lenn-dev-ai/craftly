@@ -268,7 +268,7 @@ function Stat({ label, value, tone = "ink" }: {
   }
   return (
     <div className="bg-white border border-line rounded-xl px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium truncate">{label}</div>
+      <div className="text-xs uppercase tracking-wider text-ink-muted font-medium truncate">{label}</div>
       <div className={`text-xl font-bold tabular-nums ${toneCls[tone]}`}>{value}</div>
     </div>
   )
@@ -282,7 +282,7 @@ function ChipRow<T extends string>({ label, options, value, onChange }: {
 }) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-[11px] text-ink-muted uppercase tracking-wide w-14 shrink-0">{label}</span>
+      <span className="text-xs text-ink-muted uppercase tracking-wide w-14 shrink-0">{label}</span>
       {options.map(o => {
         const active = o.value === value
         return (

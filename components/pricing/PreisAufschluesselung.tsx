@@ -52,7 +52,7 @@ export default function PreisAufschluesselung({
           Kosten-Aufschlüsselung
         </h3>
         {istEarlyAdopter && (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-warm-dark bg-warm-light border border-warm/30 px-2 py-0.5 rounded">
+          <span className="text-xs font-bold uppercase tracking-wider text-warm-dark bg-warm-light border border-warm/30 px-2 py-0.5 rounded">
             Early Adopter
           </span>
         )}
@@ -63,7 +63,7 @@ export default function PreisAufschluesselung({
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-sm text-ink">Handwerkerkosten</div>
-            <div className="text-[11px] text-ink-muted mt-0.5">Geht 1:1 an den Handwerker</div>
+            <div className="text-xs text-ink-muted mt-0.5">Geht 1:1 an den Handwerker</div>
           </div>
           <div className="text-sm font-semibold text-accent tabular-nums">
             {formatEUR(auftragswert)}
@@ -79,7 +79,7 @@ export default function PreisAufschluesselung({
                 ({istEarlyAdopter ? "0 %" : formatProzent(provisionRate)})
               </span>
             </div>
-            <div className="text-[11px] text-ink-muted mt-0.5">
+            <div className="text-xs text-ink-muted mt-0.5">
               {istEarlyAdopter
                 ? "Onboarding-Phase aktiv"
                 : "Plattform, Support, Vermittlung"}
@@ -104,7 +104,7 @@ export default function PreisAufschluesselung({
       </div>
 
       {/* Steuer-Hinweis — Audit Punkt 8 */}
-      <div className="mt-3 text-[11px] text-ink-muted">
+      <div className="mt-3 text-xs text-ink-muted">
         Alle Beträge netto, zzgl. ges. MwSt. Die Rechnungslegung erfolgt direkt
         zwischen Handwerker und Auftraggeber.
       </div>

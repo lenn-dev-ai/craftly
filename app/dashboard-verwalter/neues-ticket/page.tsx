@@ -35,19 +35,19 @@ const DRINGLICHKEIT = [
     key: "planbar",
     label: "Planbar",
     sub: "Diese Woche",
-    help: "Auktion läuft bis zu 72h, Handwerker vergleichen in Ruhe Preise",
+    help: "Vergabe läuft bis zu 72h, Handwerker vergleichen in Ruhe Preise",
   },
   {
     key: "zeitnah",
     label: "Zeitnah",
     sub: "Bald bitte",
-    help: "Auktion läuft maximal 24h, dann automatische Vergabe an besten Treffer",
+    help: "Vergabe läuft maximal 24h, dann automatische Vergabe an besten Treffer",
   },
   {
     key: "notfall",
     label: "Notfall",
     sub: "Sofort",
-    help: "Direkt-Vergabe an erstbesten HW im Radius, kein Auktions-Loop",
+    help: "Direkt-Vergabe an erstbesten HW im Radius, ohne Wartezeit",
   },
 ] as const
 
@@ -252,7 +252,7 @@ export default function NeuesTicketPage() {
                 ))}
               </div>
               {/* Audit-L2: explizite Erklärung was die gewählte Stufe auslöst */}
-              <p className="text-[11px] text-ink-muted mt-2">
+              <p className="text-xs text-ink-muted mt-2">
                 {DRINGLICHKEIT.find(d => d.key === prioritaet)?.help}
               </p>
             </div>
@@ -363,7 +363,7 @@ function vergabeStatusText(modus: string | undefined): string | null {
     case "direktvergabe":
       return "Die KI hat automatisch den passendsten Handwerker angefragt. Antwortet er nicht rechtzeitig, wird der nächste angefragt — du musst nichts tun."
     case "auktion":
-      return "Kein direkt passender Handwerker im Umkreis — die KI hat automatisch eine Marktplatz-Auktion geöffnet."
+      return "Kein direkt passender Handwerker im Umkreis — die KI hat die Anfrage automatisch für mehrere Handwerker geöffnet."
     case "uebersprungen":
       return "Ticket angelegt. Die automatische Vergabe wurde nicht gestartet (z. B. fehlender Einsatzort) — du kannst im Marktplatz manuell eingreifen."
     default:

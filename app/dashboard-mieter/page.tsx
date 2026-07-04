@@ -171,7 +171,7 @@ export default function MieterDashboard() {
           </div>
           <div className="text-left">
             <div className="text-sm font-semibold text-ink">Schaden melden</div>
-            <div className="text-xs text-ink-muted">KI erkennt Kategorie + Dringlichkeit automatisch</div>
+            <div className="text-sm text-ink-muted">KI erkennt Kategorie + Dringlichkeit automatisch</div>
           </div>
         </button>
       </div>
@@ -187,7 +187,7 @@ export default function MieterDashboard() {
             </div>
             <div>
               <div className="text-sm font-medium text-accent">Alles in Ordnung</div>
-              <div className="text-xs text-ink-muted">Keine offenen Schäden. {erledigt.length} erledigte {erledigt.length > 1 ? "Meldungen" : "Meldung"}.</div>
+              <div className="text-sm text-ink-muted">Keine offenen Schäden. {erledigt.length} erledigte {erledigt.length > 1 ? "Meldungen" : "Meldung"}.</div>
             </div>
           </div>
         </Card>
@@ -219,7 +219,7 @@ export default function MieterDashboard() {
                         <div className="text-sm text-ink font-medium truncate">{t.titel}</div>
                       </div>
                       {t.ticket_typ === "diagnose" && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-rolle-admin bg-rolle-admin/10 border border-[#7C6CAB]/20 px-2 py-0.5 rounded">
+                        <span className="text-sm font-bold uppercase tracking-wider text-rolle-admin bg-rolle-admin/10 border border-[#7C6CAB]/20 px-2 py-0.5 rounded">
                           Diagnose
                         </span>
                       )}
@@ -230,7 +230,7 @@ export default function MieterDashboard() {
                         Klick aufs Ticket-Detail. Bei Status offen/auktion
                         zeigen wir "Wird vergeben…" statt Leerstelle. */}
                     {(hw || termin) && (
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-secondary mb-2">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-secondary mb-2">
                         {hw && (
                           <span className="flex items-center gap-1.5 min-w-0">
                             <UserIcon size={12} className="text-ink-muted flex-shrink-0" />
@@ -247,7 +247,7 @@ export default function MieterDashboard() {
                       </div>
                     )}
                     {inVergabe && (
-                      <div className="flex items-center gap-1.5 text-xs text-ink-muted mb-2">
+                      <div className="flex items-center gap-1.5 text-sm text-ink-muted mb-2">
                         <Loader2 size={12} className="text-ink-muted animate-spin" />
                         Wird vergeben…
                       </div>
@@ -255,7 +255,7 @@ export default function MieterDashboard() {
 
                     {/* Diagnose-Substatus für die Mieter-Pipeline-Sicht */}
                     {diag && (
-                      <div className={`text-xs font-medium mb-2 ${diag.color}`}>
+                      <div className={`text-sm font-medium mb-2 ${diag.color}`}>
                         {diag.label}
                       </div>
                     )}
@@ -268,7 +268,7 @@ export default function MieterDashboard() {
                         </div>
                       ))}
                     </div>
-                    <div className="flex justify-between text-[9px] text-ink-muted mb-3">
+                    <div className="flex justify-between text-sm text-ink-muted mb-3">
                       {PIPELINE_STEPS.map((ps, i) => (
                         <span key={ps.label} className={i <= stepIdx ? "text-accent" : ""}>{ps.label}</span>
                       ))}
@@ -282,10 +282,10 @@ export default function MieterDashboard() {
                             <circle cx="12" cy="12" r="10" />
                             <polyline points="12 6 12 12 16 14" />
                           </svg>
-                          <span className="text-xs text-ink-muted">Geschätzt: {estimate}</span>
+                          <span className="text-sm text-ink-muted">Geschätzt: {estimate}</span>
                         </div>
                       )}
-                      <span className="text-xs text-ink-muted">{new Date(t.created_at).toLocaleDateString("de")}</span>
+                      <span className="text-sm text-ink-muted">{new Date(t.created_at).toLocaleDateString("de")}</span>
                     </div>
                   </div>
                 </Card>
@@ -310,7 +310,7 @@ export default function MieterDashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-ink-muted truncate">{t.titel}</div>
                   </div>
-                  <span className="text-xs text-ink-muted">{new Date(t.created_at).toLocaleDateString("de")}</span>
+                  <span className="text-sm text-ink-muted">{new Date(t.created_at).toLocaleDateString("de")}</span>
                 </div>
               </Card>
             ))}

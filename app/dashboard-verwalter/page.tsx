@@ -185,7 +185,7 @@ export default function VerwalterDashboard() {
             <span
               title="Live-Updates aktiv"
               aria-label="Live-Updates aktiv"
-              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-accent"
+              className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent"
             >
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-50 animate-ping" />
@@ -341,7 +341,7 @@ export default function VerwalterDashboard() {
               >
                 <div className="flex items-center gap-2 mb-2">
                   <Stethoscope size={16} className="text-rolle-admin" />
-                  <span className="text-[10px] font-bold text-rolle-admin uppercase tracking-wider">Diagnose-Befunde</span>
+                  <span className="text-xs font-bold text-rolle-admin uppercase tracking-wider">Diagnose-Befunde</span>
                 </div>
                 <div className="text-3xl font-bold text-ink tabular-nums">{befundeWartend.length}</div>
                 <div className="text-xs text-ink-secondary mt-1 flex items-center gap-1">
@@ -357,7 +357,7 @@ export default function VerwalterDashboard() {
               >
                 <div className="flex items-center gap-2 mb-2">
                   <FileEdit size={16} className="text-warm" />
-                  <span className="text-[10px] font-bold text-warm uppercase tracking-wider">Nachträge</span>
+                  <span className="text-xs font-bold text-warm uppercase tracking-wider">Nachträge</span>
                 </div>
                 <div className="text-3xl font-bold text-ink tabular-nums">{offeneNachtraege.length}</div>
                 <div className="text-xs text-ink-secondary mt-1 flex items-center gap-1">
@@ -373,7 +373,7 @@ export default function VerwalterDashboard() {
               >
                 <div className="flex items-center gap-2 mb-2">
                   <Clock size={16} className="text-danger" />
-                  <span className="text-[10px] font-bold text-danger uppercase tracking-wider">Kein HW gefunden</span>
+                  <span className="text-xs font-bold text-danger uppercase tracking-wider">Kein HW gefunden</span>
                 </div>
                 <div className="text-3xl font-bold text-ink tabular-nums">{auktionenAbgelaufen.length}</div>
                 <div className="text-xs text-ink-secondary mt-1 flex items-center gap-1">
@@ -441,7 +441,7 @@ export default function VerwalterDashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-3 mb-1.5">
                         <h3 className="text-base font-semibold text-ink">{t.titel}</h3>
-                        <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded border flex-shrink-0 ${farben.pill}`}>
+                        <span className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded border flex-shrink-0 ${farben.pill}`}>
                           {PRIO_LABEL[t.prioritaet] || t.prioritaet}
                         </span>
                       </div>
@@ -717,7 +717,7 @@ function ErsparnisWidget({ data }: { data: ErsparnisAggregat }) {
             <PiggyBank size={20} className="text-accent" />
           </div>
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-accent">
+            <div className="text-xs font-bold uppercase tracking-wider text-accent">
               System-Ersparnis
             </div>
             <div className="text-xs text-ink-secondary mt-0.5">
@@ -739,7 +739,7 @@ function ErsparnisWidget({ data }: { data: ErsparnisAggregat }) {
       {/* Drei-Spalten KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-1">
+          <div className="text-xs uppercase tracking-wider text-ink-muted font-medium mb-1">
             Gesamt
           </div>
           <div className="text-3xl font-bold tabular-nums text-accent">
@@ -747,7 +747,7 @@ function ErsparnisWidget({ data }: { data: ErsparnisAggregat }) {
           </div>
         </div>
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-1">
+          <div className="text-xs uppercase tracking-wider text-ink-muted font-medium mb-1">
             Diesen Monat
           </div>
           <div className="text-2xl font-semibold tabular-nums text-ink">
@@ -755,7 +755,7 @@ function ErsparnisWidget({ data }: { data: ErsparnisAggregat }) {
           </div>
         </div>
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-1">
+          <div className="text-xs uppercase tracking-wider text-ink-muted font-medium mb-1">
             Ø pro Auftrag
           </div>
           <div className="text-2xl font-semibold tabular-nums text-ink">
@@ -767,7 +767,7 @@ function ErsparnisWidget({ data }: { data: ErsparnisAggregat }) {
       {/* Letzte 5 Liste */}
       {data.letzte5.length > 0 && (
         <div className="pt-4 border-t border-accent/15">
-          <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-2">
+          <div className="text-xs uppercase tracking-wider text-ink-muted font-medium mb-2">
             Letzte abgeschlossene Aufträge
           </div>
           <ul className="space-y-1">
@@ -780,7 +780,7 @@ function ErsparnisWidget({ data }: { data: ErsparnisAggregat }) {
                 <span className="font-semibold tabular-nums text-accent flex-shrink-0">
                   − {e.absolut.toLocaleString("de", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €
                 </span>
-                <span className="text-[10px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full tabular-nums flex-shrink-0">
+                <span className="text-xs font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full tabular-nums flex-shrink-0">
                   −{Math.round(e.prozent)} %
                 </span>
               </li>
@@ -810,7 +810,7 @@ function Kpi({ label, value, sub, accent, href }: {
   }`
   const content = (
     <>
-      <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-1">{label}</div>
+      <div className="text-xs uppercase tracking-wider text-ink-muted font-medium mb-1">{label}</div>
       <div className={`text-2xl font-bold tabular-nums ${farben[accent || "muted"]}`}>{value}</div>
       {sub && <div className="text-xs text-ink-muted mt-1">{sub}</div>}
     </>

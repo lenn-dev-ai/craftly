@@ -62,7 +62,7 @@ export default function AdminPage() {
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="text-2xl font-bold tracking-tight">Repa<span className="text-accent">ro</span></div>
-            <span className="text-[10px] font-bold text-rolle-admin uppercase tracking-widest bg-rolle-admin/10 px-2.5 py-1 rounded-full">Admin</span>
+            <span className="text-xs font-bold text-rolle-admin uppercase tracking-widest bg-rolle-admin/10 px-2.5 py-1 rounded-full">Admin</span>
           </div>
           <div className="text-sm text-ink-muted">{userName}</div>
         </div>
@@ -92,7 +92,7 @@ export default function AdminPage() {
                   {r.label.charAt(0)}
                 </div>
                 <div className="text-sm font-semibold mb-2 text-ink">{r.label}</div>
-                <div className="text-[11px] text-ink-muted mb-4 leading-relaxed">{r.desc}</div>
+                <div className="text-xs text-ink-muted mb-4 leading-relaxed">{r.desc}</div>
                 <div
                   className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
                   style={{ backgroundColor: r.color + "12", color: r.color }}>

@@ -444,7 +444,7 @@ export default function KalenderPage() {
 
         {/* Sprint AK Stufe 1 (27.05.): Filter-Chips → Legende. HW will eh
             immer alles sehen; Toggles waren Erbe vom alten Marktplatz-Konzept. */}
-        <div className="max-w-6xl mx-auto pl-14 pr-4 md:px-6 pb-3 flex items-center gap-3 flex-wrap text-[11px]">
+        <div className="max-w-6xl mx-auto pl-14 pr-4 md:px-6 pb-3 flex items-center gap-3 flex-wrap text-xs">
           <LegendItem color="bg-accent" label="Auftrag" />
           <LegendItem color="bg-rolle-mieter/50" label="Vorschlag" />
           <LegendItem color="bg-blue-300" label="Google" />
@@ -472,7 +472,7 @@ export default function KalenderPage() {
           (Desktop hat die Zeile in der Chips-Bar; Mobile bekommt sie hier). */}
       {privatBlocks.length === 0 && termine.length === 0 && (
         <div className="max-w-6xl mx-auto px-2 sm:px-6 pt-3 sm:hidden">
-          <div className="text-[11px] text-ink-muted bg-surface-muted/60 border border-line rounded-lg px-3 py-2">
+          <div className="text-xs text-ink-muted bg-surface-muted/60 border border-line rounded-lg px-3 py-2">
             Tippe auf eine leere Stunde im Grid, um diese Zeit privat zu blockieren.
           </div>
         </div>
@@ -541,12 +541,12 @@ export default function KalenderPage() {
                 const isHeute = isoDatum(d) === heuteIso
                 const feiertag = DE_FEIERTAGE[isoDatum(d)]
                 return (
-                  <div key={i} className={`text-center py-2 text-[11px] font-medium ${isHeute ? "text-accent" : "text-ink-secondary"}`}>
+                  <div key={i} className={`text-center py-2 text-xs font-medium ${isHeute ? "text-accent" : "text-ink-secondary"}`}>
                     <div>{TAGE_LABEL[i]}</div>
                     <div className={`text-xs ${isHeute ? "font-bold" : "font-normal"}`}>{d.getDate()}.</div>
                     {feiertag && (
                       <div
-                        className="mt-0.5 text-[9px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1 py-px mx-1 truncate"
+                        className="mt-0.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1 py-px mx-1 truncate"
                         title={feiertag}
                       >
                         {feiertag}
@@ -569,7 +569,7 @@ export default function KalenderPage() {
               {stunden.map((s) => (
                 <div
                   key={s}
-                  className="text-[10px] text-ink-muted border-r border-line px-1.5 pt-0.5"
+                  className="text-xs text-ink-muted border-r border-line px-1.5 pt-0.5"
                   style={{ gridColumn: 1 }}
                 >
                   {String(s).padStart(2, "0")}:00
@@ -621,7 +621,7 @@ export default function KalenderPage() {
                               tabIndex={a.htmlLink ? 0 : undefined}
                               onClick={() => a.htmlLink && window.open(a.htmlLink, "_blank", "noopener,noreferrer")}
                               onKeyDown={e => e.key === "Enter" && a.htmlLink && window.open(a.htmlLink, "_blank", "noopener,noreferrer")}
-                              className={`block rounded-md bg-blue-100 border border-blue-200 text-blue-900 px-2 py-0.5 transition-colors truncate text-[10px] font-medium ${a.htmlLink ? "cursor-pointer hover:bg-blue-200" : "cursor-default"}`}
+                              className={`block rounded-md bg-blue-100 border border-blue-200 text-blue-900 px-2 py-0.5 transition-colors truncate text-xs font-medium ${a.htmlLink ? "cursor-pointer hover:bg-blue-200" : "cursor-default"}`}
                               title={`Ganztägig: ${decodeHtml(a.summary)}`}
                             >
                               <span className="text-blue-700 font-semibold mr-1">Google</span>
@@ -673,8 +673,8 @@ export default function KalenderPage() {
                         }}
                         title="Privat blockiert — entfernen?"
                       >
-                        <div className="text-[10px] font-semibold uppercase tracking-wide text-ink/80">🔒 Privat</div>
-                        <div className="text-[10px] truncate text-ink/70">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-ink/80">🔒 Privat</div>
+                        <div className="text-xs truncate text-ink/70">
                           {fmtTime(p.von)}–{fmtTime(p.bis)}
                         </div>
                       </button>
@@ -698,9 +698,9 @@ export default function KalenderPage() {
                         }}
                         title={`Google: ${decodeHtml(g.summary)} (${fmtTime(g.von)}–${fmtTime(g.bis)})`}
                       >
-                        <div className="text-[10px] font-semibold uppercase tracking-wide text-blue-700">Google</div>
-                        <div className="text-[10px] truncate text-blue-900">{decodeHtml(g.summary)}</div>
-                        <div className="text-[10px] text-blue-800/70 truncate">{fmtTime(g.von)}–{fmtTime(g.bis)}</div>
+                        <div className="text-xs font-semibold uppercase tracking-wide text-blue-700">Google</div>
+                        <div className="text-xs truncate text-blue-900">{decodeHtml(g.summary)}</div>
+                        <div className="text-xs text-blue-800/70 truncate">{fmtTime(g.von)}–{fmtTime(g.bis)}</div>
                       </div>
                     ))}
 
@@ -723,15 +723,15 @@ export default function KalenderPage() {
                           }}
                           title={t.titel}
                         >
-                          <div className={`text-[10px] font-semibold uppercase tracking-wide ${
+                          <div className={`text-xs font-semibold uppercase tracking-wide ${
                             istVorschlag ? "text-rolle-mieter" : "text-white/90"
                           }`}>
                             {istVorschlag ? "Vorschlag" : "Auftrag"}
                           </div>
-                          <div className={`text-[10px] truncate ${istVorschlag ? "text-rolle-mieter/80" : "text-white"}`}>
+                          <div className={`text-xs truncate ${istVorschlag ? "text-rolle-mieter/80" : "text-white"}`}>
                             {fmtTime(t.von)}–{fmtTime(t.bis)}
                           </div>
-                          <div className={`text-[10px] truncate ${istVorschlag ? "text-rolle-mieter/70" : "text-white/80"}`}>
+                          <div className={`text-xs truncate ${istVorschlag ? "text-rolle-mieter/70" : "text-white/80"}`}>
                             {t.titel}
                           </div>
                         </button>
@@ -802,7 +802,7 @@ export default function KalenderPage() {
               </p>
 
               <div>
-                <label className="block text-[11px] font-medium text-ink-muted mb-1">Datum</label>
+                <label className="block text-xs font-medium text-ink-muted mb-1">Datum</label>
                 <input
                   type="date"
                   value={slotModal.datum}
@@ -812,7 +812,7 @@ export default function KalenderPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-medium text-ink-muted mb-1">Von</label>
+                  <label className="block text-xs font-medium text-ink-muted mb-1">Von</label>
                   <input
                     type="time"
                     value={slotModal.von}
@@ -821,7 +821,7 @@ export default function KalenderPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-ink-muted mb-1">Bis</label>
+                  <label className="block text-xs font-medium text-ink-muted mb-1">Bis</label>
                   <input
                     type="time"
                     value={slotModal.bis}

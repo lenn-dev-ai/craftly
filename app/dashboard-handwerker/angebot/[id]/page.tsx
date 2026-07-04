@@ -326,7 +326,7 @@ export default function AngebotAbgeben() {
                     <button
                       type="button"
                       onClick={() => setSlotEntries(prev => prev.map((s, i) => i === idx ? { datum: "", von: "08:00", bis: "10:00" } : s))}
-                      className="text-[11px] text-ink-muted hover:text-danger"
+                      className="text-xs text-ink-muted hover:text-danger"
                     >
                       Leeren
                     </button>
@@ -373,7 +373,7 @@ export default function AngebotAbgeben() {
             >
               {slotsSaving ? "Speichert…" : "Termine an Mieter senden"}
             </button>
-            <p className="text-[11px] text-ink-muted text-center">
+            <p className="text-xs text-ink-muted text-center">
               Falls der Mieter nicht innerhalb von 24h reagiert, bekommst du eine
               Erinnerung — du kannst dann neue Slots vorschlagen.
             </p>
@@ -403,14 +403,14 @@ export default function AngebotAbgeben() {
         <div className="bg-white border border-line rounded-2xl p-5">
           <div className="flex items-start justify-between mb-3">
             <h2 className="text-base font-semibold text-ink leading-tight pr-3">{ticket.titel}</h2>
-            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${PRIO_COLORS[ticket.prioritaet] || PRIO_COLORS.normal}`}>
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${PRIO_COLORS[ticket.prioritaet] || PRIO_COLORS.normal}`}>
               {ticket.prioritaet}
             </span>
           </div>
           {ticket.beschreibung && (
             <p className="text-sm text-gray-400 mb-3 line-clamp-3">{ticket.beschreibung}</p>
           )}
-          <div className="flex flex-wrap gap-2 text-[11px]">
+          <div className="flex flex-wrap gap-2 text-xs">
             {ticket.gewerk && (
               <span className="bg-surface text-gray-300 px-2 py-0.5 rounded-full">{formatGewerk(ticket.gewerk)}</span>
             )}
@@ -433,7 +433,7 @@ export default function AngebotAbgeben() {
             <label htmlFor={preisId} className="block text-sm font-medium text-ink mb-1">
               Festpreis (vom System bestimmt)
             </label>
-            <p className="text-[11px] text-ink-muted mb-3">
+            <p className="text-xs text-ink-muted mb-3">
               Reparo kalkuliert den Festpreis aus Gewerk, Aufwand, Anfahrt und Dringlichkeit.
               Inkl. Material, kein Stundensatz.
             </p>
@@ -447,11 +447,11 @@ export default function AngebotAbgeben() {
               </div>
             </div>
             {systemPreis == null && (
-              <p className="text-[11px] text-danger mt-2">
+              <p className="text-xs text-danger mt-2">
                 Für diesen Auftrag liegt noch kein System-Preis vor — bitte beim Verwalter melden.
               </p>
             )}
-            <p className="text-[11px] text-ink-muted mt-2">
+            <p className="text-xs text-ink-muted mt-2">
               Reparo zieht 5 % Plattformgebühr ab. Du bekommst den Rest 1:1 ausgezahlt.
             </p>
           </div>
@@ -469,7 +469,7 @@ export default function AngebotAbgeben() {
               onChange={(e) => setFruehesterTermin(e.target.value)}
               className="w-full bg-surface border border-line rounded-xl px-4 py-3 text-ink placeholder:text-gray-600 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-[#00D4AA]/30 transition-all [color-scheme:dark]"
             />
-            <p className="text-[11px] text-gray-500 mt-2">Wann könntest du frühestens anfangen?</p>
+            <p className="text-xs text-gray-500 mt-2">Wann könntest du frühestens anfangen?</p>
           </div>
 
           {/* Message */}
@@ -568,7 +568,7 @@ export default function AngebotAbgeben() {
 
         {/* H3: vorheriges Disclaimer "bis zum Ablauf der Auktion" passt nicht
             mehr — Vollkalkulations-Modell, kein Auktionsfenster. */}
-        <p className="text-center text-[11px] text-gray-600 pb-6">
+        <p className="text-center text-xs text-gray-600 pb-6">
           Mit der Annahme stimmst du den Nutzungsbedingungen zu.
           <br />Mit der Annahme bist du an den vereinbarten Termin gebunden.
         </p>

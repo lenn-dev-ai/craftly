@@ -61,7 +61,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <>
       <div className="p-5 border-b border-line">
         <div className="text-xl tracking-tight text-ink">Repa<span className="text-accent">ro</span></div>
-        <div className="text-[10px] font-bold text-rolle-admin uppercase tracking-widest mt-1">Admin Panel</div>
+        <div className="text-xs font-bold text-rolle-admin uppercase tracking-widest mt-1">Admin Panel</div>
       </div>
 
       <div className="px-3 pt-3 pb-1">
@@ -98,7 +98,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <LogOut size={16} />
           <span>Abmelden</span>
         </button>
-        <div className="mt-3 flex gap-3 px-3 text-[11px] text-ink-muted">
+        <div className="mt-3 flex gap-3 px-3 text-xs text-ink-muted">
           <a href="/impressum" className="hover:text-ink transition-colors">Impressum</a>
           <a href="/agb" className="hover:text-ink transition-colors">AGB</a>
           <a href="/datenschutz" className="hover:text-ink transition-colors">Datenschutz</a>

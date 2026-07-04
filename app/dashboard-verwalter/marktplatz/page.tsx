@@ -391,7 +391,7 @@ export default function MarktplatzPage() {
           json.modus === "stamm_anfrage" ? "Stamm-Handwerker automatisch angefragt."
           : json.modus === "direktvergabe" ? "KI hat den passendsten Handwerker angefragt."
           : json.modus === "notfall-direkt" ? "Notfall direkt vergeben — Handwerker informiert."
-          : "Marktplatz-Auktion geöffnet — kein direkt passender Handwerker im Umkreis.",
+          : "Für mehrere Handwerker geöffnet — kein direkt passender Handwerker im Umkreis.",
         )
         await loadData()
       } else {
@@ -554,13 +554,13 @@ export default function MarktplatzPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-semibold text-ink truncate">{t.titel}</span>
                       {t.prioritaet === "notfall" && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wide bg-red-100 text-red-800 border border-red-200 px-1.5 py-px rounded">Notfall</span>
+                        <span className="text-xs font-semibold uppercase tracking-wide bg-red-100 text-red-800 border border-red-200 px-1.5 py-px rounded">Notfall</span>
                       )}
                       {t.status === "auktion" && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wide bg-warm-light text-warm-dark border border-warm/30 px-1.5 py-px rounded">Auktion (Fallback)</span>
+                        <span className="text-xs font-semibold uppercase tracking-wide bg-warm-light text-warm-dark border border-warm/30 px-1.5 py-px rounded">Offene Vergabe (Fallback)</span>
                       )}
                       {dvAktiv && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wide bg-accent/10 text-accent border border-accent/20 px-1.5 py-px rounded inline-flex items-center gap-1">
+                        <span className="text-xs font-semibold uppercase tracking-wide bg-accent/10 text-accent border border-accent/20 px-1.5 py-px rounded inline-flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                           Direktvergabe läuft
                         </span>
@@ -599,8 +599,8 @@ export default function MarktplatzPage() {
                     )}
                     {/* Sprint AM Phase 3 — A: Auktion als Fallback kennzeichnen */}
                     {t.status === "auktion" && !nullKandidaten && (
-                      <div className="mt-1.5 text-[11px] text-warm-dark">
-                        Direktvergabe an {(t.einladungen?.[0]?.count ?? 0)} Handwerker ohne Antwort — jetzt offene Bieter-Auktion.
+                      <div className="mt-1.5 text-xs text-warm-dark">
+                        Direktvergabe an {(t.einladungen?.[0]?.count ?? 0)} Handwerker ohne Antwort — Anfrage jetzt für mehrere Handwerker geöffnet.
                       </div>
                     )}
                     {/* Sprint BD — wartet auf Vergabe-Start (z.B. Mieter-Ticket
@@ -618,7 +618,7 @@ export default function MarktplatzPage() {
                         <AlertCircle size={13} className="flex-shrink-0 mt-0.5" />
                         <span>
                           Keine passenden Handwerker im Umkreis gefunden ({t.gewerk ? formatGewerk(t.gewerk) : "Gewerk unbekannt"}).
-                          Auktion läuft, aber noch niemand eingeladen — bitte Gewerk und Radius prüfen oder HW manuell einladen.
+                          Vergabe läuft, aber noch niemand eingeladen — bitte Gewerk und Radius prüfen oder HW manuell einladen.
                         </span>
                       </div>
                     )}
@@ -846,7 +846,7 @@ export default function MarktplatzPage() {
               </ul>
             )}
 
-            <p className="text-[11px] text-ink-muted mt-3 inline-flex items-center gap-1.5">
+            <p className="text-xs text-ink-muted mt-3 inline-flex items-center gap-1.5">
               <FilterIcon size={11} />
               Verfügbarkeits-Status kommt live aus dem Google-Kalender (4-Stunden-Fenster).
               HW ohne Google-Verbindung erscheinen als &bdquo;unbekannt&ldquo;.
@@ -912,7 +912,7 @@ export default function MarktplatzPage() {
                           )}
                         </div>
                       </div>
-                      {einlade === h.handwerker_id && <span className="text-[11px] text-ink-muted">…</span>}
+                      {einlade === h.handwerker_id && <span className="text-xs text-ink-muted">…</span>}
                     </button>
                   )
                 })
@@ -964,13 +964,13 @@ export default function MarktplatzPage() {
                 />
                 <AuctionStartOption
                   label="🟡 Zeitnah"
-                  text="System berechnet den besten Preis und fragt automatisch den passendsten Handwerker an (Antwortfrist ca. 2 Std.). Erst bei wiederholter Absage öffnet sich eine breitere Auktion."
+                  text="System berechnet den besten Preis und fragt automatisch den passendsten Handwerker an (Antwortfrist ca. 2 Std.). Erst bei wiederholter Absage wird die Anfrage für mehrere Handwerker geöffnet."
                   disabled={auctionLaeuft}
                   onClick={() => void starteAuction(auctionStarten, "zeitnah")}
                 />
                 <AuctionStartOption
                   label="🟢 Planbar"
-                  text="System berechnet den besten Preis und fragt automatisch den passendsten Handwerker an (Antwortfrist ca. 24 Std.). Erst bei wiederholter Absage öffnet sich eine breitere Auktion."
+                  text="System berechnet den besten Preis und fragt automatisch den passendsten Handwerker an (Antwortfrist ca. 24 Std.). Erst bei wiederholter Absage wird die Anfrage für mehrere Handwerker geöffnet."
                   disabled={auctionLaeuft}
                   onClick={() => void starteAuction(auctionStarten, "planbar")}
                 />
@@ -1066,7 +1066,7 @@ function TabButton({ active, label, count, icon, onClick }: {
     >
       {icon}
       {label}
-      <span className={`text-[10px] tabular-nums rounded-full px-1.5 py-0.5 ${
+      <span className={`text-xs tabular-nums rounded-full px-1.5 py-0.5 ${
         active ? "bg-accent/15 text-accent" : "bg-surface-muted text-ink-muted"
       }`}>{count}</span>
     </button>
@@ -1090,7 +1090,7 @@ function HwStatusBadge({ status, compact = false }: { status: HwStatus | undefin
   }
   return (
     <span
-      className="inline-flex items-center gap-1.5 text-[11px] font-medium text-ink-muted flex-shrink-0 w-20"
+      className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted flex-shrink-0 w-20"
       title={m.help}
     >
       <span className={`w-2 h-2 rounded-full ${m.color} flex-shrink-0`} aria-hidden="true" />

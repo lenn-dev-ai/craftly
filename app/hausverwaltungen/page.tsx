@@ -300,7 +300,7 @@ function Pricing() {
               }`}
             >
               {t.highlight && (
-                <div className="text-[10px] font-bold uppercase tracking-wider text-rolle-verwalter mb-2">
+                <div className="text-xs font-bold uppercase tracking-wider text-rolle-verwalter mb-2">
                   Beliebteste Wahl
                 </div>
               )}
@@ -310,7 +310,7 @@ function Pricing() {
                 <span className="text-3xl font-bold text-ink">{t.preis}</span>
                 {t.einheit && <span className="text-xs text-ink-muted">{t.einheit}</span>}
               </div>
-              <p className="text-[11px] text-ink-muted mb-5">{t.beispiel}</p>
+              <p className="text-xs text-ink-muted mb-5">{t.beispiel}</p>
               <ul className="space-y-2 mb-6">
                 {t.features.map(f => (
                   <li key={f} className="text-sm text-ink-secondary flex items-start gap-2">

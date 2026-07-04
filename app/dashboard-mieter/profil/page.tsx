@@ -99,7 +99,7 @@ export default function MieterProfilPage() {
           </div>
           <div>
             <h1 className="text-xl font-semibold text-ink">Mein Profil</h1>
-            <p className="text-xs text-ink-muted">{profil?.email ?? "—"}</p>
+            <p className="text-sm text-ink-muted">{profil?.email ?? "—"}</p>
           </div>
         </header>
 
@@ -109,7 +109,7 @@ export default function MieterProfilPage() {
             <MapPin size={16} className="text-rolle-mieter" />
             <h2 className="text-sm font-semibold text-ink">Meine Wohnung</h2>
           </div>
-          <p className="text-xs text-ink-muted">
+          <p className="text-sm text-ink-muted">
             Adresse wird bei jeder Schadens-Meldung automatisch vorausgefüllt.
           </p>
           <AddressAutocomplete
@@ -123,7 +123,7 @@ export default function MieterProfilPage() {
             }}
           />
           {adresse && (
-            <div className="text-[11px] text-ink-muted">
+            <div className="text-sm text-ink-muted">
               Aktuell gespeichert: {adresse}
             </div>
           )}
@@ -133,7 +133,7 @@ export default function MieterProfilPage() {
         <section className="bg-white border border-line rounded-2xl p-4 space-y-3">
           <h2 className="text-sm font-semibold text-ink">Kontakt</h2>
           <div>
-            <label className="block text-[11px] font-medium text-ink-muted mb-1">Name</label>
+            <label className="block text-sm font-medium text-ink-muted mb-1">Name</label>
             <input
               value={name}
               onChange={e => setName(e.target.value)}
@@ -142,7 +142,7 @@ export default function MieterProfilPage() {
             />
           </div>
           <div>
-            <label className="text-[11px] font-medium text-ink-muted mb-1 flex items-center gap-1.5">
+            <label className="text-sm font-medium text-ink-muted mb-1 flex items-center gap-1.5">
               <Mail size={11} /> E-Mail
             </label>
             <input
@@ -150,12 +150,12 @@ export default function MieterProfilPage() {
               readOnly
               className="w-full bg-surface-muted border border-line rounded-xl px-3 py-2.5 text-sm text-ink-muted cursor-not-allowed"
             />
-            <p className="text-[10px] text-ink-muted mt-1">
+            <p className="text-sm text-ink-muted mt-1">
               Mail ändern geht aktuell nur über den Reparo-Support.
             </p>
           </div>
           <div>
-            <label className="text-[11px] font-medium text-ink-muted mb-1 flex items-center gap-1.5">
+            <label className="text-sm font-medium text-ink-muted mb-1 flex items-center gap-1.5">
               <Phone size={11} /> Telefon <span className="text-ink-muted font-normal">(optional)</span>
             </label>
             <input

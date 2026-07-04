@@ -22,7 +22,9 @@ export function Badge({ status, mieterSicht = false }: { status: TicketStatus; m
     gemeldet:       { label: "Gemeldet",       bg: "bg-status-offen/10",       text: "text-status-offen",       dot: "bg-status-offen" },
     offen:          { label: "Offen",          bg: "bg-status-offen/10",       text: "text-status-offen",       dot: "bg-status-offen" },
     rueckfrage:     { label: "Rückfrage",      bg: "bg-warm/15",               text: "text-warm-dark",          dot: "bg-warm" },
-    auktion:        { label: "Auktion",        bg: "bg-status-auktion/10",     text: "text-status-auktion",     dot: "bg-status-auktion" },
+    // Sprach-Pass (Produkt-Review 2026-07-03): Nach außen gibt es keine
+    // "Auktion" mehr — die Engine-Stati bleiben, das Label spricht Vergabe.
+    auktion:        { label: "Vergabe läuft",  bg: "bg-status-auktion/10",     text: "text-status-auktion",     dot: "bg-status-auktion" },
     angebote_da:    { label: "Angebote da",    bg: "bg-status-auktion/10",     text: "text-status-auktion",     dot: "bg-status-auktion" },
     in_bearbeitung: { label: "In Bearbeitung", bg: "bg-status-bearbeitung/10", text: "text-status-bearbeitung", dot: "bg-status-bearbeitung" },
     fertiggestellt_hw: { label: "Wartet auf Bestätigung", bg: "bg-status-auktion/10", text: "text-status-auktion", dot: "bg-status-auktion" },
@@ -68,7 +70,7 @@ export function TypBadge({ typ }: { typ: "standard" | "diagnose" | "projekt" }) 
   return (
     <span
       aria-label={`Typ: ${label}`}
-      className={`${cls} border bg-transparent text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full inline-flex items-center`}
+      className={`${cls} border bg-transparent text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full inline-flex items-center`}
     >
       {label}
     </span>
@@ -140,7 +142,7 @@ export function TrustBadge({ kind }: {
   } as const
   const { label, icon, cls } = map[kind]
   return (
-    <span className={`${cls} border text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full inline-flex items-center gap-1`}>
+    <span className={`${cls} border text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full inline-flex items-center gap-1`}>
       <span aria-hidden="true">{icon}</span> {label}
     </span>
   )
@@ -384,7 +386,7 @@ export function Tooltip({ text }: { text: string }) {
         type="button"
         tabIndex={0}
         aria-label={`Hinweis: ${text}`}
-        className="ml-1 w-4 h-4 rounded-full bg-ink-faint/20 text-ink-muted text-[10px] font-bold flex items-center justify-center hover:bg-ink-faint/30 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:ring-offset-1"
+        className="ml-1 w-4 h-4 rounded-full bg-ink-faint/20 text-ink-muted text-xs font-bold flex items-center justify-center hover:bg-ink-faint/30 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:ring-offset-1"
       >
         ?
       </button>

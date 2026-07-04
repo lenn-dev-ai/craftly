@@ -75,7 +75,7 @@ export default function BottomNav({ rolle }: { rolle: Rolle }) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition-colors ${
+              className={`flex flex-col items-center justify-center gap-1 py-2.5 text-xs font-medium transition-colors ${
                 aktiv ? `${aktivColor} font-semibold` : "text-ink-muted hover:text-ink"
               }`}
               aria-current={aktiv ? "page" : undefined}
@@ -90,7 +90,7 @@ export default function BottomNav({ rolle }: { rolle: Rolle }) {
         <button
           type="button"
           onClick={() => window.dispatchEvent(new CustomEvent("reparo:open-menu"))}
-          className="flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium text-ink-muted hover:text-ink transition-colors"
+          className="flex flex-col items-center justify-center gap-1 py-2.5 text-xs font-medium text-ink-muted hover:text-ink transition-colors"
           aria-label="Mehr — volles Menü öffnen"
         >
           <Menu size={20} />

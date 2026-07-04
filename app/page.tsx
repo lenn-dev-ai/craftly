@@ -358,7 +358,7 @@ function VerwalterSection() {
                       <p className="text-sm font-medium">{hw.name}</p>
                       <span className="text-xs text-warm">★ {hw.rating}</span>
                       {hw.favorit && (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-[#D4A24E]/15 text-warm-dark rounded font-medium">Favorit</span>
+                        <span className="text-xs px-1.5 py-0.5 bg-[#D4A24E]/15 text-warm-dark rounded font-medium">Favorit</span>
                       )}
                     </div>
                     <p className="text-xs text-ink-muted">{hw.dist} entfernt · {hw.avail}</p>
@@ -444,7 +444,7 @@ function MieterSection() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-semibold text-ink">Reparo</span>
-                <span className="text-[10px] text-ink-muted">jetzt</span>
+                <span className="text-xs text-ink-muted">jetzt</span>
               </div>
               <p className="text-sm text-ink mt-0.5">
                 <strong>Handwerker beauftragt:</strong> M. Weber kommt am Freitag, 14:00–16:00 Uhr.
@@ -594,7 +594,7 @@ function KIAutomation() {
           {cards.map(c => (
             <div key={c.titel} className="bg-white rounded-xl p-6 border border-line shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
               {c.kuenftig && (
-                <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium uppercase tracking-wide">
+                <div className="absolute top-3 right-3 text-xs px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium uppercase tracking-wide">
                   Coming soon
                 </div>
               )}
@@ -655,7 +655,7 @@ function BeispielSzenarien() {
           {szenarien.map((s, i) => (
             <div key={i} className="bg-white p-6 rounded-2xl border border-line shadow-sm">
               <span
-                className="inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded mb-3"
+                className="inline-block text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded mb-3"
                 style={{ color: s.farbe, background: `${s.farbe}15` }}
               >
                 {s.kontext}

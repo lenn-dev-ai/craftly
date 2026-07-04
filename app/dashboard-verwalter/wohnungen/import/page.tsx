@@ -371,7 +371,7 @@ function Stat({ label, value, accent }: { label: string; value: number; accent: 
   return (
     <div className="bg-white rounded-xl border border-line p-3 text-center">
       <div className={`text-2xl font-bold tabular-nums ${accent}`}>{value}</div>
-      <div className="text-[10px] uppercase tracking-wider text-ink-muted">{label}</div>
+      <div className="text-xs uppercase tracking-wider text-ink-muted">{label}</div>
     </div>
   )
 }

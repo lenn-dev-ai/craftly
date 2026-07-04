@@ -110,7 +110,7 @@ export default function AdminDashboard() {
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-3">Live</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <BigStat label="User online (5 min)" value={live?.users_online} />
-          <BigStat label="Aktive Auktionen" value={live?.aktive_auktionen} />
+          <BigStat label="Aktive Vergaben" value={live?.aktive_auktionen} />
           <BigStat label="Neue Tickets (1h)" value={live?.neue_tickets_letzte_stunde} />
         </div>
       </section>
@@ -128,7 +128,7 @@ export default function AdminDashboard() {
           <ul className="divide-y divide-line">
             {(actionItems?.items ?? []).map((item, i) => (
               <li key={i} className="py-3 text-sm flex items-start gap-3">
-                <span className={`mt-0.5 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded ${
+                <span className={`mt-0.5 text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded ${
                   item.type === "auktion_ohne_angebot" ? "bg-amber-100 text-amber-900"
                   : item.type === "verwalter_ohne_vergabe" ? "bg-rose-100 text-rose-900"
                   : "bg-sky-100 text-sky-900"
@@ -212,7 +212,7 @@ function HealthDot({ label, ok, reason, paused }: { label: string; ok: boolean |
       <span className={`inline-block w-2 h-2 rounded-full ${color}`} />
       <span className="text-xs text-ink">{label}</span>
       {showReason && (
-        <span className={`text-[10px] ${reasonColor} truncate max-w-[160px]`} title={reason}>
+        <span className={`text-xs ${reasonColor} truncate max-w-[160px]`} title={reason}>
           {reason}
         </span>
       )}

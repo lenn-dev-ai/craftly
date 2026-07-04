@@ -155,7 +155,7 @@ export function FeedbackWidget() {
                 className="w-full px-3 py-2 rounded-xl border border-line text-sm text-ink bg-white focus:outline-none focus:ring-2 focus:ring-accent/40 resize-y"
                 disabled={pending}
               />
-              <div className="flex justify-between items-center text-[11px] text-ink-muted">
+              <div className="flex justify-between items-center text-xs text-ink-muted">
                 <span>Wir sehen den aktuellen Pfad ({pathname}) und deine Rolle.</span>
                 <span>{text.length}/5000</span>
               </div>

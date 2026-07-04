@@ -186,8 +186,8 @@ export default function NutzerPage() {
                   : "bg-white border-white/[0.06] hover:border-white/[0.15]")}
               >
                 <div className="w-2 h-2 rounded-full" style={{ background: r.color }} />
-                <span className="text-[11px] text-ink-secondary">{r.label}</span>
-                <span className="text-[11px] text-gray-400 tabular-nums">{r.count}</span>
+                <span className="text-xs text-ink-secondary">{r.label}</span>
+                <span className="text-xs text-gray-400 tabular-nums">{r.count}</span>
               </button>
             )
           })}
@@ -226,12 +226,12 @@ export default function NutzerPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/[0.06]">
-                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Nutzer</th>
-                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Rolle</th>
-                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">KI Score</th>
-                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Erstellt</th>
-                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Details</th>
-                <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Aktionen</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Nutzer</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Rolle</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">KI Score</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Erstellt</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Details</th>
+                <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Aktionen</th>
               </tr>
             </thead>
             <tbody>
@@ -256,13 +256,13 @@ export default function NutzerPage() {
                         </div>
                         <div>
                           <div className="text-sm font-medium text-ink">{u.name || u.email || "—"}</div>
-                          {u.name && <div className="text-[11px] text-gray-500">{u.email}</div>}
+                          {u.name && <div className="text-xs text-gray-500">{u.email}</div>}
                         </div>
                       </div>
                     </td>
                     <td className="px-5 py-3.5">
                       {u.rolle ? (
-                        <span className={"text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider " + (
+                        <span className={"text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider " + (
                           u.rolle === "admin" ? "bg-rolle-admin/15 text-rolle-admin"
                           : u.rolle === "verwalter" ? "bg-accent/15 text-accent"
                           : u.rolle === "handwerker" ? "bg-warm/15 text-warm"
@@ -270,7 +270,7 @@ export default function NutzerPage() {
                           : "bg-line text-ink-secondary"
                         )}>{u.rolle}</span>
                       ) : (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-danger/10 text-danger">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-danger/10 text-danger">
                           Keine Rolle
                         </span>
                       )}
@@ -280,15 +280,15 @@ export default function NutzerPage() {
                         <div className="w-12 h-1.5 bg-surface rounded-full overflow-hidden">
                           <div className="h-full rounded-full" style={{ width: score + "%", background: score >= 60 ? "#3D8B7A" : score >= 30 ? "#F59E0B" : "#FF6363" }} />
                         </div>
-                        <span className={"text-[10px] font-bold " + (score >= 60 ? "text-accent" : score >= 30 ? "text-warm" : "text-[#FF6363]")}>{score}</span>
+                        <span className={"text-xs font-bold " + (score >= 60 ? "text-accent" : score >= 30 ? "text-warm" : "text-[#FF6363]")}>{score}</span>
                       </div>
                     </td>
                     <td className="px-5 py-3.5 text-sm text-gray-400">{new Date(u.created_at).toLocaleDateString("de")}</td>
                     <td className="px-5 py-3.5 text-sm text-gray-500">
                       {u.firma && <span className="text-gray-400">{u.firma}</span>}
-                      {u.gewerk && <span className="ml-2 text-[11px] bg-surface px-2 py-0.5 rounded">{formatGewerk(u.gewerk)}</span>}
+                      {u.gewerk && <span className="ml-2 text-xs bg-surface px-2 py-0.5 rounded">{formatGewerk(u.gewerk)}</span>}
                       {u.rolle === "handwerker" && u.verifiziert && (
-                        <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold text-success bg-success-light border border-success/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                        <span className="ml-2 inline-flex items-center gap-1 text-xs font-bold text-success bg-success-light border border-success/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
                           ✓ Verifiziert
                         </span>
                       )}
@@ -296,7 +296,7 @@ export default function NutzerPage() {
                     <td className="px-5 py-3.5 text-right">
                       <div className="inline-flex items-center gap-2 justify-end">
                         {u.id === currentUserId && (
-                          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-rolle-admin/15 text-rolle-admin">
+                          <span className="text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-rolle-admin/15 text-rolle-admin">
                             Du
                           </span>
                         )}

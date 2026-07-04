@@ -26,7 +26,7 @@ function StepDot({ step }: { step: Step }) {
   const colors = {
     done: { bg: "bg-accent", text: "text-white", icon: <Check size={12} /> },
     active: { bg: "bg-warm", text: "text-white", icon: <Clock size={12} /> },
-    pending: { bg: "bg-line", text: "text-ink-muted", icon: <span className="text-[10px] font-semibold">·</span> },
+    pending: { bg: "bg-line", text: "text-ink-muted", icon: <span className="text-xs font-semibold">·</span> },
   }
   const c = colors[step.status]
   return (
@@ -34,7 +34,7 @@ function StepDot({ step }: { step: Step }) {
       <div className={`w-7 h-7 rounded-full ${c.bg} ${c.text} flex items-center justify-center shadow-sm`}>
         {c.icon}
       </div>
-      <div className={`mt-1.5 text-[10px] font-medium ${step.status === "pending" ? "text-ink-muted" : "text-ink"} max-w-[80px] text-center leading-tight`}>
+      <div className={`mt-1.5 text-xs font-medium ${step.status === "pending" ? "text-ink-muted" : "text-ink"} max-w-[80px] text-center leading-tight`}>
         {step.label}
       </div>
     </div>
@@ -97,7 +97,7 @@ export default function DiagnosePipeline({ ticket, currentUser, onReload }: Prop
 
         {korridor && (
           <div className="bg-surface rounded-xl p-3 mb-3">
-            <div className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider mb-1">Fairer Preisbereich</div>
+            <div className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">Fairer Preisbereich</div>
             <div className="text-sm font-mono tabular-nums text-ink">
               {korridor.min === korridor.max
                 ? fmtEur(korridor.min)
@@ -238,13 +238,13 @@ export default function DiagnosePipeline({ ticket, currentUser, onReload }: Prop
       {hatBefund && (
         <div className="mt-5 space-y-3">
           <div className="bg-surface rounded-xl p-3 border border-line">
-            <div className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider mb-1">Befund</div>
+            <div className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">Befund</div>
             <p className="text-sm text-ink whitespace-pre-wrap">{ticket.befund_text}</p>
           </div>
 
           {ticket.leistungsumfang && ticket.leistungsumfang.length > 0 && (
             <div className="bg-surface rounded-xl p-3 border border-line">
-              <div className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider mb-2">Leistungsumfang</div>
+              <div className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Leistungsumfang</div>
               <ul className="space-y-1">
                 {ticket.leistungsumfang.map((l, i) => (
                   <li key={i} className="text-sm text-ink flex items-start gap-2">
@@ -259,13 +259,13 @@ export default function DiagnosePipeline({ ticket, currentUser, onReload }: Prop
           <div className="grid grid-cols-2 gap-3">
             {ticket.befund_aufwand_stunden != null && (
               <div className="bg-surface rounded-xl p-3 border border-line">
-                <div className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider mb-1">Aufwand</div>
+                <div className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">Aufwand</div>
                 <div className="text-base font-mono tabular-nums text-ink">{ticket.befund_aufwand_stunden} h</div>
               </div>
             )}
             {angebot != null && (
               <div className={`rounded-xl p-3 border ${imKorridor ? "bg-accent/5 border-accent/30" : "bg-warm-light border-warm/30"}`}>
-                <div className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: imKorridor ? "#3D8B7A" : "#854F0B" }}>
+                <div className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: imKorridor ? "#3D8B7A" : "#854F0B" }}>
                   Festpreis-Angebot
                 </div>
                 <div className={`text-base font-mono tabular-nums font-bold ${imKorridor ? "text-accent" : "text-warm-dark"}`}>
@@ -316,12 +316,12 @@ export default function DiagnosePipeline({ ticket, currentUser, onReload }: Prop
                 disabled={!!busy}
                 className="text-sm font-medium border border-line text-ink-secondary hover:text-ink hover:border-[#8C857B] px-4 py-2.5 rounded-xl transition-colors disabled:opacity-50"
               >
-                In Auktion mit Vorkaufsrecht
+                Ausschreiben (mit Vorkaufsrecht)
               </button>
             </div>
           ) : (
             <div className="bg-warm-light border border-warm/30 rounded-xl p-4">
-              <div className="text-sm font-semibold text-warm-dark mb-1">Auktion mit Vorkaufsrecht starten?</div>
+              <div className="text-sm font-semibold text-warm-dark mb-1">Für mehrere Handwerker ausschreiben?</div>
               <p className="text-xs text-ink-secondary mb-3 leading-relaxed">
                 Es wird ein neues Projekt-Ticket angelegt und an passende Handwerker im Umkreis ausgeschrieben.
                 Der Diagnose-Handwerker hat 24 Stunden Vorrang — bietet er innerhalb dieser Frist, gewinnt er
@@ -353,7 +353,7 @@ export default function DiagnosePipeline({ ticket, currentUser, onReload }: Prop
         <div className="mt-5 pt-5 border-t border-line">
           <div className="text-xs text-ink-secondary leading-relaxed">
             Sobald der Handwerker den Befund eingereicht hat, kannst du das Festpreis-Angebot
-            annehmen oder in eine Auktion mit Vorkaufsrecht überführen.
+            annehmen oder für mehrere Handwerker ausschreiben (der Diagnose-Handwerker behält sein Vorkaufsrecht).
           </div>
         </div>
       )}

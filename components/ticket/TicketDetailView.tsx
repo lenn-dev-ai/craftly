@@ -101,7 +101,7 @@ function PhasenIndikator({ status, mieterSicht = false, vergabemodus }: { status
           </div>
         ))}
       </div>
-      <div className="flex justify-between text-[10px]">
+      <div className="flex justify-between text-xs">
         {PHASEN.map((p, i) => (
           <span key={p.key} className={i <= aktiv ? "text-accent font-medium" : "text-ink-muted"}>
             {mieterSicht ? p.labelMieter : vergabemodus === "direkt" ? p.labelDirekt : p.label}
@@ -155,11 +155,11 @@ function AuktionCountdown({ end, mieterSicht = false }: { end: string; mieterSic
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-sm font-semibold text-accent">
-                {mieterSicht ? "Handwerker wird gesucht" : "Auktion läuft"}
+                {mieterSicht ? "Handwerker wird gesucht" : "Vergabe läuft"}
               </span>
               {!expired && <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />}
             </div>
-            <div className="text-[11px] sm:text-xs text-ink-muted">
+            <div className="text-xs sm:text-xs text-ink-muted">
               {mieterSicht
                 ? "Wir suchen automatisch den besten Handwerker für deinen Schaden"
                 : "Handwerker bieten in Echtzeit — bestes Preis-Leistungs-Verhältnis gewinnt"}
@@ -178,7 +178,7 @@ function AuktionCountdown({ end, mieterSicht = false }: { end: string; mieterSic
                 <span className="text-line mx-0.5">:</span>
                 <span className="text-ink-secondary">{fmt(s)}</span>
               </div>
-              <div className="text-[10px] text-ink-muted mt-1">verbleibend</div>
+              <div className="text-xs text-ink-muted mt-1">verbleibend</div>
             </>
           )}
         </div>
@@ -671,14 +671,14 @@ export default function TicketDetailView() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
             {ticket.objekte && (
               <Card className="bg-white border border-line">
-                <div className="text-[10px] text-ink-muted uppercase tracking-wider font-medium mb-2">Objekt</div>
+                <div className="text-xs text-ink-muted uppercase tracking-wider font-medium mb-2">Objekt</div>
                 <div className="text-sm font-semibold text-ink mb-1">{ticket.objekte.name}</div>
                 <div className="text-xs text-ink-secondary leading-relaxed">
                   {ticket.objekte.adresse}
                   {ticket.objekte.plz && <><br />{ticket.objekte.plz}</>}
                 </div>
                 {(ticket.wohnung || typeof ticket.objekte.einheiten_anzahl === "number") && (
-                  <div className="text-[11px] text-ink-muted mt-2 pt-2 border-t border-line space-y-0.5">
+                  <div className="text-xs text-ink-muted mt-2 pt-2 border-t border-line space-y-0.5">
                     {ticket.wohnung && <div>Wohnung: <span className="text-ink-secondary">{ticket.wohnung}</span></div>}
                     {ticket.wohneinheit_referenz && <div>Mieter-/WE-Nr: <span className="text-ink-secondary font-mono">{ticket.wohneinheit_referenz}</span></div>}
                     {typeof ticket.objekte.einheiten_anzahl === "number" && (
@@ -690,7 +690,7 @@ export default function TicketDetailView() {
             )}
             {ticket.ersteller && (
               <Card className="bg-white border border-line">
-                <div className="text-[10px] text-ink-muted uppercase tracking-wider font-medium mb-2">Mieter</div>
+                <div className="text-xs text-ink-muted uppercase tracking-wider font-medium mb-2">Mieter</div>
                 <div className="text-sm font-semibold text-ink mb-1">{ticket.ersteller.name || "—"}</div>
                 <div className="text-xs text-ink-secondary leading-relaxed space-y-0.5">
                   {ticket.ersteller.email && (
@@ -715,7 +715,7 @@ export default function TicketDetailView() {
             )}
             {(ticket.ki_schadensart || typeof ticket.ki_confidence === "number") && (
               <Card className="bg-white border border-line">
-                <div className="text-[10px] text-ink-muted uppercase tracking-wider font-medium mb-2">KI-Einschätzung</div>
+                <div className="text-xs text-ink-muted uppercase tracking-wider font-medium mb-2">KI-Einschätzung</div>
                 {ticket.ki_schadensart && (
                   <div className="text-sm font-semibold text-ink mb-1 capitalize">
                     {ticket.ki_schadensart.replace(/_/g, " ")}
@@ -727,7 +727,7 @@ export default function TicketDetailView() {
                   </div>
                 )}
                 {typeof ticket.ki_confidence === "number" && (
-                  <div className="text-[11px] text-ink-muted mt-2 pt-2 border-t border-line">
+                  <div className="text-xs text-ink-muted mt-2 pt-2 border-t border-line">
                     Confidence: <span className={
                       ticket.ki_confidence >= 0.8 ? "text-accent font-semibold" :
                       ticket.ki_confidence >= 0.5 ? "text-warm font-semibold" :
@@ -743,7 +743,7 @@ export default function TicketDetailView() {
         {/* K1.2: Termin-Vorschläge (Doodle-Style) */}
         {bestaetigterTermin ? (
           <div className="bg-accent/5 border border-accent/30 rounded-2xl p-5 mb-6">
-            <div className="text-[10px] uppercase tracking-wider text-accent font-bold mb-1">Termin bestätigt</div>
+            <div className="text-xs uppercase tracking-wider text-accent font-bold mb-1">Termin bestätigt</div>
             <div className="text-base font-semibold text-ink">
               {new Date(bestaetigterTermin.datum).toLocaleDateString("de", { weekday: "long", day: "2-digit", month: "short", year: "numeric" })}
             </div>
@@ -753,7 +753,7 @@ export default function TicketDetailView() {
           </div>
         ) : terminVorschlaege.length > 0 && istMieter ? (
           <div className="bg-white border border-line rounded-2xl p-5 mb-6">
-            <div className="text-[10px] uppercase tracking-wider text-ink-muted font-bold mb-1">Termin wählen</div>
+            <div className="text-xs uppercase tracking-wider text-ink-muted font-bold mb-1">Termin wählen</div>
             <h3 className="text-base font-semibold text-ink mb-3">Der Handwerker hat {terminVorschlaege.length} Termine vorgeschlagen</h3>
             <p className="text-xs text-ink-muted mb-4">
               Wähle einen Termin aus. Die anderen verfallen automatisch.
@@ -792,7 +792,7 @@ export default function TicketDetailView() {
           </div>
         ) : terminVorschlaege.length > 0 && (isHandwerker || isVerwalter) ? (
           <div className="bg-warm-light border border-warm/30 rounded-2xl p-4 mb-6">
-            <div className="text-[10px] uppercase tracking-wider text-warm-dark font-bold mb-1">Wartet auf Mieter</div>
+            <div className="text-xs uppercase tracking-wider text-warm-dark font-bold mb-1">Wartet auf Mieter</div>
             <p className="text-xs text-warm-dark/90">
               {terminVorschlaege.length} Termin{terminVorschlaege.length === 1 ? "" : "e"} vorgeschlagen — der Mieter wählt einen aus.
             </p>
@@ -872,7 +872,7 @@ export default function TicketDetailView() {
             <div className="grid grid-cols-3 gap-3 mt-3">
               <div className="bg-white border border-line rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold text-accent">{sortiertAngebote.length}</div>
-                <div className="text-[10px] text-ink-muted mt-1">Angebote</div>
+                <div className="text-xs text-ink-muted mt-1">Angebote</div>
               </div>
               <div className="bg-white border border-line rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold text-rolle-mieter">
@@ -880,11 +880,11 @@ export default function TicketDetailView() {
                     ? (minPreis === maxPreis ? `${minPreis}` : `${minPreis}–${maxPreis}`)
                     : "—"}
                 </div>
-                <div className="text-[10px] text-ink-muted mt-1">Preisspanne EUR</div>
+                <div className="text-xs text-ink-muted mt-1">Preisspanne EUR</div>
               </div>
               <div className="bg-white border border-line rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold text-warm">{savings > 0 ? `${savings}%` : "—"}</div>
-                <div className="text-[10px] text-ink-muted mt-1">Potenzielle Ersparnis</div>
+                <div className="text-xs text-ink-muted mt-1">Potenzielle Ersparnis</div>
               </div>
             </div>
           </div>
@@ -1000,7 +1000,7 @@ export default function TicketDetailView() {
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-bold text-accent">{hw.preis} EUR</div>
-                    <div className="text-[10px] text-ink-muted">Angenommener Preis</div>
+                    <div className="text-xs text-ink-muted">Angenommener Preis</div>
                   </div>
                 </div>
               )
@@ -1056,7 +1056,7 @@ export default function TicketDetailView() {
                   <p className="text-xs text-ink-secondary mt-1 italic">„{ticket.hw_abschluss_kommentar}“</p>
                 )}
                 {ticket.hw_abschluss_am && (
-                  <p className="text-[10px] text-ink-muted mt-1">
+                  <p className="text-xs text-ink-muted mt-1">
                     Gemeldet am {new Date(ticket.hw_abschluss_am).toLocaleDateString("de", { day: "2-digit", month: "2-digit", year: "numeric" })}
                   </p>
                 )}
@@ -1158,7 +1158,7 @@ export default function TicketDetailView() {
                             <div className="flex items-center gap-3 mt-1">
                               <StarRating rating={hw?.bewertung_avg || 0} />
                               {(hw?.auftraege_anzahl ?? 0) > 0 && (
-                                <span className="text-[10px] text-ink-muted">{hw!.auftraege_anzahl} Aufträge</span>
+                                <span className="text-xs text-ink-muted">{hw!.auftraege_anzahl} Aufträge</span>
                               )}
                             </div>
                           </div>
@@ -1169,17 +1169,17 @@ export default function TicketDetailView() {
                       {/* Price + Details row */}
                       <div className="grid grid-cols-3 gap-3 mb-4">
                         <div className="bg-surface rounded-xl p-3">
-                          <div className="text-[10px] text-ink-muted mb-1">Preis</div>
+                          <div className="text-xs text-ink-muted mb-1">Preis</div>
                           <div className="text-lg font-bold text-accent">{a.preis.toLocaleString("de")} EUR</div>
                         </div>
                         <div className="bg-surface rounded-xl p-3">
-                          <div className="text-[10px] text-ink-muted mb-1">Frühester Termin</div>
+                          <div className="text-xs text-ink-muted mb-1">Frühester Termin</div>
                           <div className="text-sm font-medium text-ink">
                             {a.fruehester_termin ? new Date(a.fruehester_termin).toLocaleDateString("de", { day: "2-digit", month: "2-digit" }) : "Flexibel"}
                           </div>
                         </div>
                         <div className="bg-surface rounded-xl p-3">
-                          <div className="text-[10px] text-ink-muted mb-1">Geschätzte Dauer</div>
+                          <div className="text-xs text-ink-muted mb-1">Geschätzte Dauer</div>
                           <div className="text-sm font-medium text-ink">{a.geschaetzte_dauer ? a.geschaetzte_dauer + " Tage" : "—"}</div>
                         </div>
                       </div>
@@ -1266,7 +1266,7 @@ export default function TicketDetailView() {
                   <span className="text-xs font-medium text-rolle-mieter">KI-Preisempfehlung</span>
                 </div>
                 <div className="text-lg font-bold text-ink">EUR {kiPreisempfehlung(ticket.titel)}</div>
-                <div className="text-[10px] text-ink-muted mt-1">Basierend auf vergleichbaren Aufträgen in deiner Region</div>
+                <div className="text-xs text-ink-muted mt-1">Basierend auf vergleichbaren Aufträgen in deiner Region</div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
@@ -1315,24 +1315,24 @@ export default function TicketDetailView() {
                       {meinAngebot.smart_score != null && (
                         <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
                           <div className="bg-white rounded-lg p-2.5 border border-line">
-                            <div className="text-[10px] text-ink-muted uppercase tracking-wide">Smart-Score</div>
+                            <div className="text-xs text-ink-muted uppercase tracking-wide">Smart-Score</div>
                             <div className="text-lg font-bold text-accent tabular-nums">{meinAngebot.smart_score.toFixed(1)}</div>
                           </div>
                           {meinAngebot.entfernung_km != null && (
                             <div className="bg-white rounded-lg p-2.5 border border-line">
-                              <div className="text-[10px] text-ink-muted uppercase tracking-wide">Distanz</div>
+                              <div className="text-xs text-ink-muted uppercase tracking-wide">Distanz</div>
                               <div className="text-sm font-semibold text-ink tabular-nums">{meinAngebot.entfernung_km.toFixed(1)} km</div>
                             </div>
                           )}
                           {meinAngebot.fahrzeit_min != null && (
                             <div className="bg-white rounded-lg p-2.5 border border-line">
-                              <div className="text-[10px] text-ink-muted uppercase tracking-wide">Fahrzeit</div>
+                              <div className="text-xs text-ink-muted uppercase tracking-wide">Fahrzeit</div>
                               <div className="text-sm font-semibold text-ink tabular-nums">{meinAngebot.fahrzeit_min} min</div>
                             </div>
                           )}
                           {meinAngebot.ist_routen_bonus && (
                             <div className="bg-warm/10 rounded-lg p-2.5 border border-warm/30">
-                              <div className="text-[10px] text-warm uppercase tracking-wide font-bold">Routen-Bonus</div>
+                              <div className="text-xs text-warm uppercase tracking-wide font-bold">Routen-Bonus</div>
                               <div className="text-sm font-semibold text-warm">+10 %</div>
                             </div>
                           )}
@@ -1365,9 +1365,9 @@ export default function TicketDetailView() {
                   <div className={"max-w-[85%] sm:max-w-xs min-w-0 " + (isMe ? "" : "flex gap-2 items-end")}>
                     {!isMe && <div className="flex-shrink-0"><Avatar name={m.absender?.name || "?"} size="sm" /></div>}
                     <div className="min-w-0 flex-1">
-                      <div className={"text-[10px] mb-0.5 flex items-center gap-1.5 flex-wrap " + (isMe ? "justify-end" : "")}>
+                      <div className={"text-xs mb-0.5 flex items-center gap-1.5 flex-wrap " + (isMe ? "justify-end" : "")}>
                         <span className="font-medium text-ink-secondary truncate max-w-[120px]">{isMe ? "Du" : (m.absender?.name || "Unbekannt")}</span>
-                        {rolle && <span className="text-[9px] text-ink-secondary bg-white border border-line px-1.5 py-0.5 rounded">{rolle}</span>}
+                        {rolle && <span className="text-xs text-ink-secondary bg-white border border-line px-1.5 py-0.5 rounded">{rolle}</span>}
                         <span className="text-ink-muted">{datum} {zeit}</span>
                       </div>
                       <div className={"text-sm px-3 py-2 rounded-xl leading-relaxed break-words whitespace-pre-wrap " + (

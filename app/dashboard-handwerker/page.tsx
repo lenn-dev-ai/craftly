@@ -393,7 +393,7 @@ export default function HandwerkerDashboard() {
                             if (!d) return null
                             const badge = DRINGLICHKEITS_BADGE[d]
                             return (
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${badge.cls}`}>
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.cls}`}>
                                 {badge.label}
                               </span>
                             )

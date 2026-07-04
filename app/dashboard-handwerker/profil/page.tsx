@@ -271,7 +271,7 @@ export default function ProfilPage() {
             )
           })}
         </div>
-        <div className="text-[11px] text-ink-muted mt-2 tabular-nums">
+        <div className="text-xs text-ink-muted mt-2 tabular-nums">
           {form.handwerker_gewerke.length} / {MAX_GEWERKE} ausgewählt
         </div>
       </div>
@@ -539,7 +539,7 @@ export default function ProfilPage() {
             ⚠ &bdquo;Bis&ldquo; muss nach &bdquo;Von&ldquo; liegen — sonst bleibt der Kalender leer.
           </p>
         )}
-        <p className="text-[11px] text-ink-muted mt-3">
+        <p className="text-xs text-ink-muted mt-3">
           Beispiele: Frühdienst <span className="tabular-nums">5–15</span> · Standard <span className="tabular-nums">7–20</span> · Notdienst <span className="tabular-nums">8–24</span>
         </p>
       </div>
@@ -854,7 +854,7 @@ function NumField({
           {unit}
         </span>
       </div>
-      {help && <p className="text-[10px] text-ink-muted mt-1.5">{help}</p>}
+      {help && <p className="text-xs text-ink-muted mt-1.5">{help}</p>}
     </div>
   )
 }

@@ -289,7 +289,7 @@ function WohnungRow({ wohnung, eigentuemer, onUpdate }: {
           min={1}
           max={1000}
         />
-        <span className="text-[10px] text-ink-muted">‰</span>
+        <span className="text-xs text-ink-muted">‰</span>
       </div>
     </div>
   )

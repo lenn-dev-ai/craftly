@@ -35,12 +35,12 @@ const FAQS: { frage: string; antwort: string }[] = [
   {
     frage: "Was wenn ich als Handwerker den Preis zu niedrig finde?",
     antwort:
-      "Du legst deinen Mindest-Stundensatz fest. Aufträge unter deiner Untergrenze werden dir gar nicht erst angezeigt. Die Auktions-Mechanik ist Markt — kein Preisdumping durch Vermittler.",
+      "Du legst deinen Mindest-Stundensatz fest. Aufträge unter deiner Untergrenze werden dir gar nicht erst angezeigt. Der Preis kommt aus einer transparenten System-Kalkulation — kein Preisdumping durch Vermittler.",
   },
   {
     frage: "Kann ich als Verwalter meinen Stamm-Handwerker behalten?",
     antwort:
-      "Ja. Sie können einzelne Handwerker als Favoriten markieren und Aufträge auch direkt vergeben — die Auktion ist optional, kein Zwang. Favoriten erscheinen bei jeder neuen Meldung als bevorzugte Wahl.",
+      "Ja. Sie können einzelne Handwerker als Favoriten markieren und Aufträge auch direkt vergeben — die offene Vergabe ist optional, kein Zwang. Favoriten erscheinen bei jeder neuen Meldung als bevorzugte Wahl.",
   },
   {
     frage: "Was passiert bei Notfällen wie Wasserschäden?",

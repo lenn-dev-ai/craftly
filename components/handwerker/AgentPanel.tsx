@@ -149,7 +149,7 @@ export default function AgentPanel({ hwId, hwPreferences, onChanged }: Props) {
                   {t?.titel ?? "Auftrag"}
                 </div>
                 {t?.dringlichkeit === "notfall" && (
-                  <span className="text-[10px] font-semibold text-danger bg-danger/10 px-2 py-0.5 rounded-full flex-shrink-0">
+                  <span className="text-xs font-semibold text-danger bg-danger/10 px-2 py-0.5 rounded-full flex-shrink-0">
                     NOTFALL
                   </span>
                 )}

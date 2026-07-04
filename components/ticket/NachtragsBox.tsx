@@ -33,7 +33,7 @@ function StufeBadge({ stufe }: { stufe: NachtragStufe }) {
   const c = STUFE_LABEL[stufe]
   return (
     <span
-      className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+      className="inline-block text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
       style={{ color: c.color, backgroundColor: c.bg, border: `1px solid ${c.border}` }}
     >
       {c.label}
@@ -116,7 +116,7 @@ export default function NachtragsBox({ ticket, currentUser, onReload }: Props) {
       <div className="grid md:grid-cols-2 gap-3 mt-4">
         {/* Original-Befund */}
         <div className="bg-surface rounded-xl p-3 border border-line">
-          <div className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider mb-2">Ursprung (Festpreis)</div>
+          <div className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Ursprung (Festpreis)</div>
           <div className="text-base font-mono tabular-nums text-ink font-bold mb-1">{fmtEur(ursprungspreis)}</div>
           {ticket.befund_text && (
             <p className="text-xs text-ink-secondary leading-relaxed line-clamp-4">{ticket.befund_text}</p>
@@ -125,7 +125,7 @@ export default function NachtragsBox({ ticket, currentUser, onReload }: Props) {
 
         {/* Nachträge-Summe + aktuelle Gesamt */}
         <div className="bg-surface rounded-xl p-3 border border-line">
-          <div className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider mb-2">Nachträge genehmigt</div>
+          <div className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Nachträge genehmigt</div>
           <div className="text-base font-mono tabular-nums text-ink font-bold mb-1">
             {summeGenehmigt > 0 ? `+${fmtEur(summeGenehmigt)}` : "—"}
           </div>
@@ -211,7 +211,7 @@ function NachtragZeile({
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-2 flex-wrap">
           <StufeBadge stufe={nachtrag.stufe} />
-          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${statusColor}`}>
+          <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${statusColor}`}>
             {nachtrag.status}
           </span>
         </div>
@@ -222,7 +222,7 @@ function NachtragZeile({
 
       <p className="text-sm text-ink whitespace-pre-wrap mb-2 leading-relaxed">{nachtrag.begruendung}</p>
 
-      <div className="flex items-center justify-between gap-3 text-[11px] text-ink-muted">
+      <div className="flex items-center justify-between gap-3 text-xs text-ink-muted">
         <span>
           {new Date(nachtrag.created_at).toLocaleString("de-DE", {
             day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit",
@@ -347,7 +347,7 @@ function NachtragForm({
               ? <StufeBadge stufe={vorschauStufe} />
               : <span className="text-xs text-ink-muted">—</span>}
             {vorschauStufe === "bagatell" && (
-              <div className="text-[10px] text-accent mt-1">Wird automatisch genehmigt</div>
+              <div className="text-xs text-accent mt-1">Wird automatisch genehmigt</div>
             )}
           </div>
         </div>

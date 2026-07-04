@@ -47,7 +47,7 @@ export function SichtbarkeitsBadge({ profile }: { profile: UserProfile | null })
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold tabular-nums text-ink">{Number(score).toFixed(0)}</div>
-          <div className="text-[10px] text-ink-muted">/ 100</div>
+          <div className="text-xs text-ink-muted">/ 100</div>
         </div>
       </div>
       <div className="text-xs text-ink-secondary space-y-1 mb-2">

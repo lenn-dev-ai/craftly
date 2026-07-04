@@ -223,7 +223,7 @@ export default function TicketsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-surface-muted/50 border-b border-line">
-                <tr className="text-left text-[10px] uppercase tracking-wider text-ink-muted">
+                <tr className="text-left text-xs uppercase tracking-wider text-ink-muted">
                   <th className="py-2 pl-4 pr-2 w-6" aria-label="Status" />
                   <th className="py-2 px-2">Titel</th>
                   <th className="py-2 px-2 hidden md:table-cell">Wohnung</th>

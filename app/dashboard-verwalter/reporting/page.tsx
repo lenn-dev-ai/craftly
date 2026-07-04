@@ -205,10 +205,10 @@ export default function ReportingPage() {
       {/* Auktions-Ersparnis */}
       {ersparnis > 0 && (
         <div className="mb-6 p-4 rounded-2xl bg-accent/5 border border-accent/20">
-          <div className="text-xs text-ink-muted uppercase tracking-wide font-medium mb-1">Auktions-Ersparnis</div>
+          <div className="text-xs text-ink-muted uppercase tracking-wide font-medium mb-1">Vergabe-Ersparnis</div>
           <div className="text-2xl font-bold text-accent tabular-nums">{formatEUR(ersparnis)}</div>
           <div className="text-xs text-ink-secondary mt-1">
-            Differenz zwischen höchstem und gewähltem Angebot über alle Auktionen
+            Differenz zwischen höchstem und gewähltem Angebot über alle Vergaben
           </div>
         </div>
       )}
@@ -300,7 +300,7 @@ function Kpi({ label, value, sub, accent }: {
   const farbe = accent === "primary" ? "text-accent" : accent === "warm" ? "text-warm" : "text-ink"
   return (
     <div className="bg-white rounded-2xl border border-line p-4">
-      <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-1">{label}</div>
+      <div className="text-xs uppercase tracking-wider text-ink-muted font-medium mb-1">{label}</div>
       <div className={`text-xl font-bold tabular-nums ${farbe}`}>{value}</div>
       {sub && <div className="text-xs text-ink-muted mt-1">{sub}</div>}
     </div>

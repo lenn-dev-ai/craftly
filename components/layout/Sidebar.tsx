@@ -158,7 +158,7 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
           <span className="text-ink">Re</span>
           <span className="text-accent">paro</span>
         </div>
-        <div className="text-[11px] text-ink-muted mt-1 font-medium uppercase tracking-widest">
+        <div className="text-xs text-ink-muted mt-1 font-medium uppercase tracking-widest">
           {rolleLabels[rolle]}
         </div>
       </Link>
@@ -178,7 +178,7 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
         {renderItems(items.filter(i => i.gruppe !== "selten"))}
         {items.some(i => i.gruppe === "selten") && (
           <>
-            <div className="mt-4 mb-1 px-3.5 text-[9px] font-bold uppercase tracking-wider text-ink-muted">
+            <div className="mt-4 mb-1 px-3.5 text-xs font-bold uppercase tracking-wider text-ink-muted">
               Mein Bereich
             </div>
             {renderItems(items.filter(i => i.gruppe === "selten"))}
@@ -198,7 +198,7 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
           <LogOut size={14} />
           <span>Abmelden</span>
         </button>
-        <div className="mt-3 flex gap-3 px-3 text-[11px] text-ink-muted">
+        <div className="mt-3 flex gap-3 px-3 text-xs text-ink-muted">
           <Link
             href="/impressum"
             onClick={() => setMobileOpen(false)}

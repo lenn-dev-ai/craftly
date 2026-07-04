@@ -510,7 +510,7 @@ export default function MeldenPage() {
           {/* M2: text-ink-faint war so blass, dass der Counter optisch
               hinter Pills/Animationen in folgenden Steps verschwand.
               Mehr Contrast + tabular-nums + monospace-Feel. */}
-          <span className="text-xs font-medium text-ink-muted tabular-nums whitespace-nowrap">{Math.min(stepIndex + 1, 5)}/5</span>
+          <span className="text-sm font-medium text-ink-muted tabular-nums whitespace-nowrap">{Math.min(stepIndex + 1, 5)}/5</span>
         </div>
       </div>
 
@@ -562,12 +562,12 @@ export default function MeldenPage() {
                         type="button"
                         onClick={() => fotoEntfernen(i)}
                         aria-label={`Foto ${i + 1} entfernen`}
-                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-[#2D2A26]/80 text-white flex items-center justify-center text-xs hover:bg-[#2D2A26] transition-colors"
+                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-[#2D2A26]/80 text-white flex items-center justify-center text-sm hover:bg-[#2D2A26] transition-colors"
                       >
                         ×
                       </button>
                       {i === 0 && (
-                        <span className="absolute bottom-1 left-1 text-[9px] font-bold uppercase tracking-wider bg-accent text-white px-1.5 py-0.5 rounded">
+                        <span className="absolute bottom-1 left-1 text-sm font-bold uppercase tracking-wider bg-accent text-white px-1.5 py-0.5 rounded">
                           Haupt
                         </span>
                       )}
@@ -580,11 +580,11 @@ export default function MeldenPage() {
                       className="aspect-square rounded-xl border-2 border-dashed border-line hover:border-accent/40 hover:bg-surface transition-colors flex flex-col items-center justify-center gap-1 text-ink-muted hover:text-accent"
                     >
                       <span className="text-2xl leading-none">+</span>
-                      <span className="text-[10px]">Foto</span>
+                      <span className="text-sm">Foto</span>
                     </button>
                   )}
                 </div>
-                <p className="text-[11px] text-ink-muted mt-2">
+                <p className="text-sm text-ink-muted mt-2">
                   {fotoFiles.length} von {MAX_FOTOS} Fotos · erstes Foto wird KI-analysiert
                 </p>
               </div>
@@ -599,22 +599,22 @@ export default function MeldenPage() {
                   <circle cx="12" cy="13" r="4" />
                 </svg>
                 <p className="text-sm text-ink font-medium">Fotos aufnehmen oder hochladen</p>
-                <p className="text-xs text-ink-muted mt-1">JPG, PNG, WebP — max. 5 MB pro Foto, bis zu {MAX_FOTOS} Fotos</p>
-                <p className="text-[11px] text-accent mt-2">
+                <p className="text-sm text-ink-muted mt-1">JPG, PNG, WebP — max. 5 MB pro Foto, bis zu {MAX_FOTOS} Fotos</p>
+                <p className="text-sm text-accent mt-2">
                   💡 Mit Foto erkennt die KI den Schaden präziser — ohne Foto nur Text-Analyse
                 </p>
               </button>
             )}
 
             {fotoFehler && (
-              <div className="mb-4 p-3 rounded-lg bg-danger/10 border border-danger/20 text-xs text-danger">
+              <div className="mb-4 p-3 rounded-lg bg-danger/10 border border-danger/20 text-sm text-danger">
                 {fotoFehler}
               </div>
             )}
 
             {/* Text Beschreibung */}
             <div className="mb-4">
-              <label className="block text-xs font-medium text-ink-muted mb-2">Oder beschreibe den Schaden</label>
+              <label className="block text-sm font-medium text-ink-muted mb-2">Oder beschreibe den Schaden</label>
               <textarea
                 value={beschreibung}
                 onChange={e => setBeschreibung(e.target.value)}
@@ -629,10 +629,10 @@ export default function MeldenPage() {
                 und der Klick überschrieb stillschweigend die Beschreibung.
                 Jetzt klar gelabelt: nur Starttext, der Mieter ergänzt selbst. */}
             <div className="mb-6">
-              <p className="text-xs text-ink-muted mb-1">
+              <p className="text-sm text-ink-muted mb-1">
                 Hilfe für den Anfang <span className="text-ink-muted font-normal">(optional)</span>
               </p>
-              <p className="text-[11px] text-ink-muted mb-2">
+              <p className="text-sm text-ink-muted mb-2">
                 Setzt einen Beispieltext ein, den du danach noch anpasst.
               </p>
               <div className="flex flex-wrap gap-2">
@@ -645,7 +645,7 @@ export default function MeldenPage() {
                     <button
                       key={item.key}
                       onClick={() => { setBeschreibung(item.startText); }}
-                      className={`text-xs border rounded-full px-3 py-1.5 transition-all ${
+                      className={`text-sm border rounded-full px-3 py-1.5 transition-all ${
                         highlight
                           ? "bg-accent/20 border-accent text-accent ring-2 ring-accent/30"
                           : "bg-surface-muted hover:bg-accent/10 border-line hover:border-accent/30 text-ink-muted hover:text-accent"
@@ -675,7 +675,7 @@ export default function MeldenPage() {
             <div className="w-64 h-2 bg-surface-muted rounded-full mx-auto overflow-hidden">
               <div className="h-full bg-gradient-to-r from-[#3D8B7A] to-[#4A9E8C] rounded-full transition-all duration-300" style={{ width: Math.min(analyseProgress, 100) + "%" }} />
             </div>
-            <div className="mt-4 space-y-2 text-xs text-ink-muted">
+            <div className="mt-4 space-y-2 text-sm text-ink-muted">
               {analyseProgress > 20 && <p className="animate-fade-in">Schadensbeschreibung wird analysiert...</p>}
               {analyseProgress > 50 && <p className="animate-fade-in">Gewerk und Fachgebiet erkannt...</p>}
               {analyseProgress > 80 && <p className="animate-fade-in">Dringlichkeit wird bewertet...</p>}
@@ -689,9 +689,9 @@ export default function MeldenPage() {
             <div className="text-center mb-6">
               <div className="inline-flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-full px-4 py-1.5 mb-4">
                 <div className="w-2 h-2 rounded-full bg-accent" />
-                <span className="text-xs text-accent font-medium">KI-Analyse abgeschlossen</span>
+                <span className="text-sm text-accent font-medium">KI-Analyse abgeschlossen</span>
                 {kiConfidence != null && (
-                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ml-1 ${
+                  <span className={`text-sm font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ml-1 ${
                     kiConfidence >= 0.8
                       ? "bg-accent text-white"
                       : kiConfidence >= 0.5
@@ -704,7 +704,7 @@ export default function MeldenPage() {
               </div>
               <h2 className="text-lg font-semibold">{form.titel || analyse.titel}</h2>
               {kiHinweis && (
-                <p className="text-xs text-warm mt-2 italic max-w-md mx-auto">
+                <p className="text-sm text-warm mt-2 italic max-w-md mx-auto">
                   💡 Hinweis der KI: {kiHinweis}
                 </p>
               )}
@@ -714,7 +714,7 @@ export default function MeldenPage() {
             <Card className="mb-4 bg-white border border-line">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div className="text-[10px] text-ink-muted uppercase tracking-wider mb-1">Dringlichkeit</div>
+                  <div className="text-sm text-ink-muted uppercase tracking-wider mb-1">Dringlichkeit</div>
                   <div className={"text-sm font-semibold " + (form.prioritaet === "notfall" ? "text-danger" : form.prioritaet === "zeitnah" ? "text-[#B07A3B]" : "text-accent")}>
                     {(PRIO_LABELS[form.prioritaet] ?? "Planbar").toUpperCase()}
                   </div>
@@ -724,20 +724,20 @@ export default function MeldenPage() {
                       dass die Dringlichkeitsstufe die Dauer ändert. Jetzt
                       klar als typische Reparaturdauer gelabelt, unabhängig
                       von "Notfall/Zeitnah/Planbar". */}
-                  <div className="text-[10px] text-ink-muted uppercase tracking-wider mb-1">Typische Dauer</div>
+                  <div className="text-sm text-ink-muted uppercase tracking-wider mb-1">Typische Dauer</div>
                   <div className="text-sm font-semibold text-ink">
                     {analyse.zeit ?? "Nach Besichtigung"}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-ink-muted uppercase tracking-wider mb-1">Fachgebiet</div>
+                  <div className="text-sm text-ink-muted uppercase tracking-wider mb-1">Fachgebiet</div>
                   <div className="text-sm font-semibold text-ink">{formatGewerk(form.gewerk)}</div>
                 </div>
               </div>
             </Card>
 
             {/* KI-1: Disclaimer dass die Schätzung unverbindlich ist */}
-            <p className="text-[11px] text-ink-muted mb-4 leading-relaxed">
+            <p className="text-sm text-ink-muted mb-4 leading-relaxed">
               Unverbindliche Ersteinschätzung — der finale Preis und die genaue
               Bearbeitungszeit werden vom Handwerker nach Sichtung bestimmt.
             </p>
@@ -747,15 +747,15 @@ export default function MeldenPage() {
               <div className="flex items-start gap-2">
                 <span className="text-[#B07A3B] text-sm mt-0.5">!</span>
                 <div>
-                  <div className="text-xs font-medium text-[#B07A3B] mb-0.5">KI-Soforttipp</div>
-                  <p className="text-xs text-ink-muted">{analyse.tipp}</p>
+                  <div className="text-sm font-medium text-[#B07A3B] mb-0.5">KI-Soforttipp</div>
+                  <p className="text-sm text-ink-muted">{analyse.tipp}</p>
                 </div>
               </div>
             </div>
 
             {/* Beschreibung Review */}
             <div className="mb-4">
-              <label className="block text-xs font-medium text-ink-muted mb-2">Deine Beschreibung</label>
+              <label className="block text-sm font-medium text-ink-muted mb-2">Deine Beschreibung</label>
               <textarea
                 value={form.beschreibung}
                 onChange={e => setForm(f => ({ ...f, beschreibung: e.target.value }))}
@@ -767,7 +767,7 @@ export default function MeldenPage() {
             {/* LT-2: Werte jetzt planbar/zeitnah/notfall — Default "planbar".
                 User stuft bewusst hoch wenn nötig. */}
             <div className="mb-6">
-              <label className="block text-xs font-medium text-ink-muted mb-2">Dringlichkeit</label>
+              <label className="block text-sm font-medium text-ink-muted mb-2">Dringlichkeit</label>
               <div className="grid grid-cols-3 gap-2">
                 {[
                   { val: "planbar", color: "border-accent/30 bg-accent/5 text-accent" },
@@ -780,7 +780,7 @@ export default function MeldenPage() {
                     className={"rounded-xl px-2 py-3 border text-center transition-all " + (form.prioritaet === d.val ? d.color : "border-line bg-surface-muted text-ink-muted")}
                   >
                     <div className="text-sm font-medium whitespace-nowrap">{PRIO_LABELS[d.val]}</div>
-                    <div className="text-[10px] mt-0.5 opacity-70 whitespace-nowrap">{PRIO_SUB[d.val]}</div>
+                    <div className="text-sm mt-0.5 opacity-70 whitespace-nowrap">{PRIO_SUB[d.val]}</div>
                   </button>
                 ))}
               </div>
@@ -808,13 +808,13 @@ export default function MeldenPage() {
                 {gewaehltWohnung ? (
                   /* Ausgewählte Wohnung — Pill analog zum profilWohnung-Design */
                   <div className="bg-accent/5 border border-accent/30 rounded-xl p-4">
-                    <div className="text-[10px] uppercase tracking-wider text-accent font-bold mb-1">Meine Wohnung</div>
+                    <div className="text-sm uppercase tracking-wider text-accent font-bold mb-1">Meine Wohnung</div>
                     <div className="text-sm text-ink leading-snug flex items-start gap-2">
                       <span aria-hidden>📍</span>
                       <div>
                         <div>{gewaehltWohnung.strasse} {gewaehltWohnung.hausnummer}, {gewaehltWohnung.plz} {gewaehltWohnung.ort}</div>
                         {gewaehltWohnung.whg_bezeichnung && (
-                          <div className="text-xs text-ink-muted mt-0.5">{gewaehltWohnung.whg_bezeichnung}</div>
+                          <div className="text-sm text-ink-muted mt-0.5">{gewaehltWohnung.whg_bezeichnung}</div>
                         )}
                       </div>
                     </div>
@@ -826,7 +826,7 @@ export default function MeldenPage() {
                             setGewaehltWohnungId(null)
                             setForm(f => ({ ...f, einsatzort_adresse: "", wohneinheit_referenz: "", wohnung: "" }))
                           }}
-                          className="text-xs text-ink-muted hover:text-ink underline underline-offset-2"
+                          className="text-sm text-ink-muted hover:text-ink underline underline-offset-2"
                         >
                           Andere Wohnung wählen
                         </button>
@@ -838,7 +838,7 @@ export default function MeldenPage() {
                           setGewaehltWohnungId(null)
                           setForm(f => ({ ...f, einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null, wohneinheit_referenz: "", wohnung: "" }))
                         }}
-                        className="text-xs text-ink-muted hover:text-ink underline underline-offset-2"
+                        className="text-sm text-ink-muted hover:text-ink underline underline-offset-2"
                       >
                         Andere Adresse eingeben
                       </button>
@@ -869,7 +869,7 @@ export default function MeldenPage() {
                             className="w-full text-left bg-white border border-line rounded-xl px-4 py-3 hover:border-accent/50 hover:bg-accent/5 transition-colors"
                           >
                             <div className="text-sm font-medium text-ink">{adresse}</div>
-                            {w.whg_bezeichnung && <div className="text-xs text-ink-muted mt-0.5">{w.whg_bezeichnung}</div>}
+                            {w.whg_bezeichnung && <div className="text-sm text-ink-muted mt-0.5">{w.whg_bezeichnung}</div>}
                           </button>
                         )
                       })}
@@ -880,7 +880,7 @@ export default function MeldenPage() {
                         setNutzeProfilWohnung(false)
                         setForm(f => ({ ...f, einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null }))
                       }}
-                      className="mt-3 text-xs text-ink-muted hover:text-ink underline underline-offset-2"
+                      className="mt-3 text-sm text-ink-muted hover:text-ink underline underline-offset-2"
                     >
                       Andere Adresse eingeben
                     </button>
@@ -891,7 +891,7 @@ export default function MeldenPage() {
               /* F2: Fallback — profilWohnung aus profiles.adresse (kein wohnungen-Eintrag) */
               <div className="mb-5">
                 <div className="bg-accent/5 border border-accent/30 rounded-xl p-4">
-                  <div className="text-[10px] uppercase tracking-wider text-accent font-bold mb-1">Meine Wohnung</div>
+                  <div className="text-sm uppercase tracking-wider text-accent font-bold mb-1">Meine Wohnung</div>
                   <div className="text-sm text-ink leading-snug flex items-start gap-2">
                     <span aria-hidden>📍</span>
                     <span>{profilWohnung.adresse}</span>
@@ -902,7 +902,7 @@ export default function MeldenPage() {
                       setNutzeProfilWohnung(false)
                       setForm(f => ({ ...f, einsatzort_adresse: "", einsatzort_lat: null, einsatzort_lng: null }))
                     }}
-                    className="mt-3 text-xs text-ink-muted hover:text-ink underline underline-offset-2"
+                    className="mt-3 text-sm text-ink-muted hover:text-ink underline underline-offset-2"
                   >
                     Andere Adresse eingeben
                   </button>
@@ -938,12 +938,12 @@ export default function MeldenPage() {
                         setForm(f => ({ ...f, einsatzort_adresse: profilWohnung.adresse, einsatzort_lat: profilWohnung.lat, einsatzort_lng: profilWohnung.lng }))
                       }
                     }}
-                    className="mt-2 text-xs text-accent hover:text-[#2D6B5A] underline underline-offset-2"
+                    className="mt-2 text-sm text-accent hover:text-[#2D6B5A] underline underline-offset-2"
                   >
                     Doch meine Wohnung verwenden
                   </button>
                 ) : (
-                  <p className="mt-2 text-[11px] text-ink-muted">
+                  <p className="mt-2 text-sm text-ink-muted">
                     Tipp:{" "}
                     <button
                       type="button"
@@ -959,7 +959,7 @@ export default function MeldenPage() {
             )}
 
             <div className="mb-4">
-              <label className="text-xs text-ink-muted mb-1.5 block font-medium">
+              <label className="text-sm text-ink-muted mb-1.5 block font-medium">
                 Wohnung / Raum <span className="text-ink-muted font-normal">(optional)</span>
               </label>
               <input
@@ -975,7 +975,7 @@ export default function MeldenPage() {
                 eine Wohneinheit aus dem Picker gewählt wurde (Sprint BA). */}
             {!gewaehltWohnungId && (
               <div className="mb-4">
-                <label className="text-xs text-ink-muted mb-1.5 block font-medium">
+                <label className="text-sm text-ink-muted mb-1.5 block font-medium">
                   Mieter-Nr. / Wohneinheits-Nr. <span className="text-ink-muted font-normal">(falls bekannt)</span>
                 </label>
                 <input
@@ -984,14 +984,14 @@ export default function MeldenPage() {
                   placeholder="z.B. M-1234 oder WE-12-A — steht meistens im Mietvertrag"
                   className="w-full bg-white border border-line rounded-xl px-4 py-3 text-sm text-ink placeholder-[#B5AEA4] focus:outline-none focus:border-accent/50"
                 />
-                <p className="text-[11px] text-ink-muted mt-1">
+                <p className="text-sm text-ink-muted mt-1">
                   Wenn deine Verwaltung mit Nummern arbeitet, kann sie deine Meldung damit sofort zuordnen.
                 </p>
               </div>
             )}
 
             <div className="mb-6">
-              <p className="text-xs text-ink-muted mb-2">Schnellauswahl Raum (optional):</p>
+              <p className="text-sm text-ink-muted mb-2">Schnellauswahl Raum (optional):</p>
               <div className="flex flex-wrap gap-2">
                 {["Küche", "Bad", "Wohnzimmer", "Schlafzimmer", "Flur", "Keller", "Balkon"].map(r => {
                   // BUG-1: Active-State pro Chip — vorher war jedes selektierte
@@ -1016,7 +1016,7 @@ export default function MeldenPage() {
                       type="button"
                       onClick={toggle}
                       aria-pressed={isActive}
-                      className={`text-xs rounded-full px-3 py-1.5 transition-all border ${
+                      className={`text-sm rounded-full px-3 py-1.5 transition-all border ${
                         isActive
                           ? "bg-accent text-white border-accent shadow-sm"
                           : "bg-surface-muted text-ink-muted border-line hover:bg-accent/10 hover:border-accent/30 hover:text-accent"
@@ -1050,29 +1050,29 @@ export default function MeldenPage() {
             <Card className="mb-6 bg-white border border-line">
               <div className="space-y-4">
                 <div className="flex justify-between items-start">
-                  <span className="text-xs text-ink-muted">Problem</span>
+                  <span className="text-sm text-ink-muted">Problem</span>
                   <span className="text-sm font-medium text-ink text-right">{form.titel}</span>
                 </div>
                 <div className="border-t border-line" />
                 <div className="flex justify-between items-start">
-                  <span className="text-xs text-ink-muted">Beschreibung</span>
+                  <span className="text-sm text-ink-muted">Beschreibung</span>
                   <span className="text-sm text-ink text-right max-w-[65%]">{form.beschreibung}</span>
                 </div>
                 <div className="border-t border-line" />
                 <div className="flex justify-between">
-                  <span className="text-xs text-ink-muted">Ort</span>
+                  <span className="text-sm text-ink-muted">Ort</span>
                   <span className="text-sm text-ink">{form.wohnung}</span>
                 </div>
                 <div className="border-t border-line" />
                 <div className="flex justify-between">
-                  <span className="text-xs text-ink-muted">Dringlichkeit</span>
+                  <span className="text-sm text-ink-muted">Dringlichkeit</span>
                   <span className={"text-sm font-medium " + (form.prioritaet === "notfall" ? "text-danger" : form.prioritaet === "zeitnah" ? "text-[#B07A3B]" : "text-accent")}>
                     {PRIO_LABELS[form.prioritaet] ?? form.prioritaet}
                   </span>
                 </div>
                 <div className="border-t border-line" />
                 <div className="flex justify-between">
-                  <span className="text-xs text-ink-muted">Typische Reparaturdauer</span>
+                  <span className="text-sm text-ink-muted">Typische Reparaturdauer</span>
                   <span className="text-sm text-ink">{analyse.zeit ?? "Nach Besichtigung"}</span>
                 </div>
               </div>
@@ -1080,28 +1080,28 @@ export default function MeldenPage() {
 
             {/* Was passiert als naechstes */}
             <div className="bg-accent/5 border border-accent/10 rounded-xl px-4 py-3 mb-6">
-              <div className="text-xs font-medium text-accent mb-2">Was passiert jetzt?</div>
+              <div className="text-sm font-medium text-accent mb-2">Was passiert jetzt?</div>
               <div className="space-y-1.5">
-                <div className="flex items-center gap-2 text-xs text-ink-muted">
+                <div className="flex items-center gap-2 text-sm text-ink-muted">
                   <div className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[8px] text-accent font-bold">1</div>
                   Hausverwaltung wird sofort benachrichtigt
                 </div>
-                <div className="flex items-center gap-2 text-xs text-ink-muted">
+                <div className="flex items-center gap-2 text-sm text-ink-muted">
                   <div className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[8px] text-accent font-bold">2</div>
                   Verwalter prüft und bewertet deine Meldung
                 </div>
-                <div className="flex items-center gap-2 text-xs text-ink-muted">
+                <div className="flex items-center gap-2 text-sm text-ink-muted">
                   <div className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[8px] text-accent font-bold">3</div>
                   Wir berechnen automatisch den besten Preis und fragen den passendsten Handwerker für dich an
                 </div>
-                <div className="flex items-center gap-2 text-xs text-ink-muted">
+                <div className="flex items-center gap-2 text-sm text-ink-muted">
                   <div className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[8px] text-accent font-bold">4</div>
                   Du wirst über jeden Schritt informiert
                 </div>
               </div>
             </div>
 
-            {error && <p className="text-xs text-danger bg-danger-light border border-danger/15 px-4 py-2.5 rounded-xl mb-4">{error}</p>}
+            {error && <p className="text-sm text-danger bg-danger-light border border-danger/15 px-4 py-2.5 rounded-xl mb-4">{error}</p>}
 
             <div className="flex gap-3">
               <Button onClick={handleSubmit} disabled={loading} className="flex-1 justify-center">
@@ -1126,8 +1126,8 @@ export default function MeldenPage() {
             </p>
             {rückrufInitiert && (
               <div className="bg-accent/8 border border-accent/20 rounded-xl px-4 py-3 mb-6 max-w-sm mx-auto text-left">
-                <div className="text-xs font-medium text-accent mb-1">Kurzer Rückruf geplant</div>
-                <div className="text-xs text-ink-muted">
+                <div className="text-sm font-medium text-accent mb-1">Kurzer Rückruf geplant</div>
+                <div className="text-sm text-ink-muted">
                   Wir rufen dich gleich an, um noch 1–2 Details zu klären — dauert unter 2 Minuten.
                 </div>
               </div>

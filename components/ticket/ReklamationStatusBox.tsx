@@ -159,7 +159,7 @@ export function ReklamationStatusBox({ ticketId, canManage = false }: { ticketId
               </button>
             ))}
           </div>
-          <p className="text-[11px] text-ink-muted mt-2">
+          <p className="text-xs text-ink-muted mt-2">
             Der Mieter sieht den aktualisierten Status und einen passenden Hinweis zum nächsten Schritt.
           </p>
         </div>

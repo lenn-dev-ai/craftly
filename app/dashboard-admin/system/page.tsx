@@ -161,8 +161,8 @@ export default function SystemPage() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {health.checks.map((c, i) => (
             <div key={i} className={"p-3 rounded-xl border " + (c.ok ? "bg-accent/[0.06] border-accent/20" : "bg-[#FF6363]/[0.06] border-[#FF6363]/20")}>
-              <div className={"text-[10px] font-bold uppercase tracking-wider " + (c.ok ? "text-accent" : "text-[#FF6363]")}>{c.ok ? "OK" : "!"} {c.name}</div>
-              <div className={"text-[11px] mt-1 " + (c.ok ? "text-accent/70" : "text-[#FF6363]/70")}>{c.text}</div>
+              <div className={"text-xs font-bold uppercase tracking-wider " + (c.ok ? "text-accent" : "text-[#FF6363]")}>{c.ok ? "OK" : "!"} {c.name}</div>
+              <div className={"text-xs mt-1 " + (c.ok ? "text-accent/70" : "text-[#FF6363]/70")}>{c.text}</div>
             </div>
           ))}
         </div>
@@ -195,7 +195,7 @@ export default function SystemPage() {
               <div className="w-2.5 h-2.5 rounded-full" style={{ background: m.color }} />
             </div>
             <div className="text-xl font-bold text-ink">{m.value}</div>
-            <div className="text-[11px] text-gray-500 mt-1 uppercase tracking-wider">{m.label}</div>
+            <div className="text-xs text-gray-500 mt-1 uppercase tracking-wider">{m.label}</div>
           </div>
         ))}
       </div>

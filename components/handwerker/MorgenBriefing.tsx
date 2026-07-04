@@ -36,7 +36,7 @@ function Skeleton() {
 function FahrzeitPill({ min }: { min: number }) {
   if (min <= 0) return null
   return (
-    <span className="text-[10px] text-ink-muted flex items-center gap-0.5 ml-2 shrink-0">
+    <span className="text-xs text-ink-muted flex items-center gap-0.5 ml-2 shrink-0">
       <svg width="10" height="10" viewBox="0 0 12 12" fill="none" className="opacity-50">
         <path d="M6 1v4.5l3 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" />
@@ -89,13 +89,13 @@ export default function MorgenBriefing() {
           </div>
           <div>
             <div className="text-sm font-semibold text-ink leading-none">Dein heutiger Tag</div>
-            <div className="text-[10px] text-ink-muted mt-0.5">KI-Assistent · {new Date().toLocaleDateString("de", { weekday: "long", day: "numeric", month: "long" })}</div>
+            <div className="text-xs text-ink-muted mt-0.5">KI-Assistent · {new Date().toLocaleDateString("de", { weekday: "long", day: "numeric", month: "long" })}</div>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           {/* Wetter-Pill */}
           {wetter && (
-            <span className="text-[11px] text-ink-muted flex items-center gap-1">
+            <span className="text-xs text-ink-muted flex items-center gap-1">
               <span>{wetterEmoji(wetter.beschreibung)}</span>
               <span className="font-medium text-ink">{wetter.temperaturC}°C</span>
               {wetter.regenWahrscheinlichkeit > 40 && (
@@ -106,7 +106,7 @@ export default function MorgenBriefing() {
           {stops.length > 0 && (
             <Link
               href="/dashboard-handwerker/karte"
-              className="text-[11px] font-medium text-accent hover:text-[#2D6B5A] transition-colors"
+              className="text-xs font-medium text-accent hover:text-[#2D6B5A] transition-colors"
             >
               Karte →
             </Link>
@@ -148,20 +148,20 @@ export default function MorgenBriefing() {
               >
                 {/* Schritt-Nummer */}
                 <div className="w-5 h-5 rounded-full bg-[#3D8B7A]/12 flex items-center justify-center shrink-0">
-                  <span className="text-[10px] font-bold text-accent">{idx + 1}</span>
+                  <span className="text-xs font-bold text-accent">{idx + 1}</span>
                 </div>
 
                 {/* Inhalt */}
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-semibold text-ink truncate">{stop.titel}</div>
                   {stop.adresse && (
-                    <div className="text-[10px] text-ink-muted truncate mt-0.5">📍 {stop.adresse}</div>
+                    <div className="text-xs text-ink-muted truncate mt-0.5">📍 {stop.adresse}</div>
                   )}
                 </div>
 
                 {/* Uhrzeit + Fahrzeit */}
                 <div className="flex items-center gap-1 shrink-0">
-                  <span className="text-[11px] font-medium text-ink-secondary tabular-nums">
+                  <span className="text-xs font-medium text-ink-secondary tabular-nums">
                     {stop.von.slice(0, 5)}
                   </span>
                   <FahrzeitPill min={stop.fahrzeitVorher} />
@@ -172,7 +172,7 @@ export default function MorgenBriefing() {
 
           {/* Footer-Stats */}
           {(gesamtFahrzeitMin > 0 || gesamtDistanzKm > 0) && (
-            <div className="mt-3 pt-3 border-t border-accent/10 flex items-center gap-4 text-[11px] text-ink-muted">
+            <div className="mt-3 pt-3 border-t border-accent/10 flex items-center gap-4 text-xs text-ink-muted">
               {gesamtFahrzeitMin > 0 && (
                 <span>
                   <span className="font-semibold text-ink">{gesamtFahrzeitMin} min</span> Fahrtzeit gesamt

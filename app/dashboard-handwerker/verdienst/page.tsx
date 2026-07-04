@@ -85,7 +85,7 @@ export default function VerdienstPage() {
                 value={stundensatz}
                 onChange={e => setStundensatz(Number(e.target.value) || 0)}
               />
-              <p className="text-[11px] text-ink-muted mt-1.5">Brutto vor Reparo-Gebühr</p>
+              <p className="text-xs text-ink-muted mt-1.5">Brutto vor Reparo-Gebühr</p>
             </div>
             <div>
               <Input
@@ -97,7 +97,7 @@ export default function VerdienstPage() {
                 value={stundenProWoche}
                 onChange={e => setStundenProWoche(Number(e.target.value) || 0)}
               />
-              <p className="text-[11px] text-ink-muted mt-1.5">realistisch verfügbar für Reparo</p>
+              <p className="text-xs text-ink-muted mt-1.5">realistisch verfügbar für Reparo</p>
             </div>
           </div>
         </div>
@@ -106,18 +106,18 @@ export default function VerdienstPage() {
       <Card className="bg-white border border-line">
         <div className="space-y-4">
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-ink-muted font-bold mb-1">Brutto pro Monat</div>
+            <div className="text-xs uppercase tracking-wider text-ink-muted font-bold mb-1">Brutto pro Monat</div>
             <div className="text-2xl font-bold text-ink tabular-nums">{fmt(bruttoMonat)} €</div>
-            <div className="text-[11px] text-ink-muted mt-0.5">{stundenProWoche} h × 4 Wochen × {stundensatz} €/h</div>
+            <div className="text-xs text-ink-muted mt-0.5">{stundenProWoche} h × 4 Wochen × {stundensatz} €/h</div>
           </div>
 
           <div className="border-t border-line pt-4">
             <div className="flex items-baseline justify-between mb-1">
-              <div className="text-[10px] uppercase tracking-wider text-ink-muted font-bold">
+              <div className="text-xs uppercase tracking-wider text-ink-muted font-bold">
                 Reparo-Gebühr ({Math.round(provisionRate * 100)} %)
               </div>
               {istEarlyAdopter && (
-                <span className="text-[10px] font-bold uppercase tracking-wider text-warm-dark bg-warm-light border border-warm/30 px-2 py-0.5 rounded">
+                <span className="text-xs font-bold uppercase tracking-wider text-warm-dark bg-warm-light border border-warm/30 px-2 py-0.5 rounded">
                   Early-Adopter
                 </span>
               )}
@@ -128,7 +128,7 @@ export default function VerdienstPage() {
           </div>
 
           <div className="border-t border-line pt-4">
-            <div className="text-[10px] uppercase tracking-wider text-accent font-bold mb-1">
+            <div className="text-xs uppercase tracking-wider text-accent font-bold mb-1">
               Dein Auszahlung pro Monat
             </div>
             <div className="text-3xl font-bold text-accent tabular-nums">{fmt(nettoMonat)} €</div>

@@ -369,7 +369,7 @@ export default function HandwerkerAuswahlPage() {
       <div className="bg-white rounded-2xl border border-line p-4 mb-4">
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs text-ink-muted font-medium uppercase tracking-wide">
-            Dringlichkeit der Auktion
+            Dringlichkeit der Vergabe
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -409,7 +409,7 @@ export default function HandwerkerAuswahlPage() {
                 <div className="text-sm font-semibold text-ink mb-0.5" style={{ color: aktiv ? opt.accent : undefined }}>
                   {opt.titel}
                 </div>
-                <div className="text-[11px] text-ink-muted leading-snug">{opt.desc}</div>
+                <div className="text-xs text-ink-muted leading-snug">{opt.desc}</div>
               </button>
             )
           })}
@@ -493,7 +493,7 @@ export default function HandwerkerAuswahlPage() {
                   <div key={t.hwId} className="flex items-center gap-1.5 bg-white border border-accent/20 rounded-lg px-2.5 py-1.5">
                     <span className="text-xs font-bold text-accent">{t.rang}.</span>
                     <span className="text-xs font-medium text-ink">{hw.firma || hw.name}</span>
-                    <span className="text-[10px] text-ink-muted">· {t.begruendung}</span>
+                    <span className="text-xs text-ink-muted">· {t.begruendung}</span>
                   </div>
                 )
               })}
@@ -548,7 +548,7 @@ export default function HandwerkerAuswahlPage() {
                         <div className="flex items-center gap-2">
                           <span className="text-base font-semibold text-ink">{hw.firma || hw.name}</span>
                           {kiRang && (
-                            <span className="text-[10px] font-bold bg-accent text-white rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-bold bg-accent text-white rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
                               {kiRang.rang}
                             </span>
                           )}
@@ -559,13 +559,13 @@ export default function HandwerkerAuswahlPage() {
                           {hw.gewerk && (" · " + formatGewerk(hw.gewerk))}
                         </div>
                         {kiRang && (
-                          <div className="text-[10px] text-accent mt-1 font-medium">
+                          <div className="text-xs text-accent mt-1 font-medium">
                             🤖 {kiRang.begruendung}
                           </div>
                         )}
                       </div>
                       {label && farben && (
-                        <span className={`text-[10px] uppercase tracking-wide font-bold px-2 py-1 rounded border whitespace-nowrap ${farben.bg} ${farben.text} ${farben.border}`}>
+                        <span className={`text-xs uppercase tracking-wide font-bold px-2 py-1 rounded border whitespace-nowrap ${farben.bg} ${farben.text} ${farben.border}`}>
                           {label}
                         </span>
                       )}
@@ -647,7 +647,7 @@ function Cell({ label, value, muted, highlight }: {
 }) {
   return (
     <div>
-      <div className="text-[10px] text-ink-muted uppercase tracking-wide font-medium">{label}</div>
+      <div className="text-xs text-ink-muted uppercase tracking-wide font-medium">{label}</div>
       <div className={`text-sm font-semibold tabular-nums mt-0.5 ${
         muted ? "text-ink-muted" : highlight ? "text-accent" : "text-ink"
       }`}>
