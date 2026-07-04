@@ -57,8 +57,14 @@ export async function POST(request: NextRequest) {
       console.warn("[vapi/mieter-outbound] Ungültige Signatur abgelehnt")
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
     }
+  } else if (process.env.NODE_ENV === "production") {
+    // Fail closed (Audit C1): ohne Secret in Produktion keine ungeprüften
+    // Service-Role-Writes zulassen — sonst kann jeder ein fremdes Ticket
+    // per gefälschtem tool-call manipulieren.
+    console.error("[vapi/mieter-outbound] VAPI_WEBHOOK_SECRET fehlt in Produktion — abgelehnt")
+    return NextResponse.json({ error: "Server not configured" }, { status: 503 })
   } else {
-    console.warn("[vapi/mieter-outbound] VAPI_WEBHOOK_SECRET nicht gesetzt")
+    console.warn("[vapi/mieter-outbound] VAPI_WEBHOOK_SECRET nicht gesetzt (dev)")
   }
 
   let payload: { message?: VapiMessage }

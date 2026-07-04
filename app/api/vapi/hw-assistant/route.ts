@@ -712,16 +712,27 @@ export const runtime = "nodejs"
 export async function POST(request: NextRequest) {
   const rawBody = await request.text()
 
-  // Signatur-Prüfung. Ohne VAPI_WEBHOOK_SECRET im ENV nur warnen (dev-Modus).
+  // Authentifizierung (Audit C1) — zwei getrennte Pfade:
+  //  • Web-Calls tragen ?hwId=...&sig=... (HMAC über CRON_SECRET) → werden
+  //    weiter unten im tool-calls-Branch geprüft. Diese brauchen KEIN
+  //    VAPI_WEBHOOK_SECRET (Vapi signiert transiente Tool-Calls nicht).
+  //  • Telefon-Calls (assistant-request / caller-nummer-basierte tool-calls)
+  //    MÜSSEN in Produktion Vapi-signiert sein — sonst könnte per gefälschter
+  //    Caller-Nummer der Kontext eines fremden HW abgefragt werden.
+  const hatHwId = !!request.nextUrl.searchParams.get("hwId")
   const secret = process.env.VAPI_WEBHOOK_SECRET
   const sig = request.headers.get("x-vapi-signature")
-  if (secret) {
-    if (!verifyVapiSignature(rawBody, sig, secret)) {
-      console.warn("[vapi/hw-assistant] Ungültige Signatur abgelehnt")
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
-    }
-  } else {
-    console.warn("[vapi/hw-assistant] VAPI_WEBHOOK_SECRET nicht gesetzt — Signatur-Check übersprungen")
+  const vapiSignaturOk = !!(secret && sig && verifyVapiSignature(rawBody, sig, secret))
+
+  // Manipulierte Signatur (Header da, aber falsch) → immer ablehnen.
+  if (secret && sig && !vapiSignaturOk) {
+    console.warn("[vapi/hw-assistant] Ungültige Signatur abgelehnt")
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
+  }
+  // Telefon-Pfad ohne gültige Vapi-Signatur in Produktion → fail closed.
+  if (!hatHwId && process.env.NODE_ENV === "production" && !vapiSignaturOk) {
+    console.error("[vapi/hw-assistant] Telefon-Call ohne VAPI_WEBHOOK_SECRET in Produktion — abgelehnt")
+    return NextResponse.json({ error: "Server not configured" }, { status: 503 })
   }
 
   let payload: { message?: VapiMessage }
@@ -770,8 +781,13 @@ export async function POST(request: NextRequest) {
           console.warn("[vapi/hw-assistant] Ungültige/abgelaufene hwId-Signatur abgelehnt")
           return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
         }
+      } else if (process.env.NODE_ENV === "production") {
+        // Fail closed (Audit C1): ohne CRON_SECRET könnte mit erratener hwId
+        // ein fremder HW-Kontext abgefragt/eine Anfrage abgelehnt werden.
+        console.error("[vapi/hw-assistant] CRON_SECRET fehlt in Produktion — hwId-Call abgelehnt")
+        return NextResponse.json({ error: "Server not configured" }, { status: 503 })
       } else {
-        console.warn("[vapi/hw-assistant] CRON_SECRET fehlt — hwId-Signatur-Check übersprungen")
+        console.warn("[vapi/hw-assistant] CRON_SECRET fehlt (dev) — hwId-Signatur-Check übersprungen")
       }
     }
 
