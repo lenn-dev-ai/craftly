@@ -5,7 +5,7 @@ import { reScoreTicket } from "@/lib/auction/scoring-pipeline"
 import { effektiveProvisionsRate } from "@/lib/auction/auction-manager"
 import { calculateCommission } from "@/lib/pricing/commission"
 import { fuegeTicketZuTagesplan } from "@/lib/auction/routen-planung-sync"
-import { sendEmailFireAndForget } from "@/lib/email/send"
+import { sendEmail } from "@/lib/email/send"
 import {
   auktionAbgelaufenEmail,
   zuschlagEmail,
@@ -86,6 +86,39 @@ export async function POST(request: NextRequest) {
     fehler?: string
   }> = []
 
+  // Review-Fix 03.07.: Mail-Fehler wurden verschluckt (fire-and-forget +
+  // leerer catch). Jetzt: jeden Versand überwachen, strukturiert loggen
+  // (Ticket-ID + Empfänger) und als failed_mails im Cron-Response
+  // zurückgeben — so kann Monitoring (ki-health / Netlify-Logs) es sehen.
+  // Die Mails laufen weiter parallel zur Vergabe-Schleife; erst vor dem
+  // Response warten wir sie ab, damit der Zähler stimmt.
+  const mailJobs: Array<Promise<void>> = []
+  const failedMailDetails: Array<{
+    ticketId: string
+    empfaenger: string
+    typ: string
+    grund: string
+  }> = []
+  const ueberwachterVersand = (
+    typ: string,
+    ticketId: string,
+    empfaenger: string,
+    subject: string,
+    html: string,
+  ): Promise<void> =>
+    sendEmail({ to: empfaenger, subject, html }).then(res => {
+      if (res.success) return
+      const grund = res.skipped
+        ? `skipped:${res.skipped}`
+        : res.error instanceof Error
+          ? res.error.message
+          : JSON.stringify(res.error ?? "unbekannt")
+      console.error("[Email] check-expired: Versand fehlgeschlagen", {
+        typ, ticketId, empfaenger, grund,
+      })
+      failedMailDetails.push({ ticketId, empfaenger, typ, grund })
+    })
+
   for (const ticket of abgelaufen ?? []) {
     // Re-Scoring vor Vergabe (Sicherheit)
     await reScoreTicket(supabase, ticket.id)
@@ -108,9 +141,9 @@ export async function POST(request: NextRequest) {
         titel: ticket.titel,
         aktion: "zurueck-auf-offen",
       })
-      // Fire-and-forget: Verwalter informieren
+      // Verwalter informieren — überwacht, damit Fehler im Response landen
       // (verwalter_id = zuständiger Auftraggeber, M-K3; Fallback erstellt_von)
-      void (async () => {
+      mailJobs.push((async () => {
         const { data: verwalter } = await supabase
           .from("profiles")
           .select("email, name")
@@ -123,8 +156,16 @@ export async function POST(request: NextRequest) {
           angebotAnzahl: 0,
           ticketId: ticket.id,
         })
-        sendEmailFireAndForget({ to: verwalter.email, subject, html })
-      })().catch(err => console.error("[Email] Auktion-leer-Mail fehlgeschlagen:", err))
+        await ueberwachterVersand("auktion-leer", ticket.id, verwalter.email, subject, html)
+      })().catch(err => {
+        console.error("[Email] Auktion-leer-Mail fehlgeschlagen:", { ticketId: ticket.id, err })
+        failedMailDetails.push({
+          ticketId: ticket.id,
+          empfaenger: "unbekannt",
+          typ: "auktion-leer",
+          grund: err instanceof Error ? err.message : String(err),
+        })
+      }))
       continue
     }
 
@@ -222,8 +263,8 @@ export async function POST(request: NextRequest) {
       provisionBetrag: calc.provisionBetrag,
     })
 
-    // Fire-and-forget: Zuschlag an Gewinner + Absagen an andere
-    void (async () => {
+    // Zuschlag an Gewinner + Absagen an andere — überwacht statt fire-and-forget
+    mailJobs.push((async () => {
       const { data: gewinnerProfil } = await supabase
         .from("profiles")
         .select("email, name")
@@ -238,7 +279,7 @@ export async function POST(request: NextRequest) {
           angebotPreis: winner.preis,
           ticketId: ticket.id,
         })
-        sendEmailFireAndForget({ to: gewinnerProfil.email, subject, html })
+        await ueberwachterVersand("zuschlag", ticket.id, gewinnerProfil.email, subject, html)
       }
 
       const { data: andere } = await supabase
@@ -257,9 +298,17 @@ export async function POST(request: NextRequest) {
           handwerkerName: a.handwerker?.name || "Handwerker",
           ticketTitel: ticket.titel,
         })
-        sendEmailFireAndForget({ to: email, subject, html })
+        await ueberwachterVersand("absage", ticket.id, email, subject, html)
       }
-    })().catch(err => console.error("[Email] check-expired-Vergabe-Mails fehlgeschlagen:", err))
+    })().catch(err => {
+      console.error("[Email] check-expired-Vergabe-Mails fehlgeschlagen:", { ticketId: ticket.id, err })
+      failedMailDetails.push({
+        ticketId: ticket.id,
+        empfaenger: "unbekannt",
+        typ: "vergabe",
+        grund: err instanceof Error ? err.message : String(err),
+      })
+    }))
   }
 
   // ============================================================
@@ -292,7 +341,7 @@ export async function POST(request: NextRequest) {
       .eq("id", t.id)
     diagnoseErgebnisse.push({ ticketId: t.id, titel: t.titel })
 
-    void (async () => {
+    mailJobs.push((async () => {
       const { data: erst } = await admin
         .from("profiles")
         .select("email, name")
@@ -305,9 +354,21 @@ export async function POST(request: NextRequest) {
         angebotAnzahl: 0,
         ticketId: t.id,
       })
-      sendEmailFireAndForget({ to: erst.email, subject, html })
-    })().catch(err => console.error("[Email] Diagnose-Ablauf-Mail fehlgeschlagen:", err))
+      await ueberwachterVersand("diagnose-ablauf", t.id, erst.email, subject, html)
+    })().catch(err => {
+      console.error("[Email] Diagnose-Ablauf-Mail fehlgeschlagen:", { ticketId: t.id, err })
+      failedMailDetails.push({
+        ticketId: t.id,
+        empfaenger: "unbekannt",
+        typ: "diagnose-ablauf",
+        grund: err instanceof Error ? err.message : String(err),
+      })
+    }))
   }
+
+  // Alle Mail-Jobs abwarten, damit failed_mails im Response vollständig ist.
+  // sendEmail wirft nie; allSettled schützt trotzdem vor unerwarteten Rejects.
+  await Promise.allSettled(mailJobs)
 
   return NextResponse.json({
     ok: true,
@@ -316,6 +377,8 @@ export async function POST(request: NextRequest) {
     vergeben: ergebnisse.filter(r => r.aktion === "vergeben").length,
     zurueck: ergebnisse.filter(r => r.aktion === "zurueck-auf-offen").length,
     diagnosenAbgelaufen: diagnoseErgebnisse.length,
+    failed_mails: failedMailDetails.length,
+    failed_mail_details: failedMailDetails,
     ergebnisse,
     diagnoseErgebnisse,
   })
