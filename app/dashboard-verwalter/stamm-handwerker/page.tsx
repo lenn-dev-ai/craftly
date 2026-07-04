@@ -88,6 +88,7 @@ export default function StammHandwerkerPage() {
     setLoading(false)
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { void load() }, [])
 
   async function save() {

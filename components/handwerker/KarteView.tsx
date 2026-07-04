@@ -218,7 +218,12 @@ export default function KarteView() {
   )
   // Tickets ohne Termin-Datum: immer anzeigen (unabhängig vom Datum-Filter)
   const noDateStops = useMemo(() => stops.filter(s => !s.datum), [stops])
-  const sichtbar = zeigeAlle ? stops : [...tagesStops, ...noDateStops]
+  // useMemo, damit die Referenz stabil bleibt (sonst würde die fitBounds-
+  // useEffect-Dep bei jedem Render feuern).
+  const sichtbar = useMemo(
+    () => (zeigeAlle ? stops : [...tagesStops, ...noDateStops]),
+    [zeigeAlle, stops, tagesStops, noDateStops],
+  )
 
   const startLat = profilGeo?.startort_lat ?? profilGeo?.lat
   const startLng = profilGeo?.startort_lng ?? profilGeo?.lng

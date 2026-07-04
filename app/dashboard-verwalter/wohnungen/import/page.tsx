@@ -6,7 +6,6 @@ import { Button, Card, Select, Tooltip } from "@/components/ui"
 import { authFetch } from "@/lib/auth/clientFetch"
 import { Upload, FileSpreadsheet, Check, ChevronRight, ChevronLeft, X, AlertCircle, Download } from "lucide-react"
 import {
-  parseFile,
   autoMap,
   validateRows,
   buildVorlageCsv,
@@ -18,6 +17,7 @@ import {
   type ParsedFile,
   type RowError,
 } from "@/components/verwalter/wohnungen/parsers"
+// parseFile zieht papaparse + xlsx (~350kB) — nur bei Bedarf dynamisch laden.
 
 // Sprint I — Bulk-Wohnungs-Import Wizard
 // Steps: upload → mapping → vorschau → import → erfolg
@@ -46,6 +46,7 @@ export default function WohnungenImportPage() {
       return
     }
     try {
+      const { parseFile } = await import("@/components/verwalter/wohnungen/parse-datei")
       const p = await parseFile(file)
       if (p.rows.length === 0) {
         setError("Keine Datenzeilen gefunden. Erste Zeile sollte Spalten-Header enthalten.")

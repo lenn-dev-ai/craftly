@@ -12,10 +12,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1.0,
     },
     {
-      url: `${baseUrl}/login`,
+      // B2B-Landing für Hausverwaltungen — wichtige organische Seite.
+      url: `${baseUrl}/hausverwaltungen`,
       lastModified: heute,
-      changeFrequency: "yearly",
-      priority: 0.5,
+      changeFrequency: "monthly",
+      priority: 0.9,
     },
     {
       url: `${baseUrl}/registrierung`,
@@ -23,6 +24,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.8,
     },
+    // Hinweis: /login ist bewusst NICHT in der Sitemap (noindex, siehe
+    // app/login/layout.tsx) — Login-Seiten gehören nicht in den Index.
     {
       url: `${baseUrl}/impressum`,
       lastModified: heute,
