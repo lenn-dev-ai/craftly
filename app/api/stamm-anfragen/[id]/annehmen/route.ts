@@ -95,7 +95,7 @@ export async function POST(
   }
 
   // 2. Synthetisches Angebot (status=angenommen)
-  await admin.from("angebote").upsert(
+  const { error: angebotErr } = await admin.from("angebote").upsert(
     {
       ticket_id: anfrage.ticket_id,
       handwerker_id: user.id,
@@ -105,9 +105,14 @@ export async function POST(
     },
     { onConflict: "ticket_id,handwerker_id" },
   )
+  if (angebotErr) {
+    // Rollback der Anfrage-Markierung, damit der Stand konsistent bleibt.
+    await admin.from("stamm_anfragen").update({ status: "offen", entschieden_at: null }).eq("id", anfrage.id)
+    return NextResponse.json({ error: "Zusage fehlgeschlagen: " + angebotErr.message }, { status: 500 })
+  }
 
-  // 3. Ticket vergeben
-  await admin
+  // 3. Ticket vergeben — kritischer Zustandswechsel (Audit H1).
+  const { error: ticketErr } = await admin
     .from("tickets")
     .update({
       status: "in_bearbeitung",
@@ -115,6 +120,10 @@ export async function POST(
       kosten_final: preis,
     })
     .eq("id", anfrage.ticket_id)
+  if (ticketErr) {
+    await admin.from("stamm_anfragen").update({ status: "offen", entschieden_at: null }).eq("id", anfrage.id)
+    return NextResponse.json({ error: "Ticket-Vergabe fehlgeschlagen: " + ticketErr.message }, { status: 500 })
+  }
 
   // 4. Provision-Snapshot (kein Surge bei Stamm-Vergabe — 1.0)
   if (ticket.verwalter_id) {
@@ -127,7 +136,7 @@ export async function POST(
       new Date(verwalter.early_adopter_bis).getTime() > Date.now()
     const { finalRate } = effektiveProvisionsRate(0.05, 1.0, isEarlyAdopter)
     const calc = calculateCommission(preis, finalRate)
-    await admin.from("provisionen").upsert(
+    const { error: provErr } = await admin.from("provisionen").upsert(
       {
         ticket_id: anfrage.ticket_id,
         verwalter_id: ticket.verwalter_id,
@@ -140,11 +149,12 @@ export async function POST(
       },
       { onConflict: "ticket_id" },
     )
+    if (provErr) console.error("[stamm-anfragen/annehmen] Provisions-Snapshot fehlgeschlagen:", provErr.message)
   }
 
   // 5. Optional Termin anlegen
   if (body.termin_datum && body.termin_von && body.termin_bis) {
-    await admin.from("termine").insert({
+    const { error: terminErr } = await admin.from("termine").insert({
       handwerker_id: user.id,
       ticket_id: anfrage.ticket_id,
       titel: `Stamm: ${ticket.titel}`,
@@ -155,6 +165,7 @@ export async function POST(
       einsatzort_lat: ticket.einsatzort_lat,
       einsatzort_lng: ticket.einsatzort_lng,
     })
+    if (terminErr) console.error("[stamm-anfragen/annehmen] Termin-Anlage fehlgeschlagen:", terminErr.message)
   }
 
   void logTicketEvent({

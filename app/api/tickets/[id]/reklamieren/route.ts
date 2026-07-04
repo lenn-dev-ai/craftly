@@ -61,7 +61,13 @@ export async function POST(
     return NextResponse.json({ error: insertErr?.message || "Reklamation konnte nicht angelegt werden" }, { status: 500 })
   }
 
-  await admin.from("tickets").update({ status: "reklamiert" }).eq("id", params.id)
+  const { error: statusErr } = await admin.from("tickets").update({ status: "reklamiert" }).eq("id", params.id)
+  if (statusErr) {
+    // Reklamation ist angelegt, aber Ticket-Status hängt (Audit H1) —
+    // Reklamation zurücknehmen, damit UI und DB konsistent bleiben.
+    await admin.from("ticket_reklamationen").delete().eq("id", reklamation.id)
+    return NextResponse.json({ error: "Reklamation konnte nicht gesetzt werden: " + statusErr.message }, { status: 500 })
+  }
 
   void logTicketEvent({
     ticketId: params.id,

@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
     const auftragswert = preisBreakdown.gesamt
 
     // Synthetisches Angebot anlegen (status=angenommen)
-    await supabase.from("angebote").upsert(
+    const { error: angebotErr } = await supabase.from("angebote").upsert(
       {
         ticket_id: ticketId,
         handwerker_id: top.id,
@@ -249,9 +249,14 @@ export async function POST(request: NextRequest) {
       },
       { onConflict: "ticket_id,handwerker_id" },
     )
+    if (angebotErr) {
+      console.error("[auction/start:notfall] Angebot-Upsert fehlgeschlagen:", angebotErr.message)
+      return NextResponse.json({ error: "Notfall-Vergabe fehlgeschlagen: " + angebotErr.message }, { status: 500 })
+    }
 
-    // Ticket vergeben
-    await supabase
+    // Ticket vergeben — kritischer Zustandswechsel (Audit H1): bei Fehler
+    // 500, sonst bleibt das Ticket "offen" trotz angelegtem Angebot.
+    const { error: ticketErr } = await supabase
       .from("tickets")
       .update({
         dringlichkeit,
@@ -263,13 +268,18 @@ export async function POST(request: NextRequest) {
         kosten_final: auftragswert,
       })
       .eq("id", ticketId)
+    if (ticketErr) {
+      console.error("[auction/start:notfall] Ticket-Vergabe fehlgeschlagen:", ticketErr.message)
+      return NextResponse.json({ error: "Notfall-Vergabe fehlgeschlagen: " + ticketErr.message }, { status: 500 })
+    }
 
-    // Provisions-Snapshot mit Notfall-Surge
+    // Provisions-Snapshot mit Notfall-Surge (best-effort — Snapshot ist
+    // nachträglich reparierbar, blockiert die Vergabe nicht).
     const isEarlyAdopter = !!profile.early_adopter_bis &&
       new Date(profile.early_adopter_bis).getTime() > Date.now()
     const { finalRate } = effektiveProvisionsRate(0.05, config.surgeFaktor, isEarlyAdopter)
     const calc = calculateCommission(auftragswert, finalRate)
-    await supabase.from("provisionen").upsert(
+    const { error: provErr } = await supabase.from("provisionen").upsert(
       {
         ticket_id: ticketId,
         verwalter_id: user.id,
@@ -282,6 +292,7 @@ export async function POST(request: NextRequest) {
       },
       { onConflict: "ticket_id" },
     )
+    if (provErr) console.error("[auction/start:notfall] Provisions-Snapshot fehlgeschlagen:", provErr.message)
 
     // Termin am heutigen Tag, 1h-Fenster ab jetzt
     const heute = start.toISOString().slice(0, 10)
@@ -289,7 +300,7 @@ export async function POST(request: NextRequest) {
     const von = `${String(Math.floor(startMin / 60)).padStart(2, "0")}:${String(startMin % 60).padStart(2, "0")}`
     const endMin = Math.min(startMin + 60, 23 * 60 + 59)
     const bis = `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}`
-    await supabase.from("termine").insert({
+    const { error: terminErr } = await supabase.from("termine").insert({
       handwerker_id: top.id,
       ticket_id: ticketId,
       titel: `Notfall: ${ticket.titel}`,
@@ -300,6 +311,7 @@ export async function POST(request: NextRequest) {
       einsatzort_lat: ticket.einsatzort_lat,
       einsatzort_lng: ticket.einsatzort_lng,
     })
+    if (terminErr) console.error("[auction/start:notfall] Auto-Termin fehlgeschlagen:", terminErr.message)
 
     // Tagesplan-Sync (best-effort)
     await fuegeTicketZuTagesplan(supabase, top.id, ticketId, heute)

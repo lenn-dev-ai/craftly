@@ -167,14 +167,28 @@ export async function POST(request: NextRequest) {
     { onConflict: "ticket_id,handwerker_id" },
   )
   if (angebotErr) {
+    // Kritisch (Audit H1): ohne das synthetische Angebot kann das Projekt
+    // später nicht sauber geschlossen/vergeben werden. Nicht still mit
+    // ok:true antworten — der Verwalter muss den Fehler sehen.
     console.error("[Diagnose] Synthetisches Angebot konnte nicht angelegt werden:", angebotErr)
+    return NextResponse.json(
+      { error: "Angebot des Diagnose-Handwerkers konnte nicht übernommen werden: " + angebotErr.message },
+      { status: 500 },
+    )
   }
 
   // Diagnose-Ticket schließen
-  await admin
+  const { error: closeErr } = await admin
     .from("tickets")
     .update({ status: "erledigt" })
     .eq("id", ticket.id)
+  if (closeErr) {
+    console.error("[Diagnose] Diagnose-Ticket schließen fehlgeschlagen:", closeErr.message)
+    return NextResponse.json(
+      { error: "Diagnose-Ticket konnte nicht abgeschlossen werden: " + closeErr.message },
+      { status: 500 },
+    )
+  }
 
   // Einladungs-Mails an andere passende HW (außer Diagnose-HW)
   void (async () => {
