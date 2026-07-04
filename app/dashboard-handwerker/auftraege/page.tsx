@@ -8,25 +8,47 @@ export default function AuftraegePage() {
   const router = useRouter()
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
+  const [ladeFehler, setLadeFehler] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function load() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push("/login"); return }
-      const { data } = await supabase.from("tickets").select("*")
-        .eq("zugewiesener_hw", user.id).order("created_at", { ascending: false })
+  async function load() {
+    setLadeFehler(null)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push("/login"); return }
+    // Audit: Fehler nicht mehr verschlucken — sonst ewiger Spinner.
+    const { data, error } = await supabase.from("tickets").select("*")
+      .eq("zugewiesener_hw", user.id).order("created_at", { ascending: false })
+    if (error) {
+      setLadeFehler(error.message)
+    } else {
       setTickets(data || [])
-      setLoading(false)
     }
-    load()
-  }, [router])
+    setLoading(false)
+  }
+
+  useEffect(() => { load() /* eslint-disable-line react-hooks/exhaustive-deps */ }, [router])
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-2 border-accent/30 border-t-[#3D8B7A] rounded-full animate-spin" />
         <span className="text-sm text-ink-muted">Lädt...</span>
+      </div>
+    </div>
+  )
+
+  if (ladeFehler) return (
+    <div className="p-6 md:p-8 max-w-4xl mx-auto pt-16 md:pt-8">
+      <div className="bg-white rounded-2xl border border-danger/20 p-10 text-center">
+        <div className="text-4xl mb-3">&#9888;&#65039;</div>
+        <div className="text-lg font-semibold text-ink mb-1">Aufträge konnten nicht geladen werden</div>
+        <div className="text-sm text-ink-muted mb-5">Bitte prüfe deine Verbindung und versuche es erneut.</div>
+        <button
+          onClick={() => { setLoading(true); load() }}
+          className="inline-block text-sm font-semibold bg-accent text-white px-4 py-2 rounded-xl hover:bg-accent-hover transition-colors"
+        >
+          Erneut laden
+        </button>
       </div>
     </div>
   )

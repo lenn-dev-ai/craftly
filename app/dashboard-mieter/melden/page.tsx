@@ -101,6 +101,7 @@ export default function MeldenPage() {
   const [analyseProgress, setAnalyseProgress] = useState(0)
   const [error, setError] = useState("")
   const [rückrufInitiert, setRückrufInitiert] = useState<boolean | null>(null)
+  const [neueTicketId, setNeueTicketId] = useState<string | null>(null)
   // Foto-Upload State — UX-1: bis zu 5 Fotos
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [fotoFiles, setFotoFiles] = useState<File[]>([])
@@ -455,6 +456,7 @@ export default function MeldenPage() {
       } catch { /* Best-effort — Rückruf-Fehler blockiert Ticket-Meldung nicht */ }
     }
     setRückrufInitiert(rückruf)
+    setNeueTicketId(r.data?.id ?? null)
     setStep("gesendet")
     setLoading(false)
   }
@@ -553,7 +555,7 @@ export default function MeldenPage() {
 
             {fotoPreviewUrls.length > 0 ? (
               <div className="mb-6">
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {fotoPreviewUrls.map((url, i) => (
                     <div key={url} className="relative aspect-square rounded-xl overflow-hidden border border-line bg-surface">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1128,9 +1130,16 @@ export default function MeldenPage() {
               <span className="text-3xl text-accent">✓</span>
             </div>
             <h2 className="text-xl font-semibold mb-2">Schaden erfolgreich gemeldet</h2>
+            {neueTicketId && (
+              <div className="inline-block bg-surface-muted border border-line rounded-lg px-3 py-1.5 mb-3">
+                <span className="text-sm text-ink-muted">Deine Vorgangsnummer: </span>
+                <span className="text-sm font-semibold text-ink tabular-nums">#{neueTicketId.slice(0, 8).toUpperCase()}</span>
+              </div>
+            )}
             <p className="text-sm text-ink-muted mb-4 max-w-sm mx-auto">
               Deine Hausverwaltung prüft die Meldung und meldet sich bei dir.
-              Status-Updates findest du in &bdquo;Meine Meldungen&ldquo;.
+              Eine Bestätigung mit Statuslink ist unterwegs — Status-Updates
+              findest du außerdem in &bdquo;Meine Meldungen&ldquo;.
             </p>
             {rückrufInitiert && (
               <div className="bg-accent/8 border border-accent/20 rounded-xl px-4 py-3 mb-6 max-w-sm mx-auto text-left">
