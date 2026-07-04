@@ -26,3 +26,4 @@ playwright/.cache/
 # Transiente Claude-Code-Übergabe-Notizen
 CLAUDE-CODE-HANDOFF.md
 OPUS-HANDOFF.md
+woonwoon_scrape.py
