@@ -35,11 +35,49 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   })
+
+  // Produkt-Review 2026-07-03: Passwortloser Login für Einmal-im-Jahr-Nutzer
+  // (Mieter). "Passwort vergessen → Frust → Anruf beim Verwalter" soll gar
+  // nicht erst passieren — ein Klick schickt einen Anmelde-Link per E-Mail.
+  const [magicStatus, setMagicStatus] = useState<"idle" | "sending" | "sent" | "error">("idle")
+  const [magicMsg, setMagicMsg] = useState("")
+
+  async function sendeAnmeldeLink() {
+    const email = getValues("email").trim()
+    if (!email || !email.includes("@")) {
+      setMagicStatus("error")
+      setMagicMsg("Bitte oben zuerst deine E-Mail-Adresse eintragen.")
+      return
+    }
+    setMagicStatus("sending")
+    setMagicMsg("")
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        // Nur bestehende Konten — Registrierung bleibt der bewusste Weg.
+        shouldCreateUser: false,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+    if (error) {
+      setMagicStatus("error")
+      setMagicMsg(
+        /not found|signups not allowed|user/i.test(error.message)
+          ? "Zu dieser E-Mail gibt es noch kein Konto — bitte zuerst registrieren."
+          : "Link konnte nicht gesendet werden. Bitte später erneut versuchen.",
+      )
+      return
+    }
+    setMagicStatus("sent")
+    setMagicMsg(`Fertig! Wir haben einen Anmelde-Link an ${email} geschickt — einfach die E-Mail öffnen und den Link antippen.`)
+  }
 
   useEffect(() => {
     // OAuth-Fehler aus Callback-Route durchreichen (z.B. Consent abgelehnt).
@@ -318,6 +356,31 @@ export default function LoginPage() {
               >
                 Passwort vergessen?
               </Link>
+            </div>
+
+            {/* Passwortloser Login — nutzt die oben eingetragene E-Mail. */}
+            <div className="mt-3 pt-3 border-t border-line text-center">
+              {magicStatus === "sent" ? (
+                <p className="text-sm text-accent bg-accent/5 border border-accent/15 rounded-xl px-4 py-3" role="status">
+                  ✉️ {magicMsg}
+                </p>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={sendeAnmeldeLink}
+                    disabled={magicStatus === "sending"}
+                    className="text-sm font-medium text-accent hover:underline disabled:opacity-50"
+                  >
+                    {magicStatus === "sending"
+                      ? "Link wird gesendet…"
+                      : "Ohne Passwort anmelden — Link per E-Mail erhalten"}
+                  </button>
+                  {magicStatus === "error" && (
+                    <p className="text-sm text-danger mt-1.5" role="alert">{magicMsg}</p>
+                  )}
+                </>
+              )}
             </div>
 
             <div className="mt-6 text-center">

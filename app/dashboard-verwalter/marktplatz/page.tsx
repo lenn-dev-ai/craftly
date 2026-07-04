@@ -483,7 +483,7 @@ export default function MarktplatzPage() {
       <div className="bg-white border-b border-line">
         <div className="max-w-6xl mx-auto pl-14 pr-4 md:px-6 py-4 flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <h1 className="text-lg font-semibold text-ink">Marktplatz</h1>
+            <h1 className="text-lg font-semibold text-ink">Vergabe</h1>
             <p className="text-xs text-ink-muted">Die KI vergibt automatisch — hier behältst du den Überblick</p>
           </div>
           <button
@@ -556,13 +556,26 @@ export default function MarktplatzPage() {
                       {t.prioritaet === "notfall" && (
                         <span className="text-xs font-semibold uppercase tracking-wide bg-red-100 text-red-800 border border-red-200 px-1.5 py-px rounded">Notfall</span>
                       )}
-                      {t.status === "auktion" && (
-                        <span className="text-xs font-semibold uppercase tracking-wide bg-warm-light text-warm-dark border border-warm/30 px-1.5 py-px rounded">Offene Vergabe (Fallback)</span>
+                      {/* Produkt-Review 2026-07-03: Vier Vergabewege, EIN Satz.
+                          Der Verwalter sieht nur "Sucht Handwerker - Schritt X von 3":
+                          1 = Stamm-HW gefragt, 2 = bester Kandidat angefragt,
+                          3 = fuer mehrere Handwerker geoeffnet. */}
+                      {hatStammAnfrage && !dvAktiv && (
+                        <span className="text-xs font-semibold uppercase tracking-wide bg-accent/10 text-accent border border-accent/20 px-1.5 py-px rounded inline-flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                          Sucht Handwerker · Schritt 1 von 3
+                        </span>
                       )}
                       {dvAktiv && (
                         <span className="text-xs font-semibold uppercase tracking-wide bg-accent/10 text-accent border border-accent/20 px-1.5 py-px rounded inline-flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                          Direktvergabe läuft
+                          Sucht Handwerker · Schritt 2 von 3
+                        </span>
+                      )}
+                      {t.status === "auktion" && (
+                        <span className="text-xs font-semibold uppercase tracking-wide bg-warm-light text-warm-dark border border-warm/30 px-1.5 py-px rounded inline-flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-warm animate-pulse" />
+                          Sucht Handwerker · Schritt 3 von 3
                         </span>
                       )}
                     </div>
@@ -587,20 +600,20 @@ export default function MarktplatzPage() {
                     {/* Sprint AM Phase 3 — A: Live-Status für laufende Direktvergabe */}
                     {dvAktiv && dvKandidat && (
                       <div className="mt-2 text-xs text-accent bg-accent/5 border border-accent/15 rounded-lg px-3 py-1.5 inline-flex flex-wrap gap-x-2 gap-y-0.5">
-                        <span>🔄 wird automatisch vergeben — voraussichtlich an <strong>{dvHwName}</strong> zu <strong>{dvKandidat.preis.toLocaleString("de")} €</strong></span>
+                        <span>🔄 Schritt 2: Reparo hat den besten Kandidaten angefragt — voraussichtlich <strong>{dvHwName}</strong> zu <strong>{dvKandidat.preis.toLocaleString("de")} €</strong></span>
                         {dvRestzeit && <span className="text-ink-muted">· {dvRestzeit}</span>}
                       </div>
                     )}
                     {/* Sprint BD — A: Live-Status für aktive Stamm-Anfrage */}
                     {hatStammAnfrage && !dvAktiv && (
                       <div className="mt-2 text-xs text-accent bg-accent/5 border border-accent/15 rounded-lg px-3 py-1.5 inline-flex flex-wrap gap-x-2 gap-y-0.5">
-                        <span>⭐ Stamm-Handwerker automatisch angefragt — wartet auf Antwort.</span>
+                        <span>⭐ Schritt 1: Dein Stamm-Handwerker wurde zuerst gefragt — wartet auf Antwort.</span>
                       </div>
                     )}
                     {/* Sprint AM Phase 3 — A: Auktion als Fallback kennzeichnen */}
                     {t.status === "auktion" && !nullKandidaten && (
                       <div className="mt-1.5 text-xs text-warm-dark">
-                        Direktvergabe an {(t.einladungen?.[0]?.count ?? 0)} Handwerker ohne Antwort — Anfrage jetzt für mehrere Handwerker geöffnet.
+                        Schritt 3: {(t.einladungen?.[0]?.count ?? 0)} Handwerker ohne Antwort — die Anfrage ist jetzt für mehrere Handwerker geöffnet.
                       </div>
                     )}
                     {/* Sprint BD — wartet auf Vergabe-Start (z.B. Mieter-Ticket

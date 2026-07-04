@@ -26,7 +26,7 @@ const menus: Record<Rolle, MenuItem[]> = {
   verwalter: [
     { href: "/dashboard-verwalter", label: "Dashboard", Icon: LayoutDashboard },
     { href: "/dashboard-verwalter/tickets", label: "Tickets", Icon: Ticket },
-    { href: "/dashboard-verwalter/marktplatz", label: "Marktplatz", Icon: Zap },
+    { href: "/dashboard-verwalter/marktplatz", label: "Vergabe", Icon: Zap },
     { href: "/dashboard-verwalter/handwerker", label: "Handwerker", Icon: Wrench },
     { href: "/dashboard-verwalter/stamm-handwerker", label: "Stamm-HW", Icon: Wrench },
     { href: "/dashboard-verwalter/wohnungen", label: "Wohnungen", Icon: Home },
