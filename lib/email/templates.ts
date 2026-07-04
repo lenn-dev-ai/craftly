@@ -662,3 +662,33 @@ export function meldungEingegangenEmail(params: {
   `)
   return { subject, html }
 }
+
+// =====================================================================
+// 10. Auftrag erledigt — Info + Bewertungsbitte an den Mieter
+// =====================================================================
+export function auftragErledigtEmail(params: {
+  name: string
+  ticketTitel: string
+  statusLink: string | null
+  bewertungsLink: string
+}): { subject: string; html: string } {
+  const subject = `Erledigt: „${params.ticketTitel}“`
+  const html = emailLayout("Ihre Reparatur ist erledigt", `
+    <p style="margin:0 0 16px;color:${COLORS.text};font-size:16px;line-height:1.6;">
+      Hallo ${escapeHtml(params.name)},<br><br>
+      gute Nachricht — <strong>${escapeHtml(params.ticketTitel)}</strong> ist abgeschlossen.
+      Wir hoffen, alles ist zu Ihrer Zufriedenheit.
+    </p>
+    <p style="margin:0 0 16px;color:${COLORS.text};font-size:15px;line-height:1.6;">
+      Ihre Bewertung hilft anderen Mietern und Ihrer Hausverwaltung, gute
+      Handwerker zu erkennen — es dauert nur einen Moment:
+    </p>
+    ${ctaButton("Reparatur bewerten", params.bewertungsLink)}
+    ${params.statusLink ? `
+    <p style="margin:16px 0 0;color:${COLORS.textMuted};font-size:13px;line-height:1.6;">
+      Den Verlauf Ihrer Meldung sehen Sie jederzeit
+      <a href="${params.statusLink}" style="color:${COLORS.accent};">hier — ohne Anmeldung</a>.
+    </p>` : ""}
+  `)
+  return { subject, html }
+}

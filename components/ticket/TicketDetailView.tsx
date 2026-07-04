@@ -418,6 +418,10 @@ export default function TicketDetailView() {
       return
     }
 
+    // Audit H5: Mieter über den Abschluss informieren (Mail mit Statuslink
+    // + Bewertungsbitte). Fire-and-forget — blockiert den Abschluss nicht.
+    void authFetch(`/api/tickets/${id}/erledigt-mail`, { method: "POST" }).catch(() => {})
+
     if (currentUser) {
       // LT-7: System-Nachricht ist best-effort (Abschluss steht bereits in
       // tickets.status='erledigt'). Wenn Insert failt, nur loggen — sonst
