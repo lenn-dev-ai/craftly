@@ -12,6 +12,7 @@ import { ReklamationStatusBox } from "@/components/ticket/ReklamationStatusBox"
 import { useToast } from "@/components/Toast"
 import { useActiveRole } from "@/lib/context/ActiveRoleContext"
 import { authFetch } from "@/lib/auth/clientFetch"
+import { WarumDieserHandwerker } from "@/components/verwalter/WarumDieserHandwerker"
 
 function berechneValueScore(angebot: Angebot, alleAngebote: Angebot[]): number {
   if (alleAngebote.length === 0) return 0
@@ -1005,6 +1006,16 @@ export default function TicketDetailView() {
                 </div>
               )
             })()}
+            {/* Produkt-Review 2026-07-03: KI-Wahl in Klartext erklären —
+                Vertrauen der Verwalter entsteht durch Nachvollziehbarkeit. */}
+            {isVerwalter && (
+              <WarumDieserHandwerker
+                hwId={ticket.zugewiesener_hw}
+                ticketGewerk={ticket.gewerk ?? null}
+                einsatzortLat={ticket.einsatzort_lat ?? null}
+                einsatzortLng={ticket.einsatzort_lng ?? null}
+              />
+            )}
           </div>
         )}
 

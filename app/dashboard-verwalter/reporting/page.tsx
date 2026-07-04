@@ -151,19 +151,39 @@ export default function ReportingPage() {
               <option key={z.key} value={z.key}>{z.label}</option>
             ))}
           </select>
-          {/* Sprint AB4 — Export-Button vorbereitet. Funktion kommt
-              post-Beta (CSV-Generator via /api/verwalter/reporting/export);
-              UI-Pattern + Erwartungs-Marker im Stub. */}
+          {/* Produkt-Review 2026-07-03: Eigentümer-Report als PDF — der
+              Verwalter schuldet seinen Eigentümern Rechenschaft; der
+              Browser-Druckdialog erzeugt das PDF (kein Server nötig).
+              Print-Styles unten blenden Navigation aus und setzen den
+              Briefkopf. */}
           <button
             type="button"
-            disabled
-            title="Export (PDF/CSV) — verfügbar nach Beta"
-            className="text-xs font-medium border border-line text-ink-muted px-3 py-1.5 rounded-lg cursor-not-allowed opacity-60"
+            onClick={() => window.print()}
+            title="Druckt die aktuelle Übersicht — im Druckdialog dann Als PDF sichern wählen"
+            className="text-xs font-medium border border-accent/30 text-accent px-3 py-1.5 rounded-lg hover:bg-accent/5 transition-colors"
           >
-            Export ↓
+            Als PDF exportieren ↓
           </button>
         </div>
       </div>
+
+      {/* Druck-Briefkopf (nur im Print sichtbar) + Print-Styles:
+          Navigation/Interaktives ausblenden, Inhalt auf volle Breite. */}
+      <div className="reparo-print-kopf" aria-hidden>
+        <div style={{ fontSize: 22, fontWeight: 700 }}>Reparo — Eigentümer-Report</div>
+        <div style={{ fontSize: 13, color: "#6B665E", marginTop: 4 }}>
+          Zeitraum: {zeitraumLabel} · Erstellt am {new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })}
+        </div>
+        <hr style={{ margin: "12px 0 0", border: 0, borderTop: "2px solid #3D8B7A" }} />
+      </div>
+      <style>{`
+        .reparo-print-kopf { display: none; }
+        @media print {
+          aside, nav, header, button, select, label[for="reporting-zeitraum"] { display: none !important; }
+          .reparo-print-kopf { display: block !important; margin-bottom: 20px; }
+          main, body { background: white !important; }
+        }
+      `}</style>
 
       {/* Early-Adopter-Banner */}
       {istEarlyAdopter && (
