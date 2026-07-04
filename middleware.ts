@@ -59,10 +59,16 @@ export async function middleware(request: NextRequest) {
   // Ist BETA_PASSWORD gesetzt, ist die GANZE Seite nur per Basic-Auth
   // erreichbar (User: BETA_USER oder "reparo"). So ist die Seite nicht
   // öffentlich zugänglich (relevant fürs noch fehlende Impressum).
-  // /api bleibt offen, damit Vapi-Webhook & Crons weiterlaufen. Ohne
+  // /api bleibt offen, damit Vapi-Webhook & Crons weiterlaufen. /status ist
+  // die Zero-Login-Statusseite für Mieter (HMAC-Token-geschützt, unlisted) —
+  // Mieter mit Mail-Link sollen nicht am Beta-Passwort scheitern. Ohne
   // gesetztes BETA_PASSWORD greift kein Gate (fail-open).
   const betaPw = process.env.BETA_PASSWORD
-  if (betaPw && !request.nextUrl.pathname.startsWith("/api")) {
+  if (
+    betaPw &&
+    !request.nextUrl.pathname.startsWith("/api") &&
+    !request.nextUrl.pathname.startsWith("/status/")
+  ) {
     const betaUser = process.env.BETA_USER || "reparo"
     const authHeader = request.headers.get("authorization")
     let erlaubt = false

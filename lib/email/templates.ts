@@ -632,3 +632,33 @@ export function fristAbgelaufenEmail(params: {
   `)
   return { subject, html }
 }
+
+// =====================================================================
+// 9. Meldungs-Bestätigung an den Mieter — mit Zero-Login-Statuslink
+// =====================================================================
+export function meldungEingegangenEmail(params: {
+  name: string
+  ticketTitel: string
+  statusLink: string | null
+}): { subject: string; html: string } {
+  const subject = `Ihre Meldung ist eingegangen: „${params.ticketTitel}“`
+  const html = emailLayout("Meldung eingegangen", `
+    <p style="margin:0 0 16px;color:${COLORS.text};font-size:16px;line-height:1.6;">
+      Hallo ${escapeHtml(params.name)},<br><br>
+      Ihre Schadensmeldung <strong>${escapeHtml(params.ticketTitel)}</strong> ist bei uns
+      eingegangen. Die Suche nach einem passenden Handwerker startet automatisch —
+      Sie müssen nichts weiter tun.
+    </p>
+    ${params.statusLink ? `
+    <p style="margin:0 0 16px;color:${COLORS.text};font-size:15px;line-height:1.6;">
+      Den aktuellen Stand sehen Sie jederzeit hier — <strong>ganz ohne Anmeldung</strong>:
+    </p>
+    ${ctaButton("Stand meiner Meldung ansehen", params.statusLink)}
+    ` : ""}
+    <p style="margin:16px 0 0;color:${COLORS.textMuted};font-size:13px;line-height:1.6;">
+      Tipp: Diese E-Mail einfach aufheben — der Link bleibt gültig, bis die
+      Reparatur abgeschlossen ist.
+    </p>
+  `)
+  return { subject, html }
+}

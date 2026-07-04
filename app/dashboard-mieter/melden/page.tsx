@@ -430,6 +430,13 @@ export default function MeldenPage() {
       try {
         await authFetch(`/api/tickets/${r.data.id}/auto-vergabe`, { method: "POST" })
       } catch { /* Best-effort — Vergabe-Fehler blockiert die Meldung nicht */ }
+
+      // Bestätigungs-Mail mit Zero-Login-Statuslink (fire-and-forget).
+      void authFetch("/api/tickets/melde-bestaetigung", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticket_id: r.data.id }),
+      }).catch(() => { /* Best-effort */ })
     }
 
     // Voice-AI V2: Outbound-Rückruf bei lückenhaftem Ticket (fire-and-forget)
