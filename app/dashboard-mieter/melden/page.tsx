@@ -23,13 +23,6 @@ const PRIO_LABELS: Record<string, string> = {
 // F2: "Kann warten" klang resignativ und niemand klickte es. "Diese Woche"
 // gibt einen konkreten Zeitrahmen, ohne den User in Notfall-Drift zu treiben.
 // F2.1 (390-px-Smoke-Befund): vorheriges "Diese Woche OK" brach im 3-cols-
-// Grid bei iPhone-Breite um — auf "Diese Woche" gekürzt, Sub-Label bleibt
-// jetzt einzeilig.
-const PRIO_SUB: Record<string, string> = {
-  planbar: "Diese Woche",
-  zeitnah: "Bald bitte",
-  notfall: "Sofort",
-}
 // Mapping nur noch defensive Fallback für alte Bookmarks / Drittsysteme,
 // die noch die alten Werte schicken könnten.
 const PRIO_LEGACY_MAP: Record<string, string> = {
@@ -764,27 +757,35 @@ export default function MeldenPage() {
               />
             </div>
 
-            {/* LT-2: Werte jetzt planbar/zeitnah/notfall — Default "planbar".
-                User stuft bewusst hoch wenn nötig. */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-ink-muted mb-2">Dringlichkeit</label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { val: "planbar", color: "border-accent/30 bg-accent/5 text-accent" },
-                  { val: "zeitnah", color: "border-warm/30 bg-[#FFF3E8] text-[#B07A3B]" },
-                  { val: "notfall", color: "border-danger/30 bg-danger-light text-danger" },
-                ].map(d => (
-                  <button
-                    key={d.val}
-                    onClick={() => setForm(f => ({ ...f, prioritaet: d.val }))}
-                    className={"rounded-xl px-2 py-3 border text-center transition-all " + (form.prioritaet === d.val ? d.color : "border-line bg-surface-muted text-ink-muted")}
-                  >
-                    <div className="text-sm font-medium whitespace-nowrap">{PRIO_LABELS[d.val]}</div>
-                    <div className="text-sm mt-0.5 opacity-70 whitespace-nowrap">{PRIO_SUB[d.val]}</div>
-                  </button>
-                ))}
+            {/* Produkt-Review 2026-07-03: Die Drei-Wege-Dringlichkeitswahl ist
+                raus — die KI leitet die Dringlichkeit aus Beschreibung/Foto ab
+                (siehe KI-Insight-Card oben), der Verwalter korrigiert bei
+                Bedarf. Es bleibt ein einziges Sicherheitsventil: der Mieter
+                kann auf Notfall hochstufen (startet die Vergabe sofort). */}
+            {form.prioritaet !== "notfall" ? (
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, prioritaet: "notfall" }))}
+                className="w-full mb-6 rounded-xl px-4 py-3 border border-danger/30 bg-danger-light/40 text-danger text-sm font-medium text-left flex items-center gap-3 hover:bg-danger-light transition-colors"
+              >
+                <span aria-hidden className="text-base">⚠️</span>
+                <span>
+                  Es ist ein Notfall (Wasser läuft, Strom weg, Gefahr)?
+                  <span className="block font-normal text-danger/80">Hier tippen — dann wird sofort ein Handwerker gesucht.</span>
+                </span>
+              </button>
+            ) : (
+              <div className="w-full mb-6 rounded-xl px-4 py-3 border border-danger/30 bg-danger-light text-danger text-sm font-medium flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2"><span aria-hidden>⚠️</span> Als Notfall markiert — wird sofort vergeben.</span>
+                <button
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, prioritaet: analyse.dringlichkeit === "notfall" ? "zeitnah" : analyse.dringlichkeit }))}
+                  className="underline font-normal whitespace-nowrap"
+                >
+                  Doch kein Notfall
+                </button>
               </div>
-            </div>
+            )}
 
             {/* UX-2: Diagnose-vs-Direkt-Wahl entfernt — gehört in den
                 Verwalter-Flow (Fachentscheidung nach Sichtung), nicht
