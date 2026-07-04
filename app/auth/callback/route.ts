@@ -74,11 +74,18 @@ export async function GET(request: NextRequest) {
   // Google verbinden" klicken — Calendar-Sync ist sofort aktiv.
   const providerToken = data.session.provider_token
   const providerRefreshToken = data.session.provider_refresh_token
+  // Review-Fix 03.07.: Der Supabase-Client wirft bei DB-Fehlern nicht — er
+  // gibt { error } zurück. Vorher fing das try/catch nur Exceptions und der
+  // Upsert-Fehler ging komplett unter: HW glaubt "Kalender verbunden",
+  // Token wurde aber nie gespeichert. Jetzt: Fehler prüfen und per
+  // ?cal_fehler=1 ans Ziel-Dashboard melden (Banner dort). Login-Flow
+  // selbst darf weiterhin nicht an Cal-Sync scheitern.
+  let calFehler = false
   if (providerToken && providerRefreshToken) {
     try {
       const admin = createServiceRoleClient()
       const expiresAt = new Date(Date.now() + 3500 * 1000).toISOString()
-      await admin.from("hw_google_oauth").upsert(
+      const { error: upsertErr } = await admin.from("hw_google_oauth").upsert(
         {
           user_id: user.id,
           access_token: providerToken,
@@ -90,15 +97,25 @@ export async function GET(request: NextRequest) {
         },
         { onConflict: "user_id" },
       )
+      if (upsertErr) {
+        console.error("[auth-callback] hw_google_oauth upsert failed", {
+          userId: user.id,
+          error: upsertErr.message,
+        })
+        calFehler = true
+      }
     } catch (err) {
-      // Best-Effort — Login-Flow soll nicht failen wenn Cal-Sync nicht klappt
-      console.warn("[auth-callback] hw_google_oauth upsert failed", err)
+      console.error("[auth-callback] hw_google_oauth upsert exception", {
+        userId: user.id,
+        error: err instanceof Error ? err.message : String(err),
+      })
+      calFehler = true
     }
   }
 
-  if (profile?.rolle && roleDashboard[profile.rolle]) {
-    return NextResponse.redirect(new URL(roleDashboard[profile.rolle], origin))
-  }
-
-  return NextResponse.redirect(new URL("/onboarding", origin))
+  const ziel = profile?.rolle && roleDashboard[profile.rolle]
+    ? new URL(roleDashboard[profile.rolle], origin)
+    : new URL("/onboarding", origin)
+  if (calFehler) ziel.searchParams.set("cal_fehler", "1")
+  return NextResponse.redirect(ziel)
 }

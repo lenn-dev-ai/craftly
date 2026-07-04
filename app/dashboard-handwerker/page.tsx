@@ -30,6 +30,23 @@ export default function HandwerkerDashboard() {
   const [zeigeAusserhalb, setZeigeAusserhalb] = useState(false)
   const [loading, setLoading] = useState(true)
   const [offeneAnfragenCount, setOffeneAnfragenCount] = useState(0)
+  // Review-Fix 03.07.: /auth/callback hängt ?cal_fehler=1 an, wenn das
+  // Google-Calendar-Token beim Login nicht gespeichert werden konnte.
+  // Ohne Hinweis glaubt der HW, sein Kalender sei verbunden.
+  const [calFehler, setCalFehler] = useState(false)
+
+  useEffect(() => {
+    // Bewusst window.location statt useSearchParams — spart die
+    // Suspense-Boundary, die Next 14 für useSearchParams verlangt.
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("cal_fehler") === "1") {
+      setCalFehler(true)
+      // Param entfernen, damit Reload den Banner nicht erneut zeigt
+      params.delete("cal_fehler")
+      const rest = params.toString()
+      window.history.replaceState(null, "", window.location.pathname + (rest ? `?${rest}` : ""))
+    }
+  }, [])
 
   const load = useCallback(async () => {
     const supabase = createClient()
@@ -137,6 +154,35 @@ export default function HandwerkerDashboard() {
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto pt-16 md:pt-8">
+      {/* Review-Fix 03.07.: Kalender-Token konnte beim Login nicht
+          gespeichert werden — HW muss es wissen, sonst wundert er sich
+          später über fehlenden Sync. */}
+      {calFehler && (
+        <div className="bg-amber-50 border border-amber-300 rounded-2xl px-4 py-3 mb-6 flex items-center gap-3">
+          <div className="text-xl flex-shrink-0">⚠️</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-amber-900">Google-Kalender nicht verbunden</div>
+            <div className="text-xs text-amber-800 mt-0.5">
+              Die Kalender-Verbindung konnte beim Login nicht gespeichert werden.
+              Bitte im Profil einmal neu verbinden, sonst bleibt der Sync aus.
+            </div>
+          </div>
+          <Link
+            href="/dashboard-handwerker/profil"
+            className="text-xs font-semibold bg-amber-600 text-white px-3 py-2 rounded-xl hover:bg-amber-700 transition-colors whitespace-nowrap"
+          >
+            Zum Profil
+          </Link>
+          <button
+            type="button"
+            onClick={() => setCalFehler(false)}
+            aria-label="Hinweis schließen"
+            className="p-1 text-amber-500 hover:text-amber-800"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       {/* Hero Greeting — Sprint L/Audit-M1: Stamm-Gewerke aus
           handwerker_gewerke[] bevorzugen, Fallback single gewerk solange
           noch nicht alle HW migriert sind. */}
