@@ -37,7 +37,9 @@ export async function POST(request: NextRequest) {
     .select("rolle")
     .eq("id", user.id)
     .single<{ rolle: string }>()
-  if (profile?.rolle !== "handwerker") {
+  // Admin darf übernehmen (Admin-Sichtwechsel als Test-Werkzeug, analog
+  // zu /api/auftraege/annehmen).
+  if (profile?.rolle !== "handwerker" && profile?.rolle !== "admin") {
     return NextResponse.json({ error: "Nur Handwerker können Diagnosen übernehmen" }, { status: 403 })
   }
 

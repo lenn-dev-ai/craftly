@@ -44,7 +44,11 @@ export async function POST(request: NextRequest) {
     .select("rolle, gewerk, handwerker_gewerke")
     .eq("id", user.id)
     .single<{ rolle: string; gewerk: string | null; handwerker_gewerke: string[] | null }>()
-  if (!profile || profile.rolle !== "handwerker") {
+  // Admin darf mit-bieten: der Admin-Sichtwechsel ("Sicht wechseln") zeigt
+  // die komplette Handwerker-UI — Mieter-Melden und Verwalter-Vergabe
+  // funktionieren mit dem Admin-Account bereits, nur Bieten war gesperrt.
+  // Ohne diese Ausnahme ist der Rollen-Loop für Admins nicht testbar.
+  if (!profile || (profile.rolle !== "handwerker" && profile.rolle !== "admin")) {
     return NextResponse.json({ error: "Nur Handwerker dürfen bieten" }, { status: 403 })
   }
 
