@@ -10,6 +10,13 @@ import { TrendingUp, TrendingDown, Minus, PiggyBank, Stethoscope, FileEdit, Cloc
 import { ThroughputChart, type ThroughputBucket } from "@/components/verwalter/ThroughputChart"
 import { Accordion } from "@/components/ui/Accordion"
 import { authFetch } from "@/lib/auth/clientFetch"
+import { erkenneVerwaltungsanliegen } from "@/lib/ki/verwaltungsanliegen"
+
+// Sprint BG: DB-Flag (post-Migration) ODER Text-Heuristik (deckt
+// Alt-Tickets und den Zeitraum vor dem Migration-Apply ab).
+function istVerwaltungsanliegen(t: Ticket): boolean {
+  return t.kein_schaden === true || erkenneVerwaltungsanliegen(`${t.titel} ${t.beschreibung ?? ""}`)
+}
 
 function kostenSchaetzung(t: Ticket): string {
   const titel = (t.titel || "").toLowerCase()
@@ -467,6 +474,22 @@ export default function VerwalterDashboard() {
                         <p className="text-sm text-ink-secondary line-clamp-2 mb-3">{t.beschreibung}</p>
                       )}
 
+                      {istVerwaltungsanliegen(t) ? (
+                        // Sprint BG: kein Gebäudeschaden → keine Preis-
+                        // Schätzung, keine HW-Buchung. Der Vorgang gehört
+                        // in die Verwaltung, nicht in die Vergabe.
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <span className="text-xs text-ink-muted">
+                            📋 Verwaltungsanliegen — keine Handwerker-Vergabe
+                          </span>
+                          <button
+                            onClick={() => router.push(`/dashboard-verwalter/ticket/${t.id}`)}
+                            className="text-xs font-semibold bg-rolle-verwalter text-white px-3.5 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
+                          >
+                            Als Verwaltungsanliegen bearbeiten
+                          </button>
+                        </div>
+                      ) : (
                       <div className="flex items-center justify-between gap-3 flex-wrap">
                         <span className="text-xs text-ink-muted">
                           KI-Schätzung: <span className="text-ink font-medium">{kostenSchaetzung(t)} €</span>
@@ -486,6 +509,7 @@ export default function VerwalterDashboard() {
                           </button>
                         </div>
                       </div>
+                      )}
                     </div>
                   </div>
                 </article>

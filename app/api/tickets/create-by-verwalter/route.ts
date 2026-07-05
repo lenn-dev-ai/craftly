@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { ticketCreateByVerwalterSchema } from "@/lib/schemas"
 import { vergebeTicketAutomatisch } from "@/lib/auction/auto-vergabe"
+import { erkenneVerwaltungsanliegen } from "@/lib/ki/verwaltungsanliegen"
 
 // POST /api/tickets/create-by-verwalter (Sprint G)
 // Verwalter erstellt Ticket telefonisch via Wizard. Body enthält Anrufer-
@@ -71,14 +72,31 @@ export async function POST(request: NextRequest) {
     eingetragen_von_verwalter: true,
   }
 
-  const { data: ticket, error: insertErr } = await supabase
+  // Sprint BG: Verwaltungsanliegen markieren — keine HW-Vergabe.
+  if (erkenneVerwaltungsanliegen(beschreibung)) {
+    insertPayload.kein_schaden = true
+  }
+
+  let { data: ticket, error: insertErr } = await supabase
     .from("tickets")
     .insert(insertPayload)
     .select("id")
     .single<{ id: string }>()
 
-  if (insertErr) {
-    return NextResponse.json({ error: insertErr.message }, { status: 500 })
+  // Defensiv: Spalte existiert erst nach Migration 20260705000020.
+  if (insertErr && insertPayload.kein_schaden && /kein_schaden/.test(insertErr.message)) {
+    delete insertPayload.kein_schaden
+    const retry = await supabase
+      .from("tickets")
+      .insert(insertPayload)
+      .select("id")
+      .single<{ id: string }>()
+    ticket = retry.data
+    insertErr = retry.error
+  }
+
+  if (insertErr || !ticket) {
+    return NextResponse.json({ error: insertErr?.message ?? "Insert fehlgeschlagen" }, { status: 500 })
   }
 
   // Sprint BD — Auto-Vergabe: die KI startet die Vergabe-Engine sofort,

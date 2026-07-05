@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase-server"
 import { verifyVapiSignature } from "@/lib/sms/verify-vapi-signature"
 import { sendSms } from "@/lib/sms/twilio"
+import { erkenneVerwaltungsanliegen } from "@/lib/ki/verwaltungsanliegen"
 
 // POST /api/voice-call/ingest (Voice-AI PoC)
 // Webhook-Endpoint für Vapi. Wird aufgerufen wenn ein Anruf beendet ist.
@@ -160,15 +161,35 @@ export async function POST(request: NextRequest) {
     voice_call_transcript: body.transcript_full ?? null,
   }
 
-  const { data: ticket, error: insertErr } = await supabase
+  // Sprint BG: Verwaltungsanliegen (Bescheinigung, Vertragsfrage, …)
+  // markieren — solche Tickets laufen nicht durch die HW-Vergabe.
+  // Der Prod-Befund kam genau über diesen Kanal (Voice-AI).
+  if (erkenneVerwaltungsanliegen(data.beschreibung)) {
+    insertPayload.kein_schaden = true
+  }
+
+  let { data: ticket, error: insertErr } = await supabase
     .from("tickets")
     .insert(insertPayload)
     .select("id")
     .single<{ id: string }>()
 
-  if (insertErr) {
+  // Defensiv: Spalte kein_schaden existiert erst nach Migration
+  // 20260705000020 — bei 'column does not exist' ohne Flag erneut.
+  if (insertErr && insertPayload.kein_schaden && /kein_schaden/.test(insertErr.message)) {
+    delete insertPayload.kein_schaden
+    const retry = await supabase
+      .from("tickets")
+      .insert(insertPayload)
+      .select("id")
+      .single<{ id: string }>()
+    ticket = retry.data
+    insertErr = retry.error
+  }
+
+  if (insertErr || !ticket) {
     return NextResponse.json({
-      error: insertErr.message,
+      error: insertErr?.message ?? "Insert fehlgeschlagen",
       hint: "Falls 'column does not exist': Migrations 20260605000050 + 20260605000070 noch nicht angewandt.",
     }, { status: 500 })
   }

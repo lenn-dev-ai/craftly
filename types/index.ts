@@ -100,6 +100,8 @@ export interface Ticket {
   objekt?: Objekt; objekte?: Objekt; ersteller?: UserProfile
   handwerker?: UserProfile; angebote?: Angebot[]
   einladungen?: Einladung[]; nachrichten?: Nachricht[]
+  // Sprint BG: Verwaltungsanliegen (kein Gebäudeschaden) — keine HW-Vergabe
+  kein_schaden?: boolean | null
   // Diagnose → Projekt (Phase 1+2)
   ticket_typ?: "standard" | "diagnose" | "projekt"
   diagnose_ticket_id?: string | null

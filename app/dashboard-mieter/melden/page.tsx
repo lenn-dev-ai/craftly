@@ -7,6 +7,7 @@ import AddressAutocomplete from "@/components/AddressAutocomplete"
 import { uploadSchadensFoto } from "@/lib/storage/schadens-foto"
 import { formatGewerk } from "@/types"
 import { authFetch } from "@/lib/auth/clientFetch"
+import { erkenneVerwaltungsanliegen } from "@/lib/ki/verwaltungsanliegen"
 
 const MAX_FOTO_BYTES = 5 * 1024 * 1024 // 5 MB
 const MAX_FOTOS = 5
@@ -124,6 +125,8 @@ export default function MeldenPage() {
   const [kiConfidence, setKiConfidence] = useState<number | null>(null)
   const [kiSchadensart, setKiSchadensart] = useState<string | null>(null)
   const [kiHinweis, setKiHinweis] = useState<string | null>(null)
+  // Sprint BG: Foto-KI kann "kein Gebäudeschaden" erkennen (Brief/Formular)
+  const [kiKeinSchaden, setKiKeinSchaden] = useState(false)
   // UX-2: ticketTyp/diagnosePreis raus aus Mieter-Flow.
   // Mieter entscheidet nicht ob Diagnose oder Direkt-Reparatur — das
   // ist eine Fachentscheidung des Verwalters nach Sichtung.
@@ -308,6 +311,7 @@ export default function MeldenPage() {
     setKiConfidence(null)
     setKiSchadensart(null)
     setKiHinweis(null)
+    setKiKeinSchaden(false)
 
     const interval = setInterval(() => {
       setAnalyseProgress(p => {
@@ -334,6 +338,7 @@ export default function MeldenPage() {
               titel_vorschlag: string
               beschreibung_vorschlag: string
               confidence: number
+              kein_schaden?: boolean
               hinweis?: string
             }
             clearInterval(interval)
@@ -341,6 +346,7 @@ export default function MeldenPage() {
             setKiConfidence(data.confidence)
             setKiSchadensart(data.schadensart)
             setKiHinweis(data.hinweis ?? null)
+            setKiKeinSchaden(data.kein_schaden === true)
             setKiResult(SCHADENSART_API_TO_UI[data.schadensart] ?? "sonstiges")
             setForm(f => ({
               ...f,
@@ -415,6 +421,11 @@ export default function MeldenPage() {
       foto_urls: pfade,
       ticket_typ: "standard",
     }
+    // Sprint BG: Verwaltungsanliegen markieren (Foto-KI-Flag oder
+    // Text-Heuristik) — solche Tickets laufen nicht durch die HW-Vergabe.
+    if (kiKeinSchaden || erkenneVerwaltungsanliegen(form.beschreibung)) {
+      basisPayload.kein_schaden = true
+    }
     const mitKi = {
       ...basisPayload,
       ki_confidence: kiConfidence,
@@ -425,6 +436,11 @@ export default function MeldenPage() {
     let r = await supabase.from("tickets").insert(mitKi).select("id").single<InsertResult>()
     if (r.error && /ki_confidence|ki_schadensart/i.test(r.error.message)) {
       r = await supabase.from("tickets").insert(basisPayload).select("id").single<InsertResult>()
+    }
+    if (r.error && /kein_schaden/i.test(r.error.message)) {
+      // Migration 20260705000020 noch nicht angewandt — ohne Flag erneut.
+      const { kein_schaden: _ignored, ...ohneFlag } = basisPayload; void _ignored
+      r = await supabase.from("tickets").insert(ohneFlag).select("id").single<InsertResult>()
     }
     if (r.error && /foto_urls/i.test(r.error.message)) {
       const { foto_urls: _ignored, ...ohneFotos } = basisPayload; void _ignored

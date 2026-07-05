@@ -2,6 +2,7 @@ import { createServiceRoleClient } from "@/lib/supabase-server"
 import { konfigFuer, berechneAuktionsEnde } from "@/lib/auction/auction-manager"
 import type { Dringlichkeit } from "@/lib/auction/smart-score"
 import { findeUndErzeugeStammAnfrage } from "@/lib/auction/stamm-routing"
+import { erkenneVerwaltungsanliegen } from "@/lib/ki/verwaltungsanliegen"
 import {
   starteDirektvergabe,
   fuehreMassInviteAus,
@@ -135,6 +136,21 @@ export async function vergebeTicketAutomatisch(
     }
 
     // --- Guards: nur frische, vergebbare Tickets ---
+    // Sprint BG: Verwaltungsanliegen (kein Gebäudeschaden) nie an
+    // Handwerker vergeben. Defensive Extra-Query, weil die Spalte vor
+    // dem Migration-Apply fehlen kann; die Text-Heuristik greift als
+    // Fallback auch für Alt-Tickets ohne Flag.
+    const { data: flagZeile, error: flagErr } = await admin
+      .from("tickets")
+      .select("kein_schaden")
+      .eq("id", ticketId)
+      .single<{ kein_schaden: boolean | null }>()
+    if (
+      (!flagErr && flagZeile?.kein_schaden) ||
+      erkenneVerwaltungsanliegen(`${ticket.titel} ${ticket.beschreibung ?? ""}`)
+    ) {
+      return { ok: true, modus: "uebersprungen", grund: "verwaltungsanliegen" }
+    }
     if (ticket.status !== "offen") {
       return { ok: true, modus: "uebersprungen", grund: `status_${ticket.status}` }
     }

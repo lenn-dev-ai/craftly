@@ -32,6 +32,7 @@ Analysiere das Foto eines Gebäudeschadens und antworte AUSSCHLIESSLICH als vali
   "titel_vorschlag": "Kurzer Titel für das Ticket (max 60 Zeichen)",
   "beschreibung_vorschlag": "Detaillierte Beschreibung des Schadens in 2-3 Sätzen",
   "confidence": 0.0,
+  "kein_schaden": false,
   "hinweis": "Optionaler Hinweis falls das Bild unklar ist"
 }
 
@@ -39,6 +40,8 @@ Regeln Dringlichkeit:
 - notfall: Aktive Wasserlecks, Stromausfall, Gasgeruch, Sturmschäden, kaputte Heizung im Winter
 - zeitnah: Tropfende Hähne, defekte Steckdosen, klemmende Türen, kleine Risse
 - planbar: Kosmetische Schäden, Verschleiß, Renovierungsbedarf
+
+kein_schaden = true, wenn das Bild GAR KEINEN Gebäudeschaden zeigt, sondern ein Verwaltungsanliegen (z.B. Brief, Formular, Bescheinigung, Vertrag, Screenshot einer E-Mail). Dann schadensart "sonstiges", dringlichkeit "planbar" und im hinweis kurz erklären.
 
 confidence < 0.3 wenn das Bild keinen Schaden zeigt oder unklar ist — dann hinweis-Feld füllen.`
 
@@ -54,6 +57,7 @@ interface KiAntwort {
   titel_vorschlag: string
   beschreibung_vorschlag: string
   confidence: number
+  kein_schaden?: boolean
   hinweis?: string
 }
 
@@ -197,6 +201,7 @@ export async function POST(request: NextRequest) {
   if (!ALLOWED_DRINGLICHKEIT.has(kiAntwort.dringlichkeit)) kiAntwort.dringlichkeit = "planbar"
   if (typeof kiAntwort.confidence !== "number" || !isFinite(kiAntwort.confidence)) kiAntwort.confidence = 0
   kiAntwort.confidence = Math.max(0, Math.min(1, kiAntwort.confidence))
+  kiAntwort.kein_schaden = kiAntwort.kein_schaden === true
 
   return NextResponse.json(kiAntwort)
 }

@@ -7,6 +7,7 @@ import { useToast } from "@/components/Toast"
 import { Inbox, Users, Search, Filter as FilterIcon, RefreshCw, Clock, MapPin, AlertCircle, Star, Zap } from "lucide-react"
 import { formatGewerk } from "@/types"
 import { useFocusTrap } from "@/lib/use-focus-trap"
+import { erkenneVerwaltungsanliegen } from "@/lib/ki/verwaltungsanliegen"
 import SeitenTabs from "@/components/layout/SeitenTabs"
 import { AUFTRAEGE_TABS } from "@/components/layout/verwalterTabs"
 
@@ -28,6 +29,7 @@ type Tab = "tickets" | "handwerker"
 interface OffenesTicket {
   id: string
   titel: string
+  beschreibung: string | null
   gewerk: string | null
   ticket_typ: string | null
   prioritaet: string | null
@@ -161,7 +163,7 @@ export default function MarktplatzPage() {
     const [{ data: t }, { data: h }] = await Promise.all([
       supabase
         .from("tickets")
-        .select("id, titel, gewerk, ticket_typ, prioritaet, einsatzort_adresse, created_at, status, erstellt_von, einladungen(count), angebote(count), direktvergabe_kandidaten, direktvergabe_index, direktvergabe_angefragt_am, direktvergabe_timeout_min")
+        .select("id, titel, beschreibung, gewerk, ticket_typ, prioritaet, einsatzort_adresse, created_at, status, erstellt_von, einladungen(count), angebote(count), direktvergabe_kandidaten, direktvergabe_index, direktvergabe_angefragt_am, direktvergabe_timeout_min")
         .eq("verwalter_id", user.id)
         .is("zugewiesener_hw", null)
         .not("status", "in", "(geschlossen,storniert,erledigt)")
@@ -172,7 +174,12 @@ export default function MarktplatzPage() {
         .eq("verwalter_id", user.id)
         .order("prio", { ascending: false }),
     ])
-    const ticketList = (t ?? []) as OffenesTicket[]
+    // Sprint BG: Verwaltungsanliegen gehören nicht in die Vergabe-Liste —
+    // die bearbeitet der Verwalter über das Dashboard ("Als
+    // Verwaltungsanliegen bearbeiten"), nicht über "Vergabe starten".
+    const ticketList = ((t ?? []) as OffenesTicket[]).filter(
+      tk => !erkenneVerwaltungsanliegen(`${tk.titel} ${tk.beschreibung ?? ""}`),
+    )
     setTickets(ticketList)
     setHws((h ?? []) as unknown as StammHwEintrag[])
 
