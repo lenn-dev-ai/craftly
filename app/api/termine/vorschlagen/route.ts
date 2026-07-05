@@ -104,7 +104,10 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // HW-Berechtigung: zugewiesener_hw oder eingeladen
+  // HW-Berechtigung: zugewiesener_hw, eingeladen — oder eigenes Angebot.
+  // Letzteres deckt Fallback-Bieter ab: Wer über den offenen Pool
+  // angenommen hat, hat keine Einladungs-Zeile, wird aber von der UI
+  // direkt von der Annahme zu den Terminvorschlägen geführt.
   if (ticket.zugewiesener_hw !== user.id) {
     const { data: einl } = await supabase
       .from("einladungen")
@@ -113,7 +116,15 @@ export async function POST(request: NextRequest) {
       .eq("handwerker_id", user.id)
       .maybeSingle()
     if (!einl) {
-      return NextResponse.json({ error: "Du bist nicht für dieses Ticket eingeladen." }, { status: 403 })
+      const { data: angebot } = await supabase
+        .from("angebote")
+        .select("id")
+        .eq("ticket_id", ticketId)
+        .eq("handwerker_id", user.id)
+        .maybeSingle()
+      if (!angebot) {
+        return NextResponse.json({ error: "Du bist nicht für dieses Ticket eingeladen." }, { status: 403 })
+      }
     }
   }
 
