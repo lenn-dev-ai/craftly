@@ -67,6 +67,19 @@ const SCHADENSART_API_TO_UI: Record<string, keyof typeof KI_ANALYSEN> = {
   sonstiges: "sonstiges",
 }
 
+// Die Kategorie allein sagt nicht, wie akut es ist: "Hahn tropft, sonst
+// alles trocken" ist kein Notfall, "Wasser läuft über den Boden" schon.
+// Ohne diese Verfeinerung wurde jede Wasser-Erwähnung hart als Notfall
+// eingestuft (→ Sofort-Vergabe mit Aufschlag).
+function verfeinereDringlichkeit(kategorie: string, text: string, basis: string): string {
+  const lower = text.toLowerCase()
+  const akutMarker = /l(ä|ae)uft|steht unter wasser|wasser steht|(ü|ue)berschwemm|sprudelt|rohrbruch|geplatzt|platzt|gas.?geruch|riecht nach gas|stromausfall|kein strom|strom (weg|ausgefallen|komplett)|brand|funken|brennt/
+  if (akutMarker.test(lower)) return "notfall"
+  // Wasser ohne akuten Austritt (nur tropfen/feucht) → zeitnah reicht.
+  if (kategorie === "wasser") return "zeitnah"
+  return basis
+}
+
 function analyseText(text: string): string {
   const lower = text.toLowerCase()
   if (lower.match(/heiz|warm.?wasser|thermostat|radiator|kalt.*(wohnung|zimmer)/)) return "heizung"
@@ -357,7 +370,7 @@ export default function MeldenPage() {
         ...f,
         titel: analyse.titel,
         beschreibung: beschreibung,
-        prioritaet: analyse.dringlichkeit,
+        prioritaet: verfeinereDringlichkeit(kategorie, beschreibung, analyse.dringlichkeit),
         gewerk: analyse.gewerk,
       }))
       setTimeout(() => setStep("details"), 500)
