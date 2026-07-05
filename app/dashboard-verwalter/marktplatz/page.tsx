@@ -890,11 +890,23 @@ export default function MarktplatzPage() {
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-1">
               {hws.length === 0 ? (
-                <div className="text-sm text-ink-muted text-center py-8">
-                  Keine Stamm-HW angelegt.{" "}
-                  <a href="/dashboard-verwalter/stamm-handwerker" className="text-accent hover:underline">
-                    Jetzt anlegen
-                  </a>
+                <div className="text-sm text-ink-muted text-center py-8 space-y-2">
+                  <p>
+                    Keine Stamm-HW angelegt.{" "}
+                    <a href="/dashboard-verwalter/stamm-handwerker" className="text-accent hover:underline">
+                      Jetzt anlegen
+                    </a>
+                  </p>
+                  {/* Ohne Stamm-HW war der Dialog eine Sackgasse — der Weg
+                      über die volle Kandidatenliste existiert aber immer. */}
+                  <p>
+                    <a
+                      href={`/dashboard-verwalter/tickets/${einladenDrawer.id}/handwerker`}
+                      className="text-accent hover:underline"
+                    >
+                      Oder alle verfügbaren Handwerker ansehen →
+                    </a>
+                  </p>
                 </div>
               ) : (
                 hws.map(h => {
