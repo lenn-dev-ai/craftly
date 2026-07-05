@@ -164,6 +164,38 @@ export function neuesAngebotEmail(params: {
 }
 
 // =====================================================================
+// 2b. Auto-Vergabe erfolgt (an Verwalter — Info, keine Aktion nötig)
+// =====================================================================
+export function autoVergebenEmail(params: {
+  verwalterName: string
+  handwerkerName: string
+  handwerkerFirma: string
+  ticketTitel: string
+  preis: number
+  ticketId: string
+}): { subject: string; html: string } {
+  const preisFormatiert = params.preis.toLocaleString("de-DE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+  const subject = `Vergeben: „${params.ticketTitel}“ — ${params.handwerkerName} zu ${preisFormatiert} €`
+  const html = emailLayout("Auftrag automatisch vergeben", `
+    <p style="margin:0 0 16px;color:${COLORS.text};font-size:16px;line-height:1.6;">
+      Hallo ${escapeHtml(params.verwalterName)},<br><br>
+      Reparo hat Ihren Auftrag <strong>${escapeHtml(params.ticketTitel)}</strong> zum Festpreis vergeben — es ist nichts weiter zu tun:
+    </p>
+    <div style="background:${COLORS.bg};border:1px solid ${COLORS.border};border-radius:12px;padding:20px;margin:0 0 16px;">
+      <div style="font-size:17px;font-weight:600;color:${COLORS.text};">${escapeHtml(params.handwerkerName)}</div>
+      ${params.handwerkerFirma ? `<div style="margin:0 0 12px;color:${COLORS.textMuted};font-size:14px;">${escapeHtml(params.handwerkerFirma)}</div>` : ""}
+      <div style="font-size:32px;font-weight:700;color:${COLORS.accent};margin:8px 0;">${preisFormatiert} €</div>
+      <p style="margin:8px 0 0;color:${COLORS.textMuted};font-size:13px;">Der Handwerker stimmt den Termin direkt mit dem Mieter ab.</p>
+    </div>
+    ${ctaButton("Auftrag ansehen", `${SITE_URL}/dashboard-verwalter/ticket/${params.ticketId}`)}
+  `)
+  return { subject, html }
+}
+
+// =====================================================================
 // 3. Auktion abgelaufen (an Verwalter, ohne Auto-Vergabe)
 // =====================================================================
 export function auktionAbgelaufenEmail(params: {

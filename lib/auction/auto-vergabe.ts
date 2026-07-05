@@ -10,7 +10,7 @@ import {
 } from "@/lib/auction/direktvergabe"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-interface VerwalterPraeferenzen {
+export interface VerwalterPraeferenzen {
   autoVergabeAktiv: boolean
   budgetEur: number | null
 }
@@ -18,7 +18,9 @@ interface VerwalterPraeferenzen {
 // Lädt die Verwalter-Leitplanken (Sprint BD) defensiv: fehlen die Spalten
 // (z.B. Migration noch nicht angewandt), fällt alles auf die sicheren
 // Defaults zurück (Auto-Vergabe aktiv, kein Budget-Limit).
-async function ladeVerwalterPraeferenzen(
+// Export seit 05.07.: auch der Sofort-Zuschlag in /api/auftraege/annehmen
+// prüft dieselben Leitplanken.
+export async function ladeVerwalterPraeferenzen(
   admin: SupabaseClient,
   verwalterId: string | null,
 ): Promise<VerwalterPraeferenzen> {

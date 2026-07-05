@@ -1,8 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
+import { createServiceRoleClient } from "@/lib/supabase-server"
 import { reScoreTicket } from "@/lib/auction/scoring-pipeline"
 import { sendEmailFireAndForget } from "@/lib/email/send"
-import { neuesAngebotEmail } from "@/lib/email/templates"
+import { neuesAngebotEmail, autoVergebenEmail } from "@/lib/email/templates"
+import { ladeVerwalterPraeferenzen } from "@/lib/auction/auto-vergabe"
+import { erteileZuschlag } from "@/lib/auction/zuschlag"
 import { angebotAnnehmenSchema } from "@/lib/schemas"
 
 // POST /api/auftraege/annehmen (H2: vorher /api/auction/bid)
@@ -54,16 +57,21 @@ export async function POST(request: NextRequest) {
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, titel, status, auktion_ende, erstellt_von, verwalter_id, gewerk")
+    .select("id, titel, beschreibung, einsatzort_adresse, status, auktion_ende, erstellt_von, verwalter_id, gewerk, surge_faktor, ticket_typ, diagnose_ticket_id")
     .eq("id", ticketId)
     .single<{
       id: string
       titel: string
+      beschreibung: string | null
+      einsatzort_adresse: string | null
       status: string
       auktion_ende: string | null
       erstellt_von: string
       verwalter_id: string | null
       gewerk: string | null
+      surge_faktor: number | null
+      ticket_typ: string | null
+      diagnose_ticket_id: string | null
     }>()
   if (!ticket) return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 })
   if (ticket.status !== "auktion") {
@@ -120,7 +128,46 @@ export async function POST(request: NextRequest) {
   // Re-Score aller Bids dieses Tickets
   const result = await reScoreTicket(supabase, ticketId)
 
-  // Fire-and-forget: Mail an den Verwalter mit Live-Bid-Counter
+  // Sofort-Zuschlag (05.07.): Im Vollkalkulations-Modell ist der Preis vom
+  // System bestimmt — die Annahme IST der Deal ("wer zuerst kommt, bekommt
+  // den Auftrag", so verspricht es auch das HW-Dashboard). Die Auktion
+  // danach offenzulassen war ein Rest des alten Bieter-Systems.
+  // Leitplanken bleiben: Master-Schalter + Budget-Gate des Verwalters —
+  // außerhalb davon entscheidet weiterhin der Mensch (manueller Close
+  // bzw. Auktionsende-Cron).
+  const admin = createServiceRoleClient()
+  const verwalterId = ticket.verwalter_id ?? ticket.erstellt_von
+  const prefs = await ladeVerwalterPraeferenzen(admin, verwalterId)
+  const autoZuschlagErlaubt =
+    prefs.autoVergabeAktiv && (prefs.budgetEur == null || preis <= prefs.budgetEur)
+
+  let vergeben = false
+  if (autoZuschlagErlaubt) {
+    const { data: eigenesAngebot } = await admin
+      .from("angebote")
+      .select("id")
+      .eq("ticket_id", ticketId)
+      .eq("handwerker_id", user.id)
+      .single<{ id: string }>()
+    if (eigenesAngebot) {
+      const zuschlag = await erteileZuschlag(admin, {
+        ticket,
+        angebotId: eigenesAngebot.id,
+        actor: { userId: user.id, rolle: "system" },
+        request,
+      })
+      vergeben = zuschlag.ok
+      // Bei Fehlschlag (z.B. Race: anderer HW war schneller) bleibt das
+      // Angebot als normales Bid liegen — kein Abbruch der Annahme.
+      if (!zuschlag.ok) {
+        console.warn("[annehmen] Sofort-Zuschlag nicht erteilt:", zuschlag.error)
+      }
+    }
+  }
+
+  // Fire-and-forget: Verwalter-Mail. Bei Sofort-Zuschlag eine
+  // "vergeben, nichts zu tun"-Info statt der Bitte, Angebote zu vergleichen.
+  const istVergeben = vergeben
   void (async () => {
     const [{ data: verwalter }, { data: handwerker }, { count }] = await Promise.all([
       supabase
@@ -129,7 +176,7 @@ export async function POST(request: NextRequest) {
         // FIX-3: Bei Mieter-Tickets ist erstellt_von der Mieter — der
         // muss aber nicht die Bid-Mail bekommen. Der zuständige Verwalter
         // entscheidet, also verwalter_id bevorzugen.
-        .eq("id", ticket.verwalter_id ?? ticket.erstellt_von)
+        .eq("id", verwalterId)
         .single<{ email: string | null; name: string | null }>(),
       supabase
         .from("profiles")
@@ -142,21 +189,31 @@ export async function POST(request: NextRequest) {
         .eq("ticket_id", ticketId),
     ])
     if (!verwalter?.email) return
-    const { subject, html } = neuesAngebotEmail({
-      verwalterName: verwalter.name || "Verwalter",
-      handwerkerName: handwerker?.name || "Handwerker",
-      handwerkerFirma: handwerker?.firma || "",
-      ticketTitel: ticket.titel,
-      angebotPreis: preis,
-      angebotAnzahl: count ?? 1,
-      ticketId: ticket.id,
-    })
+    const { subject, html } = istVergeben
+      ? autoVergebenEmail({
+          verwalterName: verwalter.name || "Verwalter",
+          handwerkerName: handwerker?.name || "Handwerker",
+          handwerkerFirma: handwerker?.firma || "",
+          ticketTitel: ticket.titel,
+          preis,
+          ticketId: ticket.id,
+        })
+      : neuesAngebotEmail({
+          verwalterName: verwalter.name || "Verwalter",
+          handwerkerName: handwerker?.name || "Handwerker",
+          handwerkerFirma: handwerker?.firma || "",
+          ticketTitel: ticket.titel,
+          angebotPreis: preis,
+          angebotAnzahl: count ?? 1,
+          ticketId: ticket.id,
+        })
     sendEmailFireAndForget({ to: verwalter.email, subject, html })
   })().catch(err => console.error("[Email] bid-mail Vorbereitung fehlgeschlagen:", err))
 
   return NextResponse.json({
     ok: true,
     ticketId,
+    vergeben,
     rescored: result.updated,
     rescoreSkipped: result.skipped || undefined,
   })
