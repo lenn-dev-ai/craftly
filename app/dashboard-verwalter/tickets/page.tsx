@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase"
 import { Ticket, TicketStatus } from "@/types"
 import { Badge, TypBadge, StatusDot, EmptyState } from "@/components/ui"
 import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
+import SeitenTabs from "@/components/layout/SeitenTabs"
+import { AUFTRAEGE_TABS } from "@/components/layout/verwalterTabs"
 
 type StatusFilter = TicketStatus | "alle"
 type TypFilter = "alle" | "standard" | "diagnose" | "projekt"
@@ -96,21 +98,20 @@ export default function TicketsPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto pt-16 md:pt-6">
+      <SeitenTabs tabs={AUFTRAEGE_TABS} />
       <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-semibold text-ink">Alle Tickets</h1>
+          <h1 className="text-xl font-semibold text-ink">Aufträge</h1>
           <p className="text-sm text-ink-muted mt-0.5">{tickets.length} Tickets insgesamt</p>
         </div>
-        <div className="text-xs text-ink-muted max-w-xs text-right">
-          Tickets werden von Mietern gemeldet.
-          Für eigene Aufträge zum{" "}
-          <button
-            onClick={() => router.push("/dashboard-verwalter/marktplatz")}
-            className="text-accent hover:underline font-medium"
-          >
-            Handwerker-Marktplatz
-          </button>.
-        </div>
+        {/* Nav-Konsolidierung: "Ticket telefonisch" ist kein Sidebar-Punkt
+            mehr — die Aktion lebt jetzt hier. */}
+        <button
+          onClick={() => router.push("/dashboard-verwalter/neues-ticket")}
+          className="text-sm px-3.5 py-2 rounded-lg bg-rolle-verwalter text-white font-medium hover:opacity-90 transition-opacity"
+        >
+          + Ticket telefonisch
+        </button>
       </div>
 
       {/* Typ-Filter — Diagnose/Projekt aus dem Standard-Pool aussondern */}

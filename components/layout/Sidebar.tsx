@@ -20,24 +20,26 @@ type LucideIcon = ComponentType<LucideProps>
 
 // F12: gruppe="selten" rutscht in eine eigene Untersektion "Mein Bereich"
 // in der Sidebar. Hält die Hauptnavigation kurz, ohne Routen zu löschen.
-type MenuItem = { href: string; label: string; Icon: LucideIcon; gruppe?: "selten" }
+// aliases: weitere Routen, bei denen das Item als aktiv gilt (für per
+// SeitenTabs zusammengelegte Seiten, z.B. Aufträge = tickets+marktplatz).
+type MenuItem = { href: string; label: string; Icon: LucideIcon; gruppe?: "selten"; aliases?: string[] }
 
 const menus: Record<Rolle, MenuItem[]> = {
   verwalter: [
+    // Nav-Konsolidierung (05.07.): 8+2 Items → 5+1. Zusammengehörige
+    // Seiten teilen sich einen Punkt und sind per SeitenTabs verbunden —
+    // alle Routen bleiben bestehen (Deep-Links/Bookmarks):
+    //   Aufträge   = tickets + marktplatz (Vergabe ist Statusboard → Tab)
+    //   Handwerker = handwerker + stamm-handwerker (Tab "Stamm")
+    //   Objekte    = wohnungen + eigentuemer
+    // "Ticket telefonisch" (neues-ticket) ist eine Aktion, kein
+    // Nav-Punkt mehr — jetzt Button auf der Aufträge-Seite.
     { href: "/dashboard-verwalter", label: "Dashboard", Icon: LayoutDashboard },
-    { href: "/dashboard-verwalter/tickets", label: "Tickets", Icon: Ticket },
-    { href: "/dashboard-verwalter/marktplatz", label: "Vergabe", Icon: Zap },
-    { href: "/dashboard-verwalter/handwerker", label: "Handwerker", Icon: Wrench },
-    { href: "/dashboard-verwalter/stamm-handwerker", label: "Stamm-HW", Icon: Wrench },
-    { href: "/dashboard-verwalter/wohnungen", label: "Wohnungen", Icon: Home },
-    { href: "/dashboard-verwalter/eigentuemer", label: "Eigentümer", Icon: Home },
+    { href: "/dashboard-verwalter/tickets", label: "Aufträge", Icon: Ticket, aliases: ["/dashboard-verwalter/marktplatz", "/dashboard-verwalter/ticket", "/dashboard-verwalter/neues-ticket"] },
+    { href: "/dashboard-verwalter/handwerker", label: "Handwerker", Icon: Wrench, aliases: ["/dashboard-verwalter/stamm-handwerker"] },
+    { href: "/dashboard-verwalter/wohnungen", label: "Objekte", Icon: Home, aliases: ["/dashboard-verwalter/eigentuemer"] },
     { href: "/dashboard-verwalter/reporting", label: "Reporting", Icon: BarChart3 },
-    // Sprint AD (Mieter-First-Pivot, 25.05.): Verwalter-Wizard ist
-    // nicht mehr der primäre Eingabe-Pfad. Bleibt erreichbar für
-    // Sonderfälle (Mieter ruft Verwalter direkt an), aber gruppiert
-    // in "Mein Bereich" statt prominent als Top-Item.
-    { href: "/dashboard-verwalter/neues-ticket", label: "Ticket telefonisch", Icon: Plus, gruppe: "selten" },
-    { href: "/dashboard-verwalter/einstellungen", label: "KI-Vergabe", Icon: SlidersHorizontal, gruppe: "selten" },
+    { href: "/dashboard-verwalter/einstellungen", label: "Einstellungen", Icon: SlidersHorizontal, gruppe: "selten" },
   ],
   handwerker: [
     // K2: Top-4 — was der HW täglich anfasst.
@@ -128,7 +130,8 @@ export default function Sidebar({ rolle }: { rolle: Rolle }) {
     return list.map(item => {
       const active =
         pathname === item.href ||
-        (item.href !== "/dashboard-" + rolle && pathname.startsWith(item.href))
+        (item.href !== "/dashboard-" + rolle && pathname.startsWith(item.href)) ||
+        (item.aliases?.some(a => pathname === a || pathname.startsWith(a + "/")) ?? false)
       return (
         <Link
           key={item.href}

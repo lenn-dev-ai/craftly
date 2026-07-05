@@ -7,6 +7,8 @@ import { useToast } from "@/components/Toast"
 import { Inbox, Users, Search, Filter as FilterIcon, RefreshCw, Clock, MapPin, AlertCircle, Star, Zap } from "lucide-react"
 import { formatGewerk } from "@/types"
 import { useFocusTrap } from "@/lib/use-focus-trap"
+import SeitenTabs from "@/components/layout/SeitenTabs"
+import { AUFTRAEGE_TABS } from "@/components/layout/verwalterTabs"
 
 // Sprint AK Stufe 2 (27.05.2026) — Verwalter-Marktplatz, NEU.
 //
@@ -481,7 +483,10 @@ export default function MarktplatzPage() {
   return (
     <div className="min-h-screen bg-surface">
       <div className="bg-white border-b border-line">
-        <div className="max-w-6xl mx-auto pl-14 pr-4 md:px-6 py-4 flex items-center justify-between gap-3 flex-wrap">
+        <div className="max-w-6xl mx-auto pl-14 pr-4 md:px-6 pt-4">
+          <SeitenTabs tabs={AUFTRAEGE_TABS} />
+        </div>
+        <div className="max-w-6xl mx-auto pl-14 pr-4 md:px-6 pb-4 flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h1 className="text-lg font-semibold text-ink">Vergabe</h1>
             <p className="text-xs text-ink-muted">Die KI vergibt automatisch — hier behältst du den Überblick</p>

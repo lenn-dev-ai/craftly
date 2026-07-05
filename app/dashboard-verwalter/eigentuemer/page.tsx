@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Button } from "@/components/ui"
 import { useToast } from "@/components/Toast"
+import SeitenTabs from "@/components/layout/SeitenTabs"
+import { OBJEKTE_TABS } from "@/components/layout/verwalterTabs"
 
 // Sprint W Phase 2 — Eigentümer-Verwaltung für (WEG-)Verwalter.
 //
@@ -146,6 +148,7 @@ export default function EigentuemerPage() {
 
   return (
     <main className="p-6 max-w-5xl mx-auto space-y-8">
+      <SeitenTabs tabs={OBJEKTE_TABS} />
       <header className="flex items-baseline justify-between">
         <div>
           <h1 className="text-2xl font-bold text-ink">Eigentümer</h1>

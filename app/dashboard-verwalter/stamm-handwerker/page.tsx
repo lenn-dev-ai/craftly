@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase"
 import { Button } from "@/components/ui"
 import { useToast } from "@/components/Toast"
 import { formatGewerk } from "@/types"
+import SeitenTabs from "@/components/layout/SeitenTabs"
+import { HANDWERKER_TABS } from "@/components/layout/verwalterTabs"
 
 // Sprint V Phase 2 — Stamm-HW-Verwaltung für Verwalter.
 //
@@ -140,6 +142,7 @@ export default function StammHandwerkerPage() {
 
   return (
     <main className="p-6 max-w-5xl mx-auto">
+      <SeitenTabs tabs={HANDWERKER_TABS} />
       <header className="flex items-baseline justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-ink">Stamm-Handwerker</h1>

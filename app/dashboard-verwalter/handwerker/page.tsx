@@ -7,6 +7,8 @@ import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
 import { TrustBadge } from "@/components/ui"
 import { Search, Star, MapPin, Phone, Mail, Briefcase } from "lucide-react"
 import { formatGewerk } from "@/types"
+import SeitenTabs from "@/components/layout/SeitenTabs"
+import { HANDWERKER_TABS } from "@/components/layout/verwalterTabs"
 
 interface Handwerker {
   id: string
@@ -130,6 +132,7 @@ export default function HandwerkerUebersicht() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6 pt-16 md:pt-6">
+      <SeitenTabs tabs={HANDWERKER_TABS} />
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-ink">Handwerker-Verzeichnis</h1>

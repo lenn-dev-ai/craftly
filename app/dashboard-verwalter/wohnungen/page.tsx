@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Card, Button, WarningBanner } from "@/components/ui"
 import { Home, Upload, Search } from "lucide-react"
+import SeitenTabs from "@/components/layout/SeitenTabs"
+import { OBJEKTE_TABS } from "@/components/layout/verwalterTabs"
 
 // Sprint I — Wohnungs-Listen-View. Anker für den Import-Wizard +
 // einfache Bestands-Übersicht. Funktioniert erst nach Apply der
@@ -68,6 +70,7 @@ export default function WohnungenPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto pt-16 md:pt-8">
+      <SeitenTabs tabs={OBJEKTE_TABS} />
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-ink">Wohnungen</h1>
