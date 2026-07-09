@@ -6,6 +6,7 @@ import { sendEmailFireAndForget } from "@/lib/email/send"
 import { neuesAngebotEmail, autoVergebenEmail } from "@/lib/email/templates"
 import { ladeVerwalterPraeferenzen } from "@/lib/auction/auto-vergabe"
 import { erteileZuschlag } from "@/lib/auction/zuschlag"
+import { emitEreignis } from "@/lib/cortex/ereignis"
 import { angebotAnnehmenSchema } from "@/lib/schemas"
 
 // POST /api/auftraege/annehmen (H2: vorher /api/auction/bid)
@@ -136,6 +137,12 @@ export async function POST(request: NextRequest) {
   // außerhalb davon entscheidet weiterhin der Mensch (manueller Close
   // bzw. Auktionsende-Cron).
   const admin = createServiceRoleClient()
+  emitEreignis(admin, {
+    typ: "angebot_neu",
+    entitaet: "tickets",
+    entitaetId: ticketId,
+    payload: { titel: ticket.titel, handwerker_id: user.id, preis },
+  })
   const verwalterId = ticket.verwalter_id ?? ticket.erstellt_von
   const prefs = await ladeVerwalterPraeferenzen(admin, verwalterId)
   const autoZuschlagErlaubt =

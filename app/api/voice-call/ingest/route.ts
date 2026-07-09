@@ -3,6 +3,7 @@ import { createServiceRoleClient } from "@/lib/supabase-server"
 import { verifyVapiSignature } from "@/lib/sms/verify-vapi-signature"
 import { sendSms } from "@/lib/sms/twilio"
 import { erkenneVerwaltungsanliegen } from "@/lib/ki/verwaltungsanliegen"
+import { emitEreignis } from "@/lib/cortex/ereignis"
 
 // POST /api/voice-call/ingest (Voice-AI PoC)
 // Webhook-Endpoint für Vapi. Wird aufgerufen wenn ein Anruf beendet ist.
@@ -193,6 +194,13 @@ export async function POST(request: NextRequest) {
       hint: "Falls 'column does not exist': Migrations 20260605000050 + 20260605000070 noch nicht angewandt.",
     }, { status: 500 })
   }
+
+  emitEreignis(supabase, {
+    typ: "ticket_neu",
+    entitaet: "tickets",
+    entitaetId: ticket.id,
+    payload: { titel, via: "voice-ai", kein_schaden: insertPayload.kein_schaden === true },
+  })
 
   // 5. SMS-Bestätigung — fire-and-forget. Wenn Twilio-ENV fehlt
   //    no-op, kein Fehler für den Caller.

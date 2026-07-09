@@ -12,7 +12,7 @@ import {
   Euro, Calendar, Briefcase, MapPin, CalendarCheck, UserCircle,
   Plus, FileText, ShieldCheck, LogOut, Map, CalendarRange,
   Calculator, AlertTriangle, MessageSquare, Home,
-  Users, Activity, Heart, Tag, SlidersHorizontal,
+  Users, Activity, Heart, Tag, SlidersHorizontal, Brain,
   type LucideProps,
 } from "lucide-react"
 
@@ -69,6 +69,7 @@ const menus: Record<Rolle, MenuItem[]> = {
   ],
   admin: [
     { href: "/dashboard-admin", label: "Dashboard", Icon: LayoutDashboard },
+    { href: "/dashboard-admin/cortex", label: "Cortex", Icon: Brain },
     { href: "/dashboard-admin/feedback", label: "Feedback", Icon: MessageSquare },
     { href: "/dashboard-admin/nutzer", label: "Nutzer", Icon: Users },
     { href: "/dashboard-admin/aktivitaet", label: "Aktivität", Icon: Activity },

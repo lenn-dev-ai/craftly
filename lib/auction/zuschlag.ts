@@ -7,6 +7,7 @@ import { sendEmailFireAndForget } from "@/lib/email/send"
 import { zuschlagEmail, absageEmail } from "@/lib/email/templates"
 import { getDiagnosePreis } from "@/lib/diagnose/preise"
 import { logTicketEvent } from "@/lib/audit/logTicketEvent"
+import { emitEreignis } from "@/lib/cortex/ereignis"
 
 // Zentraler Zuschlag: ein Angebot gewinnt, das Ticket wird vergeben.
 // Extrahiert aus /api/auction/close (05.07.), damit derselbe Ablauf an
@@ -243,6 +244,19 @@ export async function erteileZuschlag(
       sendEmailFireAndForget({ to: email, subject, html })
     }
   })().catch(err => console.error("[Email] zuschlag-Mails fehlgeschlagen:", err))
+
+  // Cortex-Ereignisstrom (best-effort)
+  emitEreignis(admin, {
+    typ: "zuschlag_erteilt",
+    entitaet: "tickets",
+    entitaetId: ticketId,
+    payload: {
+      titel: ticket.titel,
+      handwerker_id: angebot.handwerker_id,
+      kosten_final: kostenFinal,
+      ausgeloest_von: actor.rolle,
+    },
+  })
 
   // Sprint T MVP — Audit-Trail
   void logTicketEvent({

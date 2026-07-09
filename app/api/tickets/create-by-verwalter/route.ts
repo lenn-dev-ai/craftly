@@ -3,6 +3,8 @@ import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { ticketCreateByVerwalterSchema } from "@/lib/schemas"
 import { vergebeTicketAutomatisch } from "@/lib/auction/auto-vergabe"
 import { erkenneVerwaltungsanliegen } from "@/lib/ki/verwaltungsanliegen"
+import { createServiceRoleClient } from "@/lib/supabase-server"
+import { emitEreignis } from "@/lib/cortex/ereignis"
 
 // POST /api/tickets/create-by-verwalter (Sprint G)
 // Verwalter erstellt Ticket telefonisch via Wizard. Body enthält Anrufer-
@@ -98,6 +100,13 @@ export async function POST(request: NextRequest) {
   if (insertErr || !ticket) {
     return NextResponse.json({ error: insertErr?.message ?? "Insert fehlgeschlagen" }, { status: 500 })
   }
+
+  emitEreignis(createServiceRoleClient(), {
+    typ: "ticket_neu",
+    entitaet: "tickets",
+    entitaetId: ticket.id,
+    payload: { titel, via: "verwalter-wizard", kein_schaden: insertPayload.kein_schaden === true },
+  })
 
   // Sprint BD — Auto-Vergabe: die KI startet die Vergabe-Engine sofort,
   // ohne dass der Verwalter im Marktplatz manuell "Auction" klicken muss.
