@@ -612,7 +612,9 @@ export default function MarktplatzPage() {
                     {/* Sprint AM Phase 3 — A: Live-Status für laufende Direktvergabe */}
                     {dvAktiv && dvKandidat && (
                       <div className="mt-2 text-xs text-accent bg-accent/5 border border-accent/15 rounded-lg px-3 py-1.5 inline-flex flex-wrap gap-x-2 gap-y-0.5">
-                        <span>🔄 Schritt 2: Reparo hat den besten Kandidaten angefragt — voraussichtlich <strong>{dvHwName}</strong> zu <strong>{dvKandidat.preis.toLocaleString("de")} €</strong></span>
+                        {/* preis defensiv: bei alten/unvollständigen Kandidaten-JSONs
+                            darf ein fehlendes Feld nicht die ganze Seite crashen. */}
+                        <span>🔄 Schritt 2: Reparo hat den besten Kandidaten angefragt — voraussichtlich <strong>{dvHwName}</strong>{typeof dvKandidat.preis === "number" && <> zu <strong>{dvKandidat.preis.toLocaleString("de")} €</strong></>}</span>
                         {dvRestzeit && <span className="text-ink-muted">· {dvRestzeit}</span>}
                       </div>
                     )}

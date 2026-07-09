@@ -156,7 +156,13 @@ for (const phase of PLAN) {
   let status = phase, hw = null, kosten = null
   if (phase === 'vergabe') {
     status = 'offen'
-    const kand = pickN(HW[gewerk], 3).map((h, idx) => ({ hw_id: h, rang: idx + 1 }))
+    // Shape muss DirektvergabeKandidat entsprechen ({hw_id, score, preis}) —
+    // die Marktplatz-UI rendert kandidat.preis.
+    const kand = pickN(HW[gewerk], 3).map((h, idx) => ({
+      hw_id: h,
+      score: r2(85 - idx * 8 - fBetween(0, 5)),
+      preis: iBetween(150, 600),
+    }))
     extras.push(`UPDATE public.tickets SET direktvergabe_kandidaten='${JSON.stringify(kand)}'::jsonb, direktvergabe_index=${iBetween(0,2)}, direktvergabe_angefragt_am=${q(daysAgoISO(0))}, direktvergabe_timeout_min=${pick([15,120,1440])} WHERE id=${q(id)};`)
   } else if (phase === 'in_bearbeitung' || phase === 'reklamiert') {
     hw = pick(HW[gewerk]); kosten = iBetween(120, 1200)
