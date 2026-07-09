@@ -67,6 +67,16 @@ Verwalter-Leitplanken (Präferenzen auf `profiles`): `auto_vergabe_aktiv`
 (`app/dashboard-verwalter/marktplatz`) ist ein **Statusboard**, kein
 Aktions-Werkzeug — manuelle Eingriffe sind bewusst Fallback.
 
+## Reparo Cortex (System-Gehirn)
+
+Der Cortex (siehe `CORTEX.md`) beobachtet den Ereignisstrom
+(`cortex_ereignisse`, DB-Trigger), führt ein Gedächtnis mit Embeddings
+(`cortex_gedaechtnis`, pgvector + Edge-Function `cortex-embed`) und
+konsolidiert nächtlich per Schlaf-Zyklus (`/api/cron/cortex-schlaf`,
+03:30 UTC) — Erkenntnisse + Memo-Mail an den Betreiber. Charta in
+`lib/cortex/charta.ts`; Ventile: `CORTEX_OFF`, `CORTEX_MODEL`,
+`CORTEX_MEMO_EMPFAENGER`. Er beobachtet & meldet nur — führt nichts aus.
+
 ## Sensible Dateien — nicht anfassen / nicht ausgeben
 
 - `.env`, `.env.local` (Secrets) — niemals den Inhalt ausgeben.
