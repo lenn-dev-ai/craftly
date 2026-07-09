@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase"
 import { ActiveRoleProvider } from "@/lib/context/ActiveRoleContext"
 import { RollenWechsel } from "@/components/RollenWechsel"
 import BottomNav from "@/components/layout/BottomNav"
-import { LayoutDashboard, Users, Activity, Settings, LogOut, MessageSquare } from "lucide-react"
+import { LayoutDashboard, Users, Activity, Settings, LogOut, MessageSquare, Brain } from "lucide-react"
 
 // UX-Konsistenz (Sprint A, fee57a75): Admin-Sidebar muss die Items aus
 // der Mobile-BottomNav alle enthalten — sonst verliert der Admin beim
@@ -15,6 +15,7 @@ import { LayoutDashboard, Users, Activity, Settings, LogOut, MessageSquare } fro
 // Feedback / Nutzer / System), dann die zusätzlichen Desktop-Items.
 const NAV_ITEMS = [
   { label: "Übersicht", href: "/dashboard-admin", Icon: LayoutDashboard },
+  { label: "Cortex", href: "/dashboard-admin/cortex", Icon: Brain },
   { label: "Feedback", href: "/dashboard-admin/feedback", Icon: MessageSquare },
   { label: "Nutzer", href: "/dashboard-admin/nutzer", Icon: Users },
   { label: "System", href: "/dashboard-admin/system", Icon: Settings },
