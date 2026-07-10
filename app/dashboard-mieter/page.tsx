@@ -7,6 +7,7 @@ import { Ticket } from "@/types"
 import { Badge, Button, Card } from "@/components/ui"
 import { CardListSkeleton, PageHeaderSkeleton } from "@/components/ui/Skeleton"
 import { User as UserIcon, Calendar as CalendarIcon, Loader2 } from "lucide-react"
+import FragReparo from "@/components/cortex/FragReparo"
 
 // Audit-R5: Mieter sieht "Handwerker wird gesucht" statt "Auktion" —
 // für nicht-technische Nutzer wirkt "Auktion" befremdlich
@@ -174,6 +175,11 @@ export default function MieterDashboard() {
             <div className="text-sm text-ink-muted">KI erkennt Kategorie + Dringlichkeit automatisch</div>
           </div>
         </button>
+      </div>
+
+      {/* Sprint CI — Cortex-Gesicht für Mieter */}
+      <div className="mt-6">
+        <FragReparo sicht="mieter" />
       </div>
 
       {/* All OK State */}

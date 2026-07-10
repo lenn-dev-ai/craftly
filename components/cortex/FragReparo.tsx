@@ -9,13 +9,22 @@ import { authFetch } from "@/lib/auth/clientFetch"
 
 interface Turn { rolle: "nutzer" | "cortex"; text: string }
 
-const BEISPIELE = [
+const BEISPIELE_VERWALTER = [
   "Was hängt gerade und braucht mich?",
   "Wie viel habe ich diesen Monat ausgegeben?",
   "Welche Nachträge warten auf Entscheidung?",
 ]
+const BEISPIELE_MIETER = [
+  "Wann kommt der Handwerker?",
+  "Wie ist der Stand meiner Meldung?",
+  "Was passiert als Nächstes?",
+]
 
-export default function FragReparo() {
+export default function FragReparo({ sicht = "verwalter" }: { sicht?: "verwalter" | "mieter" }) {
+  const BEISPIELE = sicht === "mieter" ? BEISPIELE_MIETER : BEISPIELE_VERWALTER
+  const untertitel = sicht === "mieter"
+    ? "— deine Meldungen, direkt beantwortet"
+    : "— dein Portfolio, aus dem Kopf beantwortet"
   const [offen, setOffen] = useState(false)
   const [frage, setFrage] = useState("")
   const [verlauf, setVerlauf] = useState<Turn[]>([])
@@ -35,7 +44,7 @@ export default function FragReparo() {
       const res = await authFetch("/api/cortex/frage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ frage: f, verlauf: verlauf.slice(-6) }),
+        body: JSON.stringify({ frage: f, verlauf: verlauf.slice(-6), sicht }),
       })
       const data = await res.json() as { antwort?: string; error?: string }
       if (!res.ok || !data.antwort) {
@@ -61,7 +70,7 @@ export default function FragReparo() {
         <span className="flex items-center gap-2.5">
           <span className="text-lg">🧠</span>
           <span className="text-sm font-semibold text-ink">Frag Reparo</span>
-          <span className="text-xs text-ink-muted hidden sm:inline">— dein Portfolio, aus dem Kopf beantwortet</span>
+          <span className="text-xs text-ink-muted hidden sm:inline">{untertitel}</span>
         </span>
         <span className="text-xs text-ink-muted">{offen ? "schließen" : "öffnen"}</span>
       </button>
@@ -89,7 +98,7 @@ export default function FragReparo() {
                 <div key={i} className={t.rolle === "nutzer" ? "text-right" : ""}>
                   <div className={`inline-block max-w-[85%] text-sm px-3.5 py-2 rounded-xl whitespace-pre-wrap leading-relaxed ${
                     t.rolle === "nutzer"
-                      ? "bg-rolle-verwalter text-white"
+                      ? (sicht === "mieter" ? "bg-rolle-mieter text-white" : "bg-rolle-verwalter text-white")
                       : "bg-surface-muted text-ink"
                   }`}>
                     {t.text}
