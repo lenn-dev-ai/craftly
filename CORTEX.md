@@ -36,10 +36,27 @@ Er führt nichts aus. Keine Vergaben, kein Code, kein Geld — er
 beobachtet, merkt und meldet (Charta §2). Handeln kommt stufenweise
 dazu, jeweils hinter eigenen Leitplanken.
 
+## Gesichter ("Frag Reparo")
+
+Ein Gehirn, drei Perspektiven — dieselbe API (`/api/cortex/frage`,
+`components/cortex/FragReparo.tsx` mit Prop `sicht`), rollen-gescopter
+Kontext, ein gemeinsames Journal. Echte Rollen sind serverseitig
+fixiert; nur Admins wählen die Sicht (für Sicht-Wechsel-Tests).
+
+| Sicht | Kontext | Ton |
+|---|---|---|
+| Verwalter | Portfolio, Ticket-Status, Kosten, Hänger, offene Nachträge + Cortex-Gedächtnis | knapp, mit Ticket-Kürzeln |
+| Mieter | eigene Meldungen, Status verständlich, HW-Name, Termine | freundlich, ohne Fachjargon |
+| Handwerker | Termine (mit Adresse), laufende Aufträge, offene Anfragen, Monatsverdienst | kollegial, du-Form |
+
+Kostenschutz: KI-Tagesquota (10 Fragen/Tag/Nutzer). Gedächtnis-
+Erinnerungen fließen nur in die Verwalter-Sicht (Betriebs-Insights).
+
 ## Ausbaupfad
 
 1. ✅ Fundament: Ereignisstrom, Gedächtnis, Journal, Schlaf-Zyklus, Memo
-2. Reflexe: definierte Auto-Reparaturen (z. B. hängende Vergabe anstoßen) mit Playbook + Journal
-3. Gesichter: „Frag Reparo" pro Rolle (Verwalter-Analyst zuerst), gleiche Erinnerung über alle Kanäle (Web, Voice/Vapi, Mail)
-4. Selbst-Erweiterung: Cortex öffnet PRs/Playbook-Änderungen, Betreiber genehmigt
-5. Geschlossener Lern-Loop: Hypothesen → Feature-Flags → Messung
+2. ✅ Cockpit: `/dashboard-admin/cortex` — Memos, Gedächtnis, „Jetzt denken"
+3. ✅ Gesichter: „Frag Reparo" für Verwalter, Mieter, Handwerker
+4. Reflexe: definierte Auto-Reparaturen (z. B. hängende Vergabe anstoßen) mit Playbook + Journal
+5. Selbst-Erweiterung: Cortex öffnet PRs/Playbook-Änderungen, Betreiber genehmigt
+6. Geschlossener Lern-Loop: Hypothesen → Feature-Flags → Messung
