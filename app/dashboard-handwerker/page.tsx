@@ -12,6 +12,7 @@ import { SichtbarkeitsBadge } from "@/components/handwerker/SichtbarkeitsBadge"
 import MorgenBriefing from "@/components/handwerker/MorgenBriefing"
 import VoiceButton from "@/components/handwerker/VoiceButton"
 import AgentPanel from "@/components/handwerker/AgentPanel"
+import FragReparo from "@/components/cortex/FragReparo"
 import type { HwPreferences } from "@/lib/agent/score-einladung"
 
 type Dringlichkeit = "notfall" | "zeitnah" | "planbar"
@@ -231,6 +232,9 @@ export default function HandwerkerDashboard() {
       {/* Sprint AV — KI Tages-Briefing: zeigt heute's Termine in optimierter
           Reihenfolge + KI-generierten Text. Lädt async, fällt bei Fehler still. */}
       <MorgenBriefing />
+
+      {/* Sprint CI — Cortex-Gesicht für Handwerker */}
+      <FragReparo sicht="handwerker" />
 
       {/* Sprint AX — Agent-Panel: zeigt offene Direktvergaben mit Empfehlung.
           Nur wenn Standort bekannt, damit Entfernung berechnet werden kann. */}

@@ -19,11 +19,22 @@ const BEISPIELE_MIETER = [
   "Wie ist der Stand meiner Meldung?",
   "Was passiert als Nächstes?",
 ]
+const BEISPIELE_HANDWERKER = [
+  "Was steht heute an?",
+  "Welche Anfragen warten auf mich?",
+  "Wie viel habe ich diesen Monat verdient?",
+]
 
-export default function FragReparo({ sicht = "verwalter" }: { sicht?: "verwalter" | "mieter" }) {
-  const BEISPIELE = sicht === "mieter" ? BEISPIELE_MIETER : BEISPIELE_VERWALTER
-  const untertitel = sicht === "mieter"
-    ? "— deine Meldungen, direkt beantwortet"
+type CortexSicht = "verwalter" | "mieter" | "handwerker"
+
+export default function FragReparo({ sicht = "verwalter" }: { sicht?: CortexSicht }) {
+  const BEISPIELE =
+    sicht === "mieter" ? BEISPIELE_MIETER
+    : sicht === "handwerker" ? BEISPIELE_HANDWERKER
+    : BEISPIELE_VERWALTER
+  const untertitel =
+    sicht === "mieter" ? "— deine Meldungen, direkt beantwortet"
+    : sicht === "handwerker" ? "— dein Tag, auf einen Blick"
     : "— dein Portfolio, aus dem Kopf beantwortet"
   const [offen, setOffen] = useState(false)
   const [frage, setFrage] = useState("")
@@ -98,7 +109,7 @@ export default function FragReparo({ sicht = "verwalter" }: { sicht?: "verwalter
                 <div key={i} className={t.rolle === "nutzer" ? "text-right" : ""}>
                   <div className={`inline-block max-w-[85%] text-sm px-3.5 py-2 rounded-xl whitespace-pre-wrap leading-relaxed ${
                     t.rolle === "nutzer"
-                      ? (sicht === "mieter" ? "bg-rolle-mieter text-white" : "bg-rolle-verwalter text-white")
+                      ? (sicht === "mieter" ? "bg-rolle-mieter text-white" : sicht === "handwerker" ? "bg-rolle-handwerker text-white" : "bg-rolle-verwalter text-white")
                       : "bg-surface-muted text-ink"
                   }`}>
                     {t.text}

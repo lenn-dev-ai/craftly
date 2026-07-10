@@ -125,6 +125,74 @@ async function mieterKontext(userId: string): Promise<string> {
     : "DEINE MELDUNGEN: keine vorhanden."
 }
 
+async function handwerkerKontext(userId: string): Promise<string> {
+  const admin = createServiceRoleClient()
+  const heute = new Date().toISOString().slice(0, 10)
+  const monatsStart = new Date().toISOString().slice(0, 8) + "01"
+
+  const [auftraege, einladungen, termine, angebote, provMonat] = await Promise.all([
+    admin
+      .from("tickets")
+      .select("id, titel, status, gewerk, kosten_final, einsatzort_adresse, created_at")
+      .eq("zugewiesener_hw", userId)
+      .in("status", ["in_bearbeitung", "reklamiert"])
+      .order("created_at", { ascending: false })
+      .limit(20),
+    admin
+      .from("einladungen")
+      .select("ticket_id, empfohlener_preis, status, tickets!inner(titel, gewerk, einsatzort_adresse)")
+      .eq("handwerker_id", userId)
+      .eq("status", "offen")
+      .limit(10),
+    admin
+      .from("termine")
+      .select("titel, datum, von, bis, einsatzort_adresse, status")
+      .eq("handwerker_id", userId)
+      .gte("datum", heute)
+      .in("status", ["bestaetigt", "vorgeschlagen"])
+      .order("datum", { ascending: true })
+      .limit(15),
+    admin
+      .from("angebote")
+      .select("ticket_id, preis, status")
+      .eq("handwerker_id", userId)
+      .eq("status", "eingereicht")
+      .limit(10),
+    admin
+      .from("provisionen")
+      .select("auftragswert, provision_betrag, created_at")
+      .eq("handwerker_id", userId)
+      .gte("created_at", monatsStart)
+      .limit(200),
+  ])
+
+  const verdienstMonat = (provMonat.data ?? []).reduce(
+    (s, p) => s + (Number(p.auftragswert) - Number(p.provision_betrag)), 0,
+  )
+  type EinladungRoh = { empfohlener_preis: number | null; tickets: { titel: string | null; gewerk: string | null; einsatzort_adresse: string | null } | Array<{ titel: string | null; gewerk: string | null; einsatzort_adresse: string | null }> | null }
+  const eArr = ((einladungen.data ?? []) as unknown as EinladungRoh[]).map(e => ({
+    empfohlener_preis: e.empfohlener_preis,
+    tickets: Array.isArray(e.tickets) ? e.tickets[0] ?? null : e.tickets,
+  }))
+
+  return [
+    `Heute ist der ${heute}.`,
+    (termine.data ?? []).length
+      ? `DEINE TERMINE (ab heute):\n${(termine.data ?? []).map(t => `- ${t.datum} ${String(t.von).slice(0, 5)}–${String(t.bis).slice(0, 5)} Uhr: ${t.titel}${t.einsatzort_adresse ? ` (${t.einsatzort_adresse})` : ""} [${t.status}]`).join("\n")}`
+      : "DEINE TERMINE: keine anstehenden.",
+    (auftraege.data ?? []).length
+      ? `LAUFENDE AUFTRÄGE:\n${(auftraege.data ?? []).map(a => `- "${a.titel}" (${a.id.slice(0, 8)}, ${a.gewerk ?? "?"}${a.kosten_final ? `, ${a.kosten_final} €` : ""}${a.einsatzort_adresse ? `, ${a.einsatzort_adresse}` : ""}) — ${a.status}`).join("\n")}`
+      : "LAUFENDE AUFTRÄGE: keine.",
+    eArr.length
+      ? `OFFENE ANFRAGEN (warten auf deine Antwort):\n${eArr.map(e => `- "${e.tickets?.titel ?? "?"}" (${e.tickets?.gewerk ?? "?"}${e.empfohlener_preis ? `, empfohlen ${e.empfohlener_preis} €` : ""}${e.tickets?.einsatzort_adresse ? `, ${e.tickets.einsatzort_adresse}` : ""})`).join("\n")}`
+      : "OFFENE ANFRAGEN: keine.",
+    (angebote.data ?? []).length
+      ? `DEINE ABGEGEBENEN ANGEBOTE (noch offen): ${(angebote.data ?? []).length}`
+      : "",
+    `VERDIENST DIESEN MONAT (ausgezahlt/erwartet, nach Reparo-Gebühr): ${Math.round(verdienstMonat)} €`,
+  ].filter(Boolean).join("\n\n")
+}
+
 export async function POST(request: NextRequest) {
   const { supabase, user } = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -134,7 +202,7 @@ export async function POST(request: NextRequest) {
     .select("rolle, name")
     .eq("id", user.id)
     .single<{ rolle: string; name: string | null }>()
-  if (!profile || !["verwalter", "mieter", "admin"].includes(profile.rolle)) {
+  if (!profile || !["verwalter", "mieter", "handwerker", "admin"].includes(profile.rolle)) {
     return NextResponse.json({ error: "Frag Reparo ist für dich noch nicht verfügbar." }, { status: 403 })
   }
 
@@ -153,10 +221,14 @@ export async function POST(request: NextRequest) {
 
   // Rollen-Weiche: echte Rollen sind fixiert; nur Admins dürfen die
   // Sicht wählen (für Sicht-Wechsel-Tests).
-  const sicht: "verwalter" | "mieter" =
+  const gueltigeSichten = ["verwalter", "mieter", "handwerker"] as const
+  type Sicht = typeof gueltigeSichten[number]
+  const sicht: Sicht =
     profile.rolle === "admin"
-      ? (body.sicht === "mieter" ? "mieter" : "verwalter")
-      : profile.rolle === "mieter" ? "mieter" : "verwalter"
+      ? ((gueltigeSichten as readonly string[]).includes(body.sicht ?? "") ? body.sicht as Sicht : "verwalter")
+      : profile.rolle === "mieter" ? "mieter"
+      : profile.rolle === "handwerker" ? "handwerker"
+      : "verwalter"
 
   // Kostenschutz — gleiche Tagesquota wie die Foto-KI (10/Tag/User).
   const { data: quota } = await supabase
@@ -170,10 +242,14 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createServiceRoleClient()
+  const kontextFn =
+    sicht === "mieter" ? mieterKontext
+    : sicht === "handwerker" ? handwerkerKontext
+    : verwalterKontext
   const [kontext, erinnerungen] = await Promise.all([
-    sicht === "mieter" ? mieterKontext(user.id) : verwalterKontext(user.id),
+    kontextFn(user.id),
     // Cortex-Erinnerungen sind Betriebs-Insights — nur für Verwalter-Sicht.
-    sicht === "mieter" ? Promise.resolve([]) : erinnern(admin, frage, 4),
+    sicht === "verwalter" ? erinnern(admin, frage, 4) : Promise.resolve([]),
   ])
 
   const verlauf = (body.verlauf ?? []).slice(-MAX_VERLAUF)
@@ -200,6 +276,17 @@ ${gemeinsameRegeln} Erkläre Status verständlich und ohne Fachjargon, kurz
 liegt ein Termin in der Vergangenheit, sage das und verweise auf den Stand.
 Du kannst nichts ausführen — für neue Meldungen auf "Schaden melden"
 verweisen, bei dringenden Fällen an die Hausverwaltung.
+
+${kontext}`
+    : sicht === "handwerker"
+    ? `${CORTEX_CHARTA}
+
+Du sprichst gerade als "Frag Reparo" mit dem Handwerker ${profile.name || ""}.
+${gemeinsameRegeln} Kurz und praktisch antworten (max. ~100 Wörter), Ton
+kollegial und knapp, du-Form. Bei Terminen/Aufträgen: Adresse und Zeit
+nennen, sinnvoll nach Datum sortieren. Du kannst nichts ausführen — für
+Annehmen/Ablehnen und Terminvorschläge auf die passende Stelle in der App
+verweisen (Meine Aufträge, Kalender, offene Anfragen).
 
 ${kontext}`
     : `${CORTEX_CHARTA}
