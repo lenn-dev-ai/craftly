@@ -11,6 +11,7 @@ import { ThroughputChart, type ThroughputBucket } from "@/components/verwalter/T
 import { Accordion } from "@/components/ui/Accordion"
 import { authFetch } from "@/lib/auth/clientFetch"
 import { erkenneVerwaltungsanliegen } from "@/lib/ki/verwaltungsanliegen"
+import FragReparo from "@/components/cortex/FragReparo"
 
 // Sprint BG: DB-Flag (post-Migration) ODER Text-Heuristik (deckt
 // Alt-Tickets und den Zeitraum vor dem Migration-Apply ab).
@@ -227,6 +228,9 @@ export default function VerwalterDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Sprint CI — erstes Cortex-Gesicht: Frag Reparo */}
+      <FragReparo />
 
       {/* Sprint AB1 — KPIs als beruhigte Inline-Strip statt 4 farbige
           Cards. Designer-Audit: weniger Highlights, mehr Klarheit.
