@@ -63,6 +63,25 @@ export default function CortexPage() {
 
   useEffect(() => { void laden() }, [laden])
 
+  async function reflexeAusloesen() {
+    setDenkt(true); setMeldung(null)
+    try {
+      const res = await authFetch("/api/cron/cortex-reflexe", { method: "POST" })
+      const data = await res.json() as { ok?: boolean; uebersprungen?: string; reflexe?: Array<{ name: string; befunde: number }> }
+      if (data.ok) {
+        setMeldung(data.uebersprungen
+          ? `Übersprungen: ${data.uebersprungen}`
+          : `Reflexe ausgeführt: ${(data.reflexe ?? []).map(r => `${r.name} (${r.befunde})`).join(", ") || "keine Befunde"}.`)
+      } else {
+        setMeldung("Reflexe fehlgeschlagen.")
+      }
+    } catch (err) {
+      setMeldung(`Fehler: ${err instanceof Error ? err.message : "unbekannt"}`)
+    }
+    setDenkt(false)
+    void laden()
+  }
+
   async function jetztDenken() {
     setDenkt(true); setMeldung(null)
     try {
@@ -86,13 +105,22 @@ export default function CortexPage() {
     <div className="p-6 max-w-4xl mx-auto pt-16 md:pt-6">
       <div className="flex items-start justify-between gap-4 mb-1 flex-wrap">
         <h1 className="text-2xl font-bold text-ink">🧠 Cortex</h1>
-        <button
-          onClick={() => void jetztDenken()}
-          disabled={denkt}
-          className="text-sm font-semibold bg-rolle-admin text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {denkt ? "Denkt …" : "Jetzt denken"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => void reflexeAusloesen()}
+            disabled={denkt}
+            className="text-sm font-semibold border border-rolle-admin text-rolle-admin px-4 py-2 rounded-lg hover:bg-rolle-admin/5 transition-colors disabled:opacity-50"
+          >
+            Reflexe ausführen
+          </button>
+          <button
+            onClick={() => void jetztDenken()}
+            disabled={denkt}
+            className="text-sm font-semibold bg-rolle-admin text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {denkt ? "Denkt …" : "Jetzt denken"}
+          </button>
+        </div>
       </div>
       <p className="text-sm text-ink-muted mb-1">
         Das System-Gehirn: beobachtet, merkt, meldet — führt nichts aus. Details: CORTEX.md

@@ -41,7 +41,7 @@ interface KiAusgabe {
 async function sammleKontext(admin: SupabaseClient) {
   const seit = new Date(Date.now() - 24 * 3600_000).toISOString()
 
-  const [ereignisse, feedback, haengend, kpis] = await Promise.all([
+  const [ereignisse, feedback, haengend, kpis, reflexJournal] = await Promise.all([
     admin
       .from("cortex_ereignisse")
       .select("id, typ, entitaet_id, payload, erstellt_at")
@@ -64,6 +64,13 @@ async function sammleKontext(admin: SupabaseClient) {
       r => r,
       () => ({ data: null, error: null }),
     ),
+    admin
+      .from("cortex_entscheidungen")
+      .select("begruendung, erstellt_at")
+      .eq("typ", "reflex")
+      .gte("erstellt_at", seit)
+      .order("erstellt_at", { ascending: false })
+      .limit(3),
   ])
 
   // Ereignisse kompakt aggregieren (Typ → Anzahl) + die letzten 30 im Detail
@@ -97,6 +104,9 @@ async function sammleKontext(admin: SupabaseClient) {
         : "NEUES FEEDBACK: keins",
       Array.isArray(kpis.data) && kpis.data.length
         ? `OFFENE ACTION-ITEMS (Mission Control): ${JSON.stringify(kpis.data).slice(0, 800)}`
+        : "",
+      (reflexJournal.data ?? []).length
+        ? `DEINE REFLEXE (letzte 24h — bereits ausgeführte Auto-Reparaturen):\n${(reflexJournal.data ?? []).map(r => String(r.begruendung).slice(0, 300)).join("\n")}`
         : "",
     ].filter(Boolean).join("\n\n"),
   }
