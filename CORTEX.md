@@ -16,7 +16,7 @@ Governance-Entscheidungen.
 
 | Organ | Ort | Zweck |
 |---|---|---|
-| Ereignisstrom | `cortex_ereignisse` + Trigger auf tickets/angebote/bewertungen/nachtraege/feedback | Nervenimpulse: alles Relevante landet automatisch hier. Trigger schlucken Fehler — das Gehirn blockiert nie das Geschäft. |
+| Ereignisstrom | `cortex_ereignisse` + 5 DB-Trigger (tickets/angebote/bewertungen/nachtraege/feedback) ✅ aktiv + App-Emission (`lib/cortex/ereignis.ts`) | Nervenimpulse: alles Relevante landet automatisch hier — auch client-seitige Ereignisse. Trigger schlucken Fehler — das Gehirn blockiert nie das Geschäft. |
 | Gedächtnis | `cortex_gedaechtnis` (pgvector 384 + deutsche Volltextsuche), [lib/cortex/gedaechtnis.ts](lib/cortex/gedaechtnis.ts) | episodisch / semantisch / prozedural. Embeddings via Edge-Function `cortex-embed` (gte-small, kostenlos); Fallback Volltext. |
 | Entscheidungsjournal | `cortex_entscheidungen` | Jede Überlegung mit Begründung, Modell und Token-Kosten — vollständige Rechenschaft. |
 | Playbooks | `cortex_playbooks` | Prozedurale Abläufe, die der Cortex selbst pflegen wird. |
