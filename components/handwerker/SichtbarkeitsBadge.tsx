@@ -31,6 +31,14 @@ export function SichtbarkeitsBadge({ profile }: { profile: UserProfile | null })
   const treue = profile.angebotstreue ?? 100
   const label = PARTNER_LABELS[stufe]
 
+  // Audit-Fix 11.07.: "Vertrauter Partner" bei 0/100 Punkten widersprach
+  // sich selbst. Anzeige-Fix ohne Mechanik-Änderung: unter 25 Punkten
+  // heißt die Bronze-Stufe ehrlich "Neuer Partner" — der ×1.05-Bonus
+  // gilt mechanisch weiterhin (scoring-pipeline unangetastet).
+  const anzeigeTitel = stufe === "bronze" && Number(score) < 25
+    ? "Neuer Partner"
+    : label.titel
+
   const naechsteStufe = stufe === "bronze" ? { name: PARTNER_LABELS.silber.titel, schwelle: 50 }
                        : stufe === "silber" ? { name: PARTNER_LABELS.gold.titel, schwelle: 75 }
                        : null
@@ -43,7 +51,7 @@ export function SichtbarkeitsBadge({ profile }: { profile: UserProfile | null })
           <div className="text-xs font-bold uppercase tracking-wider text-accent">
             Partner-Status
           </div>
-          <div className="text-xl font-bold text-ink">{label.titel}</div>
+          <div className="text-xl font-bold text-ink">{anzeigeTitel}</div>
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold tabular-nums text-ink">{Number(score).toFixed(0)}</div>

@@ -9,9 +9,9 @@ import { useRouter } from "next/navigation"
 import { RollenWechsel } from "@/components/RollenWechsel"
 import {
   LayoutDashboard, Ticket, Zap, Wrench, BarChart3,
-  Euro, Calendar, Briefcase, MapPin, CalendarCheck, UserCircle,
+  Euro, Calendar, MapPin, CalendarCheck, UserCircle,
   Plus, FileText, ShieldCheck, LogOut, Map, CalendarRange,
-  Calculator, AlertTriangle, MessageSquare, Home,
+  AlertTriangle, MessageSquare, Home,
   Users, Activity, Heart, Tag, SlidersHorizontal, Brain,
   type LucideProps,
 } from "lucide-react"
@@ -53,13 +53,9 @@ const menus: Record<Rolle, MenuItem[]> = {
     { href: "/dashboard-handwerker/einnahmen", label: "Einnahmen", Icon: Euro },
     // Feedback 9337c802 (25.05.): "Warum haben wir im Menüs immer noch
     // zeitslots, Terminliste, und Diagnosen? Haben wir doch konsolidiert".
-    // Lennart hat Recht: Zeitslots+Termine sind via Sprint B in den
-    // Kalender gemerged, Diagnosen via Sprint C in normale Aufträge.
-    // Sidebar-Items raus, Routen werden zu Redirects (siehe page.tsx
-    // in den jeweiligen Ordnern). "Meine Aufträge" bleibt, weil es
-    // tatsächlich nichts Äquivalentes im Hauptmenü gibt.
-    { href: "/dashboard-handwerker/auftraege", label: "Meine Aufträge", Icon: Briefcase, gruppe: "selten" },
-    { href: "/dashboard-handwerker/verdienst", label: "Verdienst-Rechner", Icon: Calculator, gruppe: "selten" },
+    // Audit 11.07.: auch "Meine Aufträge" (redundant zu Kalender/Dashboard)
+    // und "Verdienst-Rechner" (Stripe-Onboarding wohnt jetzt auf
+    // /einnahmen) sind raus — Routen bleiben als Redirects erhalten.
     { href: "/dashboard-handwerker/profil", label: "Mein Profil", Icon: UserCircle, gruppe: "selten" },
   ],
   mieter: [

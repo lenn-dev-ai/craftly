@@ -252,10 +252,18 @@ export default function MieterDashboard() {
                         )}
                       </div>
                     )}
+                    {/* Audit-Fix 11.07.: Der Freigabe-Wartezustand sah aus wie
+                        Stillstand. Jetzt erklären wir, WAS gerade passiert:
+                        Prüfung durch den Verwalter ist der normale erste
+                        Schritt, danach sucht Reparo automatisch. */}
                     {inVergabe && (
                       <div className="flex items-center gap-1.5 text-sm text-ink-muted mb-2">
                         <Loader2 size={12} className="text-ink-muted animate-spin" />
-                        Wird vergeben…
+                        {(t as { kein_schaden?: boolean | null }).kein_schaden
+                          ? "Deine Hausverwaltung kümmert sich um dein Anliegen."
+                          : t.status === "offen" && !(t as { direktvergabe_angefragt_am?: string | null }).direktvergabe_angefragt_am
+                            ? "Deine Hausverwaltung prüft die Meldung — danach sucht Reparo automatisch einen Handwerker."
+                            : "Reparo sucht gerade den passenden Handwerker …"}
                       </div>
                     )}
 

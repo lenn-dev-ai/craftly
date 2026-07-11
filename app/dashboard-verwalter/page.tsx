@@ -56,6 +56,7 @@ export default function VerwalterDashboard() {
   const [offeneNachtraege, setOffeneNachtraege] = useState<OffeneNachtragRef[]>([])
   const [loading, setLoading] = useState(true)
   const [neueLive, setNeueLive] = useState(0)
+  const [userId, setUserId] = useState<string | null>(null)
   // Sprint H — KPIs + Throughput aus /api/verwalter/kpis (server-side
   // aggregiert, damit der Cache für die nächsten Lookups warm bleibt).
   const [kpis, setKpis] = useState<{
@@ -70,12 +71,17 @@ export default function VerwalterDashboard() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/login"); return }
+    setUserId(user.id)
     const [{ data: ts }, { data: ns }] = await Promise.all([
       supabase
         .from("tickets")
         .select("*, angebote(preis), direktvergabe_kandidaten, direktvergabe_index")
         .eq("verwalter_id", user.id)
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        // Audit-Fix 11.07.: Deckel statt Volltabelle im Browser. Das
+        // Dashboard zeigt Zähler + jüngste Vorgänge; für die volle
+        // Historie gibt es die Aufträge-Seite.
+        .limit(200),
       supabase
         .from("nachtraege")
         .select("id, ticket_id, nachtrag_betrag, stufe, tickets!inner(titel, verwalter_id)")
@@ -109,23 +115,27 @@ export default function VerwalterDashboard() {
     })()
   }, [router])
 
+  useEffect(() => { void load() }, [load])
+
+  // Realtime: nur die EIGENEN Tickets abonnieren (Audit-Fix 11.07. —
+  // vorher horchte jeder Verwalter auf die komplette tickets-Tabelle und
+  // lud bei jedem fremden Event sein Dashboard neu).
   useEffect(() => {
-    load()
-    // Realtime: bei jeder Änderung an tickets neu laden, Counter bumpen
+    if (!userId) return
     const supabase = createClient()
     const channel = supabase
-      .channel("verwalter-tickets-changes")
+      .channel(`verwalter-tickets-${userId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "tickets" },
+        { event: "*", schema: "public", table: "tickets", filter: `verwalter_id=eq.${userId}` },
         () => {
           setNeueLive(n => n + 1)
-          load()
+          void load()
         }
       )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [load])
+  }, [userId, load])
 
   // Auktions-Ersparnis: pro erledigtem Ticket mit mind. 2 Angeboten ist
   // Baseline = höchstes abgegebenes Gebot (was ohne Wettbewerb gezahlt

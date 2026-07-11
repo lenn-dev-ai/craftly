@@ -6,6 +6,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase"
 import { formatGewerk, UserProfile } from "@/types"
 import { SichtbarkeitsBadge } from "@/components/handwerker/SichtbarkeitsBadge"
+import { StripeConnectCard } from "@/components/handwerker/StripeConnectCard"
 
 type EinnahmenTicket = {
   id: string
@@ -100,6 +101,10 @@ export default function EinnahmenPage() {
       </div>
 
       <SichtbarkeitsBadge profile={profile} />
+
+      {/* Nav-Konsolidierung 11.07.: Stripe-Onboarding wohnte auf der
+          Verdienst-Rechner-Seite — die ist jetzt ein Redirect hierher. */}
+      <StripeConnectCard />
 
       {/* 100%-Provisions-Banner */}
       <div className="mb-6 p-4 rounded-2xl bg-accent/8 border border-accent/25 flex items-center gap-3">

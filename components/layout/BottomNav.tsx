@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { type ComponentType } from "react"
 import { Rolle } from "@/types"
 import {
-  LayoutDashboard, Briefcase, Stethoscope, Map, UserCircle, CalendarCheck, Euro,
+  LayoutDashboard, Stethoscope, Map, UserCircle, CalendarCheck, Euro,
   Plus, FileText, Ticket, Zap, Wrench, BarChart3, Settings, Activity, Users, MessageSquare,
   Menu, Home,
   type LucideProps,

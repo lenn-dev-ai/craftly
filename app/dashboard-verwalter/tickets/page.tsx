@@ -50,9 +50,12 @@ export default function TicketsPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push("/login"); return }
+      // Audit-Fix 11.07.: Deckel gegen Volltabellen-Downloads — die
+      // Seite filtert/sortiert client-seitig, 500 Zeilen reichen dafür.
       const { data } = await supabase
         .from("tickets").select("*, angebote(*)")
         .eq("verwalter_id", user.id).order("created_at", { ascending: false })
+        .limit(500)
       setTickets(data || [])
       setLoading(false)
     }

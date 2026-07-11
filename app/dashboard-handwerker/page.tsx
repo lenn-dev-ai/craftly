@@ -56,10 +56,13 @@ export default function HandwerkerDashboard() {
 
     const [{ data: prof }, { data: offene }, { data: meine }] = await Promise.all([
       supabase.from("profiles").select("id, email, name, rolle, firma, gewerk, handwerker_gewerke, startort_lat, startort_lng, radius_km, bewertung_avg, auftraege_anzahl, sichtbarkeit_stufe, verfuegbarkeit_score, angebotstreue, created_at, agent_max_radius_km, agent_auto_accept, agent_min_auftragswert, mindest_stundensatz").eq("id", user.id).single(),
+      // Audit-Fix 11.07.: Deckel gegen unbegrenzte Auktions-Downloads.
       supabase.from("tickets").select("*, angebote(*)").eq("status", "auktion")
-        .gt("auktion_ende", new Date().toISOString()).order("auktion_ende"),
+        .gt("auktion_ende", new Date().toISOString()).order("auktion_ende")
+        .limit(50),
       supabase.from("tickets").select("*").eq("zugewiesener_hw", user.id)
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(100),
     ])
     setProfile(prof)
     setAuktionen(offene || [])
