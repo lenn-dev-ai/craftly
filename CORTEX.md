@@ -57,6 +57,6 @@ Erinnerungen fließen nur in die Verwalter-Sicht (Betriebs-Insights).
 1. ✅ Fundament: Ereignisstrom, Gedächtnis, Journal, Schlaf-Zyklus, Memo
 2. ✅ Cockpit: `/dashboard-admin/cortex` — Memos, Gedächtnis, „Jetzt denken"
 3. ✅ Gesichter: „Frag Reparo" für Verwalter, Mieter, Handwerker
-4. Reflexe: definierte Auto-Reparaturen (z. B. hängende Vergabe anstoßen) mit Playbook + Journal
+4. ✅ Reflexe ([lib/cortex/reflexe.ts](lib/cortex/reflexe.ts)): `direktvergabe-nachholen` (verpasste Eskalationen, redundant zum 5-Min-Cron), `vergabe-anstossen`, `angebote-nudge`, `wachhund` (hängende Vergaben >24h + ausbleibende `cron_heartbeats` → Alarm-Mail, max 1×/24h)
 5. Selbst-Erweiterung: Cortex öffnet PRs/Playbook-Änderungen, Betreiber genehmigt
 6. Geschlossener Lern-Loop: Hypothesen → Feature-Flags → Messung
