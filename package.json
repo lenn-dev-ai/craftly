@@ -17,7 +17,8 @@
     "db:stop": "npx --yes supabase stop",
     "db:reset": "npx --yes supabase db reset",
     "db:status": "npx --yes supabase status",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "test:smoke": "PLAYWRIGHT_BASE_URL=${SMOKE_URL:-https://reparo-app.de} playwright test smoke.spec"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",
