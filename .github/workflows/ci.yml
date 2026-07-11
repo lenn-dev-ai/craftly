@@ -1,0 +1,33 @@
+# Qualitäts-Gate (Audit 11.07.2026)
+#
+# Läuft bei jedem Push/PR auf main: Typecheck + Lint fangen die häufigsten
+# Regressionen ab, bevor sie deployen — ohne externe Abhängigkeiten (keine
+# DB, keine Secrets), daher schnell und zuverlässig. Der E2E-Smoke-Test
+# gegen die deployte URL läuft separat (npm run test:smoke) bzw. manuell,
+# weil er eine live erreichbare Umgebung braucht.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
