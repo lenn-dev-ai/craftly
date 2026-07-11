@@ -16,6 +16,22 @@ export type CronAuthErgebnis =
   | { ok: true; via: "secret" | "admin" }
   | { ok: false; status: number; error: string }
 
+// DB-Secret laden (pg_cron-Pfad). Best-effort: fehlt die Tabelle oder der
+// Client, fällt der Aufruf auf null zurück und der ENV-Pfad greift.
+async function ladeDbCronSecret(): Promise<string | null> {
+  try {
+    const admin = createServiceRoleClient()
+    const { data } = await admin
+      .from("cron_config")
+      .select("secret")
+      .eq("id", 1)
+      .single<{ secret: string | null }>()
+    return data?.secret ?? null
+  } catch {
+    return null
+  }
+}
+
 function sicherGleich(a: string, b: string): boolean {
   // Über SHA-256 normalisieren: timingSafeEqual verlangt gleiche Länge,
   // und der Hash verrät nichts über die Länge des echten Secrets.
@@ -28,11 +44,19 @@ export async function pruefeCronAuth(request: NextRequest): Promise<CronAuthErge
   const geliefert = request.headers.get("x-cron-secret")
 
   if (geliefert !== null) {
-    const secret = process.env.CRON_SECRET
-    if (!secret) {
-      return { ok: false, status: 503, error: "CRON_SECRET nicht konfiguriert" }
+    // Pfad 1: Netlify-ENV-Secret (klassischer Scheduler-Aufruf).
+    const envSecret = process.env.CRON_SECRET
+    if (envSecret && sicherGleich(geliefert, envSecret)) {
+      return { ok: true, via: "secret" }
     }
-    if (sicherGleich(geliefert, secret)) return { ok: true, via: "secret" }
+    // Pfad 2: DB-Secret (Audit 11.07.). Der DB-interne pg_cron-Scheduler
+    // authentifiziert sich unabhängig von der Netlify-ENV — so läuft die
+    // Automatik auch, wenn Netlify-Schedules tot sind und kein ENV-Secret
+    // gesetzt ist. Quelle: Tabelle cron_config (nur Service-Role liest sie).
+    const dbSecret = await ladeDbCronSecret()
+    if (dbSecret && sicherGleich(geliefert, dbSecret)) {
+      return { ok: true, via: "secret" }
+    }
     return { ok: false, status: 401, error: "Unauthorized" }
   }
 
