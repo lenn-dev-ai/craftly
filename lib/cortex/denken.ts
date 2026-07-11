@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { CORTEX_CHARTA } from "@/lib/cortex/charta"
+import { q } from "@/lib/cortex/quote"
 import { erinnern, merken } from "@/lib/cortex/gedaechtnis"
 import { sendEmail } from "@/lib/email/send"
 
@@ -97,10 +98,10 @@ async function sammleKontext(admin: SupabaseClient) {
       `EREIGNISSE (unverarbeitet, ${alle.length} gesamt): ${JSON.stringify(proTyp)}`,
       detail.length ? `LETZTE EREIGNISSE:\n${detail.join("\n")}` : "",
       haengende.length
-        ? `HÄNGENDE VERGABEN (${haengende.length}):\n${haengende.map(t => `- ${t.id.slice(0, 8)} "${t.titel}" (${t.status}, seit ${String(t.created_at).slice(0, 10)})`).join("\n")}`
+        ? `HÄNGENDE VERGABEN (${haengende.length}):\n${haengende.map(t => `- ${t.id.slice(0, 8)} ${q(t.titel)} (${t.status}, seit ${String(t.created_at).slice(0, 10)})`).join("\n")}`
         : "HÄNGENDE VERGABEN: keine",
       (feedback.data ?? []).length
-        ? `NEUES FEEDBACK:\n${(feedback.data ?? []).map(f => `- [${f.rolle}] ${String(f.text).slice(0, 200)}`).join("\n")}`
+        ? `NEUES FEEDBACK:\n${(feedback.data ?? []).map(f => `- [${f.rolle}] ${q(String(f.text).slice(0, 200))}`).join("\n")}`
         : "NEUES FEEDBACK: keins",
       Array.isArray(kpis.data) && kpis.data.length
         ? `OFFENE ACTION-ITEMS (Mission Control): ${JSON.stringify(kpis.data).slice(0, 800)}`
