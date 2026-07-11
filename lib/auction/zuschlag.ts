@@ -51,7 +51,8 @@ export async function erteileZuschlag(
     ticket: ZuschlagTicket
     angebotId: string
     // Für den Audit-Trail: wer hat den Zuschlag ausgelöst?
-    actor: { userId: string; rolle: string }
+    // userId null = System (Cron) ohne User-Kontext.
+    actor: { userId: string | null; rolle: string }
     request?: NextRequest
   },
 ): Promise<ZuschlagErgebnis> {

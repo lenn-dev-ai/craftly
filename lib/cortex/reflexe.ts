@@ -158,11 +158,15 @@ export async function reflexeAusfuehren(admin: SupabaseClient): Promise<{
   }
 
   const reflexe: ReflexErgebnis[] = []
-  for (const reflex of [reflexVergabeAnstossen, reflexAngeboteNudge]) {
+  const registry: Array<[string, (a: SupabaseClient) => Promise<ReflexErgebnis>]> = [
+    ["vergabe-anstossen", reflexVergabeAnstossen],
+    ["angebote-nudge", reflexAngeboteNudge],
+  ]
+  for (const [name, reflex] of registry) {
     try {
       reflexe.push(await reflex(admin))
     } catch (err) {
-      reflexe.push({ name: reflex.name, befunde: -1, aktionen: [`Fehler: ${String(err)}`] })
+      reflexe.push({ name, befunde: -1, aktionen: [`Fehler: ${String(err)}`] })
     }
   }
 

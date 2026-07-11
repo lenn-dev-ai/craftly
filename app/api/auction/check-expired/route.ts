@@ -2,15 +2,9 @@ import { NextResponse, type NextRequest } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase-server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
 import { reScoreTicket } from "@/lib/auction/scoring-pipeline"
-import { effektiveProvisionsRate } from "@/lib/auction/auction-manager"
-import { calculateCommission } from "@/lib/pricing/commission"
-import { fuegeTicketZuTagesplan } from "@/lib/auction/routen-planung-sync"
+import { erteileZuschlag } from "@/lib/auction/zuschlag"
 import { sendEmail } from "@/lib/email/send"
-import {
-  auktionAbgelaufenEmail,
-  zuschlagEmail,
-  absageEmail,
-} from "@/lib/email/templates"
+import { auktionAbgelaufenEmail } from "@/lib/email/templates"
 
 // POST /api/auction/check-expired
 // Cron-Endpoint. Geht über alle Tickets mit status='auktion' und
@@ -68,12 +62,15 @@ export async function POST(request: NextRequest) {
   const jetzt = new Date().toISOString()
   const { data: abgelaufen } = await supabase
     .from("tickets")
-    .select("id, titel, beschreibung, einsatzort_adresse, erstellt_von, verwalter_id, surge_faktor, auktion_ende")
+    .select("id, titel, beschreibung, einsatzort_adresse, erstellt_von, verwalter_id, surge_faktor, auktion_ende, gewerk, ticket_typ, diagnose_ticket_id")
     .eq("status", "auktion")
     .lt("auktion_ende", jetzt)
     .returns<Array<AbgelaufenesTicket & {
       beschreibung: string | null
       einsatzort_adresse: string | null
+      gewerk: string | null
+      ticket_typ: string | null
+      diagnose_ticket_id: string | null
     }>>()
 
   const ergebnisse: Array<{
@@ -188,127 +185,48 @@ export async function POST(request: NextRequest) {
     })
     const winner = sortiert[0]
 
-    // Vergabe-Mutationen
-    await supabase
-      .from("tickets")
-      .update({
-        status: "in_bearbeitung",
-        zugewiesener_hw: winner.handwerker_id,
-        kosten_final: winner.preis,
-      })
-      .eq("id", ticket.id)
-
-    await supabase
-      .from("angebote")
-      .update({ status: "angenommen" })
-      .eq("id", winner.id)
-
-    await supabase
-      .from("angebote")
-      .update({ status: "abgelehnt" })
-      .eq("ticket_id", ticket.id)
-      .neq("id", winner.id)
-
-    // Provisions-Snapshot mit Surge.
-    // Verwalter-Kontext (early_adopter_bis) aus profiles.
-    const { data: verwalter } = await supabase
-      .from("profiles")
-      .select("early_adopter_bis")
-      .eq("id", ticket.verwalter_id ?? ticket.erstellt_von)
-      .single<{ early_adopter_bis: string | null }>()
-    const isEarlyAdopter = !!verwalter?.early_adopter_bis &&
-      new Date(verwalter.early_adopter_bis).getTime() > Date.now()
-    const surge = ticket.surge_faktor ?? 1.0
-    const { finalRate } = effektiveProvisionsRate(0.05, surge, isEarlyAdopter)
-    const calc = calculateCommission(winner.preis, finalRate)
-
-    await supabase.from("provisionen").upsert(
-      {
-        ticket_id: ticket.id,
-        verwalter_id: ticket.verwalter_id ?? ticket.erstellt_von,
-        handwerker_id: winner.handwerker_id,
-        auftragswert: winner.preis,
-        provision_rate: finalRate,
-        provision_betrag: calc.provisionBetrag,
-        gesamt: calc.gesamt,
-        is_early_adopter: isEarlyAdopter,
-      },
-      { onConflict: "ticket_id" },
-    )
-
-    // Termin und Routen-Sync (best-effort)
-    if (winner.fruehester_termin) {
-      await supabase.from("termine").insert({
-        handwerker_id: winner.handwerker_id,
-        ticket_id: ticket.id,
+    // Konsolidierung (Sprint CI): Zuschlag über die gemeinsame Pipeline
+    // (lib/auction/zuschlag.ts) — identisch zu manuellem Close und
+    // Sofort-Zuschlag: Ticket-Update mit Status-Guard, Angebots-Status,
+    // Diagnose-Anrechnung, Provision, Tagesplan/Termin, Mails, Audit.
+    // Hinweis: Zuschlag-/Absage-Mails laufen dort fire-and-forget und
+    // erscheinen nicht mehr in failed_mails (Rest bleibt überwacht).
+    const zuschlag = await erteileZuschlag(createServiceRoleClient(), {
+      ticket: {
+        id: ticket.id,
         titel: ticket.titel,
-        datum: winner.fruehester_termin,
-        von: "09:00",
-        bis: "12:00",
+        beschreibung: ticket.beschreibung,
+        einsatzort_adresse: ticket.einsatzort_adresse,
+        erstellt_von: ticket.erstellt_von,
+        verwalter_id: ticket.verwalter_id,
+        surge_faktor: ticket.surge_faktor,
+        gewerk: ticket.gewerk,
+        ticket_typ: ticket.ticket_typ,
+        diagnose_ticket_id: ticket.diagnose_ticket_id,
+      },
+      angebotId: winner.id,
+      actor: { userId: null, rolle: "system" },
+      request,
+    })
+
+    if (!zuschlag.ok) {
+      ergebnisse.push({
+        ticketId: ticket.id,
+        titel: ticket.titel,
+        aktion: "fehler",
+        fehler: zuschlag.error,
       })
-      await fuegeTicketZuTagesplan(
-        supabase,
-        winner.handwerker_id,
-        ticket.id,
-        winner.fruehester_termin,
-      )
+      continue
     }
 
     ergebnisse.push({
       ticketId: ticket.id,
       titel: ticket.titel,
       aktion: "vergeben",
-      handwerkerId: winner.handwerker_id,
-      auftragswert: winner.preis,
-      provisionBetrag: calc.provisionBetrag,
+      handwerkerId: zuschlag.handwerkerId,
+      auftragswert: zuschlag.kostenFinal,
+      provisionBetrag: zuschlag.provisionBetrag,
     })
-
-    // Zuschlag an Gewinner + Absagen an andere — überwacht statt fire-and-forget
-    mailJobs.push((async () => {
-      const { data: gewinnerProfil } = await supabase
-        .from("profiles")
-        .select("email, name")
-        .eq("id", winner.handwerker_id)
-        .single<{ email: string | null; name: string | null }>()
-      if (gewinnerProfil?.email) {
-        const { subject, html } = zuschlagEmail({
-          handwerkerName: gewinnerProfil.name || "Handwerker",
-          ticketTitel: ticket.titel,
-          ticketBeschreibung: ticket.beschreibung || "",
-          einsatzort: ticket.einsatzort_adresse || "",
-          angebotPreis: winner.preis,
-          ticketId: ticket.id,
-        })
-        await ueberwachterVersand("zuschlag", ticket.id, gewinnerProfil.email, subject, html)
-      }
-
-      const { data: andere } = await supabase
-        .from("angebote")
-        .select("handwerker_id, handwerker:profiles(email, name)")
-        .eq("ticket_id", ticket.id)
-        .neq("id", winner.id)
-        .returns<Array<{
-          handwerker_id: string
-          handwerker: { email: string | null; name: string | null } | null
-        }>>()
-      for (const a of andere ?? []) {
-        const email = a.handwerker?.email
-        if (!email) continue
-        const { subject, html } = absageEmail({
-          handwerkerName: a.handwerker?.name || "Handwerker",
-          ticketTitel: ticket.titel,
-        })
-        await ueberwachterVersand("absage", ticket.id, email, subject, html)
-      }
-    })().catch(err => {
-      console.error("[Email] check-expired-Vergabe-Mails fehlgeschlagen:", { ticketId: ticket.id, err })
-      failedMailDetails.push({
-        ticketId: ticket.id,
-        empfaenger: "unbekannt",
-        typ: "vergabe",
-        grund: err instanceof Error ? err.message : String(err),
-      })
-    }))
   }
 
   // ============================================================

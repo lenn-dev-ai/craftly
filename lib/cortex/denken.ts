@@ -185,17 +185,20 @@ Max. 3 Erkenntnisse — nur was wirklich zukünftig nützt. Leere Arrays sind er
     })
   }
 
-  // Memo an den Betreiber
+  // Memo an den Betreiber. Modell-Ausgaben HTML-escapen — sie sind
+  // vertrauenswürdig, aber ein zufälliges "<" darf das Layout nicht brechen.
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
   const empfaenger = (process.env.CORTEX_MEMO_EMPFAENGER || MEMO_DEFAULT)
     .split(",").map(s => s.trim()).filter(Boolean)
   const handlungsHtml = (ausgabe.handlungsbedarf ?? []).map(h =>
-    `<li><strong>[${h.prioritaet}]</strong> ${h.text}</li>`,
+    `<li><strong>[${esc(h.prioritaet)}]</strong> ${esc(h.text)}</li>`,
   ).join("")
   const memoHtml = `
     <div style="font-family:system-ui,sans-serif;max-width:640px;margin:0 auto;color:#2A2622;">
       <h2 style="margin:0 0 4px;">🧠 Cortex-Memo</h2>
       <p style="margin:0 0 16px;color:#8C857B;font-size:13px;">${new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })} · Modell ${modell} · ${tokensIn}/${tokensOut} Tokens</p>
-      <div style="white-space:pre-wrap;line-height:1.6;">${ausgabe.memo}</div>
+      <div style="white-space:pre-wrap;line-height:1.6;">${esc(ausgabe.memo)}</div>
       ${handlungsHtml ? `<h3 style="margin:20px 0 8px;">Handlungsbedarf</h3><ul style="line-height:1.7;">${handlungsHtml}</ul>` : ""}
       <p style="margin:24px 0 0;color:#8C857B;font-size:12px;">Reparo Cortex · Schlaf-Zyklus · beobachtet, merkt, meldet — führt nichts selbst aus.</p>
     </div>`
