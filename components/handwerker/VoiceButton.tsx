@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { authFetch } from "@/lib/auth/clientFetch"
+import { trackFeature } from "@/lib/telemetrie"
 
 // Web-Voice-Button: spricht über das Browser-Mikrofon mit dem Reparo-
 // Assistenten (Vapi Web-SDK) — KEINE Telefonie-Minuten, keine Telefonnummer
@@ -89,7 +90,12 @@ export default function VoiceButton() {
       const vapi = vapiRef.current ?? new VapiCtor(publicKey)
       vapiRef.current = vapi
 
-      vapi.on("call-start", () => setStatus("active"))
+      vapi.on("call-start", () => {
+        setStatus("active")
+        // Telemetrie (Audit 11.07.): echte Call-Starts zählen — die
+        // Streichen-oder-Vertiefen-Frage für Voice braucht Nutzungsdaten.
+        trackFeature("voice", "web-call")
+      })
       vapi.on("call-end", () => {
         setStatus("idle")
         setAssistentSpricht(false)

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react"
 import { authFetch } from "@/lib/auth/clientFetch"
+import { trackFeature } from "@/lib/telemetrie"
 
 // "Frag Reparo" — das erste Nutzer-Gesicht des Cortex (Sprint CI).
 // Kompakte Karte im Verwalter-Dashboard: Frage stellen, Antwort aus
@@ -46,6 +47,8 @@ export default function FragReparo({ sicht = "verwalter" }: { sicht?: CortexSich
   async function fragen(text: string) {
     const f = text.trim()
     if (!f || laedt) return
+    // Telemetrie (Audit 11.07.): Frag-Reparo-Nutzung je Sicht zählen.
+    trackFeature("frag_reparo", sicht)
     setFehler(null)
     setLaedt(true)
     setFrage("")

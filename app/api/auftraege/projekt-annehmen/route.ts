@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
+import { createServiceRoleClient } from "@/lib/supabase-server"
+import { emitEreignis } from "@/lib/cortex/ereignis"
 import { getDiagnosePreis } from "@/lib/diagnose/preise"
 import { calculateCommission } from "@/lib/pricing/commission"
 import { sendEmailFireAndForget } from "@/lib/email/send"
@@ -183,6 +185,15 @@ export async function POST(request: NextRequest) {
     })
     sendEmailFireAndForget({ to: hw.email, subject, html })
   })().catch(err => console.error("[Email] Annahme-Mail fehlgeschlagen:", err))
+
+  // Telemetrie (Audit 11.07.): Diagnose-Workflow-Nutzung zaehlen —
+  // Datenbasis fuer die Streichen-oder-Vertiefen-Entscheidung.
+  emitEreignis(createServiceRoleClient(), {
+    typ: "feature_diagnose",
+    entitaet: "telemetrie",
+    entitaetId: user.id,
+    payload: { detail: "projekt_angenommen" },
+  })
 
   return NextResponse.json({
     ok: true,

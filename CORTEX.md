@@ -52,6 +52,34 @@ fixiert; nur Admins wählen die Sicht (für Sicht-Wechsel-Tests).
 Kostenschutz: KI-Tagesquota (10 Fragen/Tag/Nutzer). Gedächtnis-
 Erinnerungen fließen nur in die Verwalter-Sicht (Betriebs-Insights).
 
+## Nutzungs-Telemetrie (Streichen oder Vertiefen)
+
+Aufwendige Features melden ihre Nutzung als `feature_*`-Events in den
+Ereignisstrom (`/api/telemetrie` + [lib/telemetrie.ts](lib/telemetrie.ts),
+Dedupe pro Browser-Sitzung; Diagnose zusätzlich server-seitig in den
+Workflow-Routen). Der Schlaf-Zyklus sieht die Zähler automatisch.
+
+| Event | Feature | Gemessen wird |
+|---|---|---|
+| `feature_karte` | Karte & Route | Karten-Sitzungen (View) |
+| `feature_voice` | Sprach-Assistent | echte Web-Call-Starts |
+| `feature_diagnose` | Diagnose-Workflow | Übernahme / Befund / Projekt-Annahme |
+| `feature_frag_reparo` | Frag Reparo | Fragen je Sicht |
+
+Auswertung (nach 2–4 Wochen Live-Betrieb, Testdaten via payload-rolle filtern):
+
+```sql
+select typ, payload->>'rolle' as rolle, payload->>'detail' as detail,
+       count(*) as sitzungen, count(distinct entitaet_id) as nutzer
+from cortex_ereignisse
+where typ like 'feature_%' and erstellt_at > now() - interval '28 days'
+group by 1, 2, 3 order by 1, 4 desc;
+```
+
+Entscheidungsregel: Feature mit < 5 % der aktiven Nutzer je Monat →
+Streichkandidat (Nav-Eintrag raus, Route als Redirect); > 30 % →
+Vertiefungskandidat. Dazwischen: beobachten, nichts investieren.
+
 ## Ausbaupfad
 
 1. ✅ Fundament: Ereignisstrom, Gedächtnis, Journal, Schlaf-Zyklus, Memo

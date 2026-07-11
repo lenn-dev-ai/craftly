@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase-server"
 import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
+import { emitEreignis } from "@/lib/cortex/ereignis"
 
 // POST /api/auftraege/diagnose-termin-annehmen (vorher /api/diagnose/termin-annehmen)
 // Body: { ticket_id: string }
@@ -81,6 +82,15 @@ export async function POST(request: NextRequest) {
   if (!updated || updated.length === 0) {
     return NextResponse.json({ error: "Bereits vergeben (Race)" }, { status: 409 })
   }
+
+  // Telemetrie (Audit 11.07.): Diagnose-Workflow-Nutzung zaehlen —
+  // Datenbasis fuer die Streichen-oder-Vertiefen-Entscheidung.
+  emitEreignis(createServiceRoleClient(), {
+    typ: "feature_diagnose",
+    entitaet: "telemetrie",
+    entitaetId: user.id,
+    payload: { detail: "diagnose_uebernommen" },
+  })
 
   return NextResponse.json({
     ok: true,
