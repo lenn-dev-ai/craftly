@@ -27,7 +27,7 @@ export function Badge({ status, mieterSicht = false }: { status: TicketStatus; m
     auktion:        { label: "Vergabe läuft",  bg: "bg-status-auktion/10",     text: "text-status-auktion",     dot: "bg-status-auktion" },
     angebote_da:    { label: "Angebote da",    bg: "bg-status-auktion/10",     text: "text-status-auktion",     dot: "bg-status-auktion" },
     in_bearbeitung: { label: "In Bearbeitung", bg: "bg-status-bearbeitung/10", text: "text-status-bearbeitung", dot: "bg-status-bearbeitung" },
-    fertiggestellt_hw: { label: "Wartet auf Bestätigung", bg: "bg-status-auktion/10", text: "text-status-auktion", dot: "bg-status-auktion" },
+    fertiggestellt_hw: { label: "Wartet auf Bestätigung", bg: "bg-status-pruefung/10", text: "text-status-pruefung", dot: "bg-status-pruefung" },
     erledigt:       { label: "Erledigt",       bg: "bg-status-erledigt/10",    text: "text-status-erledigt",    dot: "bg-status-erledigt" },
     reklamiert:     { label: "Reklamiert",     bg: "bg-danger/10",             text: "text-danger",             dot: "bg-danger" },
   }
@@ -109,7 +109,7 @@ export function StatusDot({ status }: { status: TicketStatus }) {
     auktion:        "bg-status-auktion",
     angebote_da:    "bg-status-auktion",
     in_bearbeitung: "bg-status-bearbeitung",
-    fertiggestellt_hw: "bg-status-auktion",
+    fertiggestellt_hw: "bg-status-pruefung",
     erledigt:       "bg-status-erledigt",
     reklamiert:     "bg-danger",
   }

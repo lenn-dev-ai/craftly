@@ -39,6 +39,20 @@ const TYP_FARBE: Record<string, string> = {
   prozedural: "bg-rolle-admin/10 text-rolle-admin",
 }
 
+// Audit 11.07.: Klartext statt System-Vokabular. Die internen Slugs
+// (episodisch/semantisch/prozedural, schlaf/reflex/frage) bleiben in der
+// DB — nur die Cockpit-Anzeige spricht Betreiber-Sprache.
+const GEDAECHTNIS_LABEL: Record<string, string> = {
+  episodisch: "Ereignis",
+  semantisch: "Muster",
+  prozedural: "Regel",
+}
+const ENTSCHEIDUNG_LABEL: Record<string, string> = {
+  schlaf: "Nacht-Analyse",
+  reflex: "Reflex",
+  frage: "Frage",
+}
+
 export default function CortexPage() {
   const [entscheidungen, setEntscheidungen] = useState<Entscheidung[]>([])
   const [gedaechtnis, setGedaechtnis] = useState<Erinnerung[]>([])
@@ -144,10 +158,13 @@ export default function CortexPage() {
               {entscheidungen.map(e => (
                 <article key={e.id} className="bg-white border border-line rounded-xl p-4">
                   <div className="flex items-center gap-2 text-xs text-ink-muted mb-2 flex-wrap">
-                    <span className="font-semibold uppercase tracking-wide text-ink-secondary">{e.typ}</span>
+                    <span className="font-semibold uppercase tracking-wide text-ink-secondary">{ENTSCHEIDUNG_LABEL[e.typ] ?? e.typ}</span>
                     <span>· {new Date(e.erstellt_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
-                    {e.modell && <span>· {e.modell}</span>}
-                    {e.tokens_in != null && <span>· {e.tokens_in}/{e.tokens_out} Tokens</span>}
+                    {e.tokens_in != null && (
+                      <span className="text-ink-muted/70" title={`Modell ${e.modell ?? "?"} · ${e.tokens_in} Eingabe- / ${e.tokens_out} Ausgabe-Tokens`}>
+                        · Kosten ⓘ
+                      </span>
+                    )}
                     {e.ergebnis?.memo_gesendet && <span className="text-accent">· Memo gesendet ✓</span>}
                     {e.ergebnis?.fehler && <span className="text-danger">· Fehler</span>}
                   </div>
@@ -176,7 +193,7 @@ export default function CortexPage() {
               {gedaechtnis.map(g => (
                 <div key={g.id} className="bg-white border border-line rounded-xl px-4 py-3 flex items-start gap-3">
                   <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 mt-0.5 ${TYP_FARBE[g.typ] ?? "bg-surface-muted text-ink-muted"}`}>
-                    {g.typ} · W{g.wichtigkeit}
+                    {GEDAECHTNIS_LABEL[g.typ] ?? g.typ} · W{g.wichtigkeit}
                   </span>
                   <p className="text-sm text-ink-secondary leading-relaxed">{g.inhalt}</p>
                 </div>

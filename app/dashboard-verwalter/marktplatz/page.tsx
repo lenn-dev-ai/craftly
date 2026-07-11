@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { useToast } from "@/components/Toast"
@@ -108,8 +109,15 @@ export default function MarktplatzPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { confirm } = useToast()
-  const initialTab = (searchParams.get("tab") as Tab) === "handwerker" ? "handwerker" : "tickets"
-  const [tab, setTab] = useState<Tab>(initialTab)
+  // Audit 11.07.: nur noch der Tickets-Ticker. Alt-Deeplinks auf
+  // ?tab=handwerker leiten auf die echte Handwerker-Seite um.
+  const [tab] = useState<Tab>("tickets")
+  useEffect(() => {
+    if (searchParams.get("tab") === "handwerker") {
+      router.replace("/dashboard-verwalter/handwerker")
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [tickets, setTickets] = useState<OffenesTicket[]>([])
   // Sprint AM Phase 3: HW-Namen für den aktuell angefragten Direktvergabe-Kandidaten.
@@ -143,16 +151,6 @@ export default function MarktplatzPage() {
   useFocusTrap(einladenDialogRef, !!einladenDrawer)
   const auctionDialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(auctionDialogRef, !!auctionStarten)
-
-  // Tab-Sync in URL
-  useEffect(() => {
-    const next = new URLSearchParams(searchParams.toString())
-    if (tab === "handwerker") next.set("tab", "handwerker")
-    else next.delete("tab")
-    const qs = next.toString()
-    router.replace(`/dashboard-verwalter/marktplatz${qs ? `?${qs}` : ""}`, { scroll: false })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -507,21 +505,24 @@ export default function MarktplatzPage() {
             <RefreshCw size={13} /> Aktualisieren
           </button>
         </div>
-        <div className="max-w-6xl mx-auto pl-14 pr-4 md:px-6 flex gap-1 -mb-px">
+        {/* Audit 11.07.: Der Marktplatz ist ein Live-Vergabe-Ticker, kein
+            Handwerker-Verwaltungswerkzeug. Der frühere Tab "Meine Handwerker"
+            war eine Read-only-Kopie des Hauptmenüpunkts "Handwerker" und ist
+            entfernt — die HW-Pflege lebt dort (Link statt Dublette). */}
+        <div className="max-w-6xl mx-auto pl-14 pr-4 md:px-6 flex items-center justify-between gap-3 -mb-px">
           <TabButton
-            active={tab === "tickets"}
+            active
             label="Offene Tickets"
             count={tickets.length}
             icon={<Inbox size={14} />}
-            onClick={() => setTab("tickets")}
+            onClick={() => { /* einziger Tab */ }}
           />
-          <TabButton
-            active={tab === "handwerker"}
-            label="Meine Handwerker"
-            count={hws.length}
-            icon={<Users size={14} />}
-            onClick={() => setTab("handwerker")}
-          />
+          <Link
+            href="/dashboard-verwalter/handwerker"
+            className="text-xs text-ink-secondary hover:text-ink inline-flex items-center gap-1.5 pb-2"
+          >
+            <Users size={14} /> Meine Handwerker verwalten →
+          </Link>
         </div>
       </div>
 

@@ -43,6 +43,7 @@ module.exports = {
           offen: "#C4574B",         // needs attention (rot)
           auktion: "#5B6ABF",       // läuft (blau)
           bearbeitung: "#C4956A",   // in Arbeit (amber)
+          pruefung: "#6FA98C",      // fertig gemeldet, wartet auf Bestätigung (salbei)
           erledigt: "#3D8B7A",      // done (grün)
         },
         /* Typ-Farben — sekundär, nur wenn Typ relevant */
