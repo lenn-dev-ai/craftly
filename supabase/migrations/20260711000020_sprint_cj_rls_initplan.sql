@@ -50,6 +50,23 @@ begin
 end
 $mig$;
 
+-- Sonderfall: provision_settings-Policy nutzt auth.role() statt auth.uid()
+-- (vom generischen Rewrite oben nicht erfasst).
+do $ps$
+begin
+  if exists (
+    select 1 from pg_policies
+    where schemaname='public' and tablename='provision_settings'
+      and policyname='provision_settings_select_authenticated'
+      and qual ~ 'auth\.role\(\)' and qual !~ 'SELECT auth\.role\(\)'
+  ) then
+    alter policy provision_settings_select_authenticated
+      on public.provision_settings
+      using ((select auth.role()) = 'authenticated');
+  end if;
+end
+$ps$;
+
 -- Doppel-Index (beide UNIQUE auf ticket_id): eine Variante reicht.
 do $idx$
 begin
