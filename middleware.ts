@@ -117,8 +117,15 @@ export async function middleware(request: NextRequest) {
     const protectedAppPath = isProtectedAppPath(pathname)
 
     if (!protectedAppPath) {
-      // API-Routes etc. brauchen nur Cookie-Refresh, kein Redirect.
-      await supabase.auth.getUser()
+      // Cookie-Refresh nur, wenn überhaupt ein Auth-Cookie existiert.
+      // Für anonyme Besucher (Login-Seite, Landing) gibt es nichts zu
+      // refreshen — den getUser()-Netzwerk-Roundtrip zu Supabase sparen
+      // wir uns (Audit 11.07.: Login-TTFB 0,68s → ~0,15s).
+      const hatAuthCookie = request.cookies.getAll()
+        .some(c => c.name.startsWith("sb-") && c.name.includes("auth-token"))
+      if (hatAuthCookie) {
+        await supabase.auth.getUser()
+      }
       return response
     }
 

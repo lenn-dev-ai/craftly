@@ -360,6 +360,13 @@ export default function MeldenPage() {
             setTimeout(() => setStep("details"), 500)
             return
           }
+          // Content-Moderation (Audit 11.07.): unangemessenes Foto — Hinweis
+          // zeigen, damit der Mieter weiß, warum es nicht analysiert wurde.
+          // Danach normaler Text-Fallback (die Beschreibung bleibt nutzbar).
+          if (res.status === 422) {
+            const data = await res.json().catch(() => ({} as { hinweis?: string }))
+            setKiHinweis(data.hinweis || "Bitte lade nur ein Foto des Gebäudeschadens hoch — keine Personen oder Ausweise.")
+          }
           // bei nicht-ok auf Regex-Fallback runterfallen
         } catch {
           // ebenfalls Fallback

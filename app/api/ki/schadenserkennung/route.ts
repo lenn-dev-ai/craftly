@@ -33,6 +33,7 @@ Analysiere das Foto eines Gebäudeschadens und antworte AUSSCHLIESSLICH als vali
   "beschreibung_vorschlag": "Detaillierte Beschreibung des Schadens in 2-3 Sätzen",
   "confidence": 0.0,
   "kein_schaden": false,
+  "unangemessen": false,
   "hinweis": "Optionaler Hinweis falls das Bild unklar ist"
 }
 
@@ -43,7 +44,9 @@ Regeln Dringlichkeit:
 
 kein_schaden = true, wenn das Bild GAR KEINEN Gebäudeschaden zeigt, sondern ein Verwaltungsanliegen (z.B. Brief, Formular, Bescheinigung, Vertrag, Screenshot einer E-Mail). Dann schadensart "sonstiges", dringlichkeit "planbar" und im hinweis kurz erklären.
 
-confidence < 0.3 wenn das Bild keinen Schaden zeigt oder unklar ist — dann hinweis-Feld füllen.`
+confidence < 0.3 wenn das Bild keinen Schaden zeigt oder unklar ist — dann hinweis-Feld füllen.
+
+unangemessen = true, wenn das Bild NICHTS mit einer Immobilie/einem Gebäude zu tun hat und offensichtlich fehl am Platz ist — insbesondere Personen im Fokus, Nacktheit, Ausweis-/Gesichtsfotos, Gewalt oder anstößige Inhalte. Dann alle anderen Felder neutral lassen (schadensart "sonstiges", dringlichkeit "planbar", confidence 0) und im hinweis sachlich bitten, nur ein Foto des Schadens hochzuladen. Ein harmloses Foto ohne Schaden (leerer Raum, Möbel) ist NICHT unangemessen — nur kein_schaden.`
 
 const ALLOWED_SCHADENSARTEN = new Set([
   "sanitaer", "elektrik", "heizung", "fenster_tuer", "dach", "fassade", "boden", "schimmel", "sonstiges",
@@ -58,6 +61,7 @@ interface KiAntwort {
   beschreibung_vorschlag: string
   confidence: number
   kein_schaden?: boolean
+  unangemessen?: boolean
   hinweis?: string
 }
 
@@ -183,6 +187,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "KI-Analyse fehlgeschlagen", details: err instanceof Error ? err.message : "unbekannt" },
       { status: 502 },
+    )
+  }
+
+  // Content-Moderation (Audit 11.07.): Bilder, die das Modell als
+  // unangemessen einstuft (Personen im Fokus, Nacktheit, Ausweise …),
+  // werden NICHT gecacht und mit klarer Bitte abgewiesen — schützt vor
+  // Fehl-Uploads und hält solche Inhalte aus dem Analyse-Pfad.
+  if (kiAntwort.unangemessen === true) {
+    return NextResponse.json(
+      {
+        error: "unangemessenes_bild",
+        hinweis: kiAntwort.hinweis
+          || "Bitte lade nur ein Foto des Gebäudeschadens hoch — keine Personen, Ausweise oder anderes.",
+      },
+      { status: 422 },
     )
   }
 
