@@ -1,0 +1,69 @@
+# Fallback-Scheduler (Audit 11.07.2026)
+#
+# Befund: Die Netlify Scheduled Functions feuerten tagelang nicht (keine
+# Heartbeats, Direktvergaben blieben bei "Frist abgelaufen" stehen). Dieser
+# Workflow ist der redundante zweite Auslöseweg: GitHub Actions ruft die
+# Cron-Endpunkte direkt auf. Läuft Netlify wieder, ist Doppel-Ausführung
+# unkritisch — alle Crons sind idempotent bzw. race-gesichert.
+#
+# SETUP (einmalig): Repo → Settings → Secrets and variables → Actions →
+# "New repository secret" → Name: CRON_SECRET, Wert = derselbe wie in
+# Netlify. Ohne Secret bricht der Workflow früh und leise ab.
+
+name: reparo-crons
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # Viertelstündlich: Vergabe-Motor
+    - cron: "45 3 * * *"     # Täglich: Reflexe, Schlaf, Fristen, Briefing
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  viertelstuendlich:
+    if: github.event.schedule == '*/15 * * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vergabe-Motor anstoßen
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET fehlt (Repo-Secret setzen) — überspringe."; exit 0
+          fi
+          for pfad in \
+            /api/cron/direktvergabe-eskalation \
+            /api/auction/check-expired \
+            /api/cron/auto-freigabe \
+          ; do
+            echo "→ $pfad"
+            curl -sS -m 60 -X POST "https://reparo-app.de$pfad" \
+              -H "x-cron-secret: $CRON_SECRET" | head -c 600; echo
+          done
+
+  taeglich:
+    if: github.event.schedule == '45 3 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tages-Crons anstoßen
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET fehlt (Repo-Secret setzen) — überspringe."; exit 0
+          fi
+          for pfad in \
+            /api/cron/cortex-reflexe \
+            /api/cron/cortex-schlaf \
+            /api/cron/abwicklungsfrist \
+            /api/cron/bewertungs-reminder \
+            /api/cron/stille-hw-reaktivierung \
+            /api/cron/sichtbarkeits-recompute \
+            /api/cron/hw-morgen-briefing \
+            /api/cron/keep-alive \
+          ; do
+            echo "→ $pfad"
+            curl -sS -m 120 -X POST "https://reparo-app.de$pfad" \
+              -H "x-cron-secret: $CRON_SECRET" | head -c 600; echo
+          done

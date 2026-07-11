@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase-server"
-import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
+import { pruefeCronAuth, meldeCronHeartbeat, mitParallelitaet } from "@/lib/cron/auth"
 import { reScoreTicket } from "@/lib/auction/scoring-pipeline"
 import { erteileZuschlag } from "@/lib/auction/zuschlag"
 import { sendEmail } from "@/lib/email/send"
@@ -33,31 +33,13 @@ interface BidZeile {
 }
 
 export async function POST(request: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET
-  const authViaSecret =
-    !!cronSecret && request.headers.get("x-cron-secret") === cronSecret
-
-  // FIX-1: Im Cron-Pfad (Secret-Auth) Service-Role nutzen — sonst greift
-  // RLS und die tickets-Query unten findet 0 Rows (kein User-Kontext) →
-  // Auktionen werden nie automatisch geschlossen.
-  // Im Admin-Pfad bleibt der User-Client (RLS+Admin-Policy fängt das auf).
-  // H1: Admin-Pfad nutzt den getUserFromRequest-Helper (Bearer-Token).
-  let supabase
-  if (authViaSecret) {
-    supabase = createServiceRoleClient()
-  } else {
-    const r = await getUserFromRequest(request)
-    supabase = r.supabase
-    if (!r.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("rolle")
-      .eq("id", r.user.id)
-      .single()
-    if (profile?.rolle !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-  }
+  // Audit 11.07.: gemeinsamer Cron-Auth (timing-safe, fail-closed). Nach
+  // bestandener Prüfung arbeitet auch der Admin-Pfad mit Service-Role —
+  // der Admin ist verifiziert, und RLS-Sonderpfade (FIX-1) entfallen.
+  const auth = await pruefeCronAuth(request)
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
+  meldeCronHeartbeat("check-expired-auctions", auth.via)
+  const supabase = createServiceRoleClient()
 
   const jetzt = new Date().toISOString()
   const { data: abgelaufen } = await supabase
@@ -116,7 +98,13 @@ export async function POST(request: NextRequest) {
       failedMailDetails.push({ ticketId, empfaenger, typ, grund })
     })
 
-  for (const ticket of abgelaufen ?? []) {
+  // Audit-Fix 11.07.: parallel statt sequenziell — 4+ awaits pro Ticket
+  // in Serie sprengen das Netlify-10s-Limit ab ~10 abgelaufenen Auktionen.
+  // Deckel 5: DB und Mail-Versand nicht fluten. erteileZuschlag ist pro
+  // Ticket atomar (Status-Guard), die Tickets sind unabhängig.
+  type Ergebnis = (typeof ergebnisse)[number]
+  const laeufe = await mitParallelitaet(abgelaufen ?? [], 5, async (ticket): Promise<Ergebnis> => {
+
     // Re-Scoring vor Vergabe (Sicherheit)
     await reScoreTicket(supabase, ticket.id)
 
@@ -133,11 +121,6 @@ export async function POST(request: NextRequest) {
         .from("tickets")
         .update({ status: "offen", auktion_ende: null })
         .eq("id", ticket.id)
-      ergebnisse.push({
-        ticketId: ticket.id,
-        titel: ticket.titel,
-        aktion: "zurueck-auf-offen",
-      })
       // Verwalter informieren — überwacht, damit Fehler im Response landen
       // (verwalter_id = zuständiger Auftraggeber, M-K3; Fallback erstellt_von)
       mailJobs.push((async () => {
@@ -163,7 +146,11 @@ export async function POST(request: NextRequest) {
           grund: err instanceof Error ? err.message : String(err),
         })
       }))
-      continue
+      return {
+        ticketId: ticket.id,
+        titel: ticket.titel,
+        aktion: "zurueck-auf-offen",
+      }
     }
 
     // Tie-Break über Erfahrung
@@ -210,16 +197,15 @@ export async function POST(request: NextRequest) {
     })
 
     if (!zuschlag.ok) {
-      ergebnisse.push({
+      return ({
         ticketId: ticket.id,
         titel: ticket.titel,
         aktion: "fehler",
         fehler: zuschlag.error,
       })
-      continue
     }
 
-    ergebnisse.push({
+    return ({
       ticketId: ticket.id,
       titel: ticket.titel,
       aktion: "vergeben",
@@ -227,6 +213,10 @@ export async function POST(request: NextRequest) {
       auftragswert: zuschlag.kostenFinal,
       provisionBetrag: zuschlag.provisionBetrag,
     })
+    })
+  for (const lauf of laeufe) {
+    if (lauf.ok) ergebnisse.push(lauf.wert)
+    else ergebnisse.push({ ticketId: lauf.item.id, titel: lauf.item.titel, aktion: "fehler", fehler: lauf.fehler })
   }
 
   // ============================================================

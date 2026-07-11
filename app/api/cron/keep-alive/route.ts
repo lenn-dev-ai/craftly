@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { pruefeCronAuth, meldeCronHeartbeat } from "@/lib/cron/auth"
 
 // Anti-Pause: Supabase Free Tier pausiert das Projekt nach ~7 Tagen ohne
 // aktive DB-Verbindungen (Symptom: 503 auf /auth/v1/token, endloser
@@ -13,13 +14,9 @@ import { createClient } from "@supabase/supabase-js"
 // aber { data: [], error: null } beweist: DB ist aktiv und nicht pausiert.
 
 export async function GET(request: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET
-  if (!cronSecret) {
-    return NextResponse.json({ error: "Endpoint not configured — CRON_SECRET missing" }, { status: 503 })
-  }
-  if (request.headers.get("x-cron-secret") !== cronSecret) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const auth = await pruefeCronAuth(request)
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
+  meldeCronHeartbeat("keep-alive", auth.via)
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

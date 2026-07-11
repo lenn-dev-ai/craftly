@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase-server"
+import { pruefeCronAuth, meldeCronHeartbeat, mitParallelitaet } from "@/lib/cron/auth"
 import { sendEmail } from "@/lib/email/send"
 import { type TagesBriefingResponse } from "@/app/api/hw/tages-briefing/route"
 
@@ -93,10 +94,9 @@ function briefingHtml(name: string, datum: string, b: TagesBriefingResponse): st
 }
 
 export async function POST(request: NextRequest) {
-  const cronSecret = request.headers.get("x-cron-secret")
-  if (!cronSecret || cronSecret !== process.env.CRON_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const auth = await pruefeCronAuth(request)
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
+  meldeCronHeartbeat("hw-morgen-briefing", auth.via)
 
   const siteUrl = process.env.URL || process.env.NEXT_PUBLIC_SITE_URL || "https://reparo-app.netlify.app"
   const supabase = createServiceRoleClient()
@@ -119,34 +119,32 @@ export async function POST(request: NextRequest) {
   let skipped = 0
   const errors: string[] = []
 
-  for (const hw of hwProfiles) {
-    try {
-      // 2. Briefing pro HW generieren (ruft KI + Route-Optimizer auf)
-      const briefingUrl = `${siteUrl}/api/hw/tages-briefing?datum=${heute}&userId=${hw.id}`
-      const res = await fetch(briefingUrl, {
-        headers: { "x-cron-secret": process.env.CRON_SECRET || "" },
-      })
+  // Audit-Fix 11.07.: parallel statt sequenziell — 200 HW nacheinander
+  // (Fetch + Mail je ~200ms) sprengen das Netlify-10s-Limit. Deckel 8,
+  // damit KI-/Routen-Backend nicht geflutet wird.
+  const laeufe = await mitParallelitaet(hwProfiles, 8, async hw => {
+    // 2. Briefing pro HW generieren (ruft KI + Route-Optimizer auf)
+    const briefingUrl = `${siteUrl}/api/hw/tages-briefing?datum=${heute}&userId=${hw.id}`
+    const res = await fetch(briefingUrl, {
+      headers: { "x-cron-secret": process.env.CRON_SECRET || "" },
+    })
+    if (!res.ok) throw new Error(`briefing HTTP ${res.status}`)
 
-      if (!res.ok) {
-        errors.push(`HW ${hw.id}: briefing HTTP ${res.status}`)
-        skipped++
-        continue
-      }
+    const briefing: TagesBriefingResponse = await res.json()
+    const name = hw.name || hw.firma || "Handwerker"
+    const email = hw.email as string
 
-      const briefing: TagesBriefingResponse = await res.json()
-      const name = hw.name || hw.firma || "Handwerker"
-      const email = hw.email as string
-
-      // 3. Email senden (RESEND_PAUSED=1 → skippt silent via lib/email/send.ts)
-      await sendEmail({
-        to: email,
-        subject: `Dein Tag — ${new Date(heute + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}`,
-        html: briefingHtml(name, heute, briefing),
-      })
-
-      gesendet++
-    } catch (err) {
-      errors.push(`HW ${hw.id}: ${String(err)}`)
+    // 3. Email senden (RESEND_PAUSED=1 → skippt silent via lib/email/send.ts)
+    await sendEmail({
+      to: email,
+      subject: `Dein Tag — ${new Date(heute + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}`,
+      html: briefingHtml(name, heute, briefing),
+    })
+  })
+  for (const lauf of laeufe) {
+    if (lauf.ok) gesendet++
+    else {
+      errors.push(`HW ${lauf.item.id}: ${lauf.fehler}`)
       skipped++
     }
   }

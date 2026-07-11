@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase-server"
-import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
+import { pruefeCronAuth, meldeCronHeartbeat } from "@/lib/cron/auth"
 import { eskaliereDirektvergabe } from "@/lib/auction/direktvergabe"
 
 // POST /api/cron/direktvergabe-eskalation
@@ -22,16 +22,9 @@ import { eskaliereDirektvergabe } from "@/lib/auction/direktvergabe"
 // laufen, wenn der HW "gleichzeitig" reagiert.
 
 export async function POST(request: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET
-  const authViaSecret =
-    !!cronSecret && request.headers.get("x-cron-secret") === cronSecret
-
-  if (!authViaSecret) {
-    const { supabase, user } = await getUserFromRequest(request)
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    const { data: profile } = await supabase.from("profiles").select("rolle").eq("id", user.id).single()
-    if (profile?.rolle !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-  }
+  const auth = await pruefeCronAuth(request)
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
+  meldeCronHeartbeat("direktvergabe-eskalation", auth.via)
 
   const admin = createServiceRoleClient()
 

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase-server"
-import { getUserFromRequest } from "@/lib/auth/getUserFromRequest"
+import { pruefeCronAuth, meldeCronHeartbeat, mitParallelitaet } from "@/lib/cron/auth"
 import { PENALTY_AMOUNT_CENTS } from "@/lib/stripe"
 import { sendEmailFireAndForget } from "@/lib/email/send"
 import { fristWarnungEmail, fristAbgelaufenEmail } from "@/lib/email/templates"
@@ -35,16 +35,9 @@ interface UeberfaelligesTicket {
 }
 
 export async function POST(request: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET
-  const authViaSecret =
-    !!cronSecret && request.headers.get("x-cron-secret") === cronSecret
-
-  if (!authViaSecret) {
-    const { supabase, user } = await getUserFromRequest(request)
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    const { data: profile } = await supabase.from("profiles").select("rolle").eq("id", user.id).single()
-    if (profile?.rolle !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-  }
+  const auth = await pruefeCronAuth(request)
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
+  meldeCronHeartbeat("abwicklungsfrist", auth.via)
 
   const admin = createServiceRoleClient()
   const warnSchwelle = new Date(Date.now() - WARN_NACH_TAGEN * 86400_000).toISOString()
@@ -112,8 +105,11 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  for (const t of liste ?? []) {
-    if (!t.zugewiesener_hw) continue
+  // Audit-Fix 11.07.: parallel statt sequenziell — 4 DB-Ops pro Ticket in
+  // Serie sprengen das Netlify-10s-Limit ab ~30 überfälligen Tickets.
+  const laeufe = await mitParallelitaet(liste ?? [], 5, async (t: UeberfaelligesTicket) => {
+
+    if (!t.zugewiesener_hw) return null
     const createdMs = new Date(t.created_at).getTime()
     const istUeberFrist = createdMs < Date.parse(fristSchwelle)
 
@@ -126,8 +122,7 @@ export async function POST(request: NextRequest) {
         auktion_ende: neuesEnde,
       }).eq("id", t.id)
       if (ticketErr) {
-        ergebnisse.push({ ticketId: t.id, titel: t.titel, handwerkerId: t.zugewiesener_hw, aktion: "fehler", fehler: ticketErr.message })
-        continue
+        return { ticketId: t.id, titel: t.titel, handwerkerId: t.zugewiesener_hw, aktion: "fehler" as const, fehler: ticketErr.message }
       }
 
       const { data: hw } = await admin.from("profiles")
@@ -157,22 +152,20 @@ export async function POST(request: NextRequest) {
       // Beide Seiten informieren: Auftrag entzogen / zurück in der Vergabe.
       await sendeFristMails(t, t.zugewiesener_hw, "abgelaufen", 0)
 
-      ergebnisse.push({
+      return {
         ticketId: t.id,
         titel: t.titel,
         handwerkerId: t.zugewiesener_hw,
-        aktion: "zurueck-zur-auktion",
-      })
-      continue
+        aktion: "zurueck-zur-auktion" as const,
+      }
     }
 
     // === Stufe 1 — Warnung (10–13 Tage alt, noch keine Warnung gesendet) ===
     if (t.frist_warnung_gesendet) {
-      ergebnisse.push({
+      return {
         ticketId: t.id, titel: t.titel, handwerkerId: t.zugewiesener_hw,
-        aktion: "kein-handlungsbedarf",
-      })
-      continue
+        aktion: "kein-handlungsbedarf" as const,
+      }
     }
 
     // Best-effort: Spalte setzen (fail = Spalte noch nicht migriert, ignorieren)
@@ -189,12 +182,19 @@ export async function POST(request: NextRequest) {
     const tageBisFrist = Math.max(1, FRIST_TAGE - Math.floor((Date.now() - createdMs) / 86400_000))
     await sendeFristMails(t, t.zugewiesener_hw, "warnung", tageBisFrist)
 
-    ergebnisse.push({
+    return {
       ticketId: t.id,
       titel: t.titel,
       handwerkerId: t.zugewiesener_hw,
-      aktion: "warnung-gesendet",
+      aktion: "warnung-gesendet" as const,
+    }
     })
+  for (const lauf of laeufe) {
+    if (!lauf.ok) {
+      ergebnisse.push({ ticketId: lauf.item.id, titel: lauf.item.titel, handwerkerId: lauf.item.zugewiesener_hw, aktion: "fehler", fehler: lauf.fehler })
+    } else if (lauf.wert) {
+      ergebnisse.push(lauf.wert)
+    }
   }
 
   return NextResponse.json({
