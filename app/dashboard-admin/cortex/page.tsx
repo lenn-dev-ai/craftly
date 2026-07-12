@@ -53,25 +53,64 @@ const ENTSCHEIDUNG_LABEL: Record<string, string> = {
   frage: "Frage",
 }
 
+// Feature-Nutzung (Audit 11.07.): Datenbasis für die Streichen-oder-
+// Vertiefen-Entscheidung. Alle vier gemessenen Features werden IMMER
+// angezeigt — auch mit 0, denn "keine Nutzung" ist hier die wichtigste
+// Information. Admin-Sitzungen (Sichtwechsel-Tests) zählen separat,
+// damit Testklicks die echte Nutzung nicht verfälschen.
+const FEATURES = [
+  { key: "feature_karte", label: "Karte & Route" },
+  { key: "feature_voice", label: "Sprach-Assistent" },
+  { key: "feature_diagnose", label: "Diagnose-Workflow" },
+  { key: "feature_frag_reparo", label: "Frag Reparo" },
+] as const
+
+interface FeatureNutzung {
+  sitzungen: number
+  nutzer: Set<string>
+  echteSitzungen: number
+  echteNutzer: Set<string>
+}
+
 export default function CortexPage() {
   const [entscheidungen, setEntscheidungen] = useState<Entscheidung[]>([])
   const [gedaechtnis, setGedaechtnis] = useState<Erinnerung[]>([])
   const [ereignisse, setEreignisse] = useState<{ offen: number; gesamt: number }>({ offen: 0, gesamt: 0 })
+  const [nutzung, setNutzung] = useState<Record<string, FeatureNutzung>>({})
   const [loading, setLoading] = useState(true)
   const [denkt, setDenkt] = useState(false)
   const [meldung, setMeldung] = useState<string | null>(null)
 
   const laden = useCallback(async () => {
     const supabase = createClient()
-    const [e, g, offen, gesamt] = await Promise.all([
+    const seit28d = new Date(Date.now() - 28 * 86400_000).toISOString()
+    const [e, g, offen, gesamt, feats] = await Promise.all([
       supabase.from("cortex_entscheidungen").select("*").order("erstellt_at", { ascending: false }).limit(10),
       supabase.from("cortex_gedaechtnis").select("id, typ, inhalt, wichtigkeit, quelle, erstellt_at").order("erstellt_at", { ascending: false }).limit(20),
       supabase.from("cortex_ereignisse").select("id", { count: "exact", head: true }).eq("verarbeitet", false),
       supabase.from("cortex_ereignisse").select("id", { count: "exact", head: true }),
+      supabase.from("cortex_ereignisse")
+        .select("typ, entitaet_id, payload")
+        .like("typ", "feature_%")
+        .gte("erstellt_at", seit28d)
+        .limit(5000),
     ])
     setEntscheidungen((e.data ?? []) as Entscheidung[])
     setGedaechtnis((g.data ?? []) as Erinnerung[])
     setEreignisse({ offen: offen.count ?? 0, gesamt: gesamt.count ?? 0 })
+
+    // Feature-Events client-seitig aggregieren (Beta-Volumen ist klein)
+    const agg: Record<string, FeatureNutzung> = {}
+    for (const row of (feats.data ?? []) as Array<{ typ: string; entitaet_id: string | null; payload: { rolle?: string } | null }>) {
+      const eintrag = agg[row.typ] ??= { sitzungen: 0, nutzer: new Set(), echteSitzungen: 0, echteNutzer: new Set() }
+      eintrag.sitzungen++
+      if (row.entitaet_id) eintrag.nutzer.add(row.entitaet_id)
+      if (row.payload?.rolle && row.payload.rolle !== "admin") {
+        eintrag.echteSitzungen++
+        if (row.entitaet_id) eintrag.echteNutzer.add(row.entitaet_id)
+      }
+    }
+    setNutzung(agg)
     setLoading(false)
   }, [])
 
@@ -151,6 +190,35 @@ export default function CortexPage() {
         <p className="text-sm text-ink-muted">Lädt …</p>
       ) : (
         <div className="space-y-8">
+          <section>
+            <h2 className="text-base font-semibold text-ink mb-3">Feature-Nutzung (28 Tage)</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {FEATURES.map(f => {
+                const n = nutzung[f.key]
+                const echte = n?.echteNutzer.size ?? 0
+                const test = (n?.nutzer.size ?? 0) - echte
+                return (
+                  <div key={f.key} className="bg-white border border-line rounded-xl p-4">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-2">{f.label}</div>
+                    <div className={`text-2xl font-bold tabular-nums ${echte > 0 ? "text-ink" : "text-ink-muted/50"}`}>
+                      {echte}
+                    </div>
+                    <div className="text-xs text-ink-muted mt-0.5">
+                      {echte === 1 ? "echter Nutzer" : "echte Nutzer"}
+                      {n ? ` · ${n.echteSitzungen} Sitzung${n.echteSitzungen === 1 ? "" : "en"}` : ""}
+                    </div>
+                    {test > 0 && (
+                      <div className="text-[11px] text-ink-muted/70 mt-1">+ {test} Test/Admin</div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-xs text-ink-muted mt-2">
+              Streichen-oder-Vertiefen-Regel (CORTEX.md): unter 5 % der aktiven Nutzer/Monat → Streichkandidat · über 30 % → vertiefen. Admin-Sichtwechsel-Tests zählen separat.
+            </p>
+          </section>
+
           <section>
             <h2 className="text-base font-semibold text-ink mb-3">Memos & Entscheidungen</h2>
             {entscheidungen.length === 0 && <p className="text-sm text-ink-muted">Noch keine — &bdquo;Jetzt denken&ldquo; startet den ersten Zyklus.</p>}
