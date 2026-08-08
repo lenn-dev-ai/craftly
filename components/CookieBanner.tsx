@@ -1,9 +1,16 @@
 "use client"
 import { useEffect, useState } from "react"
+import { usePathname } from "next/navigation"
 
 const STORAGE_KEY = "reparo_cookie_consent"
 
+// Fremdgebrandete Routen (WoonWoon-Selbstauskunft) bekommen den
+// Reparo-Banner nicht — dort wäre "damit Reparo funktioniert" für den
+// Interessenten schlicht falsch. Die Seiten setzen selbst keine Cookies.
+const OHNE_BANNER: Array<string | RegExp> = [/^\/selbstauskunft(\/|$)/]
+
 export default function CookieBanner() {
+  const pathname = usePathname()
   const [sichtbar, setSichtbar] = useState(false)
 
   useEffect(() => {
@@ -11,6 +18,11 @@ export default function CookieBanner() {
     const consent = localStorage.getItem(STORAGE_KEY)
     if (!consent) setSichtbar(true)
   }, [])
+
+  const ausgeblendet = OHNE_BANNER.some(m =>
+    typeof m === "string" ? pathname === m : m.test(pathname ?? ""),
+  )
+  if (ausgeblendet) return null
 
   function speichern(wahl: "alle" | "notwendig") {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ wahl, datum: new Date().toISOString() }))

@@ -25,6 +25,8 @@ const HIDDEN_ON: Array<string | RegExp> = [
   "/email-bestaetigt",
   "/onboarding",
   /^\/auth\//,
+  // WoonWoon-Selbstauskunft: fremdgebrandete Zero-Login-Seite
+  /^\/selbstauskunft(\/|$)/,
 ]
 
 export function FeedbackWidget() {
