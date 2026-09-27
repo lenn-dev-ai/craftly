@@ -12,10 +12,10 @@
 
 name: reparo-crons
 
+# PAUSIERT (12.07.2026): Projekt-Komplettpause — Zeitpläne deaktiviert,
+# damit keine Actions-Minuten mehr anfallen. Reaktivierung: die zwei
+# schedule-Zeilen wieder einkommentieren (siehe Git-Historie).
 on:
-  schedule:
-    - cron: "*/15 * * * *"   # Viertelstündlich: Vergabe-Motor
-    - cron: "45 3 * * *"     # Täglich: Reflexe, Schlaf, Fristen, Briefing
   workflow_dispatch: {}
 
 permissions: {}
