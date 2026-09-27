@@ -18,10 +18,14 @@
 
 name: Lighthouse CI
 
+# PAUSIERT (27.09.2026): Projekt-Komplettpause — Zeitplan deaktiviert.
+# Die Produktions-URL liefert im Wartungsmodus 503, der Lauf wuerde also
+# jeden Montag fehlschlagen und eine GitHub-Fehlermail ausloesen.
+# Reaktivierung: die zwei schedule-Zeilen wieder einkommentieren.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 7 * * 1"
+  # schedule:
+  #   - cron: "0 7 * * 1"
 
 jobs:
   lighthouse:
