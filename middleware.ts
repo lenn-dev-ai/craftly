@@ -54,7 +54,35 @@ function requiredRoleForPath(pathname: string) {
   )?.role
 }
 
+// Projekt-Komplettpause (12.07.2026): true = die GESAMTE Website (inkl.
+// /api) antwortet mit 503 + Pausen-Seite. Die Supabase-DB ist ohnehin
+// pausiert — dieser Schalter nimmt auch die statische Hülle vom Netz.
+// Reaktivierung: auf false setzen und deployen (siehe Memory-Runbook).
+const WARTUNGSMODUS = true
+
 export async function middleware(request: NextRequest) {
+  if (WARTUNGSMODUS) {
+    return new NextResponse(
+      `<!doctype html><html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Reparo — pausiert</title>
+<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;background:#FAF8F4;color:#2A2622}main{text-align:center;padding:32px}h1{font-size:28px;margin:0 0 8px}h1 span{color:#3D8B7A}p{color:#6B665E;margin:0}</style>
+</head><body><main>
+<h1>Re<span>paro</span></h1>
+<p>Wir machen gerade eine Pause. Bis bald!</p>
+</main></body></html>`,
+      {
+        status: 503,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Retry-After": "86400",
+          "Cache-Control": "no-store",
+        },
+      },
+    )
+  }
+
   // --- Beta-Zugangs-Gate (geschlossene Beta) ---
   // Ist BETA_PASSWORD gesetzt, ist die GANZE Seite nur per Basic-Auth
   // erreichbar (User: BETA_USER oder "reparo"). So ist die Seite nicht
